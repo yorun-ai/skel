@@ -6,6 +6,37 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-10-02
+
+### Added
+
+- Config fields support nested ordinary data, generic data instantiations,
+  binary values, nullable values, and list/map combinations. Public config
+  generation includes its reachable local data declarations.
+
+### Changed
+
+- Config and event declarations are final and cannot be referenced as value
+  types, including through containers or generic arguments.
+- Removed the `@noTrim` config decorator and its generated tag, canonical schema,
+  compatibility diff and LSP metadata. Vine v0.25.0 preserves config whitespace
+  without an opt-in decorator.
+- Updated CLI and Go tooling dependencies: urfave/cli v3.13.0, x/mod v0.41.0
+  and x/sys v0.48.0.
+
+### Fixed
+
+- Nullable generic parameter references such as `TValue?` preserve nullability
+  in generated Go pointer fields, TypeScript unions and vRPC wire schemas.
+
+### Upgrade Notes
+
+- Remove `@noTrim` annotations before compiling existing contracts.
+- Replace config/event value references with ordinary data declarations.
+- Regenerate affected Go/TypeScript contracts. Go fields previously emitted as
+  `TValue` for `TValue?` now use `*TValue`; update assignments and nil handling.
+  Plain generic parameters and nullable collection wrappers retain their types.
+
 ## [0.22.1] - 2026-09-23
 
 ### Fixed
@@ -551,6 +582,7 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.22.1...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/yorun-ai/skelc/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/yorun-ai/skelc/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/yorun-ai/skelc/compare/v0.21.0...v0.22.0
