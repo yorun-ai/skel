@@ -6,6 +6,51 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-10-02
+
+### Fixed
+
+- Prevent language-server crashes while editing incomplete declarations and
+  permission expressions. Syntax recovery keeps inline decorators attached to
+  their declarations and continues analyzing later valid declarations.
+- Reject malformed programmatic models and schema permission expressions before
+  generation or encoding, including missing generic arguments, invalid generic
+  arity, and cyclic structural types. Valid recursive data remains supported.
+- Detect previously missed hard-reference cycles and apply directory domain
+  validation consistently in editor analysis.
+- Keep navigation, references, and rename within the correct source input and
+  resolved symbol scope. Reject invalid names and generic-parameter conflicts,
+  and use document versions when the editor supports them.
+- Prevent stale diagnostics from replacing newer results, preserve remote
+  document URI identities, and keep document updates responsive with slow
+  clients or canceled analysis.
+- Preserve path token boundaries during formatting so repeated formatting
+  produces stable output.
+- Keep target-specific generation state out of shared semantic models so one
+  parsed domain can safely be reused across generators.
+- Read Git schema baselines from one pinned commit and handle filenames
+  containing whitespace correctly.
+
+### Changed
+
+- Reuse incremental analysis results, workspace snapshots, and source indexes
+  to reduce editor latency and allocation overhead.
+- Preserve generated files and their timestamps when their contents are
+  unchanged.
+- Strengthen static analysis and regression coverage for malformed input,
+  compatibility behavior, and generated Go and TypeScript code.
+
+### Upgrade Notes
+
+- Valid contracts, public Go APIs, CLI options, and generated APIs remain
+  compatible with v0.23.0. No migration or mandatory regeneration is required;
+  Go and runtime dependency requirements are unchanged.
+- Previously missed invalid hard-reference cycles and directory domain
+  violations now produce diagnostics. Malformed programmatic models return
+  validation errors instead of crashing or recursing indefinitely.
+- Upgrade the skelc executable used by the editor as well as the CLI to receive
+  the language-server fixes.
+
 ## [0.23.0] - 2026-10-02
 
 ### Added
@@ -582,7 +627,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.23.1...HEAD
+[0.23.1]: https://github.com/yorun-ai/skelc/compare/v0.23.0...v0.23.1
 [0.23.0]: https://github.com/yorun-ai/skelc/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/yorun-ai/skelc/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/yorun-ai/skelc/compare/v0.21.0...v0.22.0
