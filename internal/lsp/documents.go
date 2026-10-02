@@ -10,6 +10,8 @@ import (
 )
 
 func (s *_Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
+	s.diagnosticsMu.Lock()
+	defer s.diagnosticsMu.Unlock()
 	document := params.TextDocument
 	s.putDocument(document.URI, document.Text, document.Version, true)
 	changed := s.workspace.RefreshDirectory(document.URI)
@@ -23,6 +25,8 @@ func (s *_Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocum
 }
 
 func (s *_Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
+	s.diagnosticsMu.Lock()
+	defer s.diagnosticsMu.Unlock()
 	if len(params.ContentChanges) == 0 {
 		return nil
 	}
@@ -36,6 +40,8 @@ func (s *_Server) DidChange(ctx context.Context, params *protocol.DidChangeTextD
 }
 
 func (s *_Server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
+	s.diagnosticsMu.Lock()
+	defer s.diagnosticsMu.Unlock()
 	documentURI := params.TextDocument.URI
 	exists := s.workspace.Close(documentURI)
 	s.invalidateSemanticDiagnostics(ctx)
@@ -50,6 +56,8 @@ func (s *_Server) DidClose(ctx context.Context, params *protocol.DidCloseTextDoc
 }
 
 func (s *_Server) DidChangeWatchedFiles(ctx context.Context, params *protocol.DidChangeWatchedFilesParams) error {
+	s.diagnosticsMu.Lock()
+	defer s.diagnosticsMu.Unlock()
 	changed := s.workspace.ApplyFileChanges(params.Changes)
 	s.invalidateSemanticDiagnostics(ctx)
 	for _, documentURI := range changed {
@@ -61,6 +69,8 @@ func (s *_Server) DidChangeWatchedFiles(ctx context.Context, params *protocol.Di
 }
 
 func (s *_Server) DidChangeWorkspaceFolders(ctx context.Context, params *protocol.DidChangeWorkspaceFoldersParams) error {
+	s.diagnosticsMu.Lock()
+	defer s.diagnosticsMu.Unlock()
 	removed := make([]uri.URI, 0)
 	for _, folder := range params.Event.Removed {
 		removed = append(removed, s.workspace.RemoveRoot(folder.URI)...)

@@ -108,3 +108,27 @@ func TestRenameRejectsDuplicateDeclarations(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, edit)
 }
+
+func TestRenameRejectsParserInvalidNamesAndGenericCapture(t *testing.T) {
+	for _, name := range []string{"用户", "Usér", "User١", "TItem"} {
+		t.Run(name, func(t *testing.T) {
+			f := newFixture()
+			u := uri.File("/workspace/input.skel")
+			f.putDocument(u, "domain demo\ndata User {}\ndata Box<TItem> { value: TItem }\n", 1, true)
+			edit, err := f.service().Rename(t.Context(), &protocol.RenameParams{TextDocumentPositionParams: protocol.TextDocumentPositionParams{TextDocument: protocol.TextDocumentIdentifier{URI: u}, Position: protocol.Position{Line: 1, Character: 6}}, NewName: name})
+			require.Error(t, err)
+			assert.Nil(t, edit)
+		})
+	}
+}
+
+func TestRenameChecksGenericParametersInSiblingFiles(t *testing.T) {
+	f := newFixture()
+	u := uri.File("/workspace/user.skel")
+	f.putDocument(uri.File("/workspace/domain.skel"), "domain demo\n", 1, true)
+	f.putDocument(u, "domain demo\ndata User {}\n", 1, true)
+	f.putDocument(uri.File("/workspace/box.skel"), "domain demo\ndata Box<TItem> { value: TItem }\n", 1, true)
+	edit, err := f.service().Rename(t.Context(), &protocol.RenameParams{TextDocumentPositionParams: protocol.TextDocumentPositionParams{TextDocument: protocol.TextDocumentIdentifier{URI: u}, Position: protocol.Position{Line: 1, Character: 6}}, NewName: "TItem"})
+	require.Error(t, err)
+	assert.Nil(t, edit)
+}

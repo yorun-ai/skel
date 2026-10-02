@@ -6,10 +6,16 @@ import (
 	"unicode/utf8"
 
 	"go.lsp.dev/protocol"
+	lsource "go.yorun.ai/skelc/internal/lsp/source"
 )
 
 func qualifierBeforePosition(source string, position protocol.Position) string {
-	offset := positionOffset(source, position)
+	return qualifierBeforePositionBuffer(lsource.New(source), position)
+}
+
+func qualifierBeforePositionBuffer(buffer lsource.Buffer, position protocol.Position) string {
+	source := buffer.String()
+	offset := buffer.Offset(position)
 	start := offset
 	for start > 0 {
 		r, size := utf8.DecodeLastRuneInString(source[:start])
@@ -34,7 +40,12 @@ func qualifierBeforePosition(source string, position protocol.Position) string {
 }
 
 func decoratorPrefixBeforePosition(source string, position protocol.Position) (string, protocol.Range, bool) {
-	offset := positionOffset(source, position)
+	return decoratorPrefixBeforePositionBuffer(lsource.New(source), position)
+}
+
+func decoratorPrefixBeforePositionBuffer(buffer lsource.Buffer, position protocol.Position) (string, protocol.Range, bool) {
+	source := buffer.String()
+	offset := buffer.Offset(position)
 	start := offset
 	for start > 0 {
 		r, size := utf8.DecodeLastRuneInString(source[:start])
@@ -46,11 +57,16 @@ func decoratorPrefixBeforePosition(source string, position protocol.Position) (s
 	if start == 0 || source[start-1] != '@' {
 		return "", protocol.Range{}, false
 	}
-	return source[start:offset], offsetRange(source, start, offset), true
+	return source[start:offset], buffer.Range(start, offset), true
 }
 
 func completionValuesBeforePosition(source string, position protocol.Position) []string {
-	offset := positionOffset(source, position)
+	return completionValuesBeforePositionBuffer(lsource.New(source), position)
+}
+
+func completionValuesBeforePositionBuffer(buffer lsource.Buffer, position protocol.Position) []string {
+	source := buffer.String()
+	offset := buffer.Offset(position)
 	lineStart := strings.LastIndexByte(source[:offset], '\n') + 1
 	prefix := strings.TrimSpace(source[lineStart:offset])
 	fields := strings.Fields(prefix)

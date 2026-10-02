@@ -29,7 +29,7 @@ func (s *_Server) publishDocumentDiagnostics(ctx context.Context, client protoco
 	diagnostics := semantic
 	if document != nil {
 		for _, diagnostic := range document.ParseDiagnostics {
-			diagnostics = append(diagnostics, lspdiagnostic.ToProtocol(diagnostic, document.Source, nil))
+			diagnostics = append(diagnostics, lspdiagnostic.ToProtocolBuffer(diagnostic, document.Buffer, nil))
 		}
 	}
 	params := &protocol.PublishDiagnosticsParams{URI: documentURI, Diagnostics: diagnostics}

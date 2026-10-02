@@ -13,30 +13,39 @@ import (
 	"go.yorun.ai/skelc/internal/loader"
 	lspdiagnostic "go.yorun.ai/skelc/internal/lsp/diagnostic"
 	"go.yorun.ai/skelc/internal/lsp/index"
+	"go.yorun.ai/skelc/internal/lsp/source"
 )
 
 // SemanticSources converts indexed LSP documents into compiler sources.
 func SemanticSources(documents map[uri.URI]*index.Document) ([]compiler.Source, map[string]uri.URI) {
-	directoryInputs := map[string]bool{}
+	directoryInputs := map[uri.URI]string{}
 	for _, document := range documents {
 		if filepath.Base(document.Path) == loader.DomainFileName {
-			directoryInputs[filepath.Clean(filepath.Dir(document.Path))] = true
+			directory, err := uri.JoinPath(document.URI, "..")
+			if err == nil {
+				directoryInputs[directory] = document.Domain
+			}
 		}
 	}
 	sources := make([]compiler.Source, 0, len(documents))
 	paths := make(map[string]uri.URI, len(documents))
 	for documentURI, document := range documents {
-		path := filepath.Clean(document.Path)
+		path := document.AnalysisPath()
 		root := path
-		if directoryInputs[filepath.Dir(path)] {
-			root = filepath.Dir(path)
+		directory, _ := uri.JoinPath(document.URI, "..")
+		expected, directoryInput := directoryInputs[directory]
+		if directoryInput {
+			root = string(directory)
+			if document.URI.IsFile() {
+				root = filepath.Dir(document.Path)
+			}
 		}
 		sources = append(sources, compiler.Source{
-			Path: path, Domain: document.Domain, Root: root,
+			Path: path, Domain: document.Domain, Root: root, ExpectedDomain: expected, DirectoryInput: directoryInput,
 			Content: []byte(document.Source), Parsed: document.Parsed,
 			ParseDiagnostics: document.ParseDiagnostics,
 		})
-		paths[path] = documentURI
+		paths[filepath.Clean(path)] = documentURI
 	}
 	return sources, paths
 }
@@ -58,10 +67,7 @@ func SemanticWorkspace(
 	strict bool,
 ) (map[uri.URI][]protocol.Diagnostic, []compiler.WorkspaceDomain, error) {
 	result := map[uri.URI][]protocol.Diagnostic{}
-	contents := make(map[string]string, len(sources))
-	for _, source := range sources {
-		contents[filepath.Clean(source.Path)] = string(source.Content)
-	}
+	contents := newSourceBuffers(sources)
 	diagnostics, domains, err := workspaceAnalyzer.AnalyzeDomainsContext(ctx, sources)
 	if err != nil {
 		return nil, nil, err
@@ -77,12 +83,25 @@ func SemanticWorkspace(
 		if !ok {
 			continue
 		}
-		source := contents[filepath.Clean(diagnostic.Position.File)]
-		result[documentURI] = append(result[documentURI], lspdiagnostic.ToProtocol(diagnostic, source, func(path string) (uri.URI, string, bool) {
+		buffer := contents.get(diagnostic.Position.File)
+		result[documentURI] = append(result[documentURI], lspdiagnostic.ToProtocolBuffer(diagnostic, buffer, func(path string) (uri.URI, source.Buffer, bool) {
 			cleaned := filepath.Clean(path)
 			relatedURI, exists := paths[cleaned]
-			return relatedURI, contents[cleaned], exists
+			return relatedURI, contents.get(cleaned), exists
 		}))
 	}
 	return result, domains, nil
+}
+
+// FilesystemDomain adapts source identities for schema baseline filesystem access.
+func FilesystemDomain(domain compiler.WorkspaceDomain) compiler.WorkspaceDomain {
+	if !strings.Contains(domain.Root, "://") {
+		return domain
+	}
+	domain.Root = uri.URI(domain.Root).FsPath()
+	domain.Sources = append([]compiler.Source{}, domain.Sources...)
+	for i := range domain.Sources {
+		domain.Sources[i].Path = uri.URI(domain.Sources[i].Path).FsPath()
+	}
+	return domain
 }

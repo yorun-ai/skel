@@ -58,7 +58,7 @@ func Build(documentURI uri.URI, path, content string, version int32) *Document {
 		path = documentURI.FsPath()
 	}
 	document := &Document{URI: documentURI, Path: path, Source: content, Version: version, Buffer: source.New(content), Imports: map[string]string{}}
-	parsed, diagnostics := compiler.ParseSourceRecovering(path, []byte(content))
+	parsed, diagnostics := compiler.ParseSourceRecovering(document.AnalysisPath(), []byte(content))
 	document.Parsed = parsed
 	document.ParseDiagnostics = diagnostics
 	if len(diagnostics) > 0 {
@@ -104,4 +104,12 @@ func Build(documentURI uri.URI, path, content string, version int32) *Document {
 	}
 	document.Occurrences = indexOccurrences(document)
 	return document
+}
+
+// AnalysisPath is a unique source identity; Path remains the local filesystem path.
+func (d *Document) AnalysisPath() string {
+	if !d.URI.IsFile() {
+		return string(d.URI)
+	}
+	return d.Path
 }

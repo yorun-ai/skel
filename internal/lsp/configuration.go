@@ -100,6 +100,8 @@ func decodeStrictSettings(value protocol.LSPAny, fallback bool) bool {
 }
 
 func (s *_Server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
+	s.diagnosticsMu.Lock()
+	defer s.diagnosticsMu.Unlock()
 	s.mu.Lock()
 	previous := s.schemaCompatibility
 	previousStrict := s.strict

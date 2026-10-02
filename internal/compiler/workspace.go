@@ -20,10 +20,12 @@ import (
 // Root identifies one logical compiler input so separate copies of the same
 // named domain in a larger editor workspace are not merged.
 type Source struct {
-	Path             string
-	Domain           string
-	Root             string
-	ExpectedDomain   string
+	Path           string
+	Domain         string
+	Root           string
+	ExpectedDomain string
+	// DirectoryInput enables the same domain.skel constraints as directory compilation.
+	DirectoryInput   bool
 	Content          []byte
 	Parsed           *grammar.SkelContent
 	ParseDiagnostics Diagnostics
@@ -144,11 +146,15 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 		}
 		diagnostics = append(diagnostics, syntaxDiagnostics...)
 		if content == nil {
-			if source.Domain != "" {
+			name := source.Domain
+			if source.ExpectedDomain != "" {
+				name = source.ExpectedDomain
+			}
+			if name != "" {
 				domain := workspaceDomain(
 					domains,
-					workspaceDomainKey(source.Domain, source.Root),
-					source.Domain,
+					workspaceDomainKey(name, source.Root),
+					name,
 					source.Root,
 				)
 				domain.invalid = true
@@ -161,7 +167,21 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 				Code: DiagnosticCodeDomainMissing, Severity: DiagnosticSeverityError, Position: position, Range: sourceRangeAt(position, source.Content),
 				Message: "missing domain declaration",
 			})
+			if source.ExpectedDomain != "" {
+				workspaceDomain(domains, workspaceDomainKey(source.ExpectedDomain, source.Root), source.ExpectedDomain, source.Root).invalid = true
+			}
 			continue
+		}
+		if source.DirectoryInput {
+			if issue := inspectDirectorySource(source.Path, source.ExpectedDomain, content); issue != nil {
+				diagnostics = append(diagnostics, Diagnostic{Code: issue.code, Severity: DiagnosticSeverityError, Position: issue.position, Message: issue.message})
+				name := source.ExpectedDomain
+				if name == "" {
+					name = content.Domain.Name.String()
+				}
+				workspaceDomain(domains, workspaceDomainKey(name, source.Root), name, source.Root).invalid = true
+				continue
+			}
 		}
 		name := content.Domain.Name.String()
 		if source.ExpectedDomain != "" && name != source.ExpectedDomain {

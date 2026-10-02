@@ -15,6 +15,7 @@ import (
 // Result is the semantic diagnostics produced for one workspace revision.
 type Result struct {
 	Revision    uint64
+	Generation  uint64
 	Diagnostics map[uri.URI][]protocol.Diagnostic
 }
 
@@ -103,5 +104,12 @@ func (r *Runner) run(ctx context.Context, generation uint64, snapshot workspace.
 	r.timer = nil
 	r.cancel = nil
 	r.mu.Unlock()
-	accept(Result{Revision: snapshot.Revision(), Diagnostics: diagnostics})
+	accept(Result{Generation: generation, Revision: snapshot.Revision(), Diagnostics: diagnostics})
+}
+
+// IsCurrent also rejects results superseded after the runner released its lock.
+func (r *Runner) IsCurrent(result Result) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return result.Generation == 0 || result.Generation == r.generation
 }

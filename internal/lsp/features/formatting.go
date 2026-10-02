@@ -21,7 +21,7 @@ func (s *Service) Formatting(_ context.Context, params *protocol.DocumentFormatt
 		return []protocol.TextEdit{}, nil
 	}
 	return []protocol.TextEdit{{
-		Range:   protocol.Range{Start: protocol.Position{}, End: offsetPosition(document.Source, len(document.Source))},
+		Range:   protocol.Range{Start: protocol.Position{}, End: document.Buffer.Position(len(document.Source))},
 		NewText: formatted,
 	}}, nil
 }

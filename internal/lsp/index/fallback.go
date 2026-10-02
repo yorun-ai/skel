@@ -2,7 +2,6 @@ package index
 
 import (
 	"strings"
-	"unicode"
 
 	"go.lsp.dev/protocol"
 	"go.yorun.ai/skelc/internal/lsp/source"
@@ -93,10 +92,10 @@ func IsIdentifier(value string) bool {
 	}
 	for index, r := range value {
 		if index == 0 {
-			if r != '_' && !unicode.IsLetter(r) {
+			if r != '_' && !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') {
 				return false
 			}
-		} else if r != '_' && !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+		} else if r != '_' && !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(r >= '0' && r <= '9') {
 			return false
 		}
 	}

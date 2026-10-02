@@ -17,6 +17,7 @@ type _Server struct {
 	protocol.UnimplementedServer
 
 	mu                     sync.RWMutex
+	diagnosticsMu          sync.Mutex // Serializes document changes and diagnostic publication.
 	workspace              *workspace.Store
 	semantic               map[uri.URI][]protocol.Diagnostic
 	client                 protocol.Client

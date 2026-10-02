@@ -31,10 +31,10 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 	if document == nil {
 		return protocol.CompletionItemSlice{}, nil
 	}
-	if positionInNonCode(document.Source, params.Position) {
+	if document.Buffer.InNonCode(params.Position) {
 		return protocol.CompletionItemSlice{}, nil
 	}
-	if prefix, range_, ok := decoratorPrefixBeforePosition(document.Source, params.Position); ok {
+	if prefix, range_, ok := decoratorPrefixBeforePositionBuffer(document.Buffer, params.Position); ok {
 		decorators := allowedDecoratorsAt(document, params.Position)
 		items := make(protocol.CompletionItemSlice, 0, len(decorators))
 		for _, decorator := range decorators {
@@ -58,7 +58,7 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 		}
 		return items, nil
 	}
-	if values := completionValuesBeforePosition(document.Source, params.Position); len(values) > 0 {
+	if values := completionValuesBeforePositionBuffer(document.Buffer, params.Position); len(values) > 0 {
 		items := make(protocol.CompletionItemSlice, 0, len(values))
 		for _, value := range values {
 			items = append(items, protocol.CompletionItem{
@@ -70,7 +70,7 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 	}
 
 	items := map[string]protocol.CompletionItem{}
-	qualifier := qualifierBeforePosition(document.Source, params.Position)
+	qualifier := qualifierBeforePositionBuffer(document.Buffer, params.Position)
 	if qualifier != "" {
 		domain := document.Imports[qualifier]
 		for _, candidate := range snapshot.DocumentsFor(document, domain) {

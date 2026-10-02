@@ -62,6 +62,11 @@ func (s *_Server) scheduleSemanticAnalysis() {
 }
 
 func (s *_Server) acceptSemanticAnalysis(result analysis.Result) {
+	s.diagnosticsMu.Lock()
+	defer s.diagnosticsMu.Unlock()
+	if !s.analysis.IsCurrent(result) {
+		return
+	}
 	if result.Revision != s.workspace.Revision() {
 		return
 	}
