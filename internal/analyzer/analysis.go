@@ -56,6 +56,10 @@ func Analyze(content *grammar.SkelContent, importedDomains []*Analysis) (*Analys
 
 // AnalyzeContext returns no partial analysis when cancelled.
 func AnalyzeContext(ctx context.Context, content *grammar.SkelContent, importedDomains []*Analysis) (*Analysis, []error, error) {
+	return analyzeContext(ctx, content, importedDomains, false)
+}
+
+func analyzeContext(ctx context.Context, content *grammar.SkelContent, importedDomains []*Analysis, allowMissingImports bool) (*Analysis, []error, error) {
 	if ctx.Err() != nil {
 		return nil, nil, ctx.Err()
 	}
@@ -76,9 +80,11 @@ func AnalyzeContext(ctx context.Context, content *grammar.SkelContent, importedD
 		return domain, domain.reporter.result(), nil
 	}
 	diagnosticsBeforeImports := len(domain.reporter.errors)
-	domain.loadImports(domainByName)
+	if !allowMissingImports {
+		domain.loadImports(domainByName)
+	}
 	if ctx.Err() == nil && len(domain.reporter.errors) == diagnosticsBeforeImports {
-		domain.normalize()
+		domain.normalizeWithMissingImports(allowMissingImports)
 	}
 	if ctx.Err() == nil && len(domain.reporter.errors) == 0 {
 		domain.finalize()
@@ -97,28 +103,7 @@ func AnalyzeImport(content *grammar.SkelContent) (*Analysis, []error) {
 
 // AnalyzeImportContext analyzes unresolved imports without publishing cancelled work.
 func AnalyzeImportContext(ctx context.Context, content *grammar.SkelContent) (*Analysis, []error, error) {
-	if ctx.Err() != nil {
-		return nil, nil, ctx.Err()
-	}
-	domain := newAnalysis(content)
-	domain.reporter.ctx = ctx
-	if domain.load() && ctx.Err() == nil {
-		domain.normalizeImport()
-	}
-	if ctx.Err() == nil && len(domain.reporter.errors) == 0 {
-		domain.finalize()
-	}
-	if ctx.Err() != nil {
-		return nil, nil, ctx.Err()
-	}
-	domain.reporter.ctx = nil
-	return domain, domain.reporter.result(), nil
-}
-
-// ResolveImports reanalyzes an import-only domain with its complete set of
-// direct dependencies. Callers use this after loading the transitive graph.
-func (p *Analysis) ResolveImports(importedDomains []*Analysis) (*Analysis, []error) {
-	return Analyze(p.content, importedDomains)
+	return analyzeContext(ctx, content, nil, true)
 }
 
 // ImportNames returns the domains directly imported by this analysis's source.

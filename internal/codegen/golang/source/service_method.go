@@ -24,13 +24,13 @@ type ServiceMethod struct {
 	ResultContainsBinaryType    bool
 }
 
-func castServiceMethod(ps *model.Service, pm *model.Method) *ServiceMethod {
+func (r _Types) castServiceMethod(ps *model.Service, pm *model.Method) *ServiceMethod {
 	methodArgs := make([]*MethodArgument, 0, len(pm.Arguments))
 	for _, argument := range pm.Arguments {
-		castedArgument := castMethodArgument(argument)
+		castedArgument := r.castMethodArgument(argument)
 		methodArgs = append(methodArgs, castedArgument)
 	}
-	resultType := castType(pm.ResultType)
+	resultType := r.castType(pm.ResultType)
 	method := &ServiceMethod{
 		_ClientMethodNames:          buildClientMethodNames(methodArgs),
 		Name:                        nameutil.ToCamel(pm.Name),
@@ -44,7 +44,7 @@ func castServiceMethod(ps *model.Service, pm *model.Method) *ServiceMethod {
 	}
 	method.SpecName = fmt.Sprintf("_%s%sSpec", ps.Name, method.Name)
 	if pm.ArgumentsData != nil {
-		method.ArgumentsData = castData(pm.ArgumentsData)
+		method.ArgumentsData = r.castData(pm.ArgumentsData)
 		method.ArgumentsData.Name = fmt.Sprintf("_%s", method.ArgumentsData.Name)
 		for _, arg := range method.Arguments {
 			member, ok := sliceutil.Find(method.ArgumentsData.Members, func(mem *DataMember) bool {
@@ -89,8 +89,8 @@ type MethodArgument struct {
 	Type        *Type
 }
 
-func castMethodArgument(p *model.Argument) *MethodArgument {
-	argType := castType(p.Type)
+func (r _Types) castMethodArgument(p *model.Argument) *MethodArgument {
+	argType := r.castType(p.Type)
 	description := common.MergeDescriptionAndExample(p.Description, p.Example)
 	if p.Deprecated {
 		if description != "" {

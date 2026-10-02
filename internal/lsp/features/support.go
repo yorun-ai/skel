@@ -5,18 +5,9 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/lsp/index"
 	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
-
-func occurrenceAt(document *index.Document, position protocol.Position) (index.Occurrence, bool) {
-	for _, occurrence := range document.Occurrences {
-		if containsPosition(occurrence.Range, position) {
-			return occurrence, true
-		}
-	}
-	return index.Occurrence{}, false
-}
 
 func positionOffset(content string, position protocol.Position) int {
 	return source.New(content).Offset(position)
@@ -43,7 +34,7 @@ func scanIdentifiers(content string) []source.Token {
 }
 
 func isIdentifierValue(value string) bool {
-	return index.IsIdentifier(value)
+	return workspace.IsIdentifier(value)
 }
 
 func containsPosition(r protocol.Range, position protocol.Position) bool {

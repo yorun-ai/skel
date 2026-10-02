@@ -5,7 +5,7 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/lsp/index"
+	"go.yorun.ai/skelc/internal/lsp/workspace"
 	"go.yorun.ai/skelc/internal/parser/grammar"
 )
 
@@ -25,7 +25,7 @@ type _DecoratorTarget struct {
 	existing  _DecoratorAllowance
 }
 
-func allowedDecoratorsAt(document *index.Document, position protocol.Position) []string {
+func allowedDecoratorsAt(document *workspace.Document, position protocol.Position) []string {
 	offset := document.Buffer.Offset(position)
 	prefixStart := offset
 	for prefixStart > 0 {

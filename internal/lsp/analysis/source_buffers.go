@@ -17,7 +17,12 @@ type _SourceBuffers struct {
 func newSourceBuffers(sources []compiler.Source) *_SourceBuffers {
 	buffers := new(_SourceBuffers{contents: make(map[string][]byte, len(sources)), indexed: map[string]source.Buffer{}})
 	for _, input := range sources {
-		buffers.contents[filepath.Clean(input.Path)] = input.Content
+		path := filepath.Clean(input.Path)
+		if input.Document != nil {
+			buffers.indexed[path] = source.FromDocument(input.Document)
+		} else {
+			buffers.contents[path] = input.Content
+		}
 	}
 	return buffers
 }

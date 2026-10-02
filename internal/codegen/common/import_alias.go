@@ -4,29 +4,27 @@ import (
 	"cmp"
 	"slices"
 	"strconv"
-
-	"go.yorun.ai/skelc/internal/model"
 )
 
 type _ImportAliasGroup struct {
 	domain    string
 	preferred string
 	explicit  bool
-	types     []*model.Type
+	types     []*ImportBinding
 }
 
 // ResolveImportAliases keeps unambiguous preferred names and allocates stable
 // alternatives using the target language's naming convention.
-func ResolveImportAliases(types []*model.Type, fallback func(string) string, reserved []string) {
+func ResolveImportAliases(types []*ImportBinding, fallback func(string) string, reserved []string) {
 	groups := map[string]*_ImportAliasGroup{}
 	for _, kind := range types {
-		key := kind.ExternalDomain + "\x00" + kind.ExternalAlias
+		key := kind.Domain + "\x00" + kind.Alias
 		group := groups[key]
 		if group == nil {
-			group = &_ImportAliasGroup{domain: kind.ExternalDomain, preferred: kind.ExternalAlias}
+			group = &_ImportAliasGroup{domain: kind.Domain, preferred: kind.Alias}
 			groups[key] = group
 		}
-		group.explicit = group.explicit || kind.ExternalAliasExplicit
+		group.explicit = group.explicit || kind.Explicit
 		group.types = append(group.types, kind)
 	}
 	ordered := make([]*_ImportAliasGroup, 0, len(groups))
@@ -67,7 +65,7 @@ func ResolveImportAliases(types []*model.Type, fallback func(string) string, res
 		}
 		used[name] = true
 		for _, kind := range group.types {
-			kind.ExternalAlias = name
+			kind.Alias = name
 		}
 	}
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func TestCastTypeUsesDefaultExternalPubPackageNameWithoutImportAlias(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind:               model.TypeKindData,
 		Data:               &model.Data{Name: "UserSummary"},
 		ExternalAlias:      "userpub",
@@ -26,7 +26,7 @@ func TestCastTypeUsesDefaultExternalPubPackageNameWithoutImportAlias(t *testing.
 }
 
 func TestCastTypePreservesExplicitExternalImportAlias(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind:                  model.TypeKindData,
 		Data:                  &model.Data{Name: "UserSummary"},
 		ExternalAlias:         "account",
@@ -45,7 +45,7 @@ func TestCastTypePreservesExplicitExternalImportAlias(t *testing.T) {
 }
 
 func TestCastEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind: model.TypeKindEnum,
 		Enum: &model.Enum{Name: "UserStatus", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}},
 	})
@@ -55,7 +55,7 @@ func TestCastEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) {
 }
 
 func TestCastExternalEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind:               model.TypeKindEnum,
 		Enum:               &model.Enum{Name: "UserStatus", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}},
 		ExternalAlias:      "userpub",
@@ -67,7 +67,7 @@ func TestCastExternalEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) 
 }
 
 func TestCastMapTypeMapsUUIDKeyToSkelUUID(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind: model.TypeKindMap,
 		Map: &model.MapType{
 			Key:   &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarUUID},
@@ -98,7 +98,7 @@ func TestCastCollectionTypesUsePointersOnlyWhenNullable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := castType(test.type_)
+			got := (_Types{}).castType(test.type_)
 			if got.Plain != test.wantPlain || got.DefaultValue != test.wantDefault {
 				t.Fatalf("unexpected collection type: plain=%q default=%q", got.Plain, got.DefaultValue)
 			}
@@ -108,7 +108,7 @@ func TestCastCollectionTypesUsePointersOnlyWhenNullable(t *testing.T) {
 
 func TestCastTypeEmitsGeneratedCollisionAlias(t *testing.T) {
 	for _, kind := range []model.TypeKind{model.TypeKindData, model.TypeKindEnum} {
-		got := castType(&model.Type{Kind: kind, Data: &model.Data{Name: "Value"}, Enum: &model.Enum{Name: "Value", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}}, ExternalDomain: "first.user", ExternalAlias: "firstuser", ExternalImportPath: "example.com/first/userpub"})
+		got := (_Types{}).castType(&model.Type{Kind: kind, Data: &model.Data{Name: "Value"}, Enum: &model.Enum{Name: "Value", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}}, ExternalDomain: "first.user", ExternalAlias: "firstuser", ExternalImportPath: "example.com/first/userpub"})
 		if len(got.Imports) != 1 || got.Imports[0].Alias != "firstuser" || got.Plain != "firstuser.Value" {
 			t.Fatalf("collision alias lost: %+v", got)
 		}
@@ -132,13 +132,13 @@ func TestCastNullableTypeParameterInCollectionsAndArguments(t *testing.T) {
 		{name: "nested generic", kind: codegentest.DataType(box, nullable), want: "Box[*TValue]"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got := castType(test.kind)
+			got := (_Types{}).castType(test.kind)
 			if got.Plain != test.want {
 				t.Fatalf("type: got %q want %q", got.Plain, test.want)
 			}
 		})
 	}
-	if got := castType(nullable); got.DefaultValue != "nil" {
+	if got := (_Types{}).castType(nullable); got.DefaultValue != "nil" {
 		t.Fatalf("nullable default: %q", got.DefaultValue)
 	}
 }

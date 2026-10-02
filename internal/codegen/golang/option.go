@@ -1,16 +1,9 @@
 package golang
 
 import (
-	gomodule "go.yorun.ai/skelc/internal/codegen/golang/module"
 	"go.yorun.ai/skelc/internal/codegen/golang/view"
 	"go.yorun.ai/skelc/internal/model"
 )
-
-// MinimumVineVersion is the minimum Vine version supported by generated Go code.
-const MinimumVineVersion = gomodule.MinimumVineVersion
-
-// DefaultVineVersion is the Vine version used when generation does not select one.
-const DefaultVineVersion = gomodule.DefaultVineVersion
 
 type Option struct {
 	CompilerVersion string

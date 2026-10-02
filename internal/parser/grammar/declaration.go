@@ -22,6 +22,7 @@ type EnumItem struct {
 }
 
 type Data struct {
+	EndPos         lexer.Position
 	Pos            lexer.Position
 	Decorators     []*Decorator
 	Pub            bool

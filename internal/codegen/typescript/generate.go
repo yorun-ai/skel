@@ -1,23 +1,20 @@
+// Package typescript generates TypeScript source and module metadata from a
+// validated semantic model. Rendering payloads and import state stay local.
 package typescript
 
 import (
 	"fmt"
 
 	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/codegen/typescript/module"
-	"go.yorun.ai/skelc/internal/codegen/typescript/source"
 	"go.yorun.ai/skelc/internal/model"
 )
 
 func Generate(domain *model.Domain, option Option) error {
-	if err := common.ValidateDomain(domain); err != nil {
+	validated, err := common.PrepareDomain(domain)
+	if err != nil {
 		return fmt.Errorf("validate TypeScript generation model: %w", err)
 	}
-	result, err := source.GenerateValidated(domain, option.Out, source.Option{
-		ModuleScope: option.ModuleScope,
-		Module:      option.Module,
-		Imports:     option.Imports,
-	})
+	result, err := generateSource(validated, option.Out, option)
 	if err != nil {
 		return err
 	}
@@ -29,7 +26,7 @@ func Generate(domain *model.Domain, option Option) error {
 			}
 		}
 		option.Imports = imports
-		return module.Generate(module.Option{
+		return generateModule(_ModuleOption{
 			Out:             option.Out,
 			PackageName:     result.PackageName,
 			Imports:         option.Imports,

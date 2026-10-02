@@ -12,12 +12,12 @@ import (
 	"go.yorun.ai/skelc/internal/compiler"
 	"go.yorun.ai/skelc/internal/loader"
 	lspdiagnostic "go.yorun.ai/skelc/internal/lsp/diagnostic"
-	"go.yorun.ai/skelc/internal/lsp/index"
 	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
 
 // SemanticSources converts indexed LSP documents into compiler sources.
-func SemanticSources(documents map[uri.URI]*index.Document) ([]compiler.Source, map[string]uri.URI) {
+func SemanticSources(documents map[uri.URI]*workspace.Document) ([]compiler.Source, map[string]uri.URI) {
 	directoryInputs := map[uri.URI]string{}
 	for _, document := range documents {
 		if filepath.Base(document.Path) == loader.DomainFileName {
@@ -42,7 +42,7 @@ func SemanticSources(documents map[uri.URI]*index.Document) ([]compiler.Source, 
 		}
 		sources = append(sources, compiler.Source{
 			Path: path, Domain: document.Domain, Root: root, ExpectedDomain: expected, DirectoryInput: directoryInput,
-			Content: []byte(document.Source), Parsed: document.Parsed,
+			Document: document.Revision, Bindings: document.Bindings, Parsed: document.Parsed,
 			ParseDiagnostics: document.ParseDiagnostics,
 		})
 		paths[filepath.Clean(path)] = documentURI

@@ -40,7 +40,8 @@ type Option struct {
 }
 
 // GenerateValidated renders a domain already checked by common.ValidateDomain.
-func GenerateValidated(option Option) error {
+func GenerateValidated(domain common.ValidatedDomain, option Option) error {
+	option.Domain = domain.Model()
 	if schemaGoTemplateError != nil {
 		return schemaGoTemplateError
 	}

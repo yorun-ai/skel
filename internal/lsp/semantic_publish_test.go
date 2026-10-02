@@ -16,15 +16,13 @@ func receiveDiagnostics(t *testing.T, diagnostics <-chan *protocol.PublishDiagno
 	select {
 	case params := <-diagnostics:
 		return params
-	default:
+	case <-time.After(5 * time.Second):
 		t.Fatal("expected published diagnostics")
 		return nil
 	}
 }
 
-// TestSemanticDiagnosticsPublishAndInvalidate drives publishing synchronously:
-// the analysis runner never fires, so the assertions depend on the handlers and
-// the accept callback alone instead of the debounce timer and wall-clock waits.
+// The analysis runner never fires; only accepted snapshots reach the publisher.
 func TestSemanticDiagnosticsPublishAndInvalidate(t *testing.T) {
 	server := newServer()
 	server.analysis = analysis.NewRunner(time.Hour)
@@ -80,12 +78,12 @@ func TestQueuedSemanticResultCannotRestoreInvalidatedDiagnostics(t *testing.T) {
 	u := uri.File("/workspace/input.skel")
 	s.workspace.Put(u, "domain demo\ndata User { value: Missing }\n", 1, true)
 	result := analysis.Result{Revision: s.workspace.Revision(), Diagnostics: map[uri.URI][]protocol.Diagnostic{u: {{Message: protocol.String("stale")}}}}
-	s.diagnosticsMu.Lock()
+	s.stateMu.Lock()
 	done := make(chan struct{})
 	go func() { defer close(done); s.acceptSemanticAnalysis(result) }()
 	s.workspace.Put(u, "domain demo\ndata User { value: int }\n", 2, true)
 	s.invalidateSemanticDiagnostics(t.Context())
-	s.diagnosticsMu.Unlock()
+	s.stateMu.Unlock()
 	<-done
 	assert.Empty(t, s.semantic)
 	assert.Empty(t, client.diagnostics)

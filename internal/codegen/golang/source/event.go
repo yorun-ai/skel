@@ -108,7 +108,7 @@ func (g *_Gen) castEvent(p *model.Data, listenerOnly bool, emitterOnly bool) *Ev
 		Members:                   make([]*DataMember, 0, len(p.Members)),
 	}
 	for _, member := range p.Members {
-		castedMember := castDataMember(member)
+		castedMember := g.types.castDataMember(member)
 		event_.Members = append(event_.Members, castedMember)
 	}
 	return event_

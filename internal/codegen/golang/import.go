@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	"go.yorun.ai/skelc/internal/codegen/common"
-	gomodule "go.yorun.ai/skelc/internal/codegen/golang/module"
 	"go.yorun.ai/skelc/internal/codegen/golang/view"
 	"go.yorun.ai/skelc/internal/model"
 )
 
 func (g *_Gen) resolveExternalTypeImports() error {
-	types := []*model.Type{}
+	types := []*common.ImportBinding{}
+	g.bindings = common.TypeBindings{}
 	err := g.visitDomainTypes(func(type_ *model.Type) error {
 		if type_.ExternalDomain == "" {
 			return nil
@@ -21,12 +21,14 @@ func (g *_Gen) resolveExternalTypeImports() error {
 		if err != nil {
 			return err
 		}
-		types = append(types, type_)
-		type_.ExternalImportPath = path
+		binding := new(common.ImportBinding{Domain: type_.ExternalDomain, Alias: type_.ExternalAlias, Explicit: type_.ExternalAliasExplicit})
+		g.bindings[type_] = binding
+		types = append(types, binding)
+		binding.Path = path
 		if !type_.ExternalAliasExplicit {
-			type_.ExternalAlias = importPackageName(type_.ExternalDomain, true)
+			binding.Alias = importPackageName(type_.ExternalDomain, true)
 			if g.mode == view.ModeApi {
-				type_.ExternalAlias = importPackageName(type_.ExternalDomain, false) + "api"
+				binding.Alias = importPackageName(type_.ExternalDomain, false) + "api"
 			}
 		}
 		return nil
@@ -59,7 +61,7 @@ func (g *_Gen) resolveExternalTypeImports() error {
 
 func (g *_Gen) goImportPath(domainName string) (string, error) {
 	if path := g.goImports[domainName]; path != "" {
-		return gomodule.ImportPath(path)
+		return ImportPath(path)
 	}
 	if g.modulePrefix == "" {
 		return "", fmt.Errorf("missing Go import for domain %s; pass --go-import %s=PACKAGE or --go-module-prefix", domainName, domainName)

@@ -8,6 +8,7 @@ import (
 	"go.yorun.ai/skelc/diagnostic"
 	"go.yorun.ai/skelc/internal/analyzer"
 	"go.yorun.ai/skelc/internal/model"
+	textsource "go.yorun.ai/skelc/internal/source"
 	"go.yorun.ai/skelc/internal/util/checkutil"
 )
 
@@ -77,17 +78,17 @@ func diagnosticFromError(path, fallbackCode string, err error) Diagnostic {
 	return diagnostic
 }
 
-func completeDiagnostic(diagnostic *Diagnostic, contents map[string][]byte) {
+func completeDiagnostic(diagnostic *Diagnostic, contents map[string]*textsource.Document) {
 	if diagnostic.Severity == "" {
 		diagnostic.Severity = DiagnosticSeverityError
 	}
 	if diagnostic.Range.Start.Line <= 0 || diagnostic.Range.End.Line <= 0 || diagnostic.Range.End == diagnostic.Range.Start {
-		diagnostic.Range = sourceRangeAt(diagnostic.Position, contents[filepath.Clean(diagnostic.Position.File)])
+		diagnostic.Range = sourceRangeAtDocument(diagnostic.Position, contents[filepath.Clean(diagnostic.Position.File)])
 	}
 	for index := range diagnostic.Related {
 		position := diagnostic.Related[index].Range.Start
 		if diagnostic.Related[index].Range.End.Line <= 0 || diagnostic.Related[index].Range.End == position {
-			diagnostic.Related[index].Range = sourceRangeAt(position, contents[filepath.Clean(position.File)])
+			diagnostic.Related[index].Range = sourceRangeAtDocument(position, contents[filepath.Clean(position.File)])
 		}
 	}
 }

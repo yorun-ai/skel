@@ -3,6 +3,7 @@ package lsp
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -94,6 +95,7 @@ func TestDidChangeConfigurationClearsStaleCompatibilityDiagnostics(t *testing.T)
 	server.client = client
 	server.schemaCompatibility = _SchemaCompatibilitySettings{Diagnostics: true, CodeLens: true}
 	server.semantic[documentURI] = []protocol.Diagnostic{{Code: protocol.String("schema.declaration.removed")}}
+	server.publisher.visible[documentURI] = true
 	settings, err := json.Marshal(map[string]any{
 		"schemaCompatibility": map[string]any{"diagnostics": false},
 	})
@@ -107,7 +109,7 @@ func TestDidChangeConfigurationClearsStaleCompatibilityDiagnostics(t *testing.T)
 	case published := <-client.diagnostics:
 		assert.Equal(t, documentURI, published.URI)
 		assert.Empty(t, published.Diagnostics)
-	default:
+	case <-time.After(5 * time.Second):
 		t.Fatal("expected stale compatibility diagnostics to be cleared")
 	}
 }

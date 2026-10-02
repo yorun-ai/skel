@@ -2,14 +2,11 @@ package compiler
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"path/filepath"
-	"slices"
-	"strings"
 
 	"go.yorun.ai/skelc/internal/analyzer"
+	"go.yorun.ai/skelc/internal/hasher"
 	"go.yorun.ai/skelc/internal/parser"
 	"go.yorun.ai/skelc/internal/parser/grammar"
 )
@@ -31,6 +28,7 @@ type _WorkspaceDomain struct {
 type _CachedWorkspaceDomain struct {
 	fingerprint string
 	analysis    *analyzer.Analysis
+	diagnostics Diagnostics
 }
 
 type _WorkspaceImportResolution struct {
@@ -125,7 +123,7 @@ func (w *WorkspaceAnalyzer) resolveWorkspaceDomainImports(
 			continue
 		}
 		seenImports[name] = true
-		if domain.root != "" {
+		if domain.root != "" && !w.options.ResolveIsolatedImports {
 			resolution.hasUnresolved = true
 			continue
 		}
@@ -173,12 +171,16 @@ func (w *WorkspaceAnalyzer) analyzeResolvedWorkspaceDomain(
 	domainsByName map[string][]*_WorkspaceDomain,
 	diagnostics *[]Diagnostic,
 ) bool {
-	domain.fingerprint = workspaceDomainFingerprint(domain, domainsByName)
+	domain.fingerprint = w.graph.inputs[domain.key]
 	if cached, ok := w.domains[domain.key]; ok && cached.fingerprint == domain.fingerprint {
 		w.stats.ReusedDomains++
 		domain.analysis = cached.analysis
 		domain.state = workspaceDomainComplete
-		return true
+		if cached.analysis == nil {
+			domain.state = workspaceDomainFailed
+		}
+		*diagnostics = append(*diagnostics, cloneDiagnostics(cached.diagnostics)...)
+		return domain.state == workspaceDomainComplete
 	}
 	var analysis *analyzer.Analysis
 	var analysisErrors []error
@@ -191,42 +193,27 @@ func (w *WorkspaceAnalyzer) analyzeResolvedWorkspaceDomain(
 	if ctx.Err() != nil {
 		return false
 	}
-	if len(analysisErrors) > 0 {
-		for _, analysisError := range analysisErrors {
-			*diagnostics = append(*diagnostics, diagnosticFromError(domain.merged.Pos.Filename, DiagnosticCodeSemanticValidation, analysisError))
+	local := Diagnostics{}
+	for _, analysisError := range analysisErrors {
+		local = append(local, diagnosticFromError(domain.merged.Pos.Filename, DiagnosticCodeSemanticValidation, analysisError))
+	}
+	if len(local) == 0 {
+		if err := hasher.FillHashes(analysis.Model()); err != nil {
+			local = append(local, diagnosticFromError(domain.merged.Pos.Filename, DiagnosticCodeSemanticValidation, err))
 		}
-		domain.state = workspaceDomainFailed
+	}
+	if ctx.Err() != nil {
 		return false
 	}
+	if len(local) > 0 {
+		*diagnostics = append(*diagnostics, local...)
+		domain.state = workspaceDomainFailed
+		w.domains[domain.key] = _CachedWorkspaceDomain{fingerprint: domain.fingerprint, diagnostics: cloneDiagnostics(local)}
+		return false
+	}
+
 	domain.analysis = analysis
 	domain.state = workspaceDomainComplete
 	w.domains[domain.key] = _CachedWorkspaceDomain{fingerprint: domain.fingerprint, analysis: analysis}
 	return true
-}
-
-func workspaceDomainFingerprint(domain *_WorkspaceDomain, domainsByName map[string][]*_WorkspaceDomain) string {
-	hash := sha256.New()
-	ordered := append([]Source{}, domain.sources...)
-	slices.SortFunc(ordered, func(left, right Source) int { return strings.Compare(left.Path, right.Path) })
-	for _, source := range ordered {
-		_, _ = hash.Write([]byte(source.Path))
-		_, _ = hash.Write([]byte{0})
-		_, _ = hash.Write(source.Content)
-		_, _ = hash.Write([]byte{0})
-	}
-	imports := append([]*grammar.ImportDecl{}, domain.merged.Imports...)
-	slices.SortFunc(imports, func(left, right *grammar.ImportDecl) int {
-		return strings.Compare(left.Domain.String(), right.Domain.String())
-	})
-	for _, importDecl := range imports {
-		name := importDecl.Domain.String()
-		_, _ = hash.Write([]byte(name))
-		if domain.root == "" {
-			candidates := domainsByName[name]
-			if len(candidates) == 1 {
-				_, _ = hash.Write([]byte(candidates[0].fingerprint))
-			}
-		}
-	}
-	return hex.EncodeToString(hash.Sum(nil))
 }

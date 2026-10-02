@@ -2,16 +2,17 @@ package compiler
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
 
+	"go.yorun.ai/skelc/internal/binding"
 	"go.yorun.ai/skelc/internal/model"
 	"go.yorun.ai/skelc/internal/parser"
 	"go.yorun.ai/skelc/internal/parser/grammar"
+	textsource "go.yorun.ai/skelc/internal/source"
 )
 
 // Source is an in-memory Skel document used by workspace analysis. Domain is a
@@ -20,6 +21,9 @@ import (
 // Root identifies one logical compiler input so separate copies of the same
 // named domain in a larger editor workspace are not merged.
 type Source struct {
+	// Document, when supplied, owns the authoritative immutable source revision.
+	Document       *textsource.Document
+	Bindings       *binding.Document
 	Path           string
 	Domain         string
 	Root           string
@@ -37,15 +41,18 @@ type _CachedWorkspaceParse struct {
 	diagnostics Diagnostics
 }
 
-// WorkspaceAnalyzer caches syntax trees and successful domain analyses across
+// WorkspaceAnalyzer caches syntax trees and complete domain outcomes across
 // workspace snapshots. A changed domain invalidates only itself and reverse
-// dependents whose import fingerprints consequently change.
+// dependents recorded in the explicit reverse dependency graph.
 type WorkspaceAnalyzer struct {
 	mu      sync.Mutex
 	gate    chan struct{}
 	parses  map[string]_CachedWorkspaceParse
 	domains map[string]_CachedWorkspaceDomain
 	stats   WorkspaceAnalysisStats
+	options AnalysisOptions
+	graph   _WorkspaceGraph
+	result  _CachedWorkspaceResult
 }
 
 // WorkspaceAnalysisStats reports syntax and semantic cache usage from the most
@@ -58,12 +65,14 @@ type WorkspaceAnalysisStats struct {
 }
 
 // WorkspaceDomain is one successfully analyzed semantic domain in a workspace
-// snapshot. Sources contains the exact in-memory inputs used to build Model.
+// snapshot. Model and its reachable declarations are immutable after publication.
+// Sources contains the exact input revisions used to build Model.
 type WorkspaceDomain struct {
-	Name    string
-	Root    string
-	Model   *model.Domain
-	Sources []Source
+	Name          string
+	Root          string
+	Model         *model.Domain
+	Sources       []Source
+	ImportAliases map[string]string
 }
 
 // NewWorkspaceAnalyzer creates an incremental workspace analyzer.
@@ -87,25 +96,17 @@ func (w *WorkspaceAnalyzer) Analyze(sources []Source) []Diagnostic {
 
 // AnalyzeContext analyzes a workspace snapshot and honors cancellation.
 func (w *WorkspaceAnalyzer) AnalyzeContext(ctx context.Context, sources []Source) ([]Diagnostic, error) {
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
-	}
-	select {
-	case w.gate <- struct{}{}:
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
-	defer func() { <-w.gate }()
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.stats = WorkspaceAnalysisStats{}
-	diagnostics, _, err := w.analyze(ctx, sources, false)
+	diagnostics, _, err := w.AnalyzeDomainsContext(ctx, sources)
 	return diagnostics, err
 }
 
-// AnalyzeDomainsContext analyzes a workspace snapshot and returns every
-// semantic domain that compiled successfully alongside its diagnostics.
 func (w *WorkspaceAnalyzer) AnalyzeDomainsContext(ctx context.Context, sources []Source) ([]Diagnostic, []WorkspaceDomain, error) {
+	return w.AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{})
+}
+
+// AnalyzeWithOptionsContext is the shared semantic pipeline for compile, check,
+// and workspace analysis. The gate is cancellable, including while queued.
+func (w *WorkspaceAnalyzer) AnalyzeWithOptionsContext(ctx context.Context, sources []Source, options AnalysisOptions) ([]Diagnostic, []WorkspaceDomain, error) {
 	if ctx.Err() != nil {
 		return nil, nil, ctx.Err()
 	}
@@ -118,7 +119,13 @@ func (w *WorkspaceAnalyzer) AnalyzeDomainsContext(ctx context.Context, sources [
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.stats = WorkspaceAnalysisStats{}
-	return w.analyze(ctx, sources, false)
+	if w.options != options {
+		w.domains = map[string]_CachedWorkspaceDomain{}
+		w.result = _CachedWorkspaceResult{}
+		w.graph = _WorkspaceGraph{}
+	}
+	w.options = options
+	return w.analyze(ctx, sources, options.AllowUnresolvedImports)
 }
 
 // Stats returns cache usage from the most recent analysis.
@@ -130,9 +137,28 @@ func (w *WorkspaceAnalyzer) Stats() WorkspaceAnalysisStats {
 
 func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allowMissingImports bool) ([]Diagnostic, []WorkspaceDomain, error) {
 	ordered := append([]Source{}, sources...)
+	for i := range ordered {
+		if ordered[i].Document == nil {
+			ordered[i].Document = textsource.New(textsource.ID(ordered[i].Path), ordered[i].Path, 0, string(ordered[i].Content))
+		} else {
+			if ordered[i].Path == "" {
+				ordered[i].Path = ordered[i].Document.AnalysisPath()
+			}
+		}
+	}
 	slices.SortFunc(ordered, func(left, right Source) int {
 		return strings.Compare(left.Path, right.Path)
 	})
+
+	fingerprint := workspaceFingerprint(ordered)
+	if w.result.fingerprint == fingerprint {
+		if err := ctx.Err(); err != nil {
+			return nil, nil, err
+		}
+		w.stats.ReusedSources = len(ordered)
+		w.stats.ReusedDomains = w.result.domainCount
+		return cloneDiagnostics(w.result.diagnostics), cloneWorkspaceDomains(w.result.domains), nil
+	}
 
 	domains := map[string]*_WorkspaceDomain{}
 	diagnostics := []Diagnostic{}
@@ -164,7 +190,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 		if content.Domain == nil || content.Domain.Name == nil || content.Domain.Name.String() == "" {
 			position := model.Position{File: source.Path, Line: 1, Column: 1}
 			diagnostics = append(diagnostics, Diagnostic{
-				Code: DiagnosticCodeDomainMissing, Severity: DiagnosticSeverityError, Position: position, Range: sourceRangeAt(position, source.Content),
+				Code: DiagnosticCodeDomainMissing, Severity: DiagnosticSeverityError, Position: position, Range: sourceRangeAtDocument(position, source.Document),
 				Message: "missing domain declaration",
 			})
 			if source.ExpectedDomain != "" {
@@ -172,7 +198,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 			}
 			continue
 		}
-		if source.DirectoryInput {
+		if source.DirectoryInput && len(syntaxDiagnostics) == 0 {
 			if issue := inspectDirectorySource(source.Path, source.ExpectedDomain, content); issue != nil {
 				diagnostics = append(diagnostics, Diagnostic{Code: issue.code, Severity: DiagnosticSeverityError, Position: issue.position, Message: issue.message})
 				name := source.ExpectedDomain
@@ -187,7 +213,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 		if source.ExpectedDomain != "" && name != source.ExpectedDomain {
 			position := parser.SourcePosition(content.Domain.Name.Pos)
 			diagnostics = append(diagnostics, Diagnostic{
-				Code: DiagnosticCodeDomainMismatch, Severity: DiagnosticSeverityError, Position: position, Range: sourceRangeAt(position, source.Content),
+				Code: DiagnosticCodeDomainMismatch, Severity: DiagnosticSeverityError, Position: position, Range: sourceRangeAtDocument(position, source.Document),
 				Message: fmt.Sprintf("domain mismatch: found=%s, expected=%s", name, source.ExpectedDomain),
 			})
 			workspaceDomain(
@@ -201,6 +227,9 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 		domain := workspaceDomain(domains, workspaceDomainKey(name, source.Root), name, source.Root)
 		if len(syntaxDiagnostics) > 0 {
 			domain.syntaxInvalid = true
+		}
+		if source.Bindings == nil {
+			source.Bindings = binding.Build(source.Document, content)
 		}
 		domain.contents = append(domain.contents, content)
 		domain.sources = append(domain.sources, source)
@@ -220,6 +249,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 			return strings.Compare(left.key, right.key)
 		})
 	}
+	w.invalidateDomainCache(domains, domainsByName)
 	slices.Sort(keys)
 	for _, key := range keys {
 		if err := ctx.Err(); err != nil {
@@ -232,12 +262,15 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 	}
 	for _, key := range keys {
 		if domain := domains[key]; domain.analysis != nil {
+			if w.options.IncludeWarnings {
+				diagnostics = appendAnalysisWarnings(diagnostics, domain.analysis.Warnings())
+			}
 			diagnostics = append(diagnostics, MigrationDiagnostics(domain.analysis.Model())...)
 		}
 	}
-	contentByPath := make(map[string][]byte, len(ordered))
+	contentByPath := make(map[string]*textsource.Document, len(ordered))
 	for _, source := range ordered {
-		contentByPath[filepath.Clean(source.Path)] = source.Content
+		contentByPath[filepath.Clean(source.Path)] = source.Document
 	}
 	for index := range diagnostics {
 		completeDiagnostic(&diagnostics[index], contentByPath)
@@ -245,7 +278,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 	slices.SortFunc(diagnostics, compareDiagnostics)
 	activePaths := make(map[string]bool, len(ordered))
 	for _, source := range ordered {
-		activePaths[source.Path] = true
+		activePaths[workspaceParseKey(source)] = true
 	}
 	for path := range w.parses {
 		if !activePaths[path] {
@@ -260,13 +293,17 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 	models := make([]WorkspaceDomain, 0, len(keys))
 	for _, key := range keys {
 		domain := domains[key]
-		if domain.state != workspaceDomainComplete || domain.analysis == nil {
+		if domain.state != workspaceDomainComplete || domain.analysis == nil || domain.syntaxInvalid {
 			continue
 		}
 		models = append(models, WorkspaceDomain{
-			Name: domain.name, Root: domain.root, Model: domain.analysis.Model(), Sources: append([]Source{}, domain.sources...),
+			Name: domain.name, Root: domain.root, Model: domain.analysis.Model(), Sources: append([]Source{}, domain.sources...), ImportAliases: domain.analysis.ImportAliases(),
 		})
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, nil, err
+	}
+	w.result = _CachedWorkspaceResult{fingerprint: fingerprint, diagnostics: cloneDiagnostics(diagnostics), domains: cloneWorkspaceDomains(models), domainCount: len(domains)}
 	return diagnostics, models, nil
 }
 
@@ -274,20 +311,22 @@ func (w *WorkspaceAnalyzer) parseWorkspaceSource(ctx context.Context, source Sou
 	if source.Parsed != nil || len(source.ParseDiagnostics) > 0 {
 		w.stats.ReusedSources++
 		if len(source.ParseDiagnostics) > 0 {
-			return source.Parsed, append(Diagnostics{}, source.ParseDiagnostics...)
+			return source.Parsed, cloneDiagnostics(source.ParseDiagnostics)
 		}
 		return source.Parsed, nil
 	}
-	hash := sha256.Sum256(source.Content)
-	if cached, ok := w.parses[source.Path]; ok && cached.hash == hash {
+	hash := source.Document.Digest()
+	if cached, ok := w.parses[workspaceParseKey(source)]; ok && cached.hash == hash {
 		w.stats.ReusedSources++
-		return cached.content, append(Diagnostics{}, cached.diagnostics...)
+		return cached.content, cloneDiagnostics(cached.diagnostics)
 	}
 	w.stats.ParsedSources++
-	content, diagnostics, err := ParseSourceRecoveringContext(ctx, source.Path, source.Content)
+	content, diagnostics, err := ParseSourceRecoveringContext(ctx, source.Path, []byte(source.Document.Text()))
 	if err != nil {
 		return nil, nil
 	}
-	w.parses[source.Path] = _CachedWorkspaceParse{hash: hash, content: content, diagnostics: append(Diagnostics{}, diagnostics...)}
+	w.parses[workspaceParseKey(source)] = _CachedWorkspaceParse{hash: hash, content: content, diagnostics: cloneDiagnostics(diagnostics)}
 	return content, diagnostics
 }
+
+func workspaceParseKey(input Source) string { return string(input.Document.ID()) + "\x00" + input.Path }

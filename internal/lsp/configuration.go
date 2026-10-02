@@ -100,8 +100,8 @@ func decodeStrictSettings(value protocol.LSPAny, fallback bool) bool {
 }
 
 func (s *_Server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
-	s.diagnosticsMu.Lock()
-	defer s.diagnosticsMu.Unlock()
+	s.stateMu.Lock()
+
 	s.mu.Lock()
 	previous := s.schemaCompatibility
 	previousStrict := s.strict
@@ -113,9 +113,11 @@ func (s *_Server) DidChangeConfiguration(ctx context.Context, params *protocol.D
 	refreshCodeLens := s.codeLensRefreshSupport
 	s.mu.Unlock()
 	if !changed {
+		s.stateMu.Unlock()
 		return nil
 	}
 	s.invalidateSemanticDiagnostics(ctx)
+	s.stateMu.Unlock()
 	if client != nil && refreshCodeLens && compatibilityChanged {
 		_ = client.CodeLensRefresh(ctx)
 	}

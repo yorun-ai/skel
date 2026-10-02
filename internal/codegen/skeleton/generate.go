@@ -19,10 +19,11 @@ func Generate(domain *model.Domain, option Option) error {
 	if !option.PubOnly {
 		return fmt.Errorf("Skel generation requires public-only output")
 	}
-	if err := common.ValidateDomain(domain); err != nil {
+	validated, err := common.PrepareDomain(domain)
+	if err != nil {
 		return fmt.Errorf("validate Skel generation model: %w", err)
 	}
-	gen, err := newGen(domain, option.Out)
+	gen, err := newGen(validated.Model(), option.Out)
 	if err != nil {
 		return err
 	}

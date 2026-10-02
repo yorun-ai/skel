@@ -1,5 +1,5 @@
 // Package schema implements normalized schema projection, querying, encoding,
-// validation, and compatibility diffing for the compiler and CLI.
+// validation, and compatibility diffing without compiling or loading inputs.
 package schema
 
 import "go.yorun.ai/skelc/internal/model"

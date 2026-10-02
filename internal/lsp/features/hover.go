@@ -5,7 +5,8 @@ import (
 	"slices"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/lsp/index"
+	"go.yorun.ai/skelc/internal/binding"
+	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
 
 func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
@@ -14,10 +15,14 @@ func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*proto
 	if document == nil {
 		return nil, nil
 	}
-	if occurrence, ok := occurrenceAt(document, params.Position); ok {
+	if occurrence, ok := snapshot.OccurrenceAt(document, params.Position); ok {
 		for _, location := range snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key)) {
 			definition := location.Definition
-			return hoverResult(occurrence.Range, definition.Detail, definition.Key, definition.Description), nil
+			name := definition.Key
+			if binding.ParseKey(name).Scope != "" {
+				name = definition.Name
+			}
+			return hoverResult(occurrence.Range, definition.Detail, name, definition.Description), nil
 		}
 	}
 	if symbol, ok := symbolAt(document.Symbols, params.Position); ok {
@@ -43,7 +48,7 @@ func hoverResult(range_ protocol.Range, detail, name, description string) *proto
 	return &protocol.Hover{Contents: &protocol.MarkupContent{Kind: protocol.MarkupKindMarkdown, Value: value}, Range: &range_}
 }
 
-func symbolAt(symbols []index.Symbol, position protocol.Position) (index.Symbol, bool) {
+func symbolAt(symbols []workspace.Symbol, position protocol.Position) (workspace.Symbol, bool) {
 	for _, symbol := range symbols {
 		selection := selectionRange(symbol)
 		if containsPosition(selection, position) {
@@ -53,5 +58,5 @@ func symbolAt(symbols []index.Symbol, position protocol.Position) (index.Symbol,
 			return child, true
 		}
 	}
-	return index.Symbol{}, false
+	return workspace.Symbol{}, false
 }

@@ -7,6 +7,7 @@ import (
 )
 
 type _Gen struct {
+	types  _Types
 	Domain *model.Domain
 
 	mode          view.Mode
@@ -18,6 +19,7 @@ type _Gen struct {
 }
 
 type Option struct {
+	Bindings      common.TypeBindings
 	Domain        *model.Domain
 	View          *view.Domain
 	Mode          view.Mode
@@ -27,7 +29,8 @@ type Option struct {
 }
 
 // GenerateValidated renders a domain already checked by common.ValidateDomain.
-func GenerateValidated(option Option) error {
+func GenerateValidated(domain common.ValidatedDomain, option Option) error {
+	option.Domain = domain.Model()
 	gen := newGen(option)
 	gen.gen()
 	return gen.Renderer.Err()
@@ -35,6 +38,7 @@ func GenerateValidated(option Option) error {
 
 func newGen(option Option) *_Gen {
 	return &_Gen{
+		types:         _Types{bindings: option.Bindings},
 		Domain:        option.Domain,
 		mode:          option.Mode,
 		pkgName:       option.PackageName,

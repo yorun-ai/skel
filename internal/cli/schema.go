@@ -10,6 +10,7 @@ import (
 	"go.yorun.ai/skelc/internal/command"
 	"go.yorun.ai/skelc/internal/compiler"
 	schemas "go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skelc/internal/schema/sourcediff"
 )
 
 const (
@@ -129,13 +130,13 @@ func newSchemaDiffCommand() *ucli.Command {
 				}
 				baselineSkelIn = baselineOption.SkelIn
 			}
-			report, err := schemas.DiffSource(ctx, candidateOption.SkelIn, schemas.SourceDiffOption{BaselineSkelIn: baselineSkelIn, Strict: cmd.Bool(flagStrict)})
+			report, err := sourcediff.DiffSource(ctx, candidateOption.SkelIn, sourcediff.Option{BaselineSkelIn: baselineSkelIn, Strict: cmd.Bool(flagStrict)})
 			if err != nil {
 				switch {
-				case errors.Is(err, schemas.ErrGitHistoryUnavailable):
+				case errors.Is(err, sourcediff.ErrGitHistoryUnavailable):
 					return commandFailure(command.ErrorCodeGitHistoryNotFound,
 						fmt.Errorf("%w; pass an explicit --%s", err, flagSchemaBaselineSkelIn))
-				case errors.Is(err, schemas.ErrSourceCompilation):
+				case errors.Is(err, sourcediff.ErrSourceCompilation):
 					return commandFailure(command.ErrorCodeCompilationFailed, err)
 				default:
 					return commandFailure(command.ErrorCodeCommandFailed, err)

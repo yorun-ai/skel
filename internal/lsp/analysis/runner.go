@@ -9,7 +9,7 @@ import (
 	"go.lsp.dev/uri"
 	"go.yorun.ai/skelc/internal/compiler"
 	"go.yorun.ai/skelc/internal/lsp/workspace"
-	"go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skelc/internal/schema/sourcediff"
 )
 
 // Result is the semantic diagnostics produced for one workspace revision.
@@ -40,13 +40,13 @@ type Runner struct {
 	timer             *time.Timer
 	cancel            context.CancelFunc
 	workspaceAnalyzer *compiler.WorkspaceAnalyzer
-	compatibility     *schema.SourceDiffer
+	compatibility     *sourcediff.Differ
 }
 
 // NewRunner creates a semantic analysis runner.
 func NewRunner(delay time.Duration) *Runner {
 	return &Runner{
-		delay: delay, workspaceAnalyzer: compiler.NewWorkspaceAnalyzer(), compatibility: schema.NewSourceDiffer(),
+		delay: delay, workspaceAnalyzer: compiler.NewWorkspaceAnalyzer(), compatibility: sourcediff.New(),
 	}
 }
 

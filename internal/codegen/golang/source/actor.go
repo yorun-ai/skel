@@ -59,19 +59,19 @@ func (g *_Gen) genActorGo() {
 	}
 	for _, tokenActor := range g.authServiceActors() {
 		if tokenActor.AuthEnabled {
-			info := castData(tokenActor.AuthInfo)
+			info := g.types.castData(tokenActor.AuthInfo)
 			for _, member := range info.Members {
 				member.Identifier = member.SkelName == tokenActor.IdentifierField
 			}
 			payload.CredentialData = append(
 				payload.CredentialData,
-				castData(tokenActor.AuthCredential),
+				g.types.castData(tokenActor.AuthCredential),
 				info,
 			)
-			payload.AuthServices = append(payload.AuthServices, castActorAuthService(tokenActor.AuthService))
+			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.AuthService))
 		}
 		if tokenActor.PermService != nil {
-			payload.AuthServices = append(payload.AuthServices, castActorAuthService(tokenActor.PermService))
+			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.PermService))
 		}
 	}
 	if len(payload.Actors) == 0 && len(payload.AuthServices) == 0 {

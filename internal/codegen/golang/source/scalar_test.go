@@ -7,7 +7,7 @@ import (
 )
 
 func TestCastTypeMapsBinaryToBytes(t *testing.T) {
-	got := castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarBinary})
+	got := (_Types{}).castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarBinary})
 	if got.Plain != "skel.Binary" {
 		t.Fatalf("unexpected binary type mapping: %s", got.Plain)
 	}
@@ -17,14 +17,14 @@ func TestCastTypeMapsBinaryToBytes(t *testing.T) {
 }
 
 func TestCastTypeMapsUUIDToSkelUUID(t *testing.T) {
-	got := castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarUUID})
+	got := (_Types{}).castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarUUID})
 	if got.Plain != "skel.UUID" {
 		t.Fatalf("unexpected uuid type mapping: %s", got.Plain)
 	}
 }
 
 func TestCastTypeMapsJSONToSkelJSON(t *testing.T) {
-	got := castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarJSON})
+	got := (_Types{}).castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarJSON})
 	if got.Plain != "skel.JSON" {
 		t.Fatalf("unexpected json type mapping: %s", got.Plain)
 	}
