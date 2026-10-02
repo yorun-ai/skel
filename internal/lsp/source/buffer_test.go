@@ -42,3 +42,17 @@ func TestMountPathsAreNotSymbolReferences(t *testing.T) {
 		t.Fatal("incorrect code classification around mount path")
 	}
 }
+
+func TestIndexedPositionsRoundTripAcrossLines(t *testing.T) {
+	for _, text := range []string{"", "a\n", "a\r\nb𐐀c\n", "\n\n尾"} {
+		buffer := New(text)
+		for offset := range len(text) + 1 {
+			if offset < len(text) && text[offset]&0xc0 == 0x80 {
+				continue
+			}
+			assert.Equal(t, offset, buffer.Offset(buffer.Position(offset)), "text=%q offset=%d", text, offset)
+		}
+		assert.Equal(t, len(text), buffer.Offset(protocol.Position{Line: 100, Character: 100}))
+	}
+	assert.Equal(t, protocol.Position{}, (Buffer{}).Position(0))
+}

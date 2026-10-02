@@ -101,7 +101,7 @@ func (w *WorkspaceAnalyzer) analyzeWorkspaceDomain(
 		domain.state = workspaceDomainFailed
 		return false
 	}
-	return w.analyzeResolvedWorkspaceDomain(domain, imports, domainsByName, diagnostics)
+	return w.analyzeResolvedWorkspaceDomain(ctx, domain, imports, domainsByName, diagnostics)
 }
 
 func (w *WorkspaceAnalyzer) resolveWorkspaceDomainImports(
@@ -167,6 +167,7 @@ func (w *WorkspaceAnalyzer) resolveWorkspaceDomainImports(
 }
 
 func (w *WorkspaceAnalyzer) analyzeResolvedWorkspaceDomain(
+	ctx context.Context,
 	domain *_WorkspaceDomain,
 	imports _WorkspaceImportResolution,
 	domainsByName map[string][]*_WorkspaceDomain,
@@ -183,9 +184,12 @@ func (w *WorkspaceAnalyzer) analyzeResolvedWorkspaceDomain(
 	var analysisErrors []error
 	w.stats.AnalyzedDomains++
 	if imports.hasUnresolved {
-		analysis, analysisErrors = analyzer.AnalyzeImport(domain.merged)
+		analysis, analysisErrors, _ = analyzer.AnalyzeImportContext(ctx, domain.merged)
 	} else {
-		analysis, analysisErrors = analyzer.Analyze(domain.merged, imports.analyses)
+		analysis, analysisErrors, _ = analyzer.AnalyzeContext(ctx, domain.merged, imports.analyses)
+	}
+	if ctx.Err() != nil {
+		return false
 	}
 	if len(analysisErrors) > 0 {
 		for _, analysisError := range analysisErrors {

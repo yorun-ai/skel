@@ -11,6 +11,9 @@ func (p *Analysis) load() bool {
 	p.description = p.content.Domain.Description
 
 	for _, entry := range p.content.Entries {
+		if p.reporter.cancelled() {
+			break
+		}
 		if p.reporter.full() {
 			break
 		}
@@ -73,6 +76,9 @@ func (p *Analysis) loadEntry(entry *grammar.SkelEntry) bool {
 		}
 		resource.SkelName = p.skelName(resource.Name)
 		for _, action := range resource.Actions {
+			if p.reporter.cancelled() {
+				break
+			}
 			action.PermissionCode = resource.SkelName + ":" + action.Name
 		}
 		resource.CheckService = buildResourceCheckService(p.name, resource)

@@ -1,6 +1,9 @@
 package graphutil
 
-import "slices"
+import (
+	"context"
+	"slices"
+)
 
 // Graph is a directed graph whose nodes preserve insertion order.
 type Graph[N comparable] struct {
@@ -34,12 +37,22 @@ func (g *Graph[N]) AddEdge(from, to N) {
 
 // FindCycles returns strongly connected components that contain a cycle.
 func (g *Graph[N]) FindCycles() [][]N {
+	cycles, _ := g.FindCyclesContext(context.Background())
+	return cycles
+}
+
+// FindCyclesContext stops graph traversal when analysis is cancelled.
+func (g *Graph[N]) FindCyclesContext(ctx context.Context) ([][]N, error) {
 	op := &_TarjanOp[N]{
+		ctx:   ctx,
 		graph: g.edges,
 		nodes: make([]_TarjanNode, 0, len(g.edges)),
 		index: make(map[N]int, len(g.edges)),
 	}
 	for _, node := range g.nodes {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 		if _, ok := op.index[node]; !ok {
 			op.strongConnect(node)
 		}
@@ -54,7 +67,10 @@ func (g *Graph[N]) FindCycles() [][]N {
 		}
 		cycles = append(cycles, component)
 	}
-	return cycles
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	return cycles, nil
 }
 
 func (g *Graph[N]) addNode(node N) {
@@ -66,6 +82,7 @@ func (g *Graph[N]) addNode(node N) {
 }
 
 type _TarjanOp[N comparable] struct {
+	ctx    context.Context
 	graph  map[N][]N
 	nodes  []_TarjanNode
 	stack  []N
@@ -79,6 +96,9 @@ type _TarjanNode struct {
 }
 
 func (op *_TarjanOp[N]) strongConnect(nodeValue N) *_TarjanNode {
+	if op.ctx.Err() != nil {
+		return nil
+	}
 	index := len(op.nodes)
 	op.index[nodeValue] = index
 	op.stack = append(op.stack, nodeValue)
@@ -86,9 +106,15 @@ func (op *_TarjanOp[N]) strongConnect(nodeValue N) *_TarjanNode {
 	node := &op.nodes[index]
 
 	for _, target := range op.graph[nodeValue] {
+		if op.ctx.Err() != nil {
+			return nil
+		}
 		targetIndex, seen := op.index[target]
 		if !seen {
 			targetNode := op.strongConnect(target)
+			if targetNode == nil {
+				return nil
+			}
 			if targetNode.lowLink < node.lowLink {
 				node.lowLink = targetNode.lowLink
 			}

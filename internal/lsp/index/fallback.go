@@ -45,7 +45,7 @@ func indexIncompleteDocument(document *Document, tokens []source.Token) {
 				continue
 			}
 			nameToken := tokens[index+1]
-			range_ := source.New(document.Source).Range(nameToken.Start, nameToken.End)
+			range_ := document.Buffer.Range(nameToken.Start, nameToken.End)
 			document.Definitions = append(document.Definitions, Definition{
 				Key: document.Domain + "." + nameToken.Value, Name: nameToken.Value, Detail: detail, Kind: kind, Range: range_,
 			})

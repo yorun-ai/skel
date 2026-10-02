@@ -1,6 +1,7 @@
 package output
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -161,14 +162,47 @@ func (o *ManagedOutput) prepareCommit() (*_OutputCommit, error) {
 		return nil, err
 	}
 	staleFiles := collectStaleGeneratedOutputFiles(files, markedFiles)
+	changedFiles := make([]string, 0, len(files))
 	paths := map[string]bool{}
 	for _, file := range append(slices.Clone(files), staleFiles...) {
-		paths[file] = true
 		if err := rejectOutputSymlink(o.targetDir, filepath.FromSlash(file)); err != nil {
 			cleanupNewTarget()
 			return nil, err
 		}
 	}
+	for _, file := range files {
+		target := filepath.Join(o.targetDir, filepath.FromSlash(file))
+		info, err := os.Lstat(target)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			cleanupNewTarget()
+			return nil, fmt.Errorf("inspect output %s: %w", target, err)
+		}
+		if err == nil {
+			if !info.Mode().IsRegular() {
+				cleanupNewTarget()
+				return nil, fmt.Errorf("output path %s is not a regular file", target)
+			}
+			current, readErr := os.ReadFile(target)
+			if readErr != nil {
+				cleanupNewTarget()
+				return nil, fmt.Errorf("read output %s: %w", target, readErr)
+			}
+			staged, readErr := os.ReadFile(filepath.Join(o.stageDir, filepath.FromSlash(file)))
+			if readErr != nil {
+				cleanupNewTarget()
+				return nil, fmt.Errorf("read staged output %s: %w", file, readErr)
+			}
+			if bytes.Equal(current, staged) {
+				continue
+			}
+		}
+		changedFiles = append(changedFiles, file)
+		paths[file] = true
+	}
+	for _, file := range staleFiles {
+		paths[file] = true
+	}
+	files = changedFiles
 	snapshots, err := snapshotOutputFiles(o.targetDir, o.stageRoot, paths)
 	if err != nil {
 		cleanupNewTarget()

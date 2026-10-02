@@ -6,6 +6,6 @@ import (
 	"go.yorun.ai/skelc/internal/lsp/source"
 )
 
-func identifierRange(content string, position lexer.Position, name string) protocol.Range {
-	return source.New(content).IdentifierRange(position.Line, position.Column, name)
+func identifierRange(content source.Buffer, position lexer.Position, name string) protocol.Range {
+	return content.IdentifierRange(position.Line, position.Column, name)
 }

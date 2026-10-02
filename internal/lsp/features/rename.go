@@ -18,7 +18,7 @@ func (s *Service) PrepareRename(_ context.Context, params *protocol.PrepareRenam
 		return nil, nil
 	}
 	occurrence, ok := occurrenceAt(document, params.Position)
-	if !ok || !snapshot.HasDefinition(occurrence.Key) {
+	if !ok || len(snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key))) != 1 {
 		return nil, nil
 	}
 	range_ := occurrence.Range
@@ -35,10 +35,10 @@ func (s *Service) Rename(_ context.Context, params *protocol.RenameParams) (*pro
 		return nil, nil
 	}
 	occurrence, ok := occurrenceAt(document, params.Position)
-	if !ok || !snapshot.HasDefinition(occurrence.Key) {
+	if !ok || len(snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key))) != 1 {
 		return nil, nil
 	}
-	for _, candidate := range snapshot.DocumentsInDomain(domainFromKey(occurrence.Key)) {
+	for _, candidate := range snapshot.DocumentsFor(document, domainFromKey(occurrence.Key)) {
 		for _, definition := range candidate.Definitions {
 			if definition.Name == params.NewName && definition.Key != occurrence.Key {
 				return nil, fmt.Errorf("Skel declaration %s already exists", definition.Key)
@@ -46,13 +46,34 @@ func (s *Service) Rename(_ context.Context, params *protocol.RenameParams) (*pro
 		}
 	}
 	changes := map[uri.URI][]protocol.TextEdit{}
-	for _, location := range snapshot.Occurrences(occurrence.Key) {
+	for _, location := range snapshot.Occurrences(snapshot.ResolveKey(document, occurrence.Key)) {
 		changes[location.Document.URI] = append(changes[location.Document.URI], protocol.TextEdit{Range: location.Occurrence.Range, NewText: params.NewName})
 	}
 	for documentURI := range changes {
 		slices.SortFunc(changes[documentURI], func(left, right protocol.TextEdit) int {
 			return source.ComparePosition(left.Range.Start, right.Range.Start)
 		})
+	}
+	if s.DocumentChangesSupport {
+		result := &protocol.WorkspaceEdit{}
+		uris := make([]uri.URI, 0, len(changes))
+		for documentURI := range changes {
+			uris = append(uris, documentURI)
+		}
+		slices.Sort(uris)
+		for _, documentURI := range uris {
+			target := snapshot.Document(documentURI)
+			var version *int32
+			if target.Open {
+				version = new(target.Version)
+			}
+			edits := make([]protocol.TextDocumentEditElement, 0, len(changes[documentURI]))
+			for _, edit := range changes[documentURI] {
+				edits = append(edits, new(edit))
+			}
+			result.DocumentChanges = append(result.DocumentChanges, &protocol.TextDocumentEdit{TextDocument: protocol.OptionalVersionedTextDocumentIdentifier{TextDocumentIdentifier: protocol.TextDocumentIdentifier{URI: documentURI}, Version: version}, Edits: edits})
+		}
+		return result, nil
 	}
 	return &protocol.WorkspaceEdit{Changes: changes}, nil
 }

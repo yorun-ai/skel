@@ -26,6 +26,9 @@ func checkCase(reporter *_DiagnosticReporter, kindName string, expectedCase _Cas
 func checkNotReservedKindSuffix(reporter *_DiagnosticReporter, kindName string, ident *grammar.Identifier) bool {
 	valid := true
 	for _, suffix := range reservedKindSuffixes {
+		if reporter.cancelled() {
+			break
+		}
 		valid = reporter.checkNot(strings.HasSuffix(ident.Value, suffix),
 			"%s %s name must not end with %s", ident.Pos, kindName, suffix) && valid
 	}

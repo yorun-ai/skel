@@ -13,7 +13,9 @@ type Document struct {
 	URI              uri.URI
 	Path             string
 	Source           string
+	Buffer           source.Buffer
 	Version          int32
+	Open             bool
 	Domain           string
 	Imports          map[string]string
 	Definitions      []Definition
@@ -24,6 +26,8 @@ type Document struct {
 }
 
 type Definition struct {
+	// Confirmed means this declaration is present in successfully recovered syntax.
+	Confirmed   bool
 	Key         string
 	Name        string
 	Detail      string
@@ -53,14 +57,25 @@ func Build(documentURI uri.URI, path, content string, version int32) *Document {
 	if path == "" {
 		path = documentURI.FsPath()
 	}
-	document := &Document{URI: documentURI, Path: path, Source: content, Version: version, Imports: map[string]string{}}
-	tokens := source.New(content).IdentifierTokens()
+	document := &Document{URI: documentURI, Path: path, Source: content, Version: version, Buffer: source.New(content), Imports: map[string]string{}}
 	parsed, diagnostics := compiler.ParseSourceRecovering(path, []byte(content))
 	document.Parsed = parsed
 	document.ParseDiagnostics = diagnostics
 	if len(diagnostics) > 0 {
-		indexIncompleteDocument(document, tokens)
-		document.Occurrences = indexOccurrences(document, tokens)
+		indexIncompleteDocument(document, document.Buffer.IdentifierTokens())
+		recovered := map[protocol.Range]bool{}
+		if parsed != nil {
+			for _, entry := range parsed.Entries {
+				name, pos, _, _ := entryDefinition(entry)
+				if name != "" {
+					recovered[identifierRange(document.Buffer, pos, name)] = true
+				}
+			}
+		}
+		for i := range document.Definitions {
+			document.Definitions[i].Confirmed = recovered[document.Definitions[i].Range]
+		}
+		document.Occurrences = indexOccurrences(document)
 		return document
 	}
 	if parsed.Domain != nil && parsed.Domain.Name != nil {
@@ -79,14 +94,14 @@ func Build(documentURI uri.URI, path, content string, version int32) *Document {
 		if name == "" {
 			continue
 		}
-		range_ := identifierRange(content, pos, name)
+		range_ := identifierRange(document.Buffer, pos, name)
 		description, deprecated := documentationFromDecoratorGroups(entry.Decorators)
 		document.Definitions = append(document.Definitions, Definition{
-			Key: document.Domain + "." + name, Name: name, Detail: detail, Description: description,
+			Confirmed: true, Key: document.Domain + "." + name, Name: name, Detail: detail, Description: description,
 			Deprecated: deprecated, Kind: kind, Range: range_,
 		})
-		document.Symbols = append(document.Symbols, entrySymbol(content, entry, name, detail, description, deprecated, kind, range_))
+		document.Symbols = append(document.Symbols, entrySymbol(document.Buffer, entry, name, detail, description, deprecated, kind, range_))
 	}
-	document.Occurrences = indexOccurrences(document, tokens)
+	document.Occurrences = indexOccurrences(document)
 	return document
 }

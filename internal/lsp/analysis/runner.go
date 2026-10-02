@@ -84,6 +84,9 @@ func (r *Runner) Stop() {
 }
 
 func (r *Runner) run(ctx context.Context, generation uint64, snapshot workspace.Snapshot, option Options, accept func(Result)) {
+	if ctx.Err() != nil {
+		return
+	}
 	sources, paths := SemanticSources(snapshot.DocumentsMap())
 	diagnostics, domains, err := SemanticWorkspace(ctx, r.workspaceAnalyzer, sources, paths, option.Strict)
 	if err != nil {
@@ -93,7 +96,7 @@ func (r *Runner) run(ctx context.Context, generation uint64, snapshot workspace.
 		appendCompatibilityDiagnostics(ctx, r.compatibility, diagnostics, domains, sources, paths, option.Compatibility)
 	}
 	r.mu.Lock()
-	if generation != r.generation {
+	if generation != r.generation || ctx.Err() != nil {
 		r.mu.Unlock()
 		return
 	}

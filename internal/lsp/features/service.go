@@ -6,6 +6,7 @@ import "go.yorun.ai/skelc/internal/lsp/workspace"
 
 // Service evaluates language features against one workspace snapshot.
 type Service struct {
-	Snapshot       workspace.Snapshot
-	SnippetSupport bool
+	Snapshot               workspace.Snapshot
+	SnippetSupport         bool
+	DocumentChangesSupport bool
 }

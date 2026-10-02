@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"go.yorun.ai/skelc/internal/codegen/common"
 )
@@ -300,5 +301,72 @@ func assertOutputTestMissing(t *testing.T, path string) {
 	t.Helper()
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatalf("expected %s to be missing, err=%v", path, err)
+	}
+}
+
+func TestIdenticalOutputPreservesFilesAndOnlyBacksUpChanges(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "generated")
+	first := newOutputTestTransaction(t, target)
+	writeGeneratedOutputTestFile(t, filepath.Join(first.StageDir(), "keep.go"), "same")
+	writeGeneratedOutputTestFile(t, filepath.Join(first.StageDir(), "change.go"), "old")
+	if err := first.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	keep := filepath.Join(target, "keep.go")
+	before, err := os.Stat(keep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second := newOutputTestTransaction(t, target)
+	writeGeneratedOutputTestFile(t, filepath.Join(second.StageDir(), "keep.go"), "same")
+	writeGeneratedOutputTestFile(t, filepath.Join(second.StageDir(), "change.go"), "new")
+	commit, err := second.prepareCommit()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(commit.files) != 1 || commit.files[0] != "change.go" || len(commit.snapshots) != 1 {
+		t.Fatalf("unexpected changes: %+v", commit)
+	}
+	second.writeFile = func(string, []byte, fs.FileMode) error { return errors.New("injected write failure") }
+	if err := commit.apply(); err == nil {
+		t.Fatal("expected failure")
+	}
+	if err := commit.rollback(); err != nil {
+		t.Fatal(err)
+	}
+	after, err := os.Stat(keep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !os.SameFile(before, after) || !before.ModTime().Equal(after.ModTime()) {
+		t.Fatal("identical file was replaced")
+	}
+	assertOutputTestContent(t, filepath.Join(target, "change.go"), "old")
+}
+
+func TestIdenticalOutputCommitDoesNotWriteOrRemoveCurrentFiles(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "generated")
+	first := newOutputTestTransaction(t, target)
+	writeGeneratedOutputTestFile(t, filepath.Join(first.StageDir(), "keep.go"), "same")
+	if err := first.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(target, "keep.go")
+	timestamp := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
+	if err := os.Chtimes(path, timestamp, timestamp); err != nil {
+		t.Fatal(err)
+	}
+	second := newOutputTestTransaction(t, target)
+	writeGeneratedOutputTestFile(t, filepath.Join(second.StageDir(), "keep.go"), "same")
+	second.writeFile = func(string, []byte, fs.FileMode) error { t.Error("identical output was written"); return nil }
+	if err := second.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !timestamp.Equal(info.ModTime()) {
+		t.Fatal("mtime changed")
 	}
 }

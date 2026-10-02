@@ -22,6 +22,7 @@ type _Server struct {
 	client                 protocol.Client
 	analysis               *analysis.Runner
 	snippetSupport         bool
+	documentChangesSupport bool
 	codeLensRefreshSupport bool
 	schemaCompatibility    _SchemaCompatibilitySettings
 	strict                 bool
@@ -83,6 +84,9 @@ func (s *_Server) Initialize(_ context.Context, params *protocol.InitializeParam
 	if workspace := params.Capabilities.Workspace; workspace != nil && workspace.CodeLens != nil &&
 		workspace.CodeLens.RefreshSupport != nil {
 		s.codeLensRefreshSupport = *workspace.CodeLens.RefreshSupport
+	}
+	if workspace := params.Capabilities.Workspace; workspace != nil && workspace.WorkspaceEdit != nil && workspace.WorkspaceEdit.DocumentChanges != nil {
+		s.documentChangesSupport = *workspace.WorkspaceEdit.DocumentChanges
 	}
 	if folders, ok := params.WorkspaceFolders.Get(); ok {
 		for _, folder := range folders {

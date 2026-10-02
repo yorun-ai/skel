@@ -25,6 +25,9 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 	// 1. fix Enum/Data/TypeParameter type references
 	// 2. check map key type (int/string/uuid/Enum)
 
+	if reporter.cancelled() {
+		return false
+	}
 	if t == nil {
 		return true
 	}
@@ -38,6 +41,9 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			if import_ == nil && refCtx.allowUnresolvedImports {
 				valid := true
 				for _, typeArg := range t.TypeArguments {
+					if reporter.cancelled() {
+						break
+					}
 					valid = fixTypeRef(reporter, typeArg, refCtx) && valid
 				}
 				return valid
@@ -76,6 +82,9 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			t.ExternalAliasExplicit = import_.Model.ExplicitAlias
 			valid := true
 			for _, typeArg := range t.TypeArguments {
+				if reporter.cancelled() {
+					break
+				}
 				valid = fixTypeRef(reporter, typeArg, refCtx) && valid
 			}
 			return checkTypeArguments(reporter, t, refName) && valid
@@ -107,6 +116,9 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			t.SkelName = dataType.SkelName
 			valid := true
 			for _, typeArg := range t.TypeArguments {
+				if reporter.cancelled() {
+					break
+				}
 				valid = fixTypeRef(reporter, typeArg, refCtx) && valid
 			}
 			return checkTypeArguments(reporter, t, refName) && valid

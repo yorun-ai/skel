@@ -73,7 +73,7 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 	qualifier := qualifierBeforePosition(document.Source, params.Position)
 	if qualifier != "" {
 		domain := document.Imports[qualifier]
-		for _, candidate := range snapshot.DocumentsInDomain(domain) {
+		for _, candidate := range snapshot.DocumentsFor(document, domain) {
 			for _, definition := range candidate.Definitions {
 				items[definition.Name] = symbolCompletion(definition, domain)
 			}
@@ -97,7 +97,7 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 				Detail: protocol.NewOptional(domain),
 			}
 		}
-		for _, candidate := range snapshot.DocumentsInDomain(document.Domain) {
+		for _, candidate := range snapshot.DocumentsFor(document, document.Domain) {
 			for _, definition := range candidate.Definitions {
 				items[definition.Name] = symbolCompletion(definition, document.Domain)
 			}

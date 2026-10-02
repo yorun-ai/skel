@@ -6,6 +6,7 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 	lspdiagnostic "go.yorun.ai/skelc/internal/lsp/diagnostic"
+	"go.yorun.ai/skelc/internal/lsp/index"
 )
 
 func (s *_Server) publishDiagnostics(ctx context.Context, documentURI uri.URI) error {
@@ -18,7 +19,10 @@ func (s *_Server) publishDiagnostics(ctx context.Context, documentURI uri.URI) e
 }
 
 func (s *_Server) publishDiagnosticsWithClient(ctx context.Context, client protocol.Client, documentURI uri.URI) error {
-	document := s.workspace.Snapshot().Document(documentURI)
+	return s.publishDocumentDiagnostics(ctx, client, documentURI, s.workspace.Document(documentURI))
+}
+
+func (s *_Server) publishDocumentDiagnostics(ctx context.Context, client protocol.Client, documentURI uri.URI, document *index.Document) error {
 	s.mu.RLock()
 	semantic := append([]protocol.Diagnostic{}, s.semantic[documentURI]...)
 	s.mu.RUnlock()

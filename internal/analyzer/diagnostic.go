@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"context"
 	"slices"
 	"strings"
 
@@ -24,6 +25,7 @@ const (
 )
 
 type _DiagnosticReporter struct {
+	ctx    context.Context
 	errors []error
 	seen   map[string]bool
 }
@@ -45,6 +47,9 @@ func (r *_DiagnosticReporter) checkReference(condition bool, message string, arg
 }
 
 func (r *_DiagnosticReporter) checkCode(code string, condition bool, message string, args ...any) bool {
+	if r.cancelled() {
+		return false
+	}
 	if condition {
 		return true
 	}
@@ -107,7 +112,7 @@ func diagnosticArgumentPositions(args []any) []model.Position {
 }
 
 func (r *_DiagnosticReporter) report(err error) {
-	if err == nil || len(r.errors) >= MaxDiagnosticsPerDomain {
+	if r.cancelled() || err == nil || len(r.errors) >= MaxDiagnosticsPerDomain {
 		return
 	}
 	position, _ := checkutil.Position(err)
@@ -120,7 +125,7 @@ func (r *_DiagnosticReporter) report(err error) {
 }
 
 func (r *_DiagnosticReporter) full() bool {
-	return len(r.errors) >= MaxDiagnosticsPerDomain
+	return r.cancelled() || len(r.errors) >= MaxDiagnosticsPerDomain
 }
 
 func (r *_DiagnosticReporter) result() []error {
@@ -141,3 +146,5 @@ func (r *_DiagnosticReporter) result() []error {
 	})
 	return result
 }
+
+func (r *_DiagnosticReporter) cancelled() bool { return r.ctx != nil && r.ctx.Err() != nil }

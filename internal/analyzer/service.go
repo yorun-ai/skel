@@ -87,6 +87,9 @@ func serviceAuthMarker(reporter *_DiagnosticReporter, gs *grammar.Service) (*gra
 	var markerPos lexer.Position
 	valid := true
 	for _, section := range gs.Sections {
+		if reporter.cancelled() {
+			break
+		}
 		if section.Auth == nil {
 			continue
 		}
@@ -109,6 +112,9 @@ func serviceRequire(reporter *_DiagnosticReporter, gs *grammar.Service) (*gramma
 	var requirePos lexer.Position
 	valid := true
 	for _, section := range gs.Sections {
+		if reporter.cancelled() {
+			break
+		}
 		if section.Require == nil {
 			continue
 		}
@@ -145,6 +151,9 @@ func parseServiceAudiences(reporter *_DiagnosticReporter, audiences []*grammar.S
 	audiencePos := map[string]lexer.Position{}
 	valid := true
 	for _, audience := range audiences {
+		if reporter.cancelled() {
+			break
+		}
 		actorIdent := audience.Actor.Parts[len(audience.Actor.Parts)-1]
 		valid = checkCaseAdvanced(reporter, "Actor", "", "Actor", caseTypeCamel, actorIdent) && valid
 		via := ""

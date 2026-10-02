@@ -54,6 +54,9 @@ func parseResource(reporter *_DiagnosticReporter, ge *grammar.Resource, pub bool
 	checks := make([]*model.ResourceCheck, 0, len(ge.Checks))
 	checkPos := map[string]lexer.Position{}
 	for _, grammarCheck := range ge.Checks {
+		if reporter.cancelled() {
+			break
+		}
 		check, checkValid := parseResourceCheck(reporter, "", grammarCheck)
 		valid = checkValid && valid
 		duplicatedPosition, duplicated := checkPos[check.Name]
@@ -69,6 +72,9 @@ func parseResource(reporter *_DiagnosticReporter, ge *grammar.Resource, pub bool
 	actions := make([]*model.ResourceAction, 0, len(ge.Actions))
 	actionPos := map[string]lexer.Position{}
 	for _, grammarAction := range ge.Actions {
+		if reporter.cancelled() {
+			break
+		}
 		action, actionValid := parseResourceAction(reporter, grammarAction, checkPos)
 		valid = actionValid && valid
 		duplicatedPosition, duplicated := actionPos[action.Name]
@@ -106,6 +112,9 @@ func parseResourceAction(reporter *_DiagnosticReporter, ga *grammar.ResourceActi
 	checks := make([]*model.ResourceCheck, 0, len(ga.Checks))
 	checkPos := map[string]lexer.Position{}
 	for _, grammarCheck := range ga.Checks {
+		if reporter.cancelled() {
+			break
+		}
 		check, checkValid := parseResourceCheck(reporter, ga.Name.Value, grammarCheck)
 		valid = checkValid && valid
 		if duplicatedPosition, duplicated := resourceCheckPos[check.Name]; duplicated {
@@ -154,6 +163,9 @@ func parseResourceCheck(reporter *_DiagnosticReporter, actionName string, gc *gr
 		inputSensitive = inputMeta.Sensitive
 
 		for _, grammarArgument := range gc.Input.Arguments {
+			if reporter.cancelled() {
+				break
+			}
 			arg, argumentValid := parseArgument(reporter, grammarArgument)
 			valid = argumentValid && valid
 			if duplicatedPosition, duplicated := argPos[arg.Name]; duplicated {
@@ -167,6 +179,9 @@ func parseResourceCheck(reporter *_DiagnosticReporter, actionName string, gc *gr
 	}
 	codeArgument := newPermissionCodeArgument()
 	for suffix := 1; ; suffix++ {
+		if reporter.cancelled() {
+			break
+		}
 		if _, exists := argPos[codeArgument.Name]; !exists {
 			break
 		}

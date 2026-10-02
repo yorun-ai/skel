@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skelc/internal/parser/grammar"
@@ -31,11 +32,16 @@ type _SourceSegmentScanner struct {
 // SplitSourceSegments identifies top-level fragments without applying compiler
 // recovery or diagnostic policy.
 func SplitSourceSegments(path string, source []byte) []SourceSegment {
+	return SplitSourceSegmentsContext(context.Background(), path, source)
+}
+
+// SplitSourceSegmentsContext supports cancellation during token scanning.
+func SplitSourceSegmentsContext(ctx context.Context, path string, source []byte) []SourceSegment {
 	lex, err := grammar.LexerDefinition().Lex(path, bytes.NewReader(source))
 	if err != nil {
 		return []SourceSegment{{End: len(source), Line: 1}}
 	}
-	tokens, err := lexer.ConsumeAll(lex)
+	tokens, err := lexer.ConsumeAll(&_ContextLexer{ctx: ctx, lexer: lex})
 	if err != nil {
 		return []SourceSegment{{End: len(source), Line: 1}}
 	}
@@ -51,11 +57,14 @@ func SplitSourceSegments(path string, source []byte) []SourceSegment {
 		source: source, tokens: tokens, identifier: symbols["Identifier"], elided: elided,
 		starts: []SourceSegment{{Line: 1}}, pendingDecoratorStart: -1,
 	}
-	return scanner.scan()
+	return scanner.scanContext(ctx)
 }
 
-func (s *_SourceSegmentScanner) scan() []SourceSegment {
+func (s *_SourceSegmentScanner) scanContext(ctx context.Context) []SourceSegment {
 	for index, token := range s.tokens {
+		if ctx.Err() != nil {
+			return nil
+		}
 		s.consume(index, token)
 	}
 	for index := range s.starts {

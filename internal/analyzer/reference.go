@@ -99,6 +99,9 @@ func checkTypeCanBeMapKey(reporter *_DiagnosticReporter, t *model.Type) bool {
 }
 
 func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*model.Type, bool) {
+	if reporter.cancelled() {
+		return nil, false
+	}
 	if s == nil {
 		return nil, true
 	}
@@ -175,6 +178,9 @@ func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*model.Type, boo
 		t.Kind = model.TypeKindUnresolvedReference
 		typeArgs := make([]*model.Type, 0, len(s.Reference.TypeArguments))
 		for _, typeArg := range s.Reference.TypeArguments {
+			if reporter.cancelled() {
+				break
+			}
 			parsedTypeArg, argumentValid := parseType(reporter, typeArg)
 			valid = argumentValid && valid
 			typeArgs = append(typeArgs, parsedTypeArg)

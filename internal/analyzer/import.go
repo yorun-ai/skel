@@ -14,6 +14,9 @@ func (p *Analysis) skelName(name string) string {
 
 func (p *Analysis) loadImports(domainByName map[string]*Analysis) {
 	for _, grammarImport := range p.content.Imports {
+		if p.reporter.cancelled() {
+			break
+		}
 		domainName := grammarImport.Domain.String()
 		alias := domainName
 		if grammarImport.Alias != nil {
@@ -83,6 +86,9 @@ func (p *Analysis) checkDuplicatedResource(name string, namePos model.Position) 
 func (p *Analysis) checkActorGeneratedNames() {
 	generated := map[string]model.Position{}
 	for _, name := range slices.Sorted(maps.Keys(p.actorsMap)) {
+		if p.reporter.cancelled() {
+			break
+		}
 		actor := p.actorsMap[name]
 		if actor.AuthEnabled {
 			p.checkGeneratedIdentifier(actor.AuthCredential.Name, actor.AuthCredential.Pos, generated)
@@ -94,6 +100,9 @@ func (p *Analysis) checkActorGeneratedNames() {
 		}
 	}
 	for _, name := range slices.Sorted(maps.Keys(p.resourcesMap)) {
+		if p.reporter.cancelled() {
+			break
+		}
 		resource := p.resourcesMap[name]
 		if resource.CheckService != nil {
 			p.checkGeneratedIdentifier(resource.CheckService.Name, resource.Pos, generated)

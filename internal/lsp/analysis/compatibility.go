@@ -34,9 +34,15 @@ func appendCompatibilityDiagnostics(
 		contentByPath[filepath.Clean(candidate.Path)] = string(candidate.Content)
 	}
 	for _, domain := range domains {
+		if ctx.Err() != nil {
+			return
+		}
 		fallback := domainFallback(domain, paths, contentByPath)
 		report, err := differ.DiffWorkspaceDomain(ctx, domain, schema.SourceDiffOption{BaselineSkelIn: option.BaselineSkelIn})
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			if errors.Is(err, schema.ErrGitHistoryUnavailable) {
 				continue
 			}

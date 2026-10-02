@@ -59,3 +59,52 @@ func TestServiceDoesNotRenameUnresolvedReferences(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, prepared)
 }
+
+func TestRenameIsolatesIndependentDomainCopies(t *testing.T) {
+	server := newFixture()
+	a, b, importer := uri.File("/a/input.skel"), uri.File("/b/input.skel"), uri.File("/consumer/input.skel")
+	server.putDocument(a, "domain demo\ndata User {}\n", 3, true)
+	server.putDocument(b, "domain demo\ndata User {}\n", 1, true)
+	server.putDocument(importer, "domain consumer\nimport demo\ndata Box { value: demo.User }\n", 1, true)
+	params := &protocol.RenameParams{TextDocumentPositionParams: protocol.TextDocumentPositionParams{TextDocument: protocol.TextDocumentIdentifier{URI: a}, Position: protocol.Position{Line: 1, Character: 6}}, NewName: "Account"}
+	edit, err := server.service().Rename(t.Context(), params)
+	require.NoError(t, err)
+	require.Len(t, edit.Changes, 1)
+	require.Len(t, edit.Changes[a], 1)
+	// An import with two possible owning inputs cannot safely be renamed.
+	params.TextDocument.URI = importer
+	params.Position = protocol.Position{Line: 2, Character: 24}
+	prepared, err := server.service().PrepareRename(t.Context(), &protocol.PrepareRenameParams{TextDocumentPositionParams: params.TextDocumentPositionParams})
+	require.NoError(t, err)
+	assert.Nil(t, prepared)
+}
+
+func TestRenameSharesDirectoryInputAndUsesDocumentVersions(t *testing.T) {
+	server := newFixture()
+	domain, a, b := uri.File("/a/domain.skel"), uri.File("/a/data.skel"), uri.File("/a/other.skel")
+	server.putDocument(domain, "domain demo\n", 1, true)
+	server.putDocument(a, "domain demo\ndata User {}\n", 7, true)
+	server.putDocument(b, "domain demo\ndata Box { owner: User }\n", 0, false)
+	service := server.service()
+	service.DocumentChangesSupport = true
+	edit, err := service.Rename(t.Context(), &protocol.RenameParams{TextDocumentPositionParams: protocol.TextDocumentPositionParams{TextDocument: protocol.TextDocumentIdentifier{URI: a}, Position: protocol.Position{Line: 1, Character: 6}}, NewName: "Account"})
+	require.NoError(t, err)
+	require.Len(t, edit.DocumentChanges, 2)
+	assert.Empty(t, edit.Changes)
+	first := edit.DocumentChanges[0].(*protocol.TextDocumentEdit)
+	assert.Equal(t, a, first.TextDocument.URI)
+	require.NotNil(t, first.TextDocument.Version)
+	assert.Equal(t, int32(7), *first.TextDocument.Version)
+	second := edit.DocumentChanges[1].(*protocol.TextDocumentEdit)
+	assert.Equal(t, b, second.TextDocument.URI)
+	assert.Nil(t, second.TextDocument.Version)
+}
+
+func TestRenameRejectsDuplicateDeclarations(t *testing.T) {
+	server := newFixture()
+	a := uri.File("/a/input.skel")
+	server.putDocument(a, "domain demo\ndata User {}\ndata User {}\n", 1, true)
+	edit, err := server.service().Rename(t.Context(), &protocol.RenameParams{TextDocumentPositionParams: protocol.TextDocumentPositionParams{TextDocument: protocol.TextDocumentIdentifier{URI: a}, Position: protocol.Position{Line: 1, Character: 6}}, NewName: "Account"})
+	require.NoError(t, err)
+	assert.Nil(t, edit)
+}

@@ -20,6 +20,9 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.
 	valid = reporter.check(len(audiences) > 0, "%s web %s must declare at least one actor", gw.Name.Pos, gw.Name.Value) && valid
 	mountPath := ""
 	for index, mount := range gw.Mounts {
+		if reporter.cancelled() {
+			break
+		}
 		valid = reporter.check(index == 0, "%s web %s must declare mount at most once", mount.Pos, gw.Name.Value) && valid
 		if err := webpath.Validate(mount.Path.Value); err != nil {
 			valid = reporter.check(false, "%s invalid web mount path: %s", mount.Path.Pos, err) && valid
@@ -41,6 +44,9 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.
 func parseWebAudiences(reporter *_DiagnosticReporter, audiences []*grammar.WebAudience) ([]*model.ActorAudience, bool) {
 	serviceAudiences := make([]*grammar.ServiceAudience, 0, len(audiences))
 	for _, audience := range audiences {
+		if reporter.cancelled() {
+			break
+		}
 		serviceAudiences = append(serviceAudiences, &grammar.ServiceAudience{
 			Pos:     audience.Pos,
 			Keyword: audience.Keyword,

@@ -13,6 +13,9 @@ func resolveMethodArgumentJsonPath(reporter *_DiagnosticReporter, method *model.
 		return nil, false
 	}
 	for _, arg := range method.Arguments {
+		if reporter.cancelled() {
+			break
+		}
 		if arg.Name == parts[0].Name {
 			return resolveJsonPathPartType(reporter, arg.Type, parts[0], parts[1:], path)
 		}
@@ -32,6 +35,9 @@ func parsePermissionCheckJsonPath(reporter *_DiagnosticReporter, path string) ([
 	wildcardCount := 0
 	valid := reporter.check(path != "", "empty require check argument path")
 	for _, rawPart := range rawParts {
+		if reporter.cancelled() {
+			break
+		}
 		partValid := reporter.check(rawPart != "", "require check argument path %s contains empty field", path)
 		part := _PermissionCheckPathPart{Name: rawPart}
 		if strings.HasSuffix(rawPart, "[*]") {
@@ -62,6 +68,9 @@ func resolveJsonPathType(reporter *_DiagnosticReporter, type_ *model.Type, parts
 		return nil, false
 	}
 	for _, member := range type_.Data.Members {
+		if reporter.cancelled() {
+			break
+		}
 		if member.Name == parts[0].Name {
 			return resolveJsonPathPartType(reporter, member.Type, parts[0], parts[1:], fullPath)
 		}

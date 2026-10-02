@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"context"
 	"strings"
 
 	"go.yorun.ai/skelc/internal/model"
@@ -13,24 +14,47 @@ func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {
 	refs := _RefsMatrix{}
 
 	for _, dataType := range dataList {
+		if p.reporter.cancelled() {
+			break
+		}
 		if refs.has(dataType) {
 			continue
 		}
 
 		refs[dataType] = _Refs{}
 		for _, member := range dataType.Members {
+			if p.reporter.cancelled() {
+				break
+			}
 			refs[dataType].merge(referencedData(member.Type))
 		}
 		for refData := range refs[dataType] {
+			if p.reporter.cancelled() {
+				break
+			}
 			graph.AddEdge(dataType, refData)
 		}
 	}
 
-	for _, cycle := range graph.FindCycles() {
+	ctx := p.reporter.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	cycles, err := graph.FindCyclesContext(ctx)
+	if err != nil {
+		return
+	}
+	for _, cycle := range cycles {
+		if p.reporter.cancelled() {
+			break
+		}
 		cycle = append(cycle, cycle[0])
 		isHard := true
 
 		for si, di := 0, 1; di < len(cycle); si, di = si+1, di+1 {
+			if p.reporter.cancelled() {
+				break
+			}
 			if !refs.refKind(cycle[si], cycle[di]).isHard() {
 				isHard = false
 				break

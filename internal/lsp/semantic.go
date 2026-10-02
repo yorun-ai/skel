@@ -45,8 +45,9 @@ func (s *_Server) invalidateSemanticDiagnostics(ctx context.Context) {
 		return
 	}
 	slices.Sort(stale)
+	snapshot := s.workspace.Snapshot()
 	for _, documentURI := range stale {
-		_ = s.publishDiagnosticsWithClient(ctx, client, documentURI)
+		_ = s.publishDocumentDiagnostics(ctx, client, documentURI, snapshot.Document(documentURI))
 	}
 }
 
@@ -61,7 +62,7 @@ func (s *_Server) scheduleSemanticAnalysis() {
 }
 
 func (s *_Server) acceptSemanticAnalysis(result analysis.Result) {
-	if result.Revision != s.workspace.Snapshot().Revision() {
+	if result.Revision != s.workspace.Revision() {
 		return
 	}
 	s.mu.Lock()
@@ -86,9 +87,10 @@ func (s *_Server) acceptSemanticAnalysis(result analysis.Result) {
 		documentURIs = append(documentURIs, documentURI)
 	}
 	slices.Sort(documentURIs)
+	snapshot := s.workspace.Snapshot()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	for _, documentURI := range documentURIs {
-		_ = s.publishDiagnosticsWithClient(ctx, client, documentURI)
+		_ = s.publishDocumentDiagnostics(ctx, client, documentURI, snapshot.Document(documentURI))
 	}
 }

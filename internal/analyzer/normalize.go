@@ -36,6 +36,9 @@ func (p *Analysis) normalizeWithMissingImports(allowMissingImports bool) {
 
 func (p *Analysis) normalizeDeclaredData(refs *_RefContext) {
 	for _, name := range slices.Sorted(maps.Keys(p.dataMap)) {
+		if p.reporter.cancelled() {
+			break
+		}
 		dataType := p.dataMap[name]
 		if !p.normalizeDataType(dataType, refs) {
 			p.invalidData[dataType] = true
@@ -47,6 +50,9 @@ func (p *Analysis) normalizeDeclaredData(refs *_RefContext) {
 
 func (p *Analysis) normalizeOwnedTypes(refs *_RefContext, allowMissingImports bool) {
 	for _, name := range slices.Sorted(maps.Keys(p.actorsMap)) {
+		if p.reporter.cancelled() {
+			break
+		}
 		actor := p.actorsMap[name]
 		p.normalizeDataType(actor.AuthCredential, refs)
 		p.normalizeDataType(actor.AuthInfo, refs)
@@ -55,12 +61,18 @@ func (p *Analysis) normalizeOwnedTypes(refs *_RefContext, allowMissingImports bo
 		}
 	}
 	for _, name := range slices.Sorted(maps.Keys(p.resourcesMap)) {
+		if p.reporter.cancelled() {
+			break
+		}
 		resource := p.resourcesMap[name]
 		if resource.CheckService != nil {
 			p.normalizeServiceTypes(resource.CheckService, refs)
 		}
 	}
 	for _, name := range slices.Sorted(maps.Keys(p.servicesMap)) {
+		if p.reporter.cancelled() {
+			break
+		}
 		service := p.servicesMap[name]
 		valid := p.normalizeServiceTypes(service, refs)
 		if allowMissingImports {
@@ -73,14 +85,26 @@ func (p *Analysis) normalizeOwnedTypes(refs *_RefContext, allowMissingImports bo
 	}
 	if !allowMissingImports {
 		for _, name := range slices.Sorted(maps.Keys(p.websMap)) {
+			if p.reporter.cancelled() {
+				break
+			}
 			web := p.websMap[name]
 			p.checkActorAudiences(web.Audiences, web.Pos, "web", web.Name)
 		}
 	}
 	for _, name := range slices.Sorted(maps.Keys(p.tasksMap)) {
+		if p.reporter.cancelled() {
+			break
+		}
 		task := p.tasksMap[name]
 		for _, trigger := range task.Triggers {
+			if p.reporter.cancelled() {
+				break
+			}
 			for _, arg := range trigger.Arguments {
+				if p.reporter.cancelled() {
+					break
+				}
 				fixTypeRef(p.reporter, arg.Type, refs)
 			}
 		}
@@ -92,6 +116,9 @@ func (p *Analysis) validateNormalizedData() {
 		return !p.invalidData[dataType]
 	})
 	for _, name := range slices.Sorted(maps.Keys(p.actorsMap)) {
+		if p.reporter.cancelled() {
+			break
+		}
 		actor := p.actorsMap[name]
 		if actor.AuthCredential != nil {
 			allData = append(allData, actor.AuthCredential)
@@ -116,6 +143,9 @@ func (p *Analysis) normalizeDataType(dataType *model.Data, refs *_RefContext) bo
 
 	valid := true
 	for _, member := range dataType.Members {
+		if p.reporter.cancelled() {
+			break
+		}
 		valid = fixTypeRef(p.reporter, member.Type, refs) && valid
 	}
 	return valid
@@ -123,12 +153,21 @@ func (p *Analysis) normalizeDataType(dataType *model.Data, refs *_RefContext) bo
 
 func (p *Analysis) propagateInvalidData() {
 	for changed := true; changed; {
+		if p.reporter.cancelled() {
+			break
+		}
 		changed = false
 		for _, dataType := range p.dataMap {
+			if p.reporter.cancelled() {
+				break
+			}
 			if p.invalidData[dataType] {
 				continue
 			}
 			for _, member := range dataType.Members {
+				if p.reporter.cancelled() {
+					break
+				}
 				if referencesInvalidData(member.Type, p.invalidData) {
 					p.invalidData[dataType] = true
 					p.unavailable[dataType.Name] = true
@@ -165,6 +204,9 @@ func referencesInvalidData(type_ *model.Type, invalid map[*model.Data]bool) bool
 func (p *Analysis) checkActorAudiences(audiences []*model.ActorAudience, ownerPos fmt.Stringer, ownerKind string, ownerName string) bool {
 	valid := true
 	for _, audience := range audiences {
+		if p.reporter.cancelled() {
+			break
+		}
 		actor := p.actorByRef(audience.Actor)
 		if !p.reporter.checkReference(actor != nil, `%s %s %s references undefined actor "%s"`, ownerPos, ownerKind, ownerName, audience.Actor) {
 			valid = false

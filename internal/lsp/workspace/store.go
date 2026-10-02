@@ -17,6 +17,8 @@ import (
 // Store owns open documents, workspace roots, and on-disk document indexes.
 type Store struct {
 	mu             sync.RWMutex
+	diskMu         sync.Mutex
+	cached         *Snapshot
 	documents      map[uri.URI]*index.Document
 	open           map[uri.URI]bool
 	workspaceFiles map[uri.URI]map[uri.URI]struct{}
@@ -35,39 +37,60 @@ func New() *Store {
 // Put indexes an in-memory document. Open documents take precedence over
 // workspace files loaded from disk.
 func (s *Store) Put(documentURI uri.URI, content string, version int32, open bool) {
+	document := index.Build(documentURI, documentURI.FsPath(), content, version)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.documents[documentURI] = index.Build(documentURI, documentURI.FsPath(), content, version)
+	if previous := s.documents[documentURI]; open && s.open[documentURI] && previous != nil && version <= previous.Version {
+		return
+	}
+	document.Open = open
+	s.documents[documentURI] = document
 	if open {
 		s.open[documentURI] = true
 	}
 	s.revision++
+	s.cached = nil
 }
 
 // Close closes an editor document and restores its on-disk contents when it
 // remains tracked by a workspace root. It reports whether the document still
 // exists in the store.
 func (s *Store) Close(documentURI uri.URI) bool {
+	s.diskMu.Lock()
+	defer s.diskMu.Unlock()
+	s.mu.Lock()
+	delete(s.open, documentURI)
+	previous := s.documents[documentURI]
+	tracked := s.documentTrackedLocked(documentURI)
+	s.mu.Unlock()
+	var document *index.Document
+	if tracked {
+		if content, err := os.ReadFile(documentURI.FsPath()); err == nil {
+			document = index.Build(documentURI, documentURI.FsPath(), string(content), 0)
+		}
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	delete(s.open, documentURI)
-	if content, err := os.ReadFile(documentURI.FsPath()); err == nil && s.documentTrackedLocked(documentURI) {
-		s.documents[documentURI] = index.Build(documentURI, documentURI.FsPath(), string(content), 0)
-		s.revision++
-		return true
+	if s.open[documentURI] || s.documents[documentURI] != previous {
+		return s.documents[documentURI] != nil
 	}
-	delete(s.documents, documentURI)
-	s.untrackLocked(documentURI)
+	if document != nil && s.documentTrackedLocked(documentURI) {
+		s.documents[documentURI] = document
+	} else {
+		delete(s.documents, documentURI)
+		s.untrackLocked(documentURI)
+	}
 	s.revision++
-	return false
+	s.cached = nil
+	return s.documents[documentURI] != nil
 }
 
 // ApplyFileChanges reconciles each affected source directory once. Watcher
 // events can be coalesced or delayed while a generator replaces several files;
 // their type is a hint to reload, not the authoritative on-disk state.
 func (s *Store) ApplyFileChanges(changes []protocol.FileEvent) []uri.URI {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.diskMu.Lock()
+	defer s.diskMu.Unlock()
 	changed := []uri.URI{}
 	directories := map[uri.URI]bool{}
 	for _, change := range changes {
@@ -76,7 +99,7 @@ func (s *Store) ApplyFileChanges(changes []protocol.FileEvent) []uri.URI {
 			continue
 		}
 		directories[directory] = true
-		changed = append(changed, s.refreshDirectoryLocked(directory)...)
+		changed = append(changed, s.refreshDirectory(directory)...)
 	}
 	slices.Sort(changed)
 	return changed
@@ -89,9 +112,9 @@ func (s *Store) RefreshDirectory(documentURI uri.URI) []uri.URI {
 	if !ok {
 		return nil
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.refreshDirectoryLocked(directory)
+	s.diskMu.Lock()
+	defer s.diskMu.Unlock()
+	return s.refreshDirectory(directory)
 }
 
 func sourceDirectory(documentURI uri.URI) (uri.URI, bool) {
@@ -102,7 +125,7 @@ func sourceDirectory(documentURI uri.URI) (uri.URI, bool) {
 	return directory, err == nil
 }
 
-func (s *Store) refreshDirectoryLocked(directory uri.URI) []uri.URI {
+func (s *Store) refreshDirectory(directory uri.URI) []uri.URI {
 	entries, err := os.ReadDir(directory.FsPath())
 	if err != nil && !os.IsNotExist(err) {
 		return nil
@@ -117,38 +140,49 @@ func (s *Store) refreshDirectoryLocked(directory uri.URI) []uri.URI {
 			candidates[documentURI] = true
 		}
 	}
+	s.mu.RLock()
 	for documentURI := range s.documents {
 		if parent, ok := sourceDirectory(documentURI); ok && parent == directory {
 			candidates[documentURI] = true
 		}
 	}
+	s.mu.RUnlock()
 	changed := []uri.URI{}
 	for documentURI := range candidates {
-		if s.open[documentURI] {
+		s.mu.RLock()
+		previous, opened := s.documents[documentURI], s.open[documentURI]
+		s.mu.RUnlock()
+		if opened {
 			continue
 		}
 		content, err := os.ReadFile(documentURI.FsPath())
-		previous := s.documents[documentURI]
-		if os.IsNotExist(err) {
-			if previous != nil {
+		if err != nil && !os.IsNotExist(err) {
+			continue
+		}
+		var document *index.Document
+		if err == nil {
+			if previous != nil && previous.Source == string(content) {
+				document = previous
+			} else {
+				document = index.Build(documentURI, documentURI.FsPath(), string(content), 0)
+			}
+		}
+		s.mu.Lock()
+		if !s.open[documentURI] && s.documents[documentURI] == previous {
+			if document == nil {
 				delete(s.documents, documentURI)
 				s.untrackLocked(documentURI)
-				changed = append(changed, documentURI)
+			} else {
+				s.trackLocked(documentURI)
+				s.documents[documentURI] = document
 			}
-			continue
+			if document != previous {
+				changed = append(changed, documentURI)
+				s.revision++
+				s.cached = nil
+			}
 		}
-		if err != nil {
-			continue
-		}
-		s.trackLocked(documentURI)
-		if previous != nil && previous.Source == string(content) {
-			continue
-		}
-		s.documents[documentURI] = index.Build(documentURI, documentURI.FsPath(), string(content), 0)
-		changed = append(changed, documentURI)
-	}
-	if len(changed) > 0 {
-		s.revision++
+		s.mu.Unlock()
 	}
 	slices.Sort(changed)
 	return changed
@@ -156,6 +190,8 @@ func (s *Store) refreshDirectoryLocked(directory uri.URI) []uri.URI {
 
 // AddRoot discovers and indexes Skel files below a workspace root.
 func (s *Store) AddRoot(rootURI uri.URI) {
+	s.diskMu.Lock()
+	defer s.diskMu.Unlock()
 	rootPath := rootURI.FsPath()
 	documents := map[uri.URI]*index.Document{}
 	_ = filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, err error) error {
@@ -188,6 +224,7 @@ func (s *Store) AddRoot(rootURI uri.URI) {
 	}
 	s.workspaceFiles[rootURI] = tracked
 	s.revision++
+	s.cached = nil
 }
 
 // RemoveRoot removes documents that are no longer open or tracked by another
@@ -206,23 +243,37 @@ func (s *Store) RemoveRoot(rootURI uri.URI) []uri.URI {
 		removed = append(removed, documentURI)
 	}
 	s.revision++
+	s.cached = nil
 	return removed
 }
 
 // Snapshot returns an immutable view of the current workspace.
 func (s *Store) Snapshot() Snapshot {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	documents := make(map[uri.URI]*index.Document, len(s.documents))
-	ordered := make([]*index.Document, 0, len(s.documents))
-	for documentURI, document := range s.documents {
-		documents[documentURI] = document
-		ordered = append(ordered, document)
+	for {
+		s.mu.RLock()
+		if s.cached != nil {
+			snapshot := *s.cached
+			s.mu.RUnlock()
+			return snapshot
+		}
+		revision := s.revision
+		documents := make(map[uri.URI]*index.Document, len(s.documents))
+		ordered := make([]*index.Document, 0, len(s.documents))
+		for documentURI, document := range s.documents {
+			documents[documentURI] = document
+			ordered = append(ordered, document)
+		}
+		s.mu.RUnlock()
+		slices.SortFunc(ordered, func(a, b *index.Document) int { return strings.Compare(string(a.URI), string(b.URI)) })
+		snapshot := newSnapshot(revision, documents, ordered)
+		s.mu.Lock()
+		if s.revision == revision {
+			s.cached = &snapshot
+			s.mu.Unlock()
+			return snapshot
+		}
+		s.mu.Unlock()
 	}
-	slices.SortFunc(ordered, func(left, right *index.Document) int {
-		return strings.Compare(string(left.URI), string(right.URI))
-	})
-	return newSnapshot(s.revision, documents, ordered)
 }
 
 func (s *Store) trackLocked(documentURI uri.URI) {
@@ -269,4 +320,14 @@ func contains(rootURI, documentURI uri.URI) bool {
 	}
 	relative, err := filepath.Rel(rootURI.FsPath(), documentURI.FsPath())
 	return err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator))
+}
+
+// Revision reads the current generation without constructing a workspace index.
+func (s *Store) Revision() uint64 { s.mu.RLock(); defer s.mu.RUnlock(); return s.revision }
+
+// Document reads a single immutable document without constructing a snapshot.
+func (s *Store) Document(documentURI uri.URI) *index.Document {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.documents[documentURI]
 }

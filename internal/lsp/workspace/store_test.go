@@ -1,8 +1,10 @@
 package workspace
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -105,4 +107,47 @@ func TestStoreRefreshDirectoryPreservesRemoteURIs(t *testing.T) {
 	assert.Empty(t, store.RefreshDirectory(documentURI))
 	assert.Equal(t, revision, store.Snapshot().Revision())
 	assert.Empty(t, store.RefreshDirectory(uri.URI("untitled:Untitled-1")))
+}
+
+func TestSnapshotReusesIndexesAndPreservesOldRevision(t *testing.T) {
+	store := New()
+	documentURI := uri.File("/audit/input.skel")
+	store.Put(documentURI, "domain demo\ndata User {}\n", 1, true)
+	before := store.Snapshot()
+	require.NotNil(t, store.cached)
+	cached := store.cached
+	assert.Equal(t, before.Revision(), store.Snapshot().Revision())
+	assert.Same(t, cached, store.cached)
+	store.Put(documentURI, "domain demo\ndata Account {}\n", 2, true)
+	assert.Nil(t, store.cached)
+	after := store.Snapshot()
+	assert.Equal(t, "User", before.Document(documentURI).Definitions[0].Name)
+	assert.Equal(t, "Account", after.Document(documentURI).Definitions[0].Name)
+	assert.Equal(t, after.Revision(), store.Revision())
+	assert.Same(t, after.Document(documentURI), store.Document(documentURI))
+	store.Put(documentURI, "domain demo\ndata Stale {}\n", 1, true)
+	assert.Equal(t, after.Revision(), store.Revision())
+	assert.Equal(t, "Account", store.Document(documentURI).Definitions[0].Name)
+}
+
+func TestConcurrentSnapshotsAndUpdatesPreserveNewestDocument(t *testing.T) {
+	store := New()
+	documentURI := uri.File("/audit/input.skel")
+	store.Put(documentURI, "domain demo\ndata Initial {}\n", 1, true)
+	var group sync.WaitGroup
+	for worker := range 4 {
+		group.Go(func() {
+			for version := int32(2 + worker); version < 100; version += 4 {
+				store.Put(documentURI, fmt.Sprintf("domain demo\ndata Value%d {}\n", version), version, true)
+				snapshot := store.Snapshot()
+				document := snapshot.Document(documentURI)
+				if document == nil || len(document.Definitions) != 1 {
+					t.Error("invalid snapshot")
+				}
+			}
+		})
+	}
+	group.Wait()
+	assert.Equal(t, int32(99), store.Document(documentURI).Version)
+	assert.Equal(t, "Value99", store.Snapshot().Document(documentURI).Definitions[0].Name)
 }
