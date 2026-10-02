@@ -65,22 +65,22 @@ func (g *_Gen) genFacadeGo() {
 		payload.Enums = append(payload.Enums, castEnum(enum))
 	}
 	for _, data := range public.Data {
-		payload.Data = append(payload.Data, castData(data))
+		payload.Data = append(payload.Data, g.types.castData(data))
 	}
 	for _, config := range g.Domain.Configs() {
 		if config.Pub {
-			payload.Configs = append(payload.Configs, castData(config))
+			payload.Configs = append(payload.Configs, g.types.castData(config))
 		}
 	}
 	for _, actor := range g.Domain.Actors() {
 		if actor.Pub {
 			payload.Actors = append(payload.Actors, castActor(actor))
 			if actor.AuthEnabled {
-				payload.AuthCredentialData = append(payload.AuthCredentialData, castData(actor.AuthCredential), castData(actor.AuthInfo))
-				payload.AuthServices = append(payload.AuthServices, castActorAuthService(actor.AuthService))
+				payload.AuthCredentialData = append(payload.AuthCredentialData, g.types.castData(actor.AuthCredential), g.types.castData(actor.AuthInfo))
+				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.AuthService))
 			}
 			if actor.PermService != nil {
-				payload.AuthServices = append(payload.AuthServices, castActorAuthService(actor.PermService))
+				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.PermService))
 			}
 		}
 	}

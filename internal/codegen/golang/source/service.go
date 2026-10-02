@@ -1,8 +1,9 @@
 package source
 
 import (
-	"go.yorun.ai/skelc/internal/model"
 	"strings"
+
+	"go.yorun.ai/skelc/internal/model"
 )
 
 const (
@@ -135,7 +136,7 @@ func (g *_Gen) castService(p *model.Service, clientOnly bool, serverOnly bool) *
 	}
 	service.Methods = make([]*ServiceMethod, 0, len(p.Methods))
 	for _, method := range p.Methods {
-		castedMethod := castServiceMethod(p, method)
+		castedMethod := g.types.castServiceMethod(p, method)
 		service.Methods = append(service.Methods, castedMethod)
 	}
 
@@ -149,7 +150,7 @@ func (g *_Gen) castService(p *model.Service, clientOnly bool, serverOnly bool) *
 	return service
 }
 
-func castActorAuthService(p *model.Service) *Service {
+func (r _Types) castActorAuthService(p *model.Service) *Service {
 	names := buildServiceNames(p.Name)
 	service := &Service{
 		Name:                    names.Name,
@@ -180,7 +181,7 @@ func castActorAuthService(p *model.Service) *Service {
 		Methods:                make([]*ServiceMethod, 0, len(p.Methods)),
 	}
 	for _, method := range p.Methods {
-		castedMethod := castServiceMethod(p, method)
+		castedMethod := r.castServiceMethod(p, method)
 		service.Methods = append(service.Methods, castedMethod)
 	}
 	for _, method := range service.Methods {

@@ -79,13 +79,13 @@ func (g *_Gen) genApiGo() {
 				ResultBinary:       methodResultContainsBinaryType(method),
 			}
 			for _, arg := range method.Arguments {
-				argument := castMethodArgument(arg)
+				argument := g.types.castMethodArgument(arg)
 				m.Arguments = append(m.Arguments, argument)
 				imports.addMany(g.apiImports(argument.Type.Imports))
 			}
 			m.ArgumentsBinary = methodArgumentsContainBinaryType(method)
 			if method.ArgumentsData != nil {
-				m.ArgumentsData = castData(method.ArgumentsData)
+				m.ArgumentsData = g.types.castData(method.ArgumentsData)
 				m.ArgumentsData.Name = "_" + m.ArgumentsData.Name
 				for _, arg := range m.Arguments {
 					member, ok := sliceutil.Find(m.ArgumentsData.Members, func(member *DataMember) bool {
@@ -98,7 +98,7 @@ func (g *_Gen) genApiGo() {
 				item.HasMethodArguments = true
 			}
 			if method.ResultType != nil {
-				kind := castType(method.ResultType)
+				kind := g.types.castType(method.ResultType)
 				if kind == nil {
 					g.Renderer.Fail(fmt.Errorf("unsupported API result type for %s.%s", service.Name, method.Name))
 					return

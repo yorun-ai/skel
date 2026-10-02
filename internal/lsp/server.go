@@ -17,7 +17,9 @@ type _Server struct {
 	protocol.UnimplementedServer
 
 	mu                     sync.RWMutex
-	diagnosticsMu          sync.Mutex // Serializes document changes and diagnostic publication.
+	stateMu                sync.Mutex // Serializes state transitions and immutable batch creation.
+	diagnosticGeneration   uint64
+	publisher              *_DiagnosticPublisher
 	workspace              *workspace.Store
 	semantic               map[uri.URI][]protocol.Diagnostic
 	client                 protocol.Client
@@ -47,6 +49,7 @@ func (rw *_ReadWriteCloser) Close() error {
 // Serve runs a Language Server Protocol connection over the supplied streams.
 func Serve(ctx context.Context, input io.Reader, output io.Writer, strict bool) error {
 	server := newServer()
+	defer server.stopSemanticAnalysis()
 	server.strict = strict
 	closer, _ := input.(io.Closer)
 	stream := jsonrpc2.NewStream(&_ReadWriteCloser{Reader: input, Writer: output, closer: closer})
@@ -64,6 +67,7 @@ func Serve(ctx context.Context, input io.Reader, output io.Writer, strict bool) 
 func newServer() *_Server {
 	return &_Server{
 		workspace:           workspace.New(),
+		publisher:           newDiagnosticPublisher(),
 		semantic:            map[uri.URI][]protocol.Diagnostic{},
 		exit:                make(chan struct{}),
 		analysis:            analysis.NewRunner(semanticAnalysisDelay),

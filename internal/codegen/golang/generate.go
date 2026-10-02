@@ -13,8 +13,9 @@ import (
 )
 
 type _Gen struct {
-	domain *model.Domain
-	view   *view.Domain
+	domain   *model.Domain
+	view     *view.Domain
+	bindings common.TypeBindings
 
 	mode              view.Mode
 	modName           string
@@ -33,7 +34,8 @@ type _Gen struct {
 // Generate consumes validated options from ResolveOption.
 func Generate(domain *model.Domain, resolved ResolvedOption) error {
 	option := resolved.option
-	if err := common.ValidateDomain(domain); err != nil {
+	validated, err := common.PrepareDomain(domain)
+	if err != nil {
 		return fmt.Errorf("validate Go generation model: %w", err)
 	}
 	if option.ApiOnly || option.PubOnly {
@@ -45,7 +47,7 @@ func Generate(domain *model.Domain, resolved ResolvedOption) error {
 		if err != nil {
 			return err
 		}
-		return g.gen()
+		return g.gen(validated)
 	}
 	if option.PubOut == "" {
 		gen, err := newGen(_GenOption{
@@ -62,7 +64,7 @@ func Generate(domain *model.Domain, resolved ResolvedOption) error {
 		if err != nil {
 			return err
 		}
-		return gen.gen()
+		return gen.gen(validated)
 	}
 
 	pubModule := option.PubModule
@@ -83,7 +85,7 @@ func Generate(domain *model.Domain, resolved ResolvedOption) error {
 	if err != nil {
 		return err
 	}
-	if err := pubGen.gen(); err != nil {
+	if err := pubGen.gen(validated); err != nil {
 		return err
 	}
 	regularGen, err := newGen(_GenOption{
@@ -102,7 +104,7 @@ func Generate(domain *model.Domain, resolved ResolvedOption) error {
 	if err != nil {
 		return err
 	}
-	return regularGen.gen()
+	return regularGen.gen(validated)
 }
 
 func newGen(option _GenOption) (*_Gen, error) {
@@ -153,7 +155,7 @@ func newGen(option _GenOption) (*_Gen, error) {
 			}
 			path := g.goImports[kind.ExternalDomain]
 			if path == "" {
-				path = kind.ExternalImportPath
+				path = g.bindings[kind].Path
 			}
 			imports[kind.ExternalDomain] = path
 		})
@@ -162,7 +164,7 @@ func newGen(option _GenOption) (*_Gen, error) {
 	return g, nil
 }
 
-func (g *_Gen) gen() error {
+func (g *_Gen) gen(validated common.ValidatedDomain) error {
 	if g.asModule {
 		if err := gomodule.Generate(gomodule.Option{
 			Out:               g.out,
@@ -176,8 +178,9 @@ func (g *_Gen) gen() error {
 			return err
 		}
 	}
-	if err := source.GenerateValidated(source.Option{
+	if err := source.GenerateValidated(validated, source.Option{
 		Domain:        g.domain,
+		Bindings:      g.bindings,
 		View:          g.view,
 		Mode:          g.mode,
 		PackageName:   g.pkgName,
@@ -189,7 +192,7 @@ func (g *_Gen) gen() error {
 	if g.mode == view.ModeApi {
 		return nil
 	}
-	return vineschema.GenerateValidated(vineschema.Option{
+	return vineschema.GenerateValidated(validated, vineschema.Option{
 		Domain:          g.domain,
 		View:            g.view,
 		Mode:            g.mode,

@@ -35,7 +35,7 @@ func (g *_Gen) buildDataGoPayload() *DataGoPayload {
 		Data:        make([]*Data, 0, len(g.view.Data)),
 	}
 	for _, dataType := range g.view.Data {
-		castedData := castData(dataType)
+		castedData := g.types.castData(dataType)
 		payload.Data = append(payload.Data, castedData)
 	}
 	imports := g.apiImports(buildDataImports(payload.Data))
@@ -61,7 +61,7 @@ type Data struct {
 	MarkerMethodName string
 }
 
-func castData(p *model.Data) *Data {
+func (r _Types) castData(p *model.Data) *Data {
 	data := &Data{
 		Name:             transDataName(p),
 		ImplName:         "_" + transDataName(p),
@@ -72,7 +72,7 @@ func castData(p *model.Data) *Data {
 		MarkerMethodName: skelmeta.SensitiveMarkerMethodName,
 	}
 	for _, member := range p.Members {
-		castedMember := castDataMember(member)
+		castedMember := r.castDataMember(member)
 		data.Members = append(data.Members, castedMember)
 	}
 
@@ -101,8 +101,8 @@ type DataMember struct {
 	Identifier   bool
 }
 
-func castDataMember(p *model.DataMember) *DataMember {
-	memberType := castType(p.Type)
+func (r _Types) castDataMember(p *model.DataMember) *DataMember {
+	memberType := r.castType(p.Type)
 	return &DataMember{
 		Name: nameutil.ToCamel(p.Name),
 		CommentLines: deprecatedGoDocLines(

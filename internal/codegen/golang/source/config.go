@@ -26,7 +26,7 @@ func (g *_Gen) buildConfigGoPayload() *DataGoPayload {
 		Data:        make([]*Data, 0, len(g.view.Configs)),
 	}
 	for _, dataType := range g.view.Configs {
-		castedData := castData(dataType)
+		castedData := g.types.castData(dataType)
 		castedData.SpecName = "_" + castedData.Name + "Spec"
 		castedData.SkelName = dataType.SkelName
 		castedData.Hash = dataType.Hash

@@ -36,5 +36,6 @@ func (s *_Server) publishDocumentDiagnostics(ctx context.Context, client protoco
 	if document != nil {
 		params.Version = protocol.NewOptional(document.Version)
 	}
-	return client.PublishDiagnostics(ctx, params)
+	s.publisher.enqueue(_DiagnosticBatch{generation: s.diagnosticGeneration, client: client, params: params, removed: document == nil})
+	return nil
 }

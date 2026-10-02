@@ -4,20 +4,25 @@ import (
 	"path/filepath"
 	"strings"
 
+	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
+	"go.yorun.ai/skelc/internal/binding"
 	"go.yorun.ai/skelc/internal/lsp/index"
+	"go.yorun.ai/skelc/internal/lsp/source"
 )
 
 // Snapshot is an immutable workspace view used by one request or analysis.
 type Snapshot struct {
-	revision    uint64
-	documents   map[uri.URI]*index.Document
-	ordered     []*index.Document
-	byDomain    map[string][]*index.Document
-	definitions map[string][]DefinitionLocation
-	occurrences map[string][]OccurrenceLocation
-	roots       map[uri.URI]string
-	domainRoots map[string]map[string]bool
+	revision            uint64
+	documents           map[uri.URI]*index.Document
+	ordered             []*index.Document
+	byDomain            map[string][]*index.Document
+	definitions         map[string][]DefinitionLocation
+	occurrences         map[string][]OccurrenceLocation
+	symbols             map[string][]binding.Symbol
+	documentOccurrences map[uri.URI][]index.Occurrence
+	roots               map[uri.URI]string
+	domainRoots         map[string]map[string]bool
 }
 
 // DefinitionLocation identifies a definition and its containing document.
@@ -36,7 +41,7 @@ func newSnapshot(revision uint64, documents map[uri.URI]*index.Document, ordered
 	snapshot := Snapshot{
 		revision: revision, documents: documents, ordered: ordered,
 		byDomain: map[string][]*index.Document{}, definitions: map[string][]DefinitionLocation{},
-		occurrences: map[string][]OccurrenceLocation{}, roots: map[uri.URI]string{}, domainRoots: map[string]map[string]bool{},
+		occurrences: map[string][]OccurrenceLocation{}, roots: map[uri.URI]string{}, domainRoots: map[string]map[string]bool{}, symbols: map[string][]binding.Symbol{}, documentOccurrences: map[uri.URI][]index.Occurrence{},
 	}
 	directories := map[uri.URI]bool{}
 	for _, document := range ordered {
@@ -57,6 +62,10 @@ func newSnapshot(revision uint64, documents map[uri.URI]*index.Document, ordered
 		}
 		snapshot.domainRoots[document.Domain][root] = true
 		snapshot.byDomain[document.Domain] = append(snapshot.byDomain[document.Domain], document)
+		for _, symbol := range document.Bindings.Symbols {
+			key := root + "\x00" + symbol.ID.Key()
+			snapshot.symbols[key] = append(snapshot.symbols[key], symbol)
+		}
 		for _, definition := range document.Definitions {
 			if !definition.Confirmed {
 				continue
@@ -66,7 +75,14 @@ func newSnapshot(revision uint64, documents map[uri.URI]*index.Document, ordered
 		}
 	}
 	for _, document := range ordered {
-		for _, occurrence := range document.Occurrences {
+		occurrences := index.BindOccurrences(document, func(id binding.SymbolID) []binding.Symbol {
+			return snapshot.symbols[snapshot.ResolveKey(document, id.Key())]
+		})
+		snapshot.documentOccurrences[document.URI] = occurrences
+		for _, occurrence := range occurrences {
+			if occurrence.Binding.Status != binding.Resolved && occurrence.Binding.Status != binding.Ambiguous {
+				continue
+			}
 			key := snapshot.ResolveKey(document, occurrence.Key)
 			if key != "" {
 				snapshot.occurrences[key] = append(snapshot.occurrences[key], OccurrenceLocation{Document: document, Occurrence: occurrence})
@@ -107,11 +123,11 @@ func (s Snapshot) Occurrences(key string) []OccurrenceLocation {
 // ResolveKey binds local references to the compiler input and imported references
 // only to an unambiguous input. Copies of a domain must never share rename edits.
 func (s Snapshot) ResolveKey(document *index.Document, key string) string {
-	split := strings.LastIndex(key, ".")
-	if split < 0 {
+	id := binding.ParseKey(key)
+	domain := id.Domain
+	if !strings.Contains(key, ".") {
 		return ""
 	}
-	domain := key[:split]
 	root := s.roots[document.URI]
 	if domain != document.Domain {
 		roots := s.domainRoots[domain]
@@ -139,4 +155,18 @@ func (s Snapshot) DocumentsFor(document *index.Document, domain string) []*index
 		}
 	}
 	return result
+}
+
+// OccurrenceAt reads bindings for this workspace revision without mutating the
+// shared per-document syntax index.
+func (s Snapshot) OccurrenceAt(document *index.Document, position protocol.Position) (index.Occurrence, bool) {
+	for _, occurrence := range s.documentOccurrences[document.URI] {
+		if occurrence.Binding.Status != binding.Resolved && occurrence.Binding.Status != binding.Ambiguous {
+			continue
+		}
+		if source.ContainsPosition(occurrence.Range, position) {
+			return occurrence, true
+		}
+	}
+	return index.Occurrence{}, false
 }

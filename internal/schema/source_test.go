@@ -206,3 +206,17 @@ func TestGitBaselinePreservesQuotedFileNames(t *testing.T) {
 		})
 	}
 }
+
+func TestGitBaselineIgnoresInvalidIndependentDomain(t *testing.T) {
+	testutil.RequireGit(t)
+	root := t.TempDir()
+	userPath := filepath.Join(root, "user.skel")
+	require.NoError(t, os.WriteFile(userPath, []byte("domain demo.user\ndata User { id: int }\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "other.skel"), []byte("domain other\ndata Broken { value: Missing }\n"), 0o600))
+	testutil.InitRepository(t, root)
+	testutil.Commit(t, root, "independent baseline domains")
+	candidate := workspaceDomains(t, []compiler.Source{{Path: userPath, Root: root, Content: []byte("domain demo.user\ndata User { id: string }\n")}})[0]
+	report, err := DiffWorkspaceDomain(t.Context(), candidate, SourceDiffOption{})
+	require.NoError(t, err)
+	require.Len(t, report.Changes, 1)
+}

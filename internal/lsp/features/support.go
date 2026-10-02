@@ -9,15 +9,6 @@ import (
 	"go.yorun.ai/skelc/internal/lsp/source"
 )
 
-func occurrenceAt(document *index.Document, position protocol.Position) (index.Occurrence, bool) {
-	for _, occurrence := range document.Occurrences {
-		if containsPosition(occurrence.Range, position) {
-			return occurrence, true
-		}
-	}
-	return index.Occurrence{}, false
-}
-
 func positionOffset(content string, position protocol.Position) int {
 	return source.New(content).Offset(position)
 }

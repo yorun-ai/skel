@@ -1,19 +1,19 @@
 package source
 
 import (
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
 	"testing"
 
+	"go.yorun.ai/skelc/internal/codegen/codegentest"
+	"go.yorun.ai/skelc/internal/codegen/golang/view"
 	"go.yorun.ai/skelc/internal/model"
 )
 
 func TestCastData(t *testing.T) {
-	data := castData(&model.Data{
+	data := (_Types{}).castData(&model.Data{
 		Name:        "Page",
 		Description: "Paginated result",
 		Sensitive:   true,
@@ -85,7 +85,7 @@ func TestSensitiveMarkerMethodNeedsNoImport(t *testing.T) {
 }
 
 func TestCastDataMapsDurationToSkelDuration(t *testing.T) {
-	data := castData(&model.Data{
+	data := (_Types{}).castData(&model.Data{
 		Name: "TimeoutConfig",
 		Members: []*model.DataMember{
 			{
@@ -103,7 +103,7 @@ func TestCastDataMapsDurationToSkelDuration(t *testing.T) {
 }
 
 func TestCastDataMapsLocalDateToSkelLocalDate(t *testing.T) {
-	data := castData(&model.Data{
+	data := (_Types{}).castData(&model.Data{
 		Name: "Profile",
 		Members: []*model.DataMember{
 			{

@@ -4,7 +4,6 @@ import (
 	"context"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"go.yorun.ai/skelc/internal/loader"
 )
@@ -26,61 +25,21 @@ func checkWithAnalyzer(option Option, workspaceAnalyzer *WorkspaceAnalyzer) (Che
 	if err != nil {
 		return CheckResult{}, err
 	}
-	sources := parseCheckSources(loadResult.Files)
-	expectedDomain := checkExpectedDomain(loadResult, sources)
-	for index := range sources {
-		sources[index].Domain = expectedDomain
-		sources[index].ExpectedDomain = expectedDomain
-	}
-	structural := checkDirectoryStructure(loadResult, sources, expectedDomain)
-	diagnostics, _, err := workspaceAnalyzer.analyze(context.Background(), sources, true)
+	sources, err := prepareInput(context.Background(), loadResult, true)
 	if err != nil {
 		return CheckResult{}, err
 	}
-	filtered := make(Diagnostics, 0, len(diagnostics))
-	for _, diagnostic := range diagnostics {
-		if diagnostic.Code != DiagnosticCodeImportMissing && (len(structural) == 0 || strings.HasPrefix(diagnostic.Code, "syntax.")) {
-			filtered = append(filtered, diagnostic)
-		}
+	diagnostics, _, err := workspaceAnalyzer.AnalyzeWithOptionsContext(context.Background(), sources, AnalysisOptions{AllowUnresolvedImports: true})
+	if err != nil {
+		return CheckResult{}, err
 	}
-	filtered = append(filtered, structural...)
+	filtered := append(Diagnostics{}, diagnostics...)
 	filtered = append(filtered, loaderWarningDiagnostics(loadResult.Warnings)...)
 	if option.Strict {
 		ApplyStrictMode(filtered)
 	}
 	slices.SortFunc(filtered, compareDiagnostics)
 	return CheckResult{Diagnostics: filtered}, nil
-}
-
-func parseCheckSources(files []*loader.SourceFile) []Source {
-	sources := make([]Source, 0, len(files))
-	for _, file := range files {
-		content, diagnostics := ParseSourceRecovering(file.FilePath, file.Content)
-		sources = append(sources, Source{
-			Path: file.FilePath, Content: file.Content, Parsed: content, ParseDiagnostics: diagnostics,
-		})
-	}
-	return sources
-}
-
-func checkDirectoryStructure(loadResult loader.Result, sources []Source, expectedDomain string) Diagnostics {
-	if !loadResult.IsDir {
-		return nil
-	}
-	diagnostics := Diagnostics{}
-	for _, source := range sources {
-		content := source.Parsed
-		if len(source.ParseDiagnostics) > 0 || content == nil {
-			continue
-		}
-		if issue := inspectDirectorySource(source.Path, expectedDomain, content); issue != nil {
-			diagnostics = append(diagnostics, Diagnostic{
-				Code: issue.code, Severity: DiagnosticSeverityError, Position: issue.position,
-				Range: sourceRangeAt(issue.position, source.Content), Message: issue.message,
-			})
-		}
-	}
-	return diagnostics
 }
 
 func checkExpectedDomain(loadResult loader.Result, sources []Source) string {

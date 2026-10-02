@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"go.lsp.dev/protocol"
+	"go.yorun.ai/skelc/internal/binding"
 	"go.yorun.ai/skelc/internal/lsp/index"
 )
 
@@ -14,10 +15,14 @@ func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*proto
 	if document == nil {
 		return nil, nil
 	}
-	if occurrence, ok := occurrenceAt(document, params.Position); ok {
+	if occurrence, ok := snapshot.OccurrenceAt(document, params.Position); ok {
 		for _, location := range snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key)) {
 			definition := location.Definition
-			return hoverResult(occurrence.Range, definition.Detail, definition.Key, definition.Description), nil
+			name := definition.Key
+			if binding.ParseKey(name).Scope != "" {
+				name = definition.Name
+			}
+			return hoverResult(occurrence.Range, definition.Detail, name, definition.Description), nil
 		}
 	}
 	if symbol, ok := symbolAt(document.Symbols, params.Position); ok {

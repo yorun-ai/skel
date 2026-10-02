@@ -1,53 +1,37 @@
 package compiler
 
 import (
-	"bytes"
 	"strings"
 	"unicode/utf8"
 
 	"go.yorun.ai/skelc/internal/model"
+	textsource "go.yorun.ai/skelc/internal/source"
 )
 
 func sourceLineOffsets(source []byte, line int) (int, int, bool) {
-	if line <= 0 {
-		return 0, 0, false
-	}
-	start := 0
-	for current := 1; current < line; current++ {
-		index := bytes.IndexByte(source[start:], '\n')
-		if index < 0 {
-			return 0, 0, false
-		}
-		start += index + 1
-	}
-	if start > len(source) {
-		return 0, 0, false
-	}
-	end := len(source)
-	if index := bytes.IndexByte(source[start:], '\n'); index >= 0 {
-		end = start + index
-	}
-	if end > start && source[end-1] == '\r' {
-		end--
-	}
-	return start, end, true
+	return textsource.New("", "", 0, string(source)).LineOffsets(line - 1)
 }
 
 func sourceRangeAt(start model.Position, source []byte) SourceRange {
+	return sourceRangeAtDocument(start, textsource.New("", "", 0, string(source)))
+}
+
+func sourceRangeAtDocument(start model.Position, document *textsource.Document) SourceRange {
 	end := start
-	if start.Line <= 0 || start.Column <= 0 {
+	if document == nil || start.Line <= 0 || start.Column <= 0 {
 		return SourceRange{Start: start, End: end}
 	}
-	lineStart, lineEnd, ok := sourceLineOffsets(source, start.Line)
+	lineStart, lineEnd, ok := document.LineOffsets(start.Line - 1)
 	if !ok {
 		return SourceRange{Start: start, End: end}
 	}
+	source := document.Text()
 	offset := lineStart
 	for range start.Column - 1 {
 		if offset >= lineEnd {
 			break
 		}
-		_, width := utf8.DecodeRune(source[offset:lineEnd])
+		_, width := utf8.DecodeRuneInString(source[offset:lineEnd])
 		offset += width
 	}
 	for offset < lineEnd && (source[offset] == ' ' || source[offset] == '\t') {
@@ -66,7 +50,7 @@ func sourceRangeAt(start model.Position, source []byte) SourceRange {
 		}
 	} else {
 		for endOffset < lineEnd {
-			value, width := utf8.DecodeRune(source[endOffset:lineEnd])
+			value, width := utf8.DecodeRuneInString(source[endOffset:lineEnd])
 			if strings.ContainsRune(" \t,.:;(){}[]<>?=@", value) {
 				break
 			}
@@ -74,10 +58,10 @@ func sourceRangeAt(start model.Position, source []byte) SourceRange {
 		}
 	}
 	if endOffset == offset && endOffset < lineEnd {
-		_, width := utf8.DecodeRune(source[endOffset:lineEnd])
+		_, width := utf8.DecodeRuneInString(source[endOffset:lineEnd])
 		endOffset += width
 	}
-	end.Column = 1 + utf8.RuneCount(source[lineStart:endOffset])
+	end.Column = 1 + utf8.RuneCountInString(source[lineStart:endOffset])
 	if end.Column <= start.Column {
 		end.Column = start.Column + 1
 	}

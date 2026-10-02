@@ -1,11 +1,13 @@
 package loader
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"go.yorun.ai/skelc/internal/source"
 )
 
 const DomainFileName = "domain.skel"
@@ -25,6 +27,7 @@ type Warning struct {
 func (w Warning) Error() string { return w.Message }
 
 type SourceFile struct {
+	Document *source.Document
 	FilePath string
 	Content  []byte
 }
@@ -36,16 +39,33 @@ type Result struct {
 }
 
 type _Loader struct {
-	skelIn string
+	skelIn   string
+	ctx      context.Context
+	provider source.Provider
 
-	directory  bool
-	domainFile string
-	skelFiles  []string
-	warnings   []Warning
+	requireDomainFile bool
+	directory         bool
+	domainFile        string
+	skelFiles         []string
+	warnings          []Warning
 }
 
 func Load(skelIn string) (Result, error) {
-	sourceLoader := new(_Loader{skelIn: skelIn})
+	return LoadFrom(context.Background(), source.FileSystem{}, skelIn)
+}
+
+// LoadFrom discovers the same input contract across disk and immutable providers.
+func LoadFrom(ctx context.Context, provider source.Provider, skelIn string) (Result, error) {
+	return loadFrom(ctx, provider, skelIn, true)
+}
+
+// LoadWorkspaceFrom also accepts a directory of independent single-file inputs.
+func LoadWorkspaceFrom(ctx context.Context, provider source.Provider, skelIn string) (Result, error) {
+	return loadFrom(ctx, provider, skelIn, false)
+}
+
+func loadFrom(ctx context.Context, provider source.Provider, skelIn string, requireDomain bool) (Result, error) {
+	sourceLoader := new(_Loader{skelIn: skelIn, ctx: ctx, provider: provider, requireDomainFile: requireDomain})
 	if err := sourceLoader.discoverFiles(); err != nil {
 		return Result{}, err
 	}
@@ -78,12 +98,12 @@ func (l *_Loader) discoverFiles() error {
 	if err != nil {
 		return fmt.Errorf("resolve skel input: %w", err)
 	}
-	info, err := os.Stat(skelInPath)
+	info, err := l.provider.Stat(l.ctx, skelInPath)
 	if err != nil {
 		return fmt.Errorf("stat skel input %s: %w", skelInPath, err)
 	}
 
-	l.directory = info.IsDir()
+	l.directory = info.Directory
 	if !l.directory {
 		return l.discoverSingleFile(skelInPath)
 	}
@@ -100,16 +120,16 @@ func (l *_Loader) discoverSingleFile(filePath string) error {
 }
 
 func (l *_Loader) discoverDirectory(dirPath string) error {
-	entries, err := os.ReadDir(dirPath)
+	entries, err := l.provider.ReadDir(l.ctx, dirPath)
 	if err != nil {
 		return fmt.Errorf("read directory %s: %w", dirPath, err)
 	}
 
 	for _, entry := range entries {
-		fullPath := filepath.Join(dirPath, entry.Name())
-		fileKind := classifyFile(entry.Name())
+		fullPath := filepath.Join(dirPath, entry.Name)
+		fileKind := classifyFile(entry.Name)
 		switch {
-		case entry.IsDir():
+		case entry.Directory:
 			l.warn(WarningCodeDirectory, fullPath, fmt.Sprintf("%s ignored (DIRECTORY)", fullPath))
 		case fileKind == "hidden":
 			l.warn(WarningCodeHiddenFile, fullPath, fmt.Sprintf("%s ignored (HIDDEN_FILE)", fullPath))
@@ -123,7 +143,7 @@ func (l *_Loader) discoverDirectory(dirPath string) error {
 		}
 	}
 	sort.Strings(l.skelFiles)
-	if l.domainFile == "" {
+	if l.domainFile == "" && l.requireDomainFile {
 		return fmt.Errorf("%s not found under %s", DomainFileName, dirPath)
 	}
 	return nil
@@ -136,11 +156,11 @@ func (l *_Loader) warn(code, path, message string) {
 func (l *_Loader) loadSourceFiles() ([]*SourceFile, error) {
 	files := make([]*SourceFile, 0, len(l.skelFiles))
 	for _, skelFile := range l.skelFiles {
-		content, err := os.ReadFile(skelFile)
+		document, err := l.provider.Read(l.ctx, skelFile)
 		if err != nil {
 			return nil, fmt.Errorf("read %s: %w", skelFile, err)
 		}
-		files = append(files, &SourceFile{FilePath: skelFile, Content: content})
+		files = append(files, &SourceFile{FilePath: skelFile, Content: []byte(document.Text()), Document: document})
 	}
 	return files, nil
 }

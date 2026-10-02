@@ -1,15 +1,16 @@
 package compiler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"slices"
+	"strings"
 
-	"go.yorun.ai/skelc/internal/analyzer"
-	"go.yorun.ai/skelc/internal/hasher"
 	"go.yorun.ai/skelc/internal/loader"
 	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skelc/internal/source"
 )
 
 type Option struct {
@@ -25,146 +26,90 @@ type Result struct {
 }
 
 // Compile loads, resolves, analyzes, and hashes one complete Skel input graph.
-func Compile(option Option) (Result, error) {
-	diagnostics := Diagnostics{}
-	importedDomains, err := parseImportedDomains(option.SkelImports, &diagnostics)
-	if err != nil {
-		return Result{}, err
-	}
-	domain, err := parseSource(option.SkelIn, importedDomains, false, &diagnostics)
-	if err != nil {
-		return Result{}, err
-	}
-	diagnostics = appendAnalysisWarnings(diagnostics, domain.Warnings())
-	diagnostics = append(diagnostics, MigrationDiagnostics(domain.Model())...)
-	slices.SortFunc(diagnostics, compareDiagnostics)
-	if option.Strict {
-		ApplyStrictMode(diagnostics)
-		if diagnostics.HasErrors() {
-			return Result{}, diagnostics
-		}
-	}
-	parsed := domain.Model()
-	if err := hasher.FillHashes(parsed); err != nil {
-		return Result{}, err
-	}
-	return Result{Domain: parsed, ImportAliases: domain.ImportAliases(), Diagnostics: diagnostics}, nil
+func Compile(option Option) (Result, error) { return CompileContext(context.Background(), option) }
+
+func CompileContext(ctx context.Context, option Option) (Result, error) {
+	return compileFrom(ctx, source.FileSystem{}, option, false)
 }
 
-// CompileImport loads one domain without requiring its dependencies. It
-// supports symbol tooling; Compile performs complete graph analysis.
+// CompileImport allows unresolved dependencies for symbol and schema tooling.
 func CompileImport(option Option) (Result, error) {
+	return CompileImportContext(context.Background(), option)
+}
+
+func CompileImportContext(ctx context.Context, option Option) (Result, error) {
+	return CompileImportFrom(ctx, source.FileSystem{}, option)
+}
+
+// CompileImportFrom uses the same pipeline for filesystem and frozen inputs.
+func CompileImportFrom(ctx context.Context, provider source.Provider, option Option) (Result, error) {
+	return compileFrom(ctx, provider, option, true)
+}
+
+func compileFrom(ctx context.Context, provider source.Provider, option Option, unresolved bool) (Result, error) {
+	inputs := []Source{}
 	diagnostics := Diagnostics{}
-	domain, err := parseSource(option.SkelIn, nil, true, &diagnostics)
+	if !unresolved {
+		names := make([]string, 0, len(option.SkelImports))
+		for name := range option.SkelImports {
+			names = append(names, name)
+		}
+		slices.Sort(names)
+		for _, name := range names {
+			loaded, err := loader.LoadFrom(ctx, provider, option.SkelImports[name])
+			if err != nil {
+				return Result{}, err
+			}
+			sources, err := prepareInput(ctx, loaded, false)
+			if err != nil {
+				return Result{}, err
+			}
+			actual := sources[0].ExpectedDomain
+			if actual != name {
+				return Result{}, fmt.Errorf("skel import %s has domain %s", name, actual)
+			}
+			inputs = append(inputs, sources...)
+			diagnostics = append(diagnostics, loaderWarningDiagnostics(loaded.Warnings)...)
+		}
+	}
+	loaded, err := loader.LoadFrom(ctx, provider, option.SkelIn)
 	if err != nil {
 		return Result{}, err
 	}
-	diagnostics = appendAnalysisWarnings(diagnostics, domain.Warnings())
-	diagnostics = append(diagnostics, MigrationDiagnostics(domain.Model())...)
+	sources, err := prepareInput(ctx, loaded, false)
+	if err != nil {
+		return Result{}, err
+	}
+	inputs = append(inputs, sources...)
+	diagnostics = append(diagnostics, loaderWarningDiagnostics(loaded.Warnings)...)
+	engine := NewWorkspaceAnalyzer()
+	analyzed, domains, err := engine.AnalyzeWithOptionsContext(ctx, inputs, AnalysisOptions{AllowUnresolvedImports: unresolved, ResolveIsolatedImports: true, IncludeWarnings: true})
+	if err != nil {
+		return Result{}, err
+	}
+	// Preserve the CLI spelling while sharing cycle detection with editor analysis.
+	for i := range analyzed {
+		if analyzed[i].Code == DiagnosticCodeImportCycle {
+			analyzed[i].Message = strings.Replace(analyzed[i].Message, "cyclic domain import", "cyclic skel import", 1)
+		}
+	}
+	diagnostics = append(diagnostics, analyzed...)
 	slices.SortFunc(diagnostics, compareDiagnostics)
+	if diagnostics.HasErrors() {
+		return Result{}, errors.Join(diagnostics.Errors()...)
+	}
 	if option.Strict {
 		ApplyStrictMode(diagnostics)
 		if diagnostics.HasErrors() {
 			return Result{}, diagnostics
 		}
 	}
-	parsed := domain.Model()
-	if err := hasher.FillHashes(parsed); err != nil {
-		return Result{}, err
-	}
-	return Result{Domain: parsed, ImportAliases: domain.ImportAliases(), Diagnostics: diagnostics}, nil
-}
-
-func parseImportedDomains(imports map[string]string, diagnostics *Diagnostics) ([]*analyzer.Analysis, error) {
-	if len(imports) == 0 {
-		return nil, nil
-	}
-	loaded := make(map[string]*analyzer.Analysis, len(imports))
-	for expectedName, importPath := range imports {
-		importedDomain, err := parseSource(importPath, nil, true, diagnostics)
-		if err != nil {
-			return nil, err
+	for _, domain := range domains {
+		if domain.Root == sources[0].Root && domain.Name == sources[0].ExpectedDomain {
+			return Result{Domain: domain.Model, ImportAliases: domain.ImportAliases, Diagnostics: diagnostics}, nil
 		}
-		if importedDomain.Model().Name() != expectedName {
-			return nil, fmt.Errorf("skel import %s has domain %s", expectedName, importedDomain.Model().Name())
-		}
-		loaded[expectedName] = importedDomain
 	}
-
-	const (
-		importVisiting = iota + 1
-		importComplete
-	)
-	states := make(map[string]int, len(loaded))
-	resolved := make(map[string]*analyzer.Analysis, len(loaded))
-	var resolve func(string) (*analyzer.Analysis, error)
-	resolve = func(name string) (*analyzer.Analysis, error) {
-		switch states[name] {
-		case importVisiting:
-			return nil, fmt.Errorf("cyclic skel import involving %s", name)
-		case importComplete:
-			return resolved[name], nil
-		}
-
-		states[name] = importVisiting
-		domain := loaded[name]
-		dependencies := make([]*analyzer.Analysis, 0, len(domain.ImportNames()))
-		for _, dependencyName := range domain.ImportNames() {
-			if loaded[dependencyName] == nil {
-				continue
-			}
-			dependency, err := resolve(dependencyName)
-			if err != nil {
-				return nil, err
-			}
-			dependencies = append(dependencies, dependency)
-		}
-		domain, analysisErrors := domain.ResolveImports(dependencies)
-		if len(analysisErrors) > 0 {
-			return nil, errors.Join(analysisErrors...)
-		}
-		resolved[name] = domain
-		states[name] = importComplete
-		return domain, nil
-	}
-
-	names := make([]string, 0, len(loaded))
-	for name := range loaded {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-	domains := make([]*analyzer.Analysis, 0, len(names))
-	for _, name := range names {
-		domain, err := resolve(name)
-		if err != nil {
-			return nil, err
-		}
-		*diagnostics = append(*diagnostics, MigrationDiagnostics(domain.Model())...)
-		domains = append(domains, domain)
-	}
-	return domains, nil
-}
-
-func parseSource(skelIn string, importedDomains []*analyzer.Analysis, importOnly bool, diagnostics *Diagnostics) (*analyzer.Analysis, error) {
-	loadResult, err := loader.Load(skelIn)
-	if err != nil {
-		return nil, err
-	}
-	*diagnostics = append(*diagnostics, loaderWarningDiagnostics(loadResult.Warnings)...)
-	if !loadResult.IsDir {
-		if importOnly {
-			return parseImportFile(loadResult.Files[0])
-		}
-		return parseFileWithImports(loadResult.Files[0], importedDomains)
-	}
-	domainFile, err := findDomainFile(loadResult.Files)
-	if err != nil {
-		return nil, err
-	}
-	if importOnly {
-		return parseImportFiles(domainFile, loadResult.Files)
-	}
-	return parseDomainFilesWithImports(domainFile, loadResult.Files, importedDomains)
+	return Result{}, fmt.Errorf("no complete domain in %s", option.SkelIn)
 }
 
 func loaderWarningDiagnostics(warnings []loader.Warning) Diagnostics {

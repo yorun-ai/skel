@@ -108,7 +108,7 @@ func (g *_Gen) castTask(p *model.Task) *Task {
 		Triggers:                make([]*TaskTrigger, 0, len(p.Triggers)),
 	}
 	for _, trigger := range p.Triggers {
-		castedTrigger := castTaskTrigger(p, trigger)
+		castedTrigger := g.types.castTaskTrigger(p, trigger)
 		task_.Triggers = append(task_.Triggers, castedTrigger)
 		if castedTrigger.ArgumentsData != nil {
 			task_.HasTriggerArgs = true
@@ -117,10 +117,10 @@ func (g *_Gen) castTask(p *model.Task) *Task {
 	return task_
 }
 
-func castTaskTrigger(task_ *model.Task, p *model.TaskTrigger) *TaskTrigger {
+func (r _Types) castTaskTrigger(task_ *model.Task, p *model.TaskTrigger) *TaskTrigger {
 	arguments := make([]*MethodArgument, 0, len(p.Arguments))
 	for _, argument := range p.Arguments {
-		castedArgument := castMethodArgument(argument)
+		castedArgument := r.castMethodArgument(argument)
 		arguments = append(arguments, castedArgument)
 	}
 
@@ -137,7 +137,7 @@ func castTaskTrigger(task_ *model.Task, p *model.TaskTrigger) *TaskTrigger {
 		Arguments:          arguments,
 	}
 	if p.ArgumentsData != nil {
-		trigger.ArgumentsData = castData(p.ArgumentsData)
+		trigger.ArgumentsData = r.castData(p.ArgumentsData)
 		trigger.ArgumentsData.Name = fmt.Sprintf("_%s", trigger.ArgumentsData.Name)
 		for _, arg := range trigger.Arguments {
 			member, ok := sliceutil.Find(trigger.ArgumentsData.Members, func(mem *DataMember) bool {

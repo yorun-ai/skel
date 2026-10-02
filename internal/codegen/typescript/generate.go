@@ -10,10 +10,11 @@ import (
 )
 
 func Generate(domain *model.Domain, option Option) error {
-	if err := common.ValidateDomain(domain); err != nil {
+	validated, err := common.PrepareDomain(domain)
+	if err != nil {
 		return fmt.Errorf("validate TypeScript generation model: %w", err)
 	}
-	result, err := source.GenerateValidated(domain, option.Out, source.Option{
+	result, err := source.GenerateValidated(validated, option.Out, source.Option{
 		ModuleScope: option.ModuleScope,
 		Module:      option.Module,
 		Imports:     option.Imports,

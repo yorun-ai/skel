@@ -10,7 +10,7 @@ import (
 )
 
 func TestCastTypeMapsBinaryToUint8Array(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind:   model.TypeKindScalar,
 		Scalar: model.ScalarBinary,
 	})
@@ -20,7 +20,7 @@ func TestCastTypeMapsBinaryToUint8Array(t *testing.T) {
 }
 
 func TestCastTypeMapsUUIDToString(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind:   model.TypeKindScalar,
 		Scalar: model.ScalarUUID,
 	})
@@ -30,7 +30,7 @@ func TestCastTypeMapsUUIDToString(t *testing.T) {
 }
 
 func TestCastTypeMapsJSONToString(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind:   model.TypeKindScalar,
 		Scalar: model.ScalarJSON,
 	})
@@ -40,14 +40,14 @@ func TestCastTypeMapsJSONToString(t *testing.T) {
 }
 
 func TestCastMapTypeMapsUUIDKeyToString(t *testing.T) {
-	got := castType(codegentest.MapType(codegentest.UUIDType(), codegentest.StringType()))
+	got := (_Types{}).castType(codegentest.MapType(codegentest.UUIDType(), codegentest.StringType()))
 	if got.Plain != "Record<string, string>" {
 		t.Fatalf("unexpected uuid-keyed map type: %s", got.Plain)
 	}
 }
 
 func TestCastTypeQualifiesExternalDataWithAlias(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind: model.TypeKindData,
 		Data: &model.Data{
 			Name: "UserSummary",
@@ -60,7 +60,7 @@ func TestCastTypeQualifiesExternalDataWithAlias(t *testing.T) {
 }
 
 func TestCastTypeQualifiesExternalEnumWithAlias(t *testing.T) {
-	got := castType(&model.Type{
+	got := (_Types{}).castType(&model.Type{
 		Kind: model.TypeKindEnum,
 		Enum: &model.Enum{
 			Name: "UserStatus",
@@ -120,7 +120,7 @@ func TestCastNullableTypeParameterInCollectionsAndArguments(t *testing.T) {
 		{name: "nested generic", kind: codegentest.DataType(box, nullable), want: "Box<TValue | null>"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got := castType(test.kind)
+			got := (_Types{}).castType(test.kind)
 			if got.Plain != test.want {
 				t.Fatalf("type: got %q want %q", got.Plain, test.want)
 			}

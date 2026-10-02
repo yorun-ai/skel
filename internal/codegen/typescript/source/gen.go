@@ -10,7 +10,9 @@ import (
 const packageScope = "@yorun-ai/skeled"
 
 type _Gen struct {
-	domain *model.Domain
+	types    _Types
+	domain   *model.Domain
+	bindings common.TypeBindings
 
 	moduleScope string
 	pkgName     string
@@ -34,8 +36,8 @@ type Result struct {
 }
 
 // GenerateValidated renders a domain already checked by common.ValidateDomain.
-func GenerateValidated(domain *model.Domain, outputDir string, option Option) (Result, error) {
-	gen := newGen(domain, outputDir, option)
+func GenerateValidated(domain common.ValidatedDomain, outputDir string, option Option) (Result, error) {
+	gen := newGen(domain.Model(), outputDir, option)
 	if gen.err != nil {
 		return Result{}, gen.err
 	}
@@ -72,6 +74,7 @@ func newGen(domain *model.Domain, outputDir string, options ...Option) *_Gen {
 	}
 	g.apiView = common.BuildApiView(domain)
 	g.resolveExternalTypeImports()
+	g.types = _Types{bindings: g.bindings}
 	return g
 }
 

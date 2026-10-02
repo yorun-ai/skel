@@ -24,7 +24,7 @@ func TestBuildServiceNames(t *testing.T) {
 }
 
 func TestCastService(t *testing.T) {
-	service := castService(&model.Service{
+	service := (_Types{}).castService(&model.Service{
 		Name:        "UserService",
 		SkelName:    "demo.user.UserService",
 		Description: "User service",
@@ -98,7 +98,7 @@ func TestCastService(t *testing.T) {
 }
 
 func TestServiceTemplateRendersDeprecatedDocs(t *testing.T) {
-	service := castService(&model.Service{
+	service := (_Types{}).castService(&model.Service{
 		Name:             "UserService",
 		Deprecated:       true,
 		DeprecatedReason: "Use ProfileService instead\nComplete migration first",
@@ -129,7 +129,7 @@ func TestServiceTemplateRendersDeprecatedDocs(t *testing.T) {
 }
 
 func TestBuildServiceTypeImports(t *testing.T) {
-	imports := buildServiceTypeImports([]*model.Service{{
+	imports := (_Types{}).buildServiceTypeImports([]*model.Service{{
 		Methods: []*model.Method{{
 			Arguments: []*model.Argument{{
 				Type: &model.Type{
@@ -174,11 +174,11 @@ func TestBuildServiceImportsSkipsExternalTypes(t *testing.T) {
 		}},
 	}}
 
-	imports := buildServiceTypeImports(services)
+	imports := (_Types{}).buildServiceTypeImports(services)
 	if len(imports) != 0 {
 		t.Fatalf("unexpected local imports: %+v", imports)
 	}
-	externalImports := buildServiceExternalTypeImports(services)
+	externalImports := (_Types{}).buildServiceExternalTypeImports(services)
 	if got, want := externalImports, []*TypeImport{{Alias: "userpub", Path: "@acme/skeled-userpub"}}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected external imports: got=%+v want=%+v", got, want)
 	}

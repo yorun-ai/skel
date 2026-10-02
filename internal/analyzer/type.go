@@ -1,6 +1,9 @@
 package analyzer
 
-import "go.yorun.ai/skelc/internal/model"
+import (
+	"go.yorun.ai/skelc/internal/binding"
+	"go.yorun.ai/skelc/internal/model"
+)
 
 const typeKindNone model.TypeKind = 0
 
@@ -34,6 +37,7 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 
 	switch t.Kind {
 	case model.TypeKindUnresolvedReference:
+		resolved := refCtx.bindType(t)
 		refName := t.SkelName
 		refQualifier := t.ExternalAlias
 		if refQualifier != "" {
@@ -51,12 +55,12 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			if !reporter.checkReference(import_ != nil, "%s import alias %s not found", t.Pos, refQualifier) {
 				return false
 			}
-			enum, enumOK := import_.Domain.enumsMap[refName]
-			dataType, dataOK := import_.Domain.dataMap[refName]
-			if !reporter.checkReference(enumOK || dataOK, "%s definition of %s.%s not found", t.Pos, refQualifier, refName) {
+			enum := import_.Domain.enumsMap[refName]
+			dataType := import_.Domain.dataMap[refName]
+			if !reporter.checkReference(resolved.Status == binding.Resolved, "%s definition of %s.%s not found", t.Pos, refQualifier, refName) {
 				return false
 			}
-			if enumOK {
+			if resolved.Kind == binding.Enum {
 				if !reporter.check(enum.Pub, "%s imported enum %s.%s is not public", t.Pos, import_.Model.Alias, refName) {
 					return false
 				}
@@ -92,22 +96,22 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 		if refCtx.unavailable[refName] {
 			return false
 		}
-		enum, enumOK := refCtx.enums[refName]
-		dataType, dataOK := refCtx.dataList[refName]
-		param, paramOK := refCtx.typeParameters[refName]
-		if dataOK && refCtx.invalidData[dataType] {
+		enum := refCtx.enums[refName]
+		dataType := refCtx.dataList[refName]
+		param := refCtx.typeParameters[refName]
+		if dataType != nil && refCtx.invalidData[dataType] {
 			return false
 		}
-		if !reporter.checkReference(enumOK || dataOK || paramOK, "%s definition of %s not found", t.Pos, refName) {
+		if !reporter.checkReference(resolved.Status == binding.Resolved, "%s definition of %s not found", t.Pos, refName) {
 			return false
 		}
-		if enumOK {
+		if resolved.Kind == binding.Enum {
 			t.Kind = model.TypeKindEnum
 			t.Enum = enum
 			t.SkelName = enum.SkelName
 			return true
 		}
-		if dataOK {
+		if resolved.Kind == binding.Data {
 			if !checkDataValueType(reporter, t, dataType) {
 				return false
 			}

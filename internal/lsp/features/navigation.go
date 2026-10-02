@@ -12,7 +12,7 @@ func (s *Service) Definition(_ context.Context, params *protocol.DefinitionParam
 	if document == nil {
 		return protocol.LocationSlice{}, nil
 	}
-	occurrence, ok := occurrenceAt(document, params.Position)
+	occurrence, ok := snapshot.OccurrenceAt(document, params.Position)
 	if !ok {
 		return protocol.LocationSlice{}, nil
 	}
@@ -30,7 +30,7 @@ func (s *Service) References(_ context.Context, params *protocol.ReferenceParams
 	if document == nil {
 		return []protocol.Location{}, nil
 	}
-	occurrence, ok := occurrenceAt(document, params.Position)
+	occurrence, ok := snapshot.OccurrenceAt(document, params.Position)
 	if !ok {
 		return []protocol.Location{}, nil
 	}

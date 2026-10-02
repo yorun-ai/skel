@@ -4,12 +4,16 @@ package index
 import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
+	"go.yorun.ai/skelc/internal/binding"
 	"go.yorun.ai/skelc/internal/compiler"
 	"go.yorun.ai/skelc/internal/lsp/source"
 	"go.yorun.ai/skelc/internal/parser/grammar"
+	textsource "go.yorun.ai/skelc/internal/source"
 )
 
 type Document struct {
+	Bindings         *binding.Document
+	Revision         *textsource.Document
 	URI              uri.URI
 	Path             string
 	Source           string
@@ -38,8 +42,9 @@ type Definition struct {
 }
 
 type Occurrence struct {
-	Key   string
-	Range protocol.Range
+	Binding binding.Resolution
+	Key     string
+	Range   protocol.Range
 }
 
 type Symbol struct {
@@ -57,9 +62,16 @@ func Build(documentURI uri.URI, path, content string, version int32) *Document {
 	if path == "" {
 		path = documentURI.FsPath()
 	}
-	document := &Document{URI: documentURI, Path: path, Source: content, Version: version, Buffer: source.New(content), Imports: map[string]string{}}
+	document := &Document{URI: documentURI, Path: path, Source: content, Version: version, Imports: map[string]string{}}
+	physicalPath := path
+	if !documentURI.IsFile() {
+		physicalPath = ""
+	}
+	document.Revision = textsource.New(textsource.ID(documentURI), physicalPath, int64(version), content)
+	document.Buffer = source.FromDocument(document.Revision)
 	parsed, diagnostics := compiler.ParseSourceRecovering(document.AnalysisPath(), []byte(content))
 	document.Parsed = parsed
+	document.Bindings = binding.Build(document.Revision, parsed)
 	document.ParseDiagnostics = diagnostics
 	if len(diagnostics) > 0 {
 		indexIncompleteDocument(document, document.Buffer.IdentifierTokens())
@@ -75,6 +87,7 @@ func Build(documentURI uri.URI, path, content string, version int32) *Document {
 		for i := range document.Definitions {
 			document.Definitions[i].Confirmed = recovered[document.Definitions[i].Range]
 		}
+		addParameterDefinitions(document)
 		document.Occurrences = indexOccurrences(document)
 		return document
 	}
@@ -102,6 +115,7 @@ func Build(documentURI uri.URI, path, content string, version int32) *Document {
 		})
 		document.Symbols = append(document.Symbols, entrySymbol(document.Buffer, entry, name, detail, description, deprecated, kind, range_))
 	}
+	addParameterDefinitions(document)
 	document.Occurrences = indexOccurrences(document)
 	return document
 }
@@ -112,4 +126,13 @@ func (d *Document) AnalysisPath() string {
 		return string(d.URI)
 	}
 	return d.Path
+}
+
+func addParameterDefinitions(document *Document) {
+	for _, symbol := range document.Bindings.Symbols {
+		if symbol.Kind != binding.Parameter {
+			continue
+		}
+		document.Definitions = append(document.Definitions, Definition{Confirmed: true, Key: symbol.ID.Key(), Name: symbol.ID.Name, Detail: "type parameter", Kind: protocol.SymbolKindTypeParameter, Range: document.Buffer.Range(symbol.Span.Start, symbol.Span.End)})
+	}
 }

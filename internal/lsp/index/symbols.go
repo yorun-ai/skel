@@ -5,40 +5,44 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.lsp.dev/protocol"
+	"go.yorun.ai/skelc/internal/binding"
 	"go.yorun.ai/skelc/internal/lsp/source"
 	"go.yorun.ai/skelc/internal/parser/grammar"
 )
 
 func entryDefinition(entry *grammar.SkelEntry) (string, lexer.Position, protocol.SymbolKind, string) {
-	switch {
-	case entry.Enum != nil:
-		return entry.Enum.Name.Value, entry.Enum.Name.Pos, protocol.SymbolKindEnum, "enum"
-	case entry.Data != nil:
-		return entry.Data.Name.Value, entry.Data.Name.Pos, protocol.SymbolKindStruct, "data"
-	case entry.Config != nil:
-		return entry.Config.Name.Value, entry.Config.Name.Pos, protocol.SymbolKindStruct, "config"
-	case entry.Actor != nil:
-		return entry.Actor.Name.Value, entry.Actor.Name.Pos, protocol.SymbolKindInterface, "actor"
-	case entry.Resource != nil:
-		return entry.Resource.Name.Value, entry.Resource.Name.Pos, protocol.SymbolKindObject, "resource"
-	case entry.Service != nil:
-		detail := "service"
+	identifier, kind := binding.Declaration(entry)
+	if identifier == nil {
+		return "", lexer.Position{}, protocol.SymbolKindNull, ""
+	}
+	protocolKind, detail := protocol.SymbolKindNull, ""
+	switch kind {
+	case binding.Enum:
+		protocolKind, detail = protocol.SymbolKindEnum, "enum"
+	case binding.Data:
+		protocolKind, detail = protocol.SymbolKindStruct, "data"
+	case binding.Config:
+		protocolKind, detail = protocol.SymbolKindStruct, "config"
+	case binding.Actor:
+		protocolKind, detail = protocol.SymbolKindInterface, "actor"
+	case binding.Resource:
+		protocolKind, detail = protocol.SymbolKindObject, "resource"
+	case binding.Service:
+		protocolKind, detail = protocol.SymbolKindInterface, "service"
 		if entry.Service.Open {
 			detail = "open service"
 		}
 		if entry.Service.Api {
 			detail = "api service"
 		}
-		return entry.Service.Name.Value, entry.Service.Name.Pos, protocol.SymbolKindInterface, detail
-	case entry.Web != nil:
-		return entry.Web.Name.Value, entry.Web.Name.Pos, protocol.SymbolKindInterface, "web"
-	case entry.Event != nil:
-		return entry.Event.Name.Value, entry.Event.Name.Pos, protocol.SymbolKindEvent, "event"
-	case entry.Task != nil:
-		return entry.Task.Name.Value, entry.Task.Name.Pos, protocol.SymbolKindFunction, "task"
-	default:
-		return "", lexer.Position{}, protocol.SymbolKindNull, ""
+	case binding.Web:
+		protocolKind, detail = protocol.SymbolKindInterface, "web"
+	case binding.Event:
+		protocolKind, detail = protocol.SymbolKindEvent, "event"
+	case binding.Task:
+		protocolKind, detail = protocol.SymbolKindFunction, "task"
 	}
+	return identifier.Value, identifier.Pos, protocolKind, detail
 }
 
 func entrySymbol(source source.Buffer, entry *grammar.SkelEntry, name, detail, description string, deprecated bool, kind protocol.SymbolKind, range_ protocol.Range) Symbol {

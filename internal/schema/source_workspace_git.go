@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os/exec"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"go.yorun.ai/skelc/internal/compiler"
+	"go.yorun.ai/skelc/internal/source"
 )
 
 // ErrGitHistoryUnavailable identifies a domain for which no usable Git HEAD
@@ -59,69 +58,66 @@ func projectGitBaseline(ctx context.Context, differ *SourceDiffer, candidate com
 	if err != nil || pathEscapesRoot(relativeRoot) {
 		return nil, "", gitHistoryError(root, err)
 	}
-	cacheKey := repositoryRoot + "\x00" + filepath.Clean(relativeRoot) + "\x00" + candidate.Name
+	requireDomainFile := false
+	for _, input := range candidate.Sources {
+		requireDomainFile = requireDomainFile || input.DirectoryInput
+	}
+	cacheKey := repositoryRoot + "\x00" + filepath.Clean(relativeRoot) + "\x00" + candidate.Name + fmt.Sprintf("\x00%t", requireDomainFile)
 	if document, cachedRoot, cachedErr, ok := differ.cachedBaseline(cacheKey, head); ok {
 		return document, cachedRoot, cachedErr
 	}
-	gitRoot := filepath.ToSlash(relativeRoot)
-	listArgs := []string{"ls-tree", "-r", "-z", "--name-only", head}
-	if relativeRoot != "." {
-		listArgs = append(listArgs, "--", gitRoot)
-	}
-	names, err := gitOutput(ctx, repositoryRoot, listArgs...)
+	provider, err := source.NewGit(ctx, repositoryRoot, head, root)
 	if err != nil {
+		if ctx.Err() != nil {
+			return nil, "", ctx.Err()
+		}
 		return nil, "", gitHistoryError(root, err)
 	}
-	sources := []compiler.Source{}
-	for _, name := range strings.Split(names, "\x00") {
-		if name == "" || filepath.Ext(name) != ".skel" {
-			continue
+	if _, err = provider.Stat(ctx, root); err != nil {
+		if ctx.Err() != nil {
+			return nil, "", ctx.Err()
 		}
-		if workspaceDomainIsFile(candidate) {
-			if filepath.Clean(filepath.FromSlash(name)) != filepath.Clean(relativeRoot) {
-				continue
-			}
-		} else if filepath.Clean(filepath.Dir(filepath.FromSlash(name))) != filepath.Clean(relativeRoot) {
-			continue
-		}
-		content, showErr := gitBytes(ctx, repositoryRoot, "show", head+":"+name)
-		if showErr != nil {
-			return nil, "", gitHistoryError(root, showErr)
-		}
-		sources = append(sources, compiler.Source{
-			Path: filepath.Join(repositoryRoot, filepath.FromSlash(name)), Root: root, Content: content,
-		})
-	}
-	if len(sources) == 0 {
-		failure := gitHistoryError(root, nil)
+		failure := gitHistoryError(root, err)
 		differ.storeBaseline(cacheKey, head, repositoryRoot, nil, failure)
 		return nil, repositoryRoot, failure
 	}
-	slices.SortFunc(sources, func(left, right compiler.Source) int { return strings.Compare(left.Path, right.Path) })
-	analyzer := compiler.NewWorkspaceAnalyzer()
-	diagnostics, domains, err := analyzer.AnalyzeDomainsContext(ctx, sources)
-	if err != nil {
-		return nil, "", err
-	}
+	diagnostics, domains, err := compiler.AnalyzeInputFromContext(ctx, provider, root, requireDomainFile)
+	var document *Document
 	for _, domain := range domains {
 		if domain.Name != candidate.Name {
 			continue
 		}
-		document, projectErr := Project(domain.Model, nil)
-		if projectErr != nil {
-			return nil, "", projectErr
+		document, err = Project(domain.Model, domain.ImportAliases)
+		if err != nil {
+			return nil, "", err
 		}
-		differ.storeBaseline(cacheKey, head, repositoryRoot, document, nil)
-		return document, repositoryRoot, nil
+		break
 	}
-	if len(diagnostics) > 0 {
-		failure := fmt.Errorf("compile Git HEAD schema compatibility baseline for %s: %s", candidate.Name, diagnostics[0].Message)
+	if document == nil && (err != nil || diagnostics.HasErrors()) {
+		if ctx.Err() != nil {
+			return nil, "", ctx.Err()
+		}
+		if err == nil {
+			for i := range diagnostics {
+				remapDiagnosticBaseline(&diagnostics[i], repositoryRoot)
+			}
+			err = diagnostics
+		}
+		failure := fmt.Errorf("%w: compile Git HEAD schema compatibility baseline for %s: %w", ErrSourceCompilation, candidate.Name, err)
 		differ.storeBaseline(cacheKey, head, repositoryRoot, nil, failure)
 		return nil, repositoryRoot, failure
 	}
-	failure := gitHistoryError(root, nil)
-	differ.storeBaseline(cacheKey, head, repositoryRoot, nil, failure)
-	return nil, repositoryRoot, failure
+	if document == nil {
+		failure := gitHistoryError(root, nil)
+		differ.storeBaseline(cacheKey, head, repositoryRoot, nil, failure)
+		return nil, repositoryRoot, failure
+	}
+
+	if ctx.Err() != nil {
+		return nil, "", ctx.Err()
+	}
+	differ.storeBaseline(cacheKey, head, repositoryRoot, document, nil)
+	return document, repositoryRoot, nil
 }
 
 func gitOutput(ctx context.Context, directory string, args ...string) (string, error) {
@@ -130,19 +126,7 @@ func gitOutput(ctx context.Context, directory string, args ...string) (string, e
 }
 
 func gitBytes(ctx context.Context, directory string, args ...string) ([]byte, error) {
-	command := exec.CommandContext(ctx, "git", append([]string{"-C", directory, "--literal-pathspecs"}, args...)...)
-	content, err := command.Output()
-	if err == nil {
-		return content, nil
-	}
-	var exitError *exec.ExitError
-	if errors.As(err, &exitError) {
-		message := strings.TrimSpace(string(exitError.Stderr))
-		if message != "" {
-			return nil, fmt.Errorf("git %s: %s", strings.Join(args, " "), message)
-		}
-	}
-	return nil, fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+	return source.GitBytes(ctx, directory, args...)
 }
 
 func gitHistoryError(root string, cause error) error {

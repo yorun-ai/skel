@@ -10,7 +10,7 @@ import (
 )
 
 func TestCastData(t *testing.T) {
-	data := castData(&model.Data{
+	data := (_Types{}).castData(&model.Data{
 		Name:        "Page",
 		Description: "Paginated result",
 		TypeParameters: []*model.TypeParameter{
@@ -56,7 +56,7 @@ func TestCastData(t *testing.T) {
 }
 
 func TestCastDataRendersDeprecatedDocs(t *testing.T) {
-	data := castData(&model.Data{
+	data := (_Types{}).castData(&model.Data{
 		Name:             "User",
 		Deprecated:       true,
 		DeprecatedReason: "Use Profile instead",
@@ -77,7 +77,7 @@ func TestCastDataRendersDeprecatedDocs(t *testing.T) {
 }
 
 func TestCastDataMapsDurationToString(t *testing.T) {
-	data := castData(&model.Data{
+	data := (_Types{}).castData(&model.Data{
 		Name: "TimeoutConfig",
 		Members: []*model.DataMember{
 			{
@@ -95,7 +95,7 @@ func TestCastDataMapsDurationToString(t *testing.T) {
 }
 
 func TestCastDataMapsLocalDateToString(t *testing.T) {
-	data := castData(&model.Data{
+	data := (_Types{}).castData(&model.Data{
 		Name: "Profile",
 		Members: []*model.DataMember{
 			{

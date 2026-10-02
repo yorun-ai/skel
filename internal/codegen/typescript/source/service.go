@@ -28,13 +28,13 @@ func (g *_Gen) genServiceTs() {
 
 func (g *_Gen) buildServiceTsPayload() *ServiceTsPayload {
 	clientServices := g.apiView.Services
-	typeImports := buildServiceTypeImports(clientServices)
-	externalTypeImports := buildServiceExternalTypeImports(clientServices)
+	typeImports := g.types.buildServiceTypeImports(clientServices)
+	externalTypeImports := g.types.buildServiceExternalTypeImports(clientServices)
 	payload := &ServiceTsPayload{
 		Services:            make([]*Service, 0, len(clientServices)),
 		ExternalTypeImports: externalTypeImports,
 	}
-	services := castServices(clientServices)
+	services := g.types.castServices(clientServices)
 	payload.Services = services
 	payload.TypeImports = typeImports
 	return payload
@@ -65,7 +65,7 @@ func buildServiceNames(serviceName string) *_ServiceNames {
 	}
 }
 
-func castService(p *model.Service) *Service {
+func (r _Types) castService(p *model.Service) *Service {
 	names := buildServiceNames(p.Name)
 	service := &Service{
 		Name:         names.Name,
@@ -76,16 +76,16 @@ func castService(p *model.Service) *Service {
 		Methods:      make([]*ServiceMethod, 0, len(p.Methods)),
 	}
 	for _, methodToken := range p.Methods {
-		castedMethod := castServiceMethod(methodToken)
+		castedMethod := r.castServiceMethod(methodToken)
 		service.Methods = append(service.Methods, castedMethod)
 	}
 	return service
 }
 
-func castServices(services []*model.Service) []*Service {
+func (r _Types) castServices(services []*model.Service) []*Service {
 	castedServices := make([]*Service, 0, len(services))
 	for _, serviceToken := range services {
-		castedService := castService(serviceToken)
+		castedService := r.castService(serviceToken)
 		castedServices = append(castedServices, castedService)
 	}
 	return castedServices
@@ -104,8 +104,8 @@ type ServiceMethod struct {
 	HasWire      bool
 }
 
-func castServiceMethod(p *model.Method) *ServiceMethod {
-	resultType := castType(p.ResultType)
+func (r _Types) castServiceMethod(p *model.Method) *ServiceMethod {
+	resultType := r.castType(p.ResultType)
 	method := &ServiceMethod{
 		Name:         nameutil.ToLowerCamel(p.Name),
 		SkelName:     p.Name,
@@ -121,7 +121,7 @@ func castServiceMethod(p *model.Method) *ServiceMethod {
 		method.ReturnType = resultType.Plain
 	}
 	for _, argToken := range p.Arguments {
-		castedArg := castMethodArgument(argToken)
+		castedArg := r.castMethodArgument(argToken)
 		method.Arguments = append(method.Arguments, castedArg)
 	}
 	method.ParamDocs = append(method.ParamDocs, &MethodParamDoc{
@@ -154,8 +154,8 @@ type MethodReturnDoc struct {
 	Description string
 }
 
-func castMethodArgument(p *model.Argument) *MethodArgument {
-	argType := castType(p.Type)
+func (r _Types) castMethodArgument(p *model.Argument) *MethodArgument {
+	argType := r.castType(p.Type)
 	return &MethodArgument{
 		Name:            nameutil.ToLowerCamel(p.Name),
 		SkelName:        p.Name,
@@ -165,11 +165,12 @@ func castMethodArgument(p *model.Argument) *MethodArgument {
 	}
 }
 
-func buildServiceTypeImports(services []*model.Service) []string {
+func (r _Types) buildServiceTypeImports(services []*model.Service) []string {
 	imports := make([]string, 0)
 	seen := make(map[string]struct{})
 	types := serviceTypeRoots(services)
 	common.VisitTypes(types, func(current *model.Type) {
+		current = r.bindings.Type(current)
 		switch current.Kind {
 		case model.TypeKindEnum:
 			if current.ExternalImportPath == "" {
@@ -205,8 +206,8 @@ func appendUniqueServiceTypeImport(imports []string, seen map[string]struct{}, n
 	return append(imports, name)
 }
 
-func buildServiceExternalTypeImports(services []*model.Service) []*TypeImport {
-	return buildExternalTypeImports(serviceTypeRoots(services))
+func (r _Types) buildServiceExternalTypeImports(services []*model.Service) []*TypeImport {
+	return r.buildExternalTypeImports(serviceTypeRoots(services))
 }
 
 func tsDocLines(description string) []string {

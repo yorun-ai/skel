@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -65,35 +66,32 @@ func DiffWorkspaceDomain(ctx context.Context, candidate compiler.WorkspaceDomain
 // DiffSource compares a candidate file or directory with either an explicit
 // source baseline or the same path at Git HEAD.
 func DiffSource(ctx context.Context, candidateSkelIn string, option SourceDiffOption) (*Report, error) {
-	candidate, err := projectSource(compiler.Option{SkelIn: candidateSkelIn, Strict: option.Strict})
+	compiled, err := compiler.CompileImportContext(ctx, compiler.Option{SkelIn: candidateSkelIn, Strict: option.Strict})
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrSourceCompilation, err)
+	}
+	root, err := filepath.Abs(candidateSkelIn)
 	if err != nil {
 		return nil, err
 	}
-	baselineSkelIn := strings.TrimSpace(option.BaselineSkelIn)
-	var gitBaseline *_GitSourceBaseline
-	if baselineSkelIn == "" {
-		gitBaseline, err = prepareGitSourceBaseline(ctx, candidateSkelIn)
+	info, err := os.Stat(root)
+	if err != nil {
+		return nil, err
+	}
+	candidate := compiler.WorkspaceDomain{Name: compiled.Domain.Name(), Root: root, Model: compiled.Domain, ImportAliases: compiled.ImportAliases}
+	if !info.IsDir() {
+		candidate.Sources = []compiler.Source{{Path: root, Root: root}}
+	} else {
+		candidate.Sources = []compiler.Source{{Path: filepath.Join(root, "domain.skel"), Root: root, DirectoryInput: true}}
+	}
+	// CLI relative baseline paths are relative to the invocation directory.
+	if strings.TrimSpace(option.BaselineSkelIn) != "" {
+		option.BaselineSkelIn, err = filepath.Abs(option.BaselineSkelIn)
 		if err != nil {
 			return nil, err
 		}
-		defer gitBaseline.cleanup()
-		baselineSkelIn = gitBaseline.skelIn
 	}
-	baseline, err := projectSource(compiler.Option{SkelIn: baselineSkelIn})
-	if err != nil {
-		if gitBaseline != nil {
-			return nil, gitBaseline.remapError(err)
-		}
-		return nil, err
-	}
-	report, err := Diff(baseline, candidate)
-	if err != nil {
-		return nil, err
-	}
-	if gitBaseline != nil {
-		gitBaseline.remapReportPositions(report)
-	}
-	return report, nil
+	return NewSourceDiffer().DiffWorkspaceDomain(ctx, candidate, option)
 }
 
 // DiffWorkspaceDomain compares a domain while reusing its unchanged Git
@@ -106,7 +104,7 @@ func (d *SourceDiffer) DiffWorkspaceDomain(ctx context.Context, candidate compil
 			return nil, fmt.Errorf("%w: %w", ErrSourceCompilation, diagnostics)
 		}
 	}
-	candidateSchema, err := Project(candidate.Model, nil)
+	candidateSchema, err := Project(candidate.Model, candidate.ImportAliases)
 	if err != nil {
 		return nil, err
 	}
@@ -123,9 +121,9 @@ func (d *SourceDiffer) DiffWorkspaceDomain(ctx context.Context, candidate compil
 			}
 			baselineSkelIn = filepath.Join(directory, baselineSkelIn)
 		}
-		baseline, compileErr := compiler.CompileImport(compiler.Option{SkelIn: baselineSkelIn})
+		baseline, compileErr := compiler.CompileImportContext(ctx, compiler.Option{SkelIn: baselineSkelIn})
 		if compileErr != nil {
-			return nil, fmt.Errorf("compile schema compatibility baseline %s: %w", baselineSkelIn, compileErr)
+			return nil, fmt.Errorf("%w: compile schema compatibility baseline %s: %w", ErrSourceCompilation, baselineSkelIn, compileErr)
 		}
 		baselineSchema, err = Project(baseline.Domain, baseline.ImportAliases)
 	}
@@ -140,14 +138,6 @@ func (d *SourceDiffer) DiffWorkspaceDomain(ctx context.Context, candidate compil
 		remapReportBaselinePositions(report, gitRepositoryRoot)
 	}
 	return report, nil
-}
-
-func projectSource(option compiler.Option) (*Document, error) {
-	result, err := compiler.CompileImport(option)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrSourceCompilation, err)
-	}
-	return Project(result.Domain, result.ImportAliases)
 }
 
 func (d *SourceDiffer) cachedBaseline(key, head string) (*Document, string, error, bool) {
@@ -237,4 +227,24 @@ func remapReportBaselinePositions(report *Report, repositoryRoot string) {
 // workspaceDomainIsFile identifies a single-file compiler input without consulting disk.
 func workspaceDomainIsFile(candidate compiler.WorkspaceDomain) bool {
 	return len(candidate.Sources) == 1 && filepath.Clean(candidate.Root) == filepath.Clean(candidate.Sources[0].Path)
+}
+
+func remapDiagnosticBaseline(item *compiler.Diagnostic, root string) {
+	remap := func(path string) string {
+		if path == "" {
+			return path
+		}
+		relative, err := filepath.Rel(root, path)
+		if err != nil || pathEscapesRoot(relative) {
+			return path
+		}
+		return "HEAD:" + filepath.ToSlash(relative)
+	}
+	item.Position.File = remap(item.Position.File)
+	item.Range.Start.File = remap(item.Range.Start.File)
+	item.Range.End.File = remap(item.Range.End.File)
+	for i := range item.Related {
+		item.Related[i].Range.Start.File = remap(item.Related[i].Range.Start.File)
+		item.Related[i].Range.End.File = remap(item.Related[i].Range.End.File)
+	}
 }

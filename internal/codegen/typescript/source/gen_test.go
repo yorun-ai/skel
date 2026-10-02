@@ -100,7 +100,11 @@ func TestNewGenDerivesExternalTypeImportsFromTypeScriptModuleScope(t *testing.T)
 	if gen.err != nil {
 		t.Fatal(gen.err)
 	}
-	memberType := pkg.Data()[0].Members[0].Type
+	original := pkg.Data()[0].Members[0].Type
+	if original.ExternalImportPath != "" {
+		t.Fatal("generation mutated semantic model")
+	}
+	memberType := gen.bindings.Type(original)
 	if memberType.ExternalImportPath != "@acme/skeled-demo-userapi" {
 		t.Fatalf("unexpected import path: %s", memberType.ExternalImportPath)
 	}
@@ -141,7 +145,11 @@ func TestNewGenDerivesPublicTypeImportsFromTypeScriptModuleScope(t *testing.T) {
 	if gen.err != nil {
 		t.Fatal(gen.err)
 	}
-	memberType := pkg.Data()[0].Members[0].Type
+	original := pkg.Data()[0].Members[0].Type
+	if original.ExternalImportPath != "" {
+		t.Fatal("generation mutated semantic model")
+	}
+	memberType := gen.bindings.Type(original)
 	if memberType.ExternalImportPath != "@acme/skeled-demo-userapi" {
 		t.Fatalf("unexpected import path: %s", memberType.ExternalImportPath)
 	}

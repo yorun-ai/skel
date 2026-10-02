@@ -17,7 +17,7 @@ type TypeImport struct {
 	Path  string
 }
 
-func castType(p *model.Type) *Type {
+func (r _Types) castType(p *model.Type) *Type {
 	if p == nil {
 		return nil
 	}
@@ -26,15 +26,15 @@ func castType(p *model.Type) *Type {
 	case model.TypeKindScalar:
 		return castScalarType(p)
 	case model.TypeKindList:
-		return castListType(p)
+		return r.castListType(p)
 	case model.TypeKindMap:
-		return castMapType(p)
+		return r.castMapType(p)
 	case model.TypeKindEnum:
-		return castEnumType(p)
+		return r.castEnumType(p)
 	case model.TypeKindData:
-		return castDataType(p)
+		return r.castDataType(p)
 	case model.TypeKindTypeParameter:
-		return castTypeParameter(p)
+		return r.castTypeParameter(p)
 	}
 
 	return nil
@@ -98,24 +98,25 @@ func castScalarType(p *model.Type) *Type {
 	return nil
 }
 
-func castListType(p *model.Type) *Type {
-	valueType := castType(p.List.Value)
+func (r _Types) castListType(p *model.Type) *Type {
+	valueType := r.castType(p.List.Value)
 	arrayType := fmt.Sprintf("Array<%s>", valueType.Plain)
 	return &Type{
 		Plain: common.ChooseString(p.Nullable, fmt.Sprintf("%s | null", arrayType), arrayType),
 	}
 }
 
-func castMapType(p *model.Type) *Type {
-	keyType := castType(p.Map.Key)
-	valueType := castType(p.Map.Value)
+func (r _Types) castMapType(p *model.Type) *Type {
+	keyType := r.castType(p.Map.Key)
+	valueType := r.castType(p.Map.Value)
 	mapType := fmt.Sprintf("Record<%s, %s>", keyType.Plain, valueType.Plain)
 	return &Type{
 		Plain: common.ChooseString(p.Nullable, fmt.Sprintf("%s | null", mapType), mapType),
 	}
 }
 
-func castEnumType(p *model.Type) *Type {
+func (r _Types) castEnumType(p *model.Type) *Type {
+	p = r.bindings.Type(p)
 	enumName := transEnumName(p.Enum)
 	if p.ExternalAlias != "" {
 		enumName = fmt.Sprintf("%s.%s", p.ExternalAlias, enumName)
@@ -125,7 +126,8 @@ func castEnumType(p *model.Type) *Type {
 	}
 }
 
-func castDataType(p *model.Type) *Type {
+func (r _Types) castDataType(p *model.Type) *Type {
+	p = r.bindings.Type(p)
 	dataName := transDataName(p.Data)
 	if p.ExternalAlias != "" {
 		dataName = fmt.Sprintf("%s.%s", p.ExternalAlias, dataName)
@@ -133,7 +135,7 @@ func castDataType(p *model.Type) *Type {
 	if len(p.TypeArguments) > 0 {
 		typeArgNames := make([]string, 0, len(p.TypeArguments))
 		for _, typeArg := range p.TypeArguments {
-			castedTypeArg := castType(typeArg)
+			castedTypeArg := r.castType(typeArg)
 			typeArgNames = append(typeArgNames, castedTypeArg.Plain)
 		}
 		dataName = fmt.Sprintf("%s<%s>", dataName, strings.Join(typeArgNames, ", "))
@@ -143,7 +145,7 @@ func castDataType(p *model.Type) *Type {
 	}
 }
 
-func castTypeParameter(p *model.Type) *Type {
+func (r _Types) castTypeParameter(p *model.Type) *Type {
 	return &Type{
 		Plain: common.ChooseString(p.Nullable, p.TypeParameter.Name+" | null", p.TypeParameter.Name),
 	}

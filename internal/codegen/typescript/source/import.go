@@ -10,16 +10,19 @@ import (
 )
 
 func (g *_Gen) resolveExternalTypeImports() {
-	types := []*model.Type{}
+	types := []*common.ImportBinding{}
+	g.bindings = common.TypeBindings{}
 	common.VisitTypes(common.ApiTypeRoots(g.apiView.Data, g.apiView.Services), func(type_ *model.Type) {
 		if type_ == nil || type_.ExternalDomain == "" {
 			return
 		}
-		types = append(types, type_)
+		binding := new(common.ImportBinding{Domain: type_.ExternalDomain, Alias: type_.ExternalAlias, Explicit: type_.ExternalAliasExplicit})
+		g.bindings[type_] = binding
+		types = append(types, binding)
 		importPath := g.tsImportPath(type_.ExternalDomain)
-		type_.ExternalImportPath = importPath
+		binding.Path = importPath
 		if !type_.ExternalAliasExplicit {
-			type_.ExternalAlias = importPackageAlias(type_.ExternalDomain)
+			binding.Alias = importPackageAlias(type_.ExternalDomain)
 		}
 	})
 	reserved := []string{"VrpcClient", "VrpcRequestOptions", "VrpcWireSchema", "await", "class", "const", "default", "enum", "export", "extends", "function", "import", "interface", "let", "new", "return", "super", "this", "typeof", "var", "void", "yield", "break", "case", "catch", "continue", "debugger", "delete", "do", "else", "false", "finally", "for", "if", "in", "instanceof", "null", "switch", "throw", "true", "try", "while", "with", "implements", "package", "private", "protected", "public", "static"}

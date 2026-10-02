@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
+	"go.yorun.ai/skelc/internal/binding"
 	"go.yorun.ai/skelc/internal/lsp/index"
 )
 
@@ -75,6 +76,9 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 		domain := document.Imports[qualifier]
 		for _, candidate := range snapshot.DocumentsFor(document, domain) {
 			for _, definition := range candidate.Definitions {
+				if binding.ParseKey(definition.Key).Scope != "" {
+					continue
+				}
 				items[definition.Name] = symbolCompletion(definition, domain)
 			}
 		}
@@ -99,7 +103,18 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 		}
 		for _, candidate := range snapshot.DocumentsFor(document, document.Domain) {
 			for _, definition := range candidate.Definitions {
+				if binding.ParseKey(definition.Key).Scope != "" {
+					continue
+				}
 				items[definition.Name] = symbolCompletion(definition, document.Domain)
+			}
+		}
+	}
+
+	if qualifier == "" {
+		for _, parameter := range document.Bindings.ParametersAt(document.Buffer.Offset(params.Position)) {
+			if _, exists := items[parameter.ID.Name]; !exists {
+				items[parameter.ID.Name] = protocol.CompletionItem{Label: parameter.ID.Name, Kind: protocol.CompletionItemKindTypeParameter, Detail: protocol.NewOptional("Skel type parameter")}
 			}
 		}
 	}

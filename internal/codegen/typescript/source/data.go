@@ -31,31 +31,32 @@ func (g *_Gen) genDataTs() {
 func (g *_Gen) buildDataTsPayload() *DataTsPayload {
 	dataList := g.apiView.Data
 	payload := &DataTsPayload{
-		TypeImports: buildDataExternalImports(dataList),
+		TypeImports: g.types.buildDataExternalImports(dataList),
 		Enums:       sliceutil.Map(g.apiView.Enums, castEnum),
 		Data:        make([]*Data, 0, len(dataList)),
 	}
 	for _, dataType := range dataList {
-		castedData := castData(dataType)
+		castedData := g.types.castData(dataType)
 		payload.Data = append(payload.Data, castedData)
 	}
 	return payload
 }
 
-func buildDataExternalImports(dataList []*model.Data) []*TypeImport {
+func (r _Types) buildDataExternalImports(dataList []*model.Data) []*TypeImport {
 	types := make([]*model.Type, 0)
 	for _, dataType := range dataList {
 		for _, member := range dataType.Members {
 			types = append(types, member.Type)
 		}
 	}
-	return buildExternalTypeImports(types)
+	return r.buildExternalTypeImports(types)
 }
 
-func buildExternalTypeImports(types []*model.Type) []*TypeImport {
+func (r _Types) buildExternalTypeImports(types []*model.Type) []*TypeImport {
 	imports := make([]*TypeImport, 0)
 	seen := make(map[string]struct{})
 	common.VisitTypes(types, func(current *model.Type) {
+		current = r.bindings.Type(current)
 		if current.ExternalImportPath != "" {
 			key := current.ExternalAlias + "\x00" + current.ExternalImportPath
 			if _, ok := seen[key]; !ok {
@@ -80,14 +81,14 @@ type Data struct {
 	Members      []*DataMember
 }
 
-func castData(p *model.Data) *Data {
+func (r _Types) castData(p *model.Data) *Data {
 	data := &Data{
 		Name:         transDataName(p),
 		CommentLines: deprecatedTsDocLines(tsCommentLines(p.Description, ""), p.Deprecated, p.DeprecatedReason),
 		Members:      make([]*DataMember, 0, len(p.Members)),
 	}
 	for _, member := range p.Members {
-		castedMember := castDataMember(member)
+		castedMember := r.castDataMember(member)
 		data.Members = append(data.Members, castedMember)
 	}
 
@@ -121,8 +122,8 @@ type DataMember struct {
 	Type         *Type
 }
 
-func castDataMember(p *model.DataMember) *DataMember {
-	memberType := castType(p.Type)
+func (r _Types) castDataMember(p *model.DataMember) *DataMember {
+	memberType := r.castType(p.Type)
 	return &DataMember{
 		Name:         p.Name,
 		CommentLines: deprecatedTsDocLines(tsCommentLines(p.Description, p.Example), p.Deprecated, p.DeprecatedReason),

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
+	"go.yorun.ai/skelc/internal/binding"
 	"go.yorun.ai/skelc/internal/lsp/source"
 )
 
@@ -17,7 +17,7 @@ func (s *Service) PrepareRename(_ context.Context, params *protocol.PrepareRenam
 	if document == nil {
 		return nil, nil
 	}
-	occurrence, ok := occurrenceAt(document, params.Position)
+	occurrence, ok := snapshot.OccurrenceAt(document, params.Position)
 	if !ok || len(snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key))) != 1 {
 		return nil, nil
 	}
@@ -34,29 +34,12 @@ func (s *Service) Rename(_ context.Context, params *protocol.RenameParams) (*pro
 	if document == nil {
 		return nil, nil
 	}
-	occurrence, ok := occurrenceAt(document, params.Position)
+	occurrence, ok := snapshot.OccurrenceAt(document, params.Position)
 	if !ok || len(snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key))) != 1 {
 		return nil, nil
 	}
-	oldName := strings.TrimPrefix(occurrence.Key, domainFromKey(occurrence.Key)+".")
-	for _, candidate := range snapshot.DocumentsFor(document, domainFromKey(occurrence.Key)) {
-		if candidate.Parsed != nil {
-			for _, entry := range candidate.Parsed.Entries {
-				if entry.Data == nil {
-					continue
-				}
-				for _, parameter := range entry.Data.TypeParameters {
-					if parameter.Name.Value == params.NewName && params.NewName != oldName {
-						return nil, fmt.Errorf("Skel name %s conflicts with a generic parameter", params.NewName)
-					}
-				}
-			}
-		}
-		for _, definition := range candidate.Definitions {
-			if definition.Name == params.NewName && definition.Key != occurrence.Key {
-				return nil, fmt.Errorf("Skel declaration %s already exists", definition.Key)
-			}
-		}
+	if err := snapshot.ValidateRename(document, occurrence.Key, params.NewName); err != nil {
+		return nil, err
 	}
 	changes := map[uri.URI][]protocol.TextEdit{}
 	for _, location := range snapshot.Occurrences(snapshot.ResolveKey(document, occurrence.Key)) {
@@ -91,9 +74,4 @@ func (s *Service) Rename(_ context.Context, params *protocol.RenameParams) (*pro
 	return &protocol.WorkspaceEdit{Changes: changes}, nil
 }
 
-func domainFromKey(key string) string {
-	if index := strings.LastIndex(key, "."); index >= 0 {
-		return key[:index]
-	}
-	return ""
-}
+func domainFromKey(key string) string { return binding.ParseKey(key).Domain }

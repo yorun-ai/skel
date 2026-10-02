@@ -17,7 +17,7 @@ type Type struct {
 
 const skelImport = "go.yorun.ai/vine/core/skel"
 
-func castType(p *model.Type) *Type {
+func (r _Types) castType(p *model.Type) *Type {
 	if p == nil {
 		return nil
 	}
@@ -26,22 +26,22 @@ func castType(p *model.Type) *Type {
 	case model.TypeKindScalar:
 		return castScalarType(p)
 	case model.TypeKindList:
-		return castListType(p)
+		return r.castListType(p)
 	case model.TypeKindMap:
-		return castMapType(p)
+		return r.castMapType(p)
 	case model.TypeKindEnum:
-		return castEnumType(p)
+		return r.castEnumType(p)
 	case model.TypeKindData:
-		return castDataType(p)
+		return r.castDataType(p)
 	case model.TypeKindTypeParameter:
-		return castTypeParameter(p)
+		return r.castTypeParameter(p)
 	}
 
 	return nil
 }
 
-func castListType(p *model.Type) *Type {
-	valueType := castType(p.List.Value)
+func (r _Types) castListType(p *model.Type) *Type {
+	valueType := r.castType(p.List.Value)
 	plain := fmt.Sprintf("[]%s", valueType.Plain)
 	return &Type{
 		Plain:        common.ChooseString(p.Nullable, "*"+plain, plain),
@@ -50,9 +50,9 @@ func castListType(p *model.Type) *Type {
 	}
 }
 
-func castMapType(p *model.Type) *Type {
-	keyType := castType(p.Map.Key)
-	valueType := castType(p.Map.Value)
+func (r _Types) castMapType(p *model.Type) *Type {
+	keyType := r.castType(p.Map.Key)
+	valueType := r.castType(p.Map.Value)
 	plain := fmt.Sprintf("map[%s]%s", keyType.Plain, valueType.Plain)
 	return &Type{
 		Plain:        common.ChooseString(p.Nullable, "*"+plain, plain),
@@ -61,7 +61,8 @@ func castMapType(p *model.Type) *Type {
 	}
 }
 
-func castEnumType(p *model.Type) *Type {
+func (r _Types) castEnumType(p *model.Type) *Type {
+	p = r.bindings.Type(p)
 	enumName := transEnumName(p.Enum)
 	unspecifiedItemName := transUnspecifiedItemName(p.Enum)
 	imports := []*Import(nil)
@@ -77,7 +78,8 @@ func castEnumType(p *model.Type) *Type {
 	}
 }
 
-func castDataType(p *model.Type) *Type {
+func (r _Types) castDataType(p *model.Type) *Type {
+	p = r.bindings.Type(p)
 	structName := transDataName(p.Data)
 	imports := []*Import(nil)
 	if p.ExternalImportPath != "" {
@@ -88,7 +90,7 @@ func castDataType(p *model.Type) *Type {
 		typeArgNames := make([]string, 0, len(p.TypeArguments))
 		typeArgTypes := make([]*Type, 0, len(p.TypeArguments))
 		for _, typeArg := range p.TypeArguments {
-			castedTypeArg := castType(typeArg)
+			castedTypeArg := r.castType(typeArg)
 			typeArgNames = append(typeArgNames, castedTypeArg.Plain)
 			typeArgTypes = append(typeArgTypes, castedTypeArg)
 		}
@@ -111,7 +113,7 @@ func goImportAlias(p *model.Type) string {
 	return ""
 }
 
-func castTypeParameter(p *model.Type) *Type {
+func (r _Types) castTypeParameter(p *model.Type) *Type {
 	return &Type{
 		Plain:        common.ChooseString(p.Nullable, "*"+p.TypeParameter.Name, p.TypeParameter.Name),
 		DefaultValue: common.ChooseString(p.Nullable, "nil", ""),

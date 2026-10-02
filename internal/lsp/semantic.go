@@ -14,6 +14,7 @@ const semanticAnalysisDelay = 200 * time.Millisecond
 
 func (s *_Server) stopSemanticAnalysis() {
 	s.analysis.Stop()
+	s.publisher.stop()
 }
 
 func (s *_Server) rememberClient(ctx context.Context) {
@@ -31,8 +32,10 @@ func (s *_Server) rememberClient(ctx context.Context) {
 // retained because they are computed directly from the current document.
 func (s *_Server) invalidateSemanticDiagnostics(ctx context.Context) {
 	s.rememberClient(ctx)
+	s.diagnosticGeneration++
+	pending := s.publisher.advance(s.diagnosticGeneration)
 	s.mu.Lock()
-	stale := make([]uri.URI, 0, len(s.semantic))
+	stale := append([]uri.URI{}, pending...)
 	for documentURI := range s.semantic {
 		stale = append(stale, documentURI)
 	}
@@ -45,6 +48,7 @@ func (s *_Server) invalidateSemanticDiagnostics(ctx context.Context) {
 		return
 	}
 	slices.Sort(stale)
+	stale = slices.Compact(stale)
 	snapshot := s.workspace.Snapshot()
 	for _, documentURI := range stale {
 		_ = s.publishDocumentDiagnostics(ctx, client, documentURI, snapshot.Document(documentURI))
@@ -62,8 +66,8 @@ func (s *_Server) scheduleSemanticAnalysis() {
 }
 
 func (s *_Server) acceptSemanticAnalysis(result analysis.Result) {
-	s.diagnosticsMu.Lock()
-	defer s.diagnosticsMu.Unlock()
+	s.stateMu.Lock()
+	defer s.stateMu.Unlock()
 	if !s.analysis.IsCurrent(result) {
 		return
 	}
@@ -93,8 +97,7 @@ func (s *_Server) acceptSemanticAnalysis(result analysis.Result) {
 	}
 	slices.Sort(documentURIs)
 	snapshot := s.workspace.Snapshot()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx := context.Background()
 	for _, documentURI := range documentURIs {
 		_ = s.publishDocumentDiagnostics(ctx, client, documentURI, snapshot.Document(documentURI))
 	}
