@@ -16,7 +16,6 @@ const (
 	allowExample
 	allowSensitive
 	allowDeprecated
-	allowNoTrim
 	allowIdentifier
 )
 
@@ -118,7 +117,7 @@ func collectDecoratorTargets(content *grammar.SkelContent, source string) []_Dec
 		case entry.Config != nil:
 			addKeyword(identifierOffset(entry.Config.Name), "config", allowDesc|allowSensitive|allowDeprecated, entry.Config.Decorators)
 			for _, member := range entry.Config.Members {
-				add(identifierOffset(member.Name), allowDesc|allowExample|allowSensitive|allowDeprecated|allowNoTrim, member.Decorators)
+				add(identifierOffset(member.Name), allowDesc|allowExample|allowSensitive|allowDeprecated, member.Decorators)
 			}
 		case entry.Event != nil:
 			addKeyword(identifierOffset(entry.Event.Name), "event", allowDesc|allowDeprecated, entry.Event.Decorators)
@@ -231,8 +230,6 @@ func decoratorBit(decorator string) _DecoratorAllowance {
 		return allowExample
 	case "identifier":
 		return allowIdentifier
-	case "noTrim":
-		return allowNoTrim
 	case "sensitive":
 		return allowSensitive
 	case "deprecated":

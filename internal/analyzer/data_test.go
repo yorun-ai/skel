@@ -357,41 +357,19 @@ func TestParseConfigAllowsPub(t *testing.T) {
 	}
 }
 
-func TestParseConfigNoTrim(t *testing.T) {
+func TestParseConfigRejectsUnknownDecorator(t *testing.T) {
 	for _, lifecycle := range []string{"eternal", "instant"} {
-		config := parseConfigTest(t, &grammar.Data{
-			Name: ident("TextConfig"), Qualifier: ident(lifecycle),
-			Members: []*grammar.DataMember{{
-				Name: ident("text"), Type: nullableType(plainType(grammar.String)),
-				Decorators: []*grammar.Decorator{{Name: ident("noTrim")}, {Name: ident("sensitive")}},
-			}},
-		})
-		if !config.Members[0].NoTrim || !config.Members[0].Sensitive {
-			t.Fatalf("config field lost decorators: %+v", config.Members[0])
-		}
-	}
-}
-
-func TestParseConfigRejectsInvalidNoTrim(t *testing.T) {
-	for _, test := range []struct {
-		name       string
-		decorators []*grammar.Decorator
-		message    string
-	}{
-		{"argument", []*grammar.Decorator{{Name: ident("noTrim"), Value: decoratorValue("true")}}, "@noTrim does not accept an argument"},
-		{"duplicate", []*grammar.Decorator{{Name: ident("noTrim")}, {Name: ident("noTrim")}}, "duplicated decorator @noTrim"},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			expectConfigDiagnostic(t, test.message, &grammar.Data{
-				Name: ident("TextConfig"), Qualifier: ident("eternal"),
-				Members: []*grammar.DataMember{{Name: ident("text"), Type: plainType(grammar.String), Decorators: test.decorators}},
-			})
+		t.Run(lifecycle, func(t *testing.T) {
+			for _, decorators := range [][]*grammar.Decorator{
+				{{Name: ident("unknownDecorator")}},
+				{{Name: ident("sensitive")}, {Name: ident("unknownDecorator")}},
+				{{Name: ident("unknownDecorator"), Value: decoratorValue("true")}},
+			} {
+				expectConfigDiagnostic(t, "unexpected decorator @unknownDecorator", &grammar.Data{
+					Name: ident("TextConfig"), Qualifier: ident(lifecycle),
+					Members: []*grammar.DataMember{{Name: ident("text"), Type: plainType(grammar.String), Decorators: decorators}},
+				})
+			}
 		})
 	}
-	expectDataDiagnostic(t, "unexpected decorator @noTrim", &grammar.Data{
-		Name: ident("Text"), Members: []*grammar.DataMember{{Name: ident("text"), Type: plainType(grammar.String), Decorators: []*grammar.Decorator{{Name: ident("noTrim")}}}},
-	})
-	expectConfigDiagnostic(t, "unexpected decorator @noTrim", &grammar.Data{
-		Name: ident("TextConfig"), Qualifier: ident("eternal"), Decorators: []*grammar.Decorator{{Name: ident("noTrim")}},
-	})
 }

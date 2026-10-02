@@ -91,6 +91,9 @@ func (b *_WireSchemaBuilder) renderType(type_ *model.Type, depth int) string {
 		rendered = renderSimpleWireSchema("value", type_.Nullable)
 	case model.TypeKindTypeParameter:
 		rendered = wireTypeParameterName(type_.TypeParameter)
+		if type_.Nullable {
+			rendered = "{ ..." + rendered + ", nullable: true }"
+		}
 	case model.TypeKindList:
 		rendered = b.renderContainerSchema(
 			"list",

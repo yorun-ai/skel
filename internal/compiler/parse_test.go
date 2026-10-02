@@ -441,7 +441,7 @@ actor DemoActor {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.parse()
-			if err == nil || !strings.Contains(err.Error(), "data DemoActorInfo cannot reference config SessionConfig") {
+			if err == nil || !strings.Contains(err.Error(), "config SessionConfig cannot be used as a value type") {
 				t.Fatalf("expected actor info config reference error, got %v", err)
 			}
 		})

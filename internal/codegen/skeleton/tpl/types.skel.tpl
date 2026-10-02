@@ -27,8 +27,7 @@ import {{ $import.Name }}{{ with importAlias $import }} as {{ . }}{{ end }}
 {{ end -}}
 {{ template "description" (description $config.Description 0) }}{{ template "deprecated" (deprecated $config.Deprecated $config.DeprecatedReason 0) }}{{ template "sensitive" (sensitive $config.Sensitive 0) }}pub config {{ $config.Name }}{{ with configSuffix $config }} {{ . }}{{ end }} {
 {{- range $member := $config.Members }}
-{{ template "description" (description $member.Description 4) }}{{ template "deprecated" (deprecated $member.Deprecated $member.DeprecatedReason 4) }}{{ template "example" (example $member.Example 4) }}{{ template "sensitive" (sensitive $member.Sensitive 4) }}{{ if $member.NoTrim }}    @noTrim
-{{ end }}    {{ $member.Name }}: {{ template "type" (typeRef $member.Type) }}
+{{ template "description" (description $member.Description 4) }}{{ template "deprecated" (deprecated $member.Deprecated $member.DeprecatedReason 4) }}{{ template "example" (example $member.Example 4) }}{{ template "sensitive" (sensitive $member.Sensitive 4) }}    {{ $member.Name }}: {{ template "type" (typeRef $member.Type) }}
 {{- end }}
 }
 {{ end -}}

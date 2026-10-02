@@ -121,3 +121,106 @@ func TestCheckWebMountDiagnostics(t *testing.T) {
 		})
 	}
 }
+
+func TestCompileConfigValueTypes(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		source     string
+		diagnostic string
+	}{
+		{"nested values", `data Entry<TValue> { value: TValue }
+ data Node { content: binary children: list<Node> }
+ config AppConfig instant {
+  root: Node?
+  entries: list<map<string, Entry<binary?>?>>
+  content: binary
+ }`, ""},
+		{"nested config", `config ChildConfig eternal {}
+ config AppConfig instant { child: list<ChildConfig> }`, "config ChildConfig cannot be used as a value type"},
+		{"generic config argument", `data Entry<TValue> { value: TValue }
+ config ChildConfig eternal {}
+ config AppConfig instant { child: Entry<ChildConfig> }`, "config ChildConfig cannot be used as a value type"},
+		{"nested event", `event ChangedEvent { payload { content: binary } }
+ data Entry { change: ChangedEvent }
+ config AppConfig instant { entry: Entry }`, "event ChangedEvent cannot be used as a value type"},
+		{"binary map key", `config AppConfig instant { values: map<binary, string> }`, "incorrect key type"},
+		{"hard cycle", `data Node { child: Node }
+ config AppConfig instant { root: Node }`, "hard reference chain detected"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "config.skel")
+			writeFile(t, path, "domain demo\n"+test.source)
+			_, err := Compile(Option{SkelIn: path})
+			if test.diagnostic == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, test.diagnostic)
+				require.ErrorContains(t, err, path)
+			}
+		})
+	}
+}
+
+func TestCompileConfigImportedData(t *testing.T) {
+	dir := t.TempDir()
+	shared := filepath.Join(dir, "shared.skel")
+	writeFile(t, shared, `domain shared
+ pub data Entry<TValue> { value: TValue }
+ pub data Record { content: binary }
+`)
+	input := filepath.Join(dir, "config.skel")
+	writeFile(t, input, `domain demo
+ import shared
+ pub config AppConfig eternal {
+  record: shared.Record
+  entries: list<shared.Entry<binary?>>
+ }
+`)
+	result, err := Compile(Option{SkelIn: input, SkelImports: map[string]string{"shared": shared}})
+	require.NoError(t, err)
+	require.Len(t, result.Domain.Configs(), 1)
+	require.True(t, result.Domain.Configs()[0].Members[0].Type.ContainsBinaryType())
+}
+
+func TestCompileRejectsFinalDeclarationsAsValueTypes(t *testing.T) {
+	for _, declaration := range []struct {
+		name       string
+		source     string
+		diagnostic string
+	}{
+		{"config", "pub config SettingsConfig eternal {}", "config SettingsConfig cannot be used as a value type"},
+		{"event", "pub event ChangedEvent { payload {} }", "event ChangedEvent cannot be used as a value type"},
+	} {
+		name := "SettingsConfig"
+		if declaration.name == "event" {
+			name = "ChangedEvent"
+		}
+		for _, expression := range []string{name, name + "?", "list<" + name + ">", "map<string, " + name + ">", "Entry<" + name + ">"} {
+			for _, owner := range []string{
+				"data Wrapper { value: " + expression + " }",
+				"config AppConfig instant { value: " + expression + " }",
+				"event WrapperEvent { payload { value: " + expression + " } }",
+				"service SampleService { method get { output " + expression + " } }",
+				"service SampleService { method put { input { value: " + expression + " } } }",
+			} {
+				t.Run(declaration.name+"/"+owner, func(t *testing.T) {
+					path := filepath.Join(t.TempDir(), "contract.skel")
+					writeFile(t, path, "domain demo\ndata Entry<TValue> { value: TValue }\n"+declaration.source+"\n"+owner)
+					_, err := Compile(Option{SkelIn: path})
+					require.ErrorContains(t, err, declaration.diagnostic)
+					require.ErrorContains(t, err, path)
+				})
+			}
+		}
+		t.Run("imported/"+declaration.name, func(t *testing.T) {
+			dir := t.TempDir()
+			shared := filepath.Join(dir, "shared.skel")
+			writeFile(t, shared, "domain shared\n"+declaration.source)
+			path := filepath.Join(dir, "contract.skel")
+			writeFile(t, path, "domain demo\nimport shared\ndata Wrapper { value: shared."+name+" }")
+			_, err := Compile(Option{SkelIn: path, SkelImports: map[string]string{"shared": shared}})
+			require.ErrorContains(t, err, declaration.diagnostic)
+			require.ErrorContains(t, err, path)
+		})
+	}
+}

@@ -12,7 +12,6 @@ type _DecoratorMeta struct {
 	Example          string
 	HasExample       bool
 	Sensitive        bool
-	NoTrim           bool
 	Deprecated       bool
 	DeprecatedReason string
 	hasDeprecated    bool
@@ -23,7 +22,6 @@ type _DecoratorContext struct {
 	allowDesc       bool
 	allowExample    bool
 	allowSensitive  bool
-	allowNoTrim     bool
 	allowDeprecated bool
 	ignoreOthers    bool
 	requireDesc     bool
@@ -69,14 +67,6 @@ func parseDecoratorMeta(reporter *_DiagnosticReporter, decorators []*grammar.Dec
 			valid = accepted && valid
 			if accepted {
 				meta.Sensitive = true
-			}
-		case "noTrim":
-			accepted := reporter.check(ctx.allowNoTrim, "%s unexpected decorator @noTrim", decorator.Name.Pos)
-			accepted = reporter.checkNotDuplicate(meta.NoTrim, "%s duplicated decorator @noTrim", decorator.Name.Pos) && accepted
-			accepted = reporter.check(decorator.Value == nil, "%s decorator @noTrim does not accept an argument", decorator.Name.Pos) && accepted
-			valid = accepted && valid
-			if accepted {
-				meta.NoTrim = true
 			}
 		case "deprecated":
 			accepted := reporter.check(ctx.allowDeprecated, "%s unexpected decorator %s", decorator.Name.Pos, "@"+decorator.Name.Value)

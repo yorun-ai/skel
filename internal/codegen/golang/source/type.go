@@ -113,6 +113,7 @@ func goImportAlias(p *model.Type) string {
 
 func castTypeParameter(p *model.Type) *Type {
 	return &Type{
-		Plain: p.TypeParameter.Name,
+		Plain:        common.ChooseString(p.Nullable, "*"+p.TypeParameter.Name, p.TypeParameter.Name),
+		DefaultValue: common.ChooseString(p.Nullable, "nil", ""),
 	}
 }

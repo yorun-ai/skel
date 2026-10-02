@@ -21,13 +21,11 @@ type DataSchema struct {
 
 type Member struct {
 	Metadata
-	Name      string `json:"name"`
-	Example   string `json:"example,omitempty"`
-	Sensitive bool   `json:"sensitive,omitempty"`
-	// NoTrim preserves string whitespace for config members.
-	NoTrim bool           `json:"noTrim,omitempty"`
-	Type   *Type          `json:"type"`
-	Pos    model.Position `json:"-"`
+	Name      string         `json:"name"`
+	Example   string         `json:"example,omitempty"`
+	Sensitive bool           `json:"sensitive,omitempty"`
+	Type      *Type          `json:"type"`
+	Pos       model.Position `json:"-"`
 }
 
 type Type struct {

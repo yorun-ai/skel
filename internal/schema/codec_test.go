@@ -44,6 +44,7 @@ func TestDecodeRejectsUnknownFieldsAndTrailingValues(t *testing.T) {
 	for _, input := range []string{
 		`{"format":"yorun.skel.schema","formatVersion":1,"domain":"demo","declarations":[],"unknown":true}`,
 		`{"format":"yorun.skel.schema","formatVersion":1,"domain":"demo","declarations":[]} {}`,
+		`{"format":"yorun.skel.schema","formatVersion":1,"domain":"demo","declarations":[{"name":"TextConfig","type":"config","skelName":"demo.TextConfig","data":{"lifecycle":"eternal","members":[{"name":"text","unknownMemberField":true,"type":{"kind":"scalar","name":"string"}}]}}]}`,
 	} {
 		if _, err := Decode(strings.NewReader(input)); err == nil {
 			t.Fatalf("expected strict decode to fail: %s", input)

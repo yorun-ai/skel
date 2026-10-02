@@ -198,3 +198,30 @@ func TestWireSchemaSupportsGenericAndRecursiveData(t *testing.T) {
 		}
 	}
 }
+
+func TestWireSchemaPreservesNullableTypeParameter(t *testing.T) {
+	parameter := codegentest.TypeParam("TValue")
+	wrapper := &model.Data{Name: "Wrapper", TypeParameters: []*model.TypeParameter{parameter}, Members: []*model.DataMember{
+		{Name: "required", Type: codegentest.TypeParamType(parameter)},
+		{Name: "optional", Type: codegentest.NullableType(codegentest.TypeParamType(parameter))},
+		{Name: "items", Type: codegentest.ListType(codegentest.NullableType(codegentest.TypeParamType(parameter)))},
+	}}
+	method := &model.Method{Name: "read", ResultType: codegentest.DataType(wrapper, codegentest.BinaryType())}
+	builder := newWireSchemaBuilder()
+	builder.collectMethod(method)
+	builder.prepareFactoryNames()
+	factories := builder.renderFactories()
+	if len(factories) != 1 {
+		t.Fatalf("factories: %+v", factories)
+	}
+	code := factories[0].Code
+	for _, check := range []string{"required: tValueWireSchema", "optional: { ...tValueWireSchema, nullable: true }", "value: { ...tValueWireSchema, nullable: true }"} {
+		if !strings.Contains(code, check) {
+			t.Fatalf("missing %q in:\n%s", check, code)
+		}
+	}
+	nullableArgument := &model.Method{Name: "read", ResultType: codegentest.DataType(wrapper, codegentest.NullableType(codegentest.BinaryType()))}
+	if rendered := builder.renderMethod(nullableArgument).ResultSchema; !strings.Contains(rendered, "kind: 'binary', nullable: true") {
+		t.Fatalf("nullable argument lost: %s", rendered)
+	}
+}

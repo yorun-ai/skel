@@ -199,16 +199,6 @@ func TestFillHashesIncludesWholeSensitiveMetadata(t *testing.T) {
 	})
 }
 
-func TestFillHashesIncludesConfigNoTrim(t *testing.T) {
-	oldDomain, oldConfig := newHashDataKindTestDomain(model.DataKindConfig)
-	newDomain, newConfig := newHashDataKindTestDomain(model.DataKindConfig)
-	newConfig.Members[0].NoTrim = true
-	fillHashes(t, oldDomain, newDomain)
-	if oldConfig.Hash == newConfig.Hash || oldDomain.Hash() == newDomain.Hash() {
-		t.Fatal("config noTrim must change config and domain hashes")
-	}
-}
-
 func TestFillHashesIncludesApiBoundary(t *testing.T) {
 	backend := newHashTestDomain(t, "Order service")
 	api := newHashTestDomain(t, "Order service")

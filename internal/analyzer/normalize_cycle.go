@@ -43,17 +43,3 @@ func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {
 		}
 	}
 }
-
-func (p *Analysis) checkDataDoesNotReferenceConfigs(dataList []*model.Data) {
-	for _, dataType := range dataList {
-		if dataType.Kind != model.DataKindData {
-			continue
-		}
-		for _, member := range dataType.Members {
-			for refData := range referencedData(member.Type) {
-				p.reporter.check(refData.Kind != model.DataKindConfig,
-					"%s data %s cannot reference config %s", member.Pos, dataType.Name, refData.Name)
-			}
-		}
-	}
-}
