@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"go.yorun.ai/skelc/internal/codegen/codegentest"
@@ -261,21 +262,37 @@ func TestGenRendersTypesWithoutClientServices(t *testing.T) {
 	outDir := filepath.Join(t.TempDir(), "ts")
 	pkg := buildModelDomainForTest(t, model.DomainSpec{
 		Name: "demo.user",
-		Actors: []*model.Actor{{
-			Name: "AgentActor",
-			Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaAgent)},
+		Data: []*model.Data{{
+			Name: "User", Pub: true,
+			Members: []*model.DataMember{{Name: "id", Type: codegentest.IntType()}},
 		}},
 		Services: []*model.Service{{
-			Name: "AgentService", Audiences: []*model.ActorAudience{{Actor: "AgentActor"}}, Methods: []*model.Method{{Name: "ping"}},
+			Name: "BackendService", Pub: true, Methods: []*model.Method{{Name: "ping"}},
 		}},
 	})
 
 	gen := newGen(pkg, outDir)
+	if gen.err != nil {
+		t.Fatal(gen.err)
+	}
+	if len(gen.apiView.Services) != 0 {
+		t.Fatalf("fixture must not expose client services: %+v", gen.apiView.Services)
+	}
 	gen.generate()
+	if err := gen.renderer.Err(); err != nil {
+		t.Fatal(err)
+	}
 
 	for _, filename := range []string{indexFilename, dataTsFilename, serviceTsFilename, specTsFilename} {
-		if _, err := os.Stat(filepath.Join(outDir, filename)); err != nil {
-			t.Fatalf("expected %s to exist: %v", filename, err)
+		content, err := os.ReadFile(filepath.Join(outDir, filename))
+		if err != nil {
+			t.Fatalf("read %s: %v", filename, err)
+		}
+		if strings.Contains(string(content), "BackendService") {
+			t.Fatalf("backend service leaked into %s: %s", filename, content)
+		}
+		if filename == dataTsFilename && !strings.Contains(string(content), "export type User =") {
+			t.Fatalf("public type missing from data.ts: %s", content)
 		}
 	}
 	if _, err := os.Stat(filepath.Join(outDir, "package.json")); !os.IsNotExist(err) {

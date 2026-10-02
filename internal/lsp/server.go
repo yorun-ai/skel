@@ -97,10 +97,16 @@ func (s *_Server) Initialize(_ context.Context, params *protocol.InitializeParam
 		for _, folder := range folders {
 			s.loadWorkspace(folder.URI)
 		}
-	} else if params.RootURI != nil {
-		s.loadWorkspace(*params.RootURI)
-	} else if rootPath, ok := params.RootPath.Get(); ok {
-		s.loadWorkspace(uri.File(rootPath))
+	} else {
+		//lint:ignore SA1019 Older LSP clients may send rootUri without workspaceFolders.
+		if rootURI := params.RootURI; rootURI != nil {
+			s.loadWorkspace(*rootURI)
+		} else {
+			//lint:ignore SA1019 Preserve the rootPath fallback for legacy LSP clients.
+			if rootPath, ok := params.RootPath.Get(); ok {
+				s.loadWorkspace(uri.File(rootPath))
+			}
+		}
 	}
 	openClose := true
 	prepareRename := true

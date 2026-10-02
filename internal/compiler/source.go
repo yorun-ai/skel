@@ -9,7 +9,7 @@ import (
 	"go.yorun.ai/skelc/internal/parser/grammar"
 )
 
-func parseContentContext(ctx context.Context, sourceFile *loader.SourceFile, requireDomain bool) (*grammar.SkelContent, error) {
+func parseContentContext(ctx context.Context, sourceFile *loader.SourceFile) (*grammar.SkelContent, error) {
 	parsed, err := parser.ParseSourceContext(ctx, sourceFile.FilePath, sourceFile.Content)
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -20,10 +20,7 @@ func parseContentContext(ctx context.Context, sourceFile *loader.SourceFile, req
 
 	content := parsed.Content
 	if content.Domain == nil || content.Domain.Name == nil {
-		if requireDomain {
-			return nil, fmt.Errorf("missing domain declaration in %s", sourceFile.FilePath)
-		}
-		return content, nil
+		return nil, fmt.Errorf("missing domain declaration in %s", sourceFile.FilePath)
 	}
 	if content.Domain.Name.String() == "" {
 		return nil, fmt.Errorf("missing domain name in %s", sourceFile.FilePath)

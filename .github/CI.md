@@ -19,11 +19,18 @@ changes skip those jobs while the required gate still completes successfully:
 
 | Job | Checks |
 | --- | --- |
-| Go static | Module metadata drift and full-repository `go vet` |
+| Go static | Module metadata drift, `go vet`, Staticcheck correctness/simplification/unused-code checks and nilness |
 | Go race | Full-repository tests with the race detector |
 | Examples | Generate both examples, compile their Go modules, and type-check their TypeScript clients against the pinned published vRPC runtime |
 
 All Go commands use `GOWORK=off`, including commands in generated modules.
+Run `bash .github/scripts/ci.sh static` from the repository root to reproduce
+the static gate locally. Both CI and cache warmup use this script, which pins
+Staticcheck and the Go analysis tools without adding application dependencies.
+The nilness analyzer catches redundant nil comparisons as well as definite nil
+dereferences. Legacy LSP initialization fields have local, explained
+Staticcheck exemptions so support for older clients remains covered by tests.
+
 Race tests disable Go's automatic vet pass because the static job runs the full
 vet check. `GORACE=atexit_sleep_ms=0` removes the race runtime's exit delay; it
 does not disable race detection or change its failure exit code.

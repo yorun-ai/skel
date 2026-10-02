@@ -1,13 +1,13 @@
 package compiler
 
 import (
-	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/model"
 	"path/filepath"
 	"testing"
+
+	"go.yorun.ai/skelc/internal/model"
 )
 
-func TestParseServiceAndData(t *testing.T) {
+func TestCompileServiceAndData(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": describedUserDomain,
 		"user.skel": `
@@ -71,7 +71,7 @@ enum UserStatus {
 	}
 }
 
-func TestParseAcrossFilesAndResolveTypes(t *testing.T) {
+func TestCompileAcrossFilesAndResolveTypes(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": describedUserDomain,
 		"types.skel": `
@@ -187,23 +187,17 @@ service UserService {
 	}
 }
 
-func TestParseFilesPopulatesDomainAndSkelContents(t *testing.T) {
+func TestCompileDirectoryIncludesAllDeclarationKinds(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "domain.skel"), describedUserDomain)
 	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\nactor PortalAdminActor { via client {} }\nservice AgentService { for PortalAdminActor\nmethod ping {} }\n")
 	writeFile(t, filepath.Join(dir, "types.skel"), "domain demo.user\ndata User { id: int }\nenum UserStatus { ACTIVE }\n")
 
-	loadResult, err := loader.Load(dir)
+	result, err := Compile(Option{SkelIn: dir})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("compile directory: %v", err)
 	}
-	sourceFiles := loadResult.Files
-
-	analysis, err := parseDomainFilesWithImports(findDomainFileForTest(t, sourceFiles), sourceFiles, nil)
-	if err != nil {
-		t.Fatalf("parse domain files: %v", err)
-	}
-	domain := analysis.Model()
+	domain := result.Domain
 
 	entryKinds := map[string]bool{}
 	for _, service := range domain.Services() {

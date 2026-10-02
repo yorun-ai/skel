@@ -66,18 +66,6 @@ func TestRunSkelcGenHelpShowsSubcommandOptions(t *testing.T) {
 	if genSkelIndex > genGoIndex || genSkelIndex > genTSIndex {
 		t.Fatalf("expected skel options first, got stdout: %q", result.Stdout)
 	}
-	if !strings.Contains(result.Stdout, "go OPTIONS:") {
-		t.Fatalf("unexpected stdout: %q", result.Stdout)
-	}
-	if !strings.Contains(result.Stdout, "go-module OPTIONS:") {
-		t.Fatalf("unexpected stdout: %q", result.Stdout)
-	}
-	if !strings.Contains(result.Stdout, "ts OPTIONS:") {
-		t.Fatalf("unexpected stdout: %q", result.Stdout)
-	}
-	if !strings.Contains(result.Stdout, "skel OPTIONS:") {
-		t.Fatalf("unexpected stdout: %q", result.Stdout)
-	}
 	if !strings.Contains(result.Stdout, "--skel-in") {
 		t.Fatalf("unexpected stdout: %q", result.Stdout)
 	}

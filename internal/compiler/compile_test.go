@@ -8,7 +8,7 @@ import (
 	"go.yorun.ai/skelc/internal/model"
 )
 
-func TestParseDirectory(t *testing.T) {
+func TestCompileDirectory(t *testing.T) {
 	skelDir := t.TempDir()
 	writeFile(t, filepath.Join(skelDir, "domain.skel"), describedUserDomain)
 	writeFile(t, filepath.Join(skelDir, "user.skel"), `
@@ -55,7 +55,7 @@ config SiteConfig eternal {
 	}
 }
 
-func TestParseRequiresTransitiveImports(t *testing.T) {
+func TestCompileRequiresTransitiveImports(t *testing.T) {
 	root := t.TempDir()
 	appDir := filepath.Join(root, "app")
 	userDir := filepath.Join(root, "user")
@@ -130,7 +130,7 @@ pub data Loan {
 	}
 }
 
-func TestParseNormalizesImportedDomainLocalTypeReferences(t *testing.T) {
+func TestCompileNormalizesImportedDomainLocalTypeReferences(t *testing.T) {
 	root := t.TempDir()
 	baseDir := filepath.Join(root, "base")
 	appDir := filepath.Join(root, "app")
@@ -242,7 +242,7 @@ data AppItem {
 	}
 }
 
-func TestParseNormalizesTransitiveImportedTypeReferences(t *testing.T) {
+func TestCompileNormalizesTransitiveImportedTypeReferences(t *testing.T) {
 	root := t.TempDir()
 	baseDir := filepath.Join(root, "base")
 	userDir := filepath.Join(root, "user")
@@ -294,7 +294,7 @@ data AppUser {
 	}
 }
 
-func TestParseRejectsCyclicTransitiveImports(t *testing.T) {
+func TestCompileRejectsCyclicTransitiveImports(t *testing.T) {
 	root := t.TempDir()
 	firstDir := filepath.Join(root, "first")
 	secondDir := filepath.Join(root, "second")
@@ -320,7 +320,7 @@ func TestParseRejectsCyclicTransitiveImports(t *testing.T) {
 	}
 }
 
-func TestParseRejectsTypeParameterOutsideDeclaringData(t *testing.T) {
+func TestCompileRejectsTypeParameterOutsideDeclaringData(t *testing.T) {
 	tests := []struct {
 		name        string
 		declaration string
@@ -397,7 +397,7 @@ data Wrapper<TItem> {
 	}
 }
 
-func TestParseRejectsConfigReferenceFromActorAuthInfo(t *testing.T) {
+func TestCompileRejectsConfigReferenceFromActorAuthInfo(t *testing.T) {
 	skelFile := filepath.Join(t.TempDir(), "types.skel")
 	writeFile(t, skelFile, `
 domain demo.types
@@ -448,7 +448,7 @@ actor DemoActor {
 	}
 }
 
-func TestParseImportDoesNotRequireImportedDomains(t *testing.T) {
+func TestCompileImportDoesNotRequireImportedDomains(t *testing.T) {
 	skelDir := t.TempDir()
 	writeFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.booker\n")
 	writeFile(t, filepath.Join(skelDir, "types.skel"), `
@@ -474,7 +474,7 @@ data Booking {
 	}
 }
 
-func TestParseReturnsErrorWhenDomainFileMissing(t *testing.T) {
+func TestCompileReturnsErrorWhenDomainFileMissing(t *testing.T) {
 	skelDir := t.TempDir()
 	writeFile(t, filepath.Join(skelDir, "user.skel"), "data User { id: string }\n")
 
@@ -482,7 +482,7 @@ func TestParseReturnsErrorWhenDomainFileMissing(t *testing.T) {
 	expectErrorContains(t, err, "domain.skel not found")
 }
 
-func TestParseSingleSkelFile(t *testing.T) {
+func TestCompileSingleSkelFile(t *testing.T) {
 	skelFile := filepath.Join(t.TempDir(), "user.skel")
 	writeFile(t, skelFile, `@desc("User domain")
 domain demo.user

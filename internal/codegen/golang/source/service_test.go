@@ -137,12 +137,15 @@ func TestGeneratedGoParsesWithMultilineDeprecatedReasons(t *testing.T) {
 	gen.genServiceGo()
 	gen.genTaskGo()
 
-	files, err := goparser.ParseDir(token.NewFileSet(), outputDir, nil, goparser.ParseComments)
-	if err != nil {
-		t.Fatalf("generated Go should parse: %v", err)
-	}
-	if _, ok := files["skeled"]; !ok {
-		t.Fatalf("expected generated package in %s", filepath.Clean(outputDir))
+	for _, filename := range []string{serviceGoFilename, taskGoFilename} {
+		path := filepath.Join(outputDir, filename)
+		file, err := goparser.ParseFile(token.NewFileSet(), path, nil, goparser.ParseComments)
+		if err != nil {
+			t.Fatalf("generated Go should parse: %v", err)
+		}
+		if file.Name.Name != "skeled" {
+			t.Fatalf("expected package skeled in %s, got %s", path, file.Name.Name)
+		}
 	}
 }
 

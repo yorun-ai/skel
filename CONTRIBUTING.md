@@ -25,8 +25,8 @@ GOWORK=off go test ./...
 The source-processing pipeline is intentionally separated:
 
 1. `internal/loader` discovers and loads source files.
-2. `internal/parser` coordinates imports and parses grammar.
-3. `internal/parser/{grammar,analyzer,hasher}` parse syntax, build and validate semantic state, and derive compatibility hashes; the public `model` package contains parser-independent semantic data.
+2. `internal/compiler` coordinates imports and the compilation pipeline.
+3. `internal/parser`, `internal/analyzer`, and `internal/hasher` parse syntax, build and validate semantic state, and derive compatibility hashes; the public `model` package contains parser-independent semantic data.
 4. `internal/codegen/{golang,skeleton,typescript}` renders Go, public Skel, and TypeScript output; `internal/codegen/common` contains target-independent generation infrastructure.
 5. The root `skelc` API normalizes inputs and target options and manages output-directory lifecycle. `internal/cli` maps flags to that API and exposes stable terminal output and exit codes.
 
@@ -50,6 +50,8 @@ Changes to one boundary often require coordinated parser, formatter, generator, 
 - Format changed Go files with `gofmt`.
 - Follow the naming and implementation rules in [AGENTS.md](AGENTS.md).
 - Keep implementation tests paired with their source files.
+- Use `<source>_test.go` for unit tests and `<entrypoint>_<scenario>_test.go` for split or integration suites. Dedicated benchmarks and fuzz targets use `<subject>_benchmark_test.go` and `<subject>_fuzz_test.go`; shared setup uses `test_helper_test.go` or `<subject>_helper_test.go`.
+- Test names and fixtures must describe the current behavior. Test supported compatibility paths through production entrypoints; do not reproduce retired implementations in helpers. Change one input at a time when testing whether each metadata field affects a compatibility hash.
 - Use `t.TempDir` for generated fixtures and avoid writing test output into the repository.
 - Preserve deterministic ordering for inputs, symbols, dependencies, diagnostics, and generated files.
 
@@ -65,10 +67,11 @@ Before submitting a repository-wide Go change, run:
 
 ```bash
 GOWORK=off go test ./...
-GOWORK=off go test ./internal/parser ./internal/formatter -run '^$' -bench . -benchtime=1x
+bash .github/scripts/ci.sh static
+GOWORK=off go test ./internal/compiler ./internal/formatter -run '^$' -bench . -benchtime=1x
 ```
 
-Also run `GOWORK=off go vet ./...` after changes involving exported APIs, reflection, filesystem safety, or CLI/runtime wiring.
+The static script runs `go mod tidy -diff`, `go vet`, Staticcheck and nilness with pinned analyzer versions.
 Parser, analyzer, or formatter changes should also smoke-test the fuzz targets with `go test -fuzz` and a bounded `-fuzztime`.
 
 CI runs static checks, full race tests, and example integration in parallel.
@@ -167,7 +170,7 @@ Before submitting a pull request, confirm that:
 - The change is focused and follows the repository rules.
 - Changed Go files are formatted and `git diff --check` passes.
 - Relevant targeted tests and `go test ./...` pass.
-- `go vet ./...` has been run when applicable.
+- `bash .github/scripts/ci.sh static` passes.
 - CLI or generator changes were exercised with a representative input.
 - Generated output is deterministic and its diff was reviewed.
 - English and Chinese root READMEs and detailed references are updated where applicable.

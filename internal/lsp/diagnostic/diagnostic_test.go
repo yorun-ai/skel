@@ -1,8 +1,6 @@
 package diagnostic
 
 import (
-	"go.yorun.ai/skelc/internal/lsp/source"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +8,7 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 	skeldiagnostic "go.yorun.ai/skelc/diagnostic"
+	"go.yorun.ai/skelc/internal/lsp/source"
 	"go.yorun.ai/skelc/internal/model"
 )
 
@@ -45,22 +44,4 @@ func TestCachedRangeMatchesUTF16Conversion(t *testing.T) {
 	actual := ToProtocolBuffer(item, buffer, func(path string) (uri.URI, source.Buffer, bool) { return uri.File(path), buffer, true })
 	assert.Equal(t, expected, actual)
 	assert.Equal(t, uint32(2), actual.Range.Start.Character)
-}
-
-func BenchmarkDiagnosticRange(b *testing.B) {
-	text := strings.Repeat("data User { id: int }\n", 10000)
-	r := skeldiagnostic.SourceRange{Start: model.Position{Line: 9999, Column: 6}, End: model.Position{Line: 9999, Column: 10}}
-	b.Run("build-buffer", func(b *testing.B) {
-		b.ReportAllocs()
-		for b.Loop() {
-			Range(text, r)
-		}
-	})
-	buffer := source.New(text)
-	b.Run("reuse-buffer", func(b *testing.B) {
-		b.ReportAllocs()
-		for b.Loop() {
-			RangeBuffer(buffer, r)
-		}
-	})
 }

@@ -7,7 +7,6 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/binding"
 	"go.yorun.ai/skelc/internal/lsp/source"
 )
 
@@ -73,5 +72,3 @@ func (s *Service) Rename(_ context.Context, params *protocol.RenameParams) (*pro
 	}
 	return &protocol.WorkspaceEdit{Changes: changes}, nil
 }
-
-func domainFromKey(key string) string { return binding.ParseKey(key).Domain }

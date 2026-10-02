@@ -1,11 +1,9 @@
 package compiler
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skelc/internal/loader"
 	"go.yorun.ai/skelc/internal/parser/grammar"
 )
 
@@ -28,28 +26,5 @@ func TestMergeDomainContentsUsesDomainFileDomain(t *testing.T) {
 	}
 	if len(merged.Entries) != 1 {
 		t.Fatalf("unexpected merged entry count: %d", len(merged.Entries))
-	}
-}
-
-func TestParseSingleSkelAllowsDomainDecorator(t *testing.T) {
-	filePath := filepath.Join(t.TempDir(), "user.skel")
-	singleSource := &loader.SourceFile{
-		FilePath: filePath,
-		Content: []byte(`@desc("User domain")
-domain demo.user
-data User { id: string }
-`),
-	}
-
-	analysis, err := parseFileWithImports(singleSource, nil)
-	if err != nil {
-		t.Fatalf("parse file: %v", err)
-	}
-	domain := analysis.Model()
-	if domain.Name() != "demo.user" {
-		t.Fatalf("unexpected domain name: %s", domain.Name())
-	}
-	if len(domain.Data()) != 1 || domain.Data()[0].Name != "User" {
-		t.Fatalf("unexpected data: %+v", domain.Data())
 	}
 }

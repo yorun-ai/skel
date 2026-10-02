@@ -17,14 +17,11 @@ func BuildApiView(domain *model.Domain) *PublicView {
 func collectViewData(domain *model.Domain, view *PublicView) {
 	data := map[*model.Data]bool{}
 	enums := map[*model.Enum]bool{}
-	visited := map[*model.Data]bool{}
 	var visitType func(*model.Type)
-	var visitData func(*model.Data)
-	visitData = func(d *model.Data) {
-		if d == nil || visited[d] {
+	visitData := func(d *model.Data) {
+		if d == nil || data[d] {
 			return
 		}
-		visited[d] = true
 		data[d] = true
 		for _, member := range d.Members {
 			visitType(member.Type)

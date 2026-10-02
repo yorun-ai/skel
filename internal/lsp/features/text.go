@@ -9,10 +9,6 @@ import (
 	lsource "go.yorun.ai/skelc/internal/lsp/source"
 )
 
-func qualifierBeforePosition(source string, position protocol.Position) string {
-	return qualifierBeforePositionBuffer(lsource.New(source), position)
-}
-
 func qualifierBeforePositionBuffer(buffer lsource.Buffer, position protocol.Position) string {
 	source := buffer.String()
 	offset := buffer.Offset(position)
@@ -39,10 +35,6 @@ func qualifierBeforePositionBuffer(buffer lsource.Buffer, position protocol.Posi
 	return source[start:end]
 }
 
-func decoratorPrefixBeforePosition(source string, position protocol.Position) (string, protocol.Range, bool) {
-	return decoratorPrefixBeforePositionBuffer(lsource.New(source), position)
-}
-
 func decoratorPrefixBeforePositionBuffer(buffer lsource.Buffer, position protocol.Position) (string, protocol.Range, bool) {
 	source := buffer.String()
 	offset := buffer.Offset(position)
@@ -58,10 +50,6 @@ func decoratorPrefixBeforePositionBuffer(buffer lsource.Buffer, position protoco
 		return "", protocol.Range{}, false
 	}
 	return source[start:offset], buffer.Range(start, offset), true
-}
-
-func completionValuesBeforePosition(source string, position protocol.Position) []string {
-	return completionValuesBeforePositionBuffer(lsource.New(source), position)
 }
 
 func completionValuesBeforePositionBuffer(buffer lsource.Buffer, position protocol.Position) []string {

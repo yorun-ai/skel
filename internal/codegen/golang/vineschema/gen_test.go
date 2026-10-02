@@ -1,13 +1,14 @@
 package vineschema
 
 import (
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
-	"go.yorun.ai/skelc/internal/model"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"go.yorun.ai/skelc/internal/codegen/codegentest"
+	"go.yorun.ai/skelc/internal/codegen/golang/view"
+	"go.yorun.ai/skelc/internal/model"
 )
 
 func TestGenSchemaGoRendersActorAuthEnabled(t *testing.T) {

@@ -16,8 +16,9 @@ func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*proto
 		return nil, nil
 	}
 	if occurrence, ok := snapshot.OccurrenceAt(document, params.Position); ok {
-		for _, location := range snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key)) {
-			definition := location.Definition
+		definitions := snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key))
+		if len(definitions) > 0 {
+			definition := definitions[0].Definition
 			name := definition.Key
 			if binding.ParseKey(name).Scope != "" {
 				name = definition.Name
@@ -28,7 +29,7 @@ func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*proto
 	if symbol, ok := symbolAt(document.Symbols, params.Position); ok {
 		return hoverResult(selectionRange(symbol), symbol.Detail, symbol.Name, symbol.Description), nil
 	}
-	for _, token := range scanIdentifiers(document.Source) {
+	for _, token := range document.Buffer.IdentifierTokens() {
 		range_ := document.Buffer.Range(token.Start, token.End)
 		if containsPosition(range_, params.Position) && slices.Contains(completionTypes, token.Value) {
 			return hoverResult(range_, "built-in type", token.Value, ""), nil

@@ -9,20 +9,16 @@ import (
 	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
 
-func (s *_Server) publishDiagnostics(ctx context.Context, documentURI uri.URI) error {
+func (s *_Server) publishDiagnostics(ctx context.Context, documentURI uri.URI) {
 	client, ok := protocol.ClientFromContext(ctx)
 	if !ok {
-		return nil
+		return
 	}
 	s.rememberClient(ctx)
-	return s.publishDiagnosticsWithClient(ctx, client, documentURI)
+	s.publishDocumentDiagnostics(client, documentURI, s.workspace.Document(documentURI))
 }
 
-func (s *_Server) publishDiagnosticsWithClient(ctx context.Context, client protocol.Client, documentURI uri.URI) error {
-	return s.publishDocumentDiagnostics(ctx, client, documentURI, s.workspace.Document(documentURI))
-}
-
-func (s *_Server) publishDocumentDiagnostics(ctx context.Context, client protocol.Client, documentURI uri.URI, document *workspace.Document) error {
+func (s *_Server) publishDocumentDiagnostics(client protocol.Client, documentURI uri.URI, document *workspace.Document) {
 	s.mu.RLock()
 	semantic := append([]protocol.Diagnostic{}, s.semantic[documentURI]...)
 	s.mu.RUnlock()
@@ -37,5 +33,4 @@ func (s *_Server) publishDocumentDiagnostics(ctx context.Context, client protoco
 		params.Version = protocol.NewOptional(document.Version)
 	}
 	s.publisher.enqueue(_DiagnosticBatch{generation: s.diagnosticGeneration, client: client, params: params, removed: document == nil})
-	return nil
 }
