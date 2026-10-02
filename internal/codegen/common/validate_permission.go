@@ -10,11 +10,19 @@ func validatePermissionExpr(require *model.PermissionRequire) error {
 	if require == nil || require.Expr == nil {
 		return nil
 	}
+	active := map[*model.PermissionExpr]uint8{}
 	var validate func(*model.PermissionExpr) error
 	validate = func(expr *model.PermissionExpr) error {
 		if expr == nil {
 			return fmt.Errorf("permission expression is nil")
 		}
+		if active[expr] == 1 {
+			return fmt.Errorf("cyclic permission expression")
+		}
+		if active[expr] == 2 {
+			return nil
+		}
+		active[expr] = 1
 		switch expr.Mode {
 		case model.PermissionRequireModeCode:
 		case model.PermissionRequireModeCheck:
@@ -38,6 +46,7 @@ func validatePermissionExpr(require *model.PermissionRequire) error {
 		default:
 			return fmt.Errorf("unsupported permission require mode %q", expr.Mode)
 		}
+		active[expr] = 2
 		return nil
 	}
 	return validate(require.Expr)

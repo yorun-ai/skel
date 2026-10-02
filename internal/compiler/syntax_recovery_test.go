@@ -220,3 +220,56 @@ func TestParseSourceRecoveringRetainsDeclarationsAfterDiagnosticLimit(t *testing
 		t.Fatalf("expected declaration after diagnostic limit to survive, got %+v", last)
 	}
 }
+
+func TestWorkspaceAnalysisDiscardsUnrecoverableFragments(t *testing.T) {
+	for _, declaration := range []string{
+		"config AppConfig eternal {\n    @desc(\"unfinished field\")",
+		"data User {\n    @desc(\"unfinished field\")\n}",
+		"service UserService { method",
+		"data",
+	} {
+		t.Run(declaration, func(t *testing.T) {
+			source := []byte("domain demo\n" + declaration + "\ndata Duplicate {}\ndata Duplicate {}\n")
+			diagnostics := AnalyzeWorkspace([]Source{{Path: "/workspace/incomplete.skel", Content: source}})
+			if !slices.ContainsFunc(diagnostics, func(diagnostic Diagnostic) bool {
+				return strings.HasPrefix(diagnostic.Code, "syntax.")
+			}) {
+				t.Fatalf("expected syntax diagnostic, got %v", diagnostics)
+			}
+			if !slices.ContainsFunc(diagnostics, func(diagnostic Diagnostic) bool {
+				return diagnostic.Code == DiagnosticCodeSemanticDuplicate
+			}) {
+				t.Fatalf("expected later declarations to receive semantic analysis, got %v", diagnostics)
+			}
+		})
+	}
+}
+
+func TestWorkspaceAnalysisHandlesIncompleteFragmentAfterDiagnosticLimit(t *testing.T) {
+	var source strings.Builder
+	source.WriteString("domain demo\n")
+	for index := range analyzer.MaxDiagnosticsPerDomain {
+		fmt.Fprintf(&source, "data Broken%d { id string }\n", index)
+	}
+	source.WriteString("config AppConfig eternal {\n    @desc(\"unfinished field\")\n}\ndata Valid {}\n")
+	diagnostics := AnalyzeWorkspace([]Source{{Path: "/workspace/limited.skel", Content: []byte(source.String())}})
+	if len(diagnostics) != analyzer.MaxDiagnosticsPerDomain {
+		t.Fatalf("expected %d diagnostics, got %v", analyzer.MaxDiagnosticsPerDomain, diagnostics)
+	}
+}
+
+func TestWorkspaceAnalysisHandlesEveryConfigEditingPrefix(t *testing.T) {
+	declaration := `config AppConfig eternal {
+    @desc("server address")
+    address: string
+}`
+	for end := 0; end <= len(declaration); end++ {
+		t.Run(fmt.Sprint(end), func(t *testing.T) {
+			source := []byte("domain demo\n" + declaration[:end])
+			diagnostics := AnalyzeWorkspace([]Source{{Path: "/workspace/config.skel", Content: source}})
+			if end == len(declaration) && len(diagnostics) != 0 {
+				t.Fatalf("expected valid complete config, got %v", diagnostics)
+			}
+		})
+	}
+}

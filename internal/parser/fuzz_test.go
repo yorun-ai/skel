@@ -5,6 +5,7 @@ import "testing"
 func FuzzParseSource(f *testing.F) {
 	for _, seed := range []string{
 		"domain fuzz.demo\n",
+		"domain A@A\ndata A{}",
 		"domain fuzz.demo\ndata User {\n    id: uuid\n    tags: list<string?>\n}\n",
 		"domain fuzz.demo\npub resource File { action read }\nservice Files { method get { require any(File:read) } }\n",
 		"domain fuzz.demo\r\ndata User { id: string }\r\n",

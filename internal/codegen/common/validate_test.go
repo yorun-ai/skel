@@ -39,3 +39,54 @@ func TestValidateDomainRejectsMalformedNestedModels(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateDomainRejectsCyclicStructuralTypes(t *testing.T) {
+	kind := new(model.Type{Kind: model.TypeKindList})
+	kind.List = new(model.ListType{Value: kind})
+	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{{Name: "Node", Kind: model.DataKindData, Members: []*model.DataMember{{Name: "value", Type: kind}}}}})
+	if err := ValidateDomain(domain); err == nil || !strings.Contains(err.Error(), "cyclic type") {
+		t.Fatalf("expected cyclic type error, got %v", err)
+	}
+}
+
+func TestValidateDomainRejectsMalformedGenerics(t *testing.T) {
+	box := new(model.Data{Name: "Box", Kind: model.DataKindData, TypeParameters: []*model.TypeParameter{{Name: "T"}}})
+	for _, kind := range []*model.Type{
+		{Kind: model.TypeKindData, Data: box},
+		{Kind: model.TypeKindData, Data: box, TypeArguments: []*model.Type{nil}},
+		{Kind: model.TypeKindData, Data: box, TypeArguments: []*model.Type{{Kind: model.TypeKindScalar, Scalar: model.ScalarString}, {Kind: model.TypeKindScalar, Scalar: model.ScalarBinary}}},
+	} {
+		domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{{Name: "Value", Kind: model.DataKindData, Members: []*model.DataMember{{Name: "box", Type: kind}}}}})
+		if err := ValidateDomain(domain); err == nil {
+			t.Fatal("expected invalid generic model to be rejected")
+		}
+	}
+}
+
+func TestValidateDomainRejectsCyclicPermissionExpressions(t *testing.T) {
+	expression := new(model.PermissionExpr{Mode: model.PermissionRequireModeAll})
+	expression.Children = []*model.PermissionExpr{expression}
+	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Services: []*model.Service{{Name: "Service", Require: new(model.PermissionRequire{Expr: expression})}}})
+	if err := ValidateDomain(domain); err == nil || !strings.Contains(err.Error(), "cyclic permission") {
+		t.Fatalf("expected cyclic permission error, got %v", err)
+	}
+}
+
+func TestValidateDomainAllowsRecursiveDataAndSharedTypes(t *testing.T) {
+	data := new(model.Data{Name: "Node", Kind: model.DataKindData})
+	reference := new(model.Type{Kind: model.TypeKindData, Data: data, Nullable: true})
+	kind := new(model.Type{Kind: model.TypeKindMap, Map: new(model.MapType{Key: new(model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString}), Value: reference})})
+	data.Members = []*model.DataMember{{Name: "next", Type: reference}, {Name: "children", Type: kind}, {Name: "otherChildren", Type: kind}}
+	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{data}})
+	if err := ValidateDomain(domain); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestValidateDomainRejectsMalformedReferencedData(t *testing.T) {
+	referenced := new(model.Data{Name: "Nested", Kind: model.DataKindData, Members: []*model.DataMember{nil}})
+	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{{Name: "Value", Kind: model.DataKindData, Members: []*model.DataMember{{Name: "nested", Type: new(model.Type{Kind: model.TypeKindData, Data: referenced})}}}}})
+	if err := ValidateDomain(domain); err == nil || !strings.Contains(err.Error(), "nil member") {
+		t.Fatalf("expected referenced data error, got %v", err)
+	}
+}
