@@ -3,6 +3,8 @@ package lsp
 import (
 	"context"
 	"net"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -37,8 +39,7 @@ func TestServeLifecycle(t *testing.T) {
 
 	root := uri.File(t.TempDir())
 	result, err := server.Initialize(t.Context(), &protocol.InitializeParams{
-		//lint:ignore SA1019 Exercise initialization through the legacy rootUri fallback.
-		RootURI: &root, Capabilities: protocol.ClientCapabilities{},
+		WorkspaceFolders: protocol.NewNullable([]protocol.WorkspaceFolder{{URI: root, Name: "test"}}),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, protocol.PositionEncodingKindUTF16, result.Capabilities.PositionEncoding)
@@ -67,6 +68,60 @@ func TestServeLifecycle(t *testing.T) {
 		require.NoError(t, err)
 	case <-time.After(2 * time.Second):
 		t.Fatal("language server did not exit after the exit notification")
+	}
+}
+
+func TestInitializeLoadsWorkspaceRootsWithLegacyFallbacks(t *testing.T) {
+	root := t.TempDir()
+	documents := map[string]uri.URI{}
+	for _, name := range []string{"folders", "uri", "path"} {
+		directory := filepath.Join(root, name)
+		require.NoError(t, os.Mkdir(directory, 0o700))
+		path := filepath.Join(directory, "input.skel")
+		require.NoError(t, os.WriteFile(path, []byte("domain demo."+name+"\ndata Value { id: string }\n"), 0o600))
+		documents[name] = uri.File(path)
+	}
+	for _, test := range []struct {
+		name         string
+		folders      bool
+		emptyFolders bool
+		rootURI      bool
+		rootPath     bool
+		want         string
+	}{
+		{name: "workspace folders take precedence", folders: true, rootURI: true, rootPath: true, want: "folders"},
+		{name: "root URI takes precedence over path", rootURI: true, rootPath: true, want: "uri"},
+		{name: "root path fallback", rootPath: true, want: "path"},
+		{name: "explicit empty folders disable fallback", emptyFolders: true, rootURI: true, rootPath: true},
+		{name: "no workspace roots"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server := newServer()
+			t.Cleanup(server.stopSemanticAnalysis)
+			params := new(protocol.InitializeParams)
+			if test.folders {
+				params.WorkspaceFolders = protocol.NewNullable([]protocol.WorkspaceFolder{{URI: uri.File(filepath.Join(root, "folders")), Name: "test"}})
+			} else if test.emptyFolders {
+				params.WorkspaceFolders = protocol.NewNullable([]protocol.WorkspaceFolder{})
+			}
+			if test.rootURI {
+				//lint:ignore SA1019 Verify the supported rootUri fallback and its precedence.
+				params.RootURI = new(uri.File(filepath.Join(root, "uri")))
+			}
+			if test.rootPath {
+				//lint:ignore SA1019 Verify workspace discovery for legacy clients sending rootPath.
+				params.RootPath = protocol.NewNullable(filepath.Join(root, "path"))
+			}
+			_, err := server.Initialize(t.Context(), params)
+			require.NoError(t, err)
+			snapshot := server.workspace.Snapshot()
+			if test.want == "" {
+				assert.Empty(t, snapshot.Documents())
+				return
+			}
+			require.Len(t, snapshot.Documents(), 1)
+			assert.NotNil(t, snapshot.Document(documents[test.want]))
+		})
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestParseServiceWithoutActor(t *testing.T) {
+func TestCompileServiceWithoutActor(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": describedUserDomain,
 		"service.skel": `
@@ -31,7 +31,7 @@ service UserService {
 	}
 }
 
-func TestParseEvent(t *testing.T) {
+func TestCompileEvent(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": describedUserDomain,
 		"event.skel": `
@@ -66,7 +66,7 @@ event UserCreatedEvent {
 	}
 }
 
-func TestParseTask(t *testing.T) {
+func TestCompileTask(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": describedUserDomain,
 		"task.skel": `
@@ -105,7 +105,7 @@ task RebuildUserIndexTask {
 	}
 }
 
-func TestParseDeprecatedMetadata(t *testing.T) {
+func TestCompileDeprecatedMetadata(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": "domain demo\n",
 		"deprecated.skel": `
@@ -208,7 +208,7 @@ web PortalWeb {
 	}
 }
 
-func TestParseRejectsDeprecatedOnStructuralBlocks(t *testing.T) {
+func TestCompileRejectsDeprecatedOnStructuralBlocks(t *testing.T) {
 	tests := map[string]string{
 		"domain": `@deprecated("Not supported")
 domain demo

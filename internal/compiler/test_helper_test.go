@@ -35,17 +35,11 @@ func parseDomain(t *testing.T, files map[string]string) *model.Domain {
 		writeFile(t, filepath.Join(dir, name), content)
 	}
 
-	loadResult, err := loader.Load(dir)
+	result, err := Compile(Option{SkelIn: dir})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("compile domain: %v", err)
 	}
-	sourceFiles := loadResult.Files
-
-	domain, err := parseDomainFilesWithImports(findDomainFileForTest(t, sourceFiles), sourceFiles, nil)
-	if err != nil {
-		t.Fatalf("parse domain: %v", err)
-	}
-	return domain.Model()
+	return result.Domain
 }
 
 func findDataByName(t *testing.T, domain *model.Domain, name string) *model.Data {
@@ -66,18 +60,6 @@ func writeFile(t *testing.T, path string, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
-}
-
-func findDomainFileForTest(t *testing.T, sourceFiles []*loader.SourceFile) *loader.SourceFile {
-	t.Helper()
-
-	for _, sourceFile := range sourceFiles {
-		if filepath.Base(sourceFile.FilePath) == loader.DomainFileName {
-			return sourceFile
-		}
-	}
-	t.Fatal("domain.skel not found")
-	return nil
 }
 
 func identForTest(value string) *grammar.Identifier {

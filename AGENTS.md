@@ -58,6 +58,9 @@
 ## Tests
 
 - Keep implementation tests paired with their source files. Shared setup may live in a narrowly scoped test helper file.
+- Name unit tests `<source>_test.go`. For larger suites or integration scenarios, use `<entrypoint>_<scenario>_test.go`; name tests after the current entrypoint rather than a removed API.
+- Use `<subject>_benchmark_test.go` and `<subject>_fuzz_test.go` for dedicated benchmark and fuzz files. Keep shared setup in `test_helper_test.go` or `<subject>_helper_test.go`; avoid vague names such as `performance_test.go` and `api_util_test.go`.
+- Preserve tests for currently supported compatibility behavior. Remove retired-feature assertions only after confirming the support boundary, and exercise production entrypoints instead of recreating removed production pipelines in test helpers.
 - Use `t.TempDir` for filesystem tests and `t.Cleanup` to restore modified globals or environment variables.
 - Do not write test output into repository source directories.
 - Add parser and formatter coverage for whitespace, comments, source locations, invalid input, and round trips when relevant.

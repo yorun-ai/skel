@@ -179,7 +179,6 @@ func TestRunSkelcGenGoPreservesUnmanagedOutput(t *testing.T) {
 	assertFileContains(t, filepath.Join(goOut, "old.go"), "old")
 	assertFileContains(t, filepath.Join(goOut, "doc.go"), "package skeled")
 	assertFileContains(t, filepath.Join(goOut, "doc.go"), common.GeneratedFileMarker)
-	assertFileMissing(t, filepath.Join(goOut, ".skelc-manifest.json"))
 }
 
 func TestRunSkelcGenGoDoesNotChangeOutputWhenCompilationFails(t *testing.T) {

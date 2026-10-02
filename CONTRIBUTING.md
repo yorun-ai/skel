@@ -50,6 +50,8 @@ Changes to one boundary often require coordinated parser, formatter, generator, 
 - Format changed Go files with `gofmt`.
 - Follow the naming and implementation rules in [AGENTS.md](AGENTS.md).
 - Keep implementation tests paired with their source files.
+- Use `<source>_test.go` for unit tests and `<entrypoint>_<scenario>_test.go` for split or integration suites. Dedicated benchmarks and fuzz targets use `<subject>_benchmark_test.go` and `<subject>_fuzz_test.go`; shared setup uses `test_helper_test.go` or `<subject>_helper_test.go`.
+- Test names and fixtures must describe the current behavior. Test supported compatibility paths through production entrypoints; do not reproduce retired implementations in helpers. Change one input at a time when testing whether each metadata field affects a compatibility hash.
 - Use `t.TempDir` for generated fixtures and avoid writing test output into the repository.
 - Preserve deterministic ordering for inputs, symbols, dependencies, diagnostics, and generated files.
 

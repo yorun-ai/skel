@@ -2,7 +2,6 @@ package source
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -10,6 +9,7 @@ import (
 	"go.yorun.ai/skelc/internal/codegen/codegentest"
 	"go.yorun.ai/skelc/internal/codegen/golang/view"
 	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skelc/internal/testutil"
 )
 
 func TestCastData(t *testing.T) {
@@ -172,10 +172,5 @@ func TestGeneratedGenerics(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	command := exec.Command("go", "test", ".")
-	command.Dir = output
-	command.Env = append(os.Environ(), "GOWORK=off")
-	if result, err := command.CombinedOutput(); err != nil {
-		t.Fatalf("generated generic code: %v\n%s", err, result)
-	}
+	testutil.Go(t, output, "test", ".")
 }

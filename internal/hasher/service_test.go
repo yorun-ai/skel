@@ -50,45 +50,51 @@ func TestFillHashesIncludesAllowVia(t *testing.T) {
 	}
 }
 
-func TestFillHashesIncludesSensitiveMetadata(t *testing.T) {
-	oldDomain := newHashTestDomain(t, "User service")
-	newDomain := newHashTestDomain(t, "User service")
-	newDomain.Data()[0].Members[0].Sensitive = true
-	newDomain.Services()[0].Methods[0].Arguments[0].Sensitive = true
+func TestFillHashesIncludesMetadataIndependently(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		mutate      func(*model.Domain)
+		changesData bool
+	}{
+		{"member sensitive", func(d *model.Domain) { d.Data()[0].Members[0].Sensitive = true }, true},
+		{"argument sensitive", func(d *model.Domain) { d.Services()[0].Methods[0].Arguments[0].Sensitive = true }, false},
+		{"member deprecated", func(d *model.Domain) { d.Data()[0].Members[0].Deprecated = false }, true},
+		{"member deprecated reason", func(d *model.Domain) { d.Data()[0].Members[0].DeprecatedReason = "New member reason" }, true},
+		{"method deprecated", func(d *model.Domain) { d.Services()[0].Methods[0].Deprecated = false }, false},
+		{"method deprecated reason", func(d *model.Domain) { d.Services()[0].Methods[0].DeprecatedReason = "New method reason" }, false},
+		{"argument deprecated", func(d *model.Domain) { d.Services()[0].Methods[0].Arguments[0].Deprecated = false }, false},
+		{"argument deprecated reason", func(d *model.Domain) {
+			d.Services()[0].Methods[0].Arguments[0].DeprecatedReason = "New argument reason"
+		}, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			baseline := newHashTestDomain(t, "User service")
+			candidate := newHashTestDomain(t, "User service")
+			for _, domain := range []*model.Domain{baseline, candidate} {
+				member := domain.Data()[0].Members[0]
+				member.Deprecated, member.DeprecatedReason = true, "Original member reason"
+				method := domain.Services()[0].Methods[0]
+				method.Deprecated, method.DeprecatedReason = true, "Original method reason"
+				argument := method.Arguments[0]
+				argument.Deprecated, argument.DeprecatedReason = true, "Original argument reason"
+			}
+			// Change one field at a time so another metadata change cannot hide a missing hash input.
+			test.mutate(candidate)
+			fillHashes(t, baseline, candidate)
 
-	fillHashes(t, oldDomain, newDomain)
-
-	if oldDomain.Data()[0].Hash == newDomain.Data()[0].Hash {
-		t.Fatal("expected data hash to change when sensitive metadata changes")
-	}
-	if oldDomain.Services()[0].Methods[0].Hash == newDomain.Services()[0].Methods[0].Hash {
-		t.Fatal("expected method hash to change when sensitive metadata changes")
-	}
-}
-
-func TestFillHashesIncludesDeprecatedMetadata(t *testing.T) {
-	oldDomain := newHashTestDomain(t, "User service")
-	newDomain := newHashTestDomain(t, "User service")
-	newDomain.Data()[0].Members[0].Deprecated = true
-	newDomain.Data()[0].Members[0].DeprecatedReason = "Use id instead"
-	newDomain.Services()[0].Methods[0].Deprecated = true
-	newDomain.Services()[0].Methods[0].DeprecatedReason = "Use getProfile instead"
-	newDomain.Services()[0].Methods[0].Arguments[0].Deprecated = true
-	newDomain.Services()[0].Methods[0].Arguments[0].DeprecatedReason = "Use subject instead"
-
-	fillHashes(t, oldDomain, newDomain)
-
-	if oldDomain.Data()[0].Hash == newDomain.Data()[0].Hash {
-		t.Fatal("expected data hash to change when member deprecation changes")
-	}
-	if oldDomain.Services()[0].Methods[0].Hash == newDomain.Services()[0].Methods[0].Hash {
-		t.Fatal("expected method hash to change when deprecation changes")
-	}
-	if oldDomain.Services()[0].Hash == newDomain.Services()[0].Hash {
-		t.Fatal("expected service hash to change when method deprecation changes")
-	}
-	if oldDomain.Hash() == newDomain.Hash() {
-		t.Fatal("expected domain hash to change when deprecation changes")
+			if changed := baseline.Data()[0].Hash != candidate.Data()[0].Hash; changed != test.changesData {
+				t.Fatalf("data hash changed = %t, want %t", changed, test.changesData)
+			}
+			if baseline.Services()[0].Methods[0].Hash == candidate.Services()[0].Methods[0].Hash {
+				t.Fatal("metadata change did not affect method hash")
+			}
+			if baseline.Services()[0].Hash == candidate.Services()[0].Hash {
+				t.Fatal("metadata change did not affect service hash")
+			}
+			if baseline.Hash() == candidate.Hash() {
+				t.Fatal("metadata change did not affect domain hash")
+			}
+		})
 	}
 }
 

@@ -2,8 +2,9 @@ package workspace
 
 import (
 	"fmt"
-	"go.lsp.dev/uri"
 	"testing"
+
+	"go.lsp.dev/uri"
 )
 
 func BenchmarkSnapshot(b *testing.B) {
