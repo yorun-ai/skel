@@ -24,6 +24,7 @@ type _Planner struct {
 	parenDepth     int
 	lineTokenCount int
 	previous       string
+	previousKind   string
 	topLine        _TopLineKind
 	inRequire      bool
 	parenIndents   []bool
@@ -107,6 +108,7 @@ func (p *_Planner) addBlockComment(token _Token) {
 	}
 	p.raw(normalizeBlockComment(token.value, baseIndent), 0)
 	p.previous = "comment"
+	p.previousKind = token.kind
 	p.lineTokenCount++
 }
 
@@ -134,6 +136,7 @@ func (p *_Planner) addSyntax(index int, token _Token) {
 		p.before(value)
 		p.text(value)
 		p.previous = value
+		p.previousKind = token.kind
 		p.lineTokenCount++
 		if next := p.nextMeaningful(index + 1); next != nil && next.value == "}" {
 			p.braceIndents = append(p.braceIndents, false)
@@ -159,6 +162,7 @@ func (p *_Planner) addSyntax(index int, token _Token) {
 		}
 		p.text(value)
 		p.previous = value
+		p.previousKind = token.kind
 		p.lineTokenCount++
 		return
 	case "(":
@@ -190,10 +194,17 @@ func (p *_Planner) addSyntax(index int, token _Token) {
 	}
 
 	p.previous = value
+	p.previousKind = token.kind
 	p.lineTokenCount++
 }
 
 func (p *_Planner) before(value string) {
+	// Path tokens consume every non-space character except braces. Preserve
+	// their boundary even when punctuation normally attaches to the prior token.
+	if p.lineTokenCount > 0 && p.previousKind == "Path" && value != "{" && value != "}" {
+		p.space()
+		return
+	}
 	if p.lineTokenCount == 0 || noSpaceBefore(value) || noSpaceAfter(p.previous) {
 		return
 	}
@@ -265,6 +276,7 @@ func (p *_Planner) breakLine(lines int) {
 	}
 	p.layout = append(p.layout, _Layout{kind: kind})
 	p.previous = ""
+	p.previousKind = ""
 	p.lineTokenCount = 0
 }
 
