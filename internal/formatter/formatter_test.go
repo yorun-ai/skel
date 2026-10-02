@@ -3,6 +3,7 @@ package formatter
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"go.yorun.ai/skelc/internal/compiler"
@@ -62,6 +63,39 @@ func TestFormatterIsIdempotentAroundMismatchedParenAndBrace(t *testing.T) {
 	second := formatTestSource(t, first)
 	if string(first) != string(second) {
 		t.Fatalf("formatter is not idempotent: first=%q second=%q", first, second)
+	}
+}
+
+func TestSourcePreservesPathTokenBoundaries(t *testing.T) {
+	for _, source := range []string{"/ (\n0", "/ ( 0 )", "/route ?", "/route . field", "/route ,", "/route [ 0 ]", "/route < T >", "/route : value"} {
+		t.Run(source, func(t *testing.T) {
+			first := formatTestSource(t, []byte(source))
+			second := formatTestSource(t, first)
+			if string(first) != string(second) {
+				t.Fatalf("formatter is not idempotent: first=%q second=%q", first, second)
+			}
+			originalTokens, err := lex([]byte(source))
+			if err != nil {
+				t.Fatal(err)
+			}
+			formattedTokens, err := lex(first)
+			if err != nil {
+				t.Fatal(err)
+			}
+			meaningful := func(tokens []_Token) []_Token {
+				result := []_Token{}
+				for _, token := range tokens {
+					if token.kind != "Newline" {
+						token.column = 0
+						result = append(result, token)
+					}
+				}
+				return result
+			}
+			if !reflect.DeepEqual(meaningful(originalTokens), meaningful(formattedTokens)) {
+				t.Fatalf("formatting changed path token boundaries: %q", first)
+			}
+		})
 	}
 }
 

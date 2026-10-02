@@ -27,6 +27,7 @@ func FuzzSourceIdempotent(f *testing.F) {
 	f.Add([]byte("0/*\n  */"))
 	f.Add([]byte("{\n0/*\n  */"))
 	f.Add([]byte("0\"\"\"\n  \"\"\""))
+	f.Add([]byte("/ (\n0"))
 	f.Fuzz(func(t *testing.T, source []byte) {
 		first, err := Source(source)
 		if err != nil {
