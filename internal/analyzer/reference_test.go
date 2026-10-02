@@ -10,11 +10,12 @@ import (
 func TestParseTypeAndFixRef(t *testing.T) {
 	page := &model.Data{
 		Name: "Page",
+		Kind: model.DataKindData,
 		TypeParameters: []*model.TypeParameter{
 			{Name: "TItem"},
 		},
 	}
-	user := &model.Data{Name: "User"}
+	user := &model.Data{Name: "User", Kind: model.DataKindData}
 
 	tp := parseTypeTest(t, refGrammarType("Page", refGrammarType("User")))
 	fixTypeRefTest(t, tp, &_RefContext{
@@ -42,7 +43,7 @@ func TestParseTypeAndFixRef(t *testing.T) {
 }
 
 func TestTypeRefData(t *testing.T) {
-	user := &model.Data{Name: "User"}
+	user := &model.Data{Name: "User", Kind: model.DataKindData}
 	page := &model.Type{
 		Kind: model.TypeKindData,
 		Data: &model.Data{Name: "Page"},
@@ -85,6 +86,7 @@ func TestFixRefReturnsErrorWhenDefinitionMissing(t *testing.T) {
 func TestFixRefReturnsErrorWhenGenericTypeArgsMismatch(t *testing.T) {
 	page := &model.Data{
 		Name: "Page",
+		Kind: model.DataKindData,
 		TypeParameters: []*model.TypeParameter{
 			{Name: "TItem"},
 		},
@@ -95,8 +97,8 @@ func TestFixRefReturnsErrorWhenGenericTypeArgsMismatch(t *testing.T) {
 	expectFixTypeRefDiagnostic(t, "mismatched type arguments", typ, &_RefContext{
 		dataList: map[string]*model.Data{
 			"Page":    page,
-			"User":    {Name: "User"},
-			"Profile": {Name: "Profile"},
+			"User":    {Name: "User", Kind: model.DataKindData},
+			"Profile": {Name: "Profile", Kind: model.DataKindData},
 		},
 	})
 }
@@ -104,6 +106,7 @@ func TestFixRefReturnsErrorWhenGenericTypeArgsMismatch(t *testing.T) {
 func TestFixRefReturnsErrorWhenGenericTypeArgsMissing(t *testing.T) {
 	page := &model.Data{
 		Name: "Page",
+		Kind: model.DataKindData,
 		TypeParameters: []*model.TypeParameter{
 			{Name: "TItem"},
 		},

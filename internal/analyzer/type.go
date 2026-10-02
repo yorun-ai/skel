@@ -62,6 +62,9 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 				t.ExternalAliasExplicit = import_.Model.ExplicitAlias
 				return true
 			}
+			if !checkDataValueType(reporter, t, dataType) {
+				return false
+			}
 			if !reporter.check(dataType.Pub, "%s imported data %s.%s is not public", t.Pos, import_.Model.Alias, refName) {
 				return false
 			}
@@ -96,6 +99,9 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			return true
 		}
 		if dataOK {
+			if !checkDataValueType(reporter, t, dataType) {
+				return false
+			}
 			t.Kind = model.TypeKindData
 			t.Data = dataType
 			t.SkelName = dataType.SkelName
@@ -137,4 +143,9 @@ func checkTypeArguments(reporter *_DiagnosticReporter, t *model.Type, refName st
 		"%s generic data %s have mismatched type arguments(s), found=%d, expected=%d",
 		referencePos, refName, len(t.TypeArguments), len(t.Data.TypeParameters)) && valid
 	return valid
+}
+
+func checkDataValueType(reporter *_DiagnosticReporter, kind *model.Type, data *model.Data) bool {
+	return reporter.check(data.Kind == model.DataKindData,
+		"%s %s %s cannot be used as a value type", kind.Pos, data.Kind, data.Name)
 }

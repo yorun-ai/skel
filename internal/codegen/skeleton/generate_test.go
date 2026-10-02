@@ -537,3 +537,26 @@ func TestGenImportAliasesDoNotSelectUnrelatedDomains(t *testing.T) {
 		})
 	}
 }
+
+func TestPublicConfigStructuredTypesRoundTrip(t *testing.T) {
+	domain, _ := parseDomainForTest(t, "domain.skel", "domain demo\n", "config.skel", `domain demo
+ data Entry<TValue> { value: TValue }
+ data Record { content: binary children: list<Record> }
+ pub config AppConfig instant {
+  records: list<Record>
+  entries: map<string, Entry<binary?>?>
+ }
+`, nil)
+	out := t.TempDir()
+	mustGenerateForTest(t, domain, Option{PubOnly: true, Out: out})
+	parsed, err := compiler.Compile(compiler.Option{SkelIn: out})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(parsed.Domain.Data()) != 2 || len(parsed.Domain.Configs()) != 1 {
+		t.Fatalf("incomplete public config dependencies: data=%d, configs=%d", len(parsed.Domain.Data()), len(parsed.Domain.Configs()))
+	}
+	if !parsed.Domain.Configs()[0].Members[0].Type.ContainsBinaryType() {
+		t.Fatal("public config lost nested binary type")
+	}
+}

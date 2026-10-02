@@ -31,7 +31,7 @@ func (p *Analysis) normalizeWithMissingImports(allowMissingImports bool) {
 	}
 	p.normalizeDeclaredData(refs)
 	p.normalizeOwnedTypes(refs, allowMissingImports)
-	p.validateNormalizedData(allowMissingImports)
+	p.validateNormalizedData()
 }
 
 func (p *Analysis) normalizeDeclaredData(refs *_RefContext) {
@@ -87,7 +87,7 @@ func (p *Analysis) normalizeOwnedTypes(refs *_RefContext, allowMissingImports bo
 	}
 }
 
-func (p *Analysis) validateNormalizedData(allowMissingImports bool) {
+func (p *Analysis) validateNormalizedData() {
 	allData := sliceutil.Filter(sortData(p.dataMap), func(dataType *model.Data) bool {
 		return !p.invalidData[dataType]
 	})
@@ -101,11 +101,6 @@ func (p *Analysis) validateNormalizedData(allowMissingImports bool) {
 		}
 	}
 	p.checkHardCycleReferences(allData)
-	p.checkDataDoesNotReferenceConfigs(allData)
-	if allowMissingImports {
-		return
-	}
-	p.checkConfigMemberTypes(allData)
 }
 
 func (p *Analysis) normalizeDataType(dataType *model.Data, refs *_RefContext) bool {

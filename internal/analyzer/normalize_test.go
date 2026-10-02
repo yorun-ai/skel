@@ -8,7 +8,7 @@ import (
 )
 
 func TestAnalyzeReturnsErrorWhenDataReferencesConfig(t *testing.T) {
-	expectAnalyzeDiagnosticsContains(t, "data Page cannot reference config SiteConfig", &grammar.SkelContent{
+	expectAnalyzeDiagnosticsContains(t, "config SiteConfig cannot be used as a value type", &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
@@ -32,8 +32,8 @@ func TestAnalyzeReturnsErrorWhenDataReferencesConfig(t *testing.T) {
 	})
 }
 
-func TestAnalyzeReturnsErrorWhenConfigReferencesData(t *testing.T) {
-	expectAnalyzeDiagnosticsContains(t, "config AppConfig member database cannot reference data Database", &grammar.SkelContent{
+func TestAnalyzeAllowsConfigReferencesData(t *testing.T) {
+	mustAnalyze(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
@@ -113,8 +113,8 @@ func TestAnalyzeAllowsConfigListValueEnum(t *testing.T) {
 	}
 }
 
-func TestAnalyzeReturnsErrorWhenConfigMemberIsBinary(t *testing.T) {
-	expectAnalyzeDiagnosticsContains(t, "config AppConfig member payload cannot use binary type", &grammar.SkelContent{
+func TestAnalyzeAllowsConfigMemberBinary(t *testing.T) {
+	mustAnalyze(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
@@ -130,8 +130,8 @@ func TestAnalyzeReturnsErrorWhenConfigMemberIsBinary(t *testing.T) {
 	})
 }
 
-func TestAnalyzeReturnsErrorWhenConfigListValueIsBinary(t *testing.T) {
-	expectAnalyzeDiagnosticsContains(t, "config AppConfig member payloads list value cannot use binary type", &grammar.SkelContent{
+func TestAnalyzeAllowsConfigListBinary(t *testing.T) {
+	mustAnalyze(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
@@ -147,8 +147,8 @@ func TestAnalyzeReturnsErrorWhenConfigListValueIsBinary(t *testing.T) {
 	})
 }
 
-func TestAnalyzeReturnsErrorWhenConfigListValueIsData(t *testing.T) {
-	expectAnalyzeDiagnosticsContains(t, "config AppConfig member databases list value type must be scalar or enum", &grammar.SkelContent{
+func TestAnalyzeAllowsConfigListData(t *testing.T) {
+	mustAnalyze(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
@@ -172,8 +172,8 @@ func TestAnalyzeReturnsErrorWhenConfigListValueIsData(t *testing.T) {
 	})
 }
 
-func TestAnalyzeReturnsErrorWhenConfigMapValueIsNotScalarOrEnum(t *testing.T) {
-	expectAnalyzeDiagnosticsContains(t, "config AppConfig member databases map value type must be scalar or enum", &grammar.SkelContent{
+func TestAnalyzeAllowsConfigMapData(t *testing.T) {
+	mustAnalyze(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
@@ -197,8 +197,8 @@ func TestAnalyzeReturnsErrorWhenConfigMapValueIsNotScalarOrEnum(t *testing.T) {
 	})
 }
 
-func TestAnalyzeReturnsErrorWhenConfigMapValueIsBinary(t *testing.T) {
-	expectAnalyzeDiagnosticsContains(t, "config AppConfig member payloads map value cannot use binary type", &grammar.SkelContent{
+func TestAnalyzeAllowsConfigMapBinary(t *testing.T) {
+	mustAnalyze(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
