@@ -117,7 +117,7 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.D
 		if reporter.cancelled() {
 			break
 		}
-		member, memberValid := parseDataMember(reporter, grammarMember, kind)
+		member, memberValid := parseDataMember(reporter, grammarMember)
 		valid = memberValid && valid
 		valid = reporter.check(member.Name != skelmeta.SensitiveMarkerFieldName(),
 			"%s DataMember %s is reserved for the generated sensitive marker method",
@@ -144,7 +144,7 @@ func parseTypeParameter(reporter *_DiagnosticReporter, gtp *grammar.TypeParamete
 	}, valid
 }
 
-func parseDataMember(reporter *_DiagnosticReporter, gsm *grammar.DataMember, kind model.DataKind) (*model.DataMember, bool) {
+func parseDataMember(reporter *_DiagnosticReporter, gsm *grammar.DataMember) (*model.DataMember, bool) {
 	valid := checkCase(reporter, "DataMember", caseTypeLowerCamel, gsm.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, gsm.Decorators, _DecoratorContext{
 		allowDesc:       true,

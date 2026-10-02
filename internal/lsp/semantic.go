@@ -51,7 +51,7 @@ func (s *_Server) invalidateSemanticDiagnostics(ctx context.Context) {
 	stale = slices.Compact(stale)
 	snapshot := s.workspace.Snapshot()
 	for _, documentURI := range stale {
-		_ = s.publishDocumentDiagnostics(ctx, client, documentURI, snapshot.Document(documentURI))
+		s.publishDocumentDiagnostics(client, documentURI, snapshot.Document(documentURI))
 	}
 }
 
@@ -97,8 +97,7 @@ func (s *_Server) acceptSemanticAnalysis(result analysis.Result) {
 	}
 	slices.Sort(documentURIs)
 	snapshot := s.workspace.Snapshot()
-	ctx := context.Background()
 	for _, documentURI := range documentURIs {
-		_ = s.publishDocumentDiagnostics(ctx, client, documentURI, snapshot.Document(documentURI))
+		s.publishDocumentDiagnostics(client, documentURI, snapshot.Document(documentURI))
 	}
 }

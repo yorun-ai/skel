@@ -40,7 +40,6 @@ func (g *_Gen) genWebGo() {
 		return
 	}
 	g.renderGo(webGoFilename, webGoTemplate, payload)
-	return
 }
 
 func (g *_Gen) buildWebGoPayload() *WebGoPayload {

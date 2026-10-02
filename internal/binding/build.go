@@ -93,69 +93,67 @@ func Build(revision *source.Document, parsed *grammar.SkelContent) *Document {
 			input(value.Input)
 		}
 	}
-	if parsed != nil {
-		for _, entry := range parsed.Entries {
-			scope = ""
-			if entry.Data != nil {
-				scope = addScope(document, revision, entry.Data)
+	for _, entry := range parsed.Entries {
+		scope = ""
+		if entry.Data != nil {
+			scope = addScope(document, revision, entry.Data)
+		}
+		switch {
+		case entry.Data != nil:
+			members(entry.Data.Members)
+		case entry.Config != nil:
+			members(entry.Config.Members)
+		case entry.Event != nil:
+			if entry.Event.Payload != nil {
+				members(entry.Event.Payload.Members)
 			}
-			switch {
-			case entry.Data != nil:
-				members(entry.Data.Members)
-			case entry.Config != nil:
-				members(entry.Config.Members)
-			case entry.Event != nil:
-				if entry.Event.Payload != nil {
-					members(entry.Event.Payload.Members)
-				}
-			case entry.Actor != nil:
-				for _, section := range entry.Actor.Sections {
-					if section.Auth != nil {
-						if section.Auth.Credential != nil {
-							members(section.Auth.Credential.Members)
-						}
-						if section.Auth.Info != nil {
-							members(section.Auth.Info.Members)
-						}
+		case entry.Actor != nil:
+			for _, section := range entry.Actor.Sections {
+				if section.Auth != nil {
+					if section.Auth.Credential != nil {
+						members(section.Auth.Credential.Members)
+					}
+					if section.Auth.Info != nil {
+						members(section.Auth.Info.Members)
 					}
 				}
-			case entry.Service != nil:
-				for _, section := range entry.Service.Sections {
-					if section.Audience != nil {
-						reference(section.Audience.Actor, Actor)
+			}
+		case entry.Service != nil:
+			for _, section := range entry.Service.Sections {
+				if section.Audience != nil {
+					reference(section.Audience.Actor, Actor)
+				}
+				if section.Require != nil {
+					require(section.Require.Expr)
+				}
+				if method := section.Method; method != nil {
+					input(method.Input)
+					if method.Output != nil {
+						visitType(method.Output.Type)
 					}
-					if section.Require != nil {
-						require(section.Require.Expr)
-					}
-					if method := section.Method; method != nil {
-						input(method.Input)
-						if method.Output != nil {
-							visitType(method.Output.Type)
-						}
-						if method.Require != nil {
-							require(method.Require.Expr)
-						}
+					if method.Require != nil {
+						require(method.Require.Expr)
 					}
 				}
-			case entry.Web != nil:
-				for _, section := range entry.Web.Sections {
-					if section.Audience != nil {
-						reference(section.Audience.Actor, Actor)
+			}
+		case entry.Web != nil:
+			for _, section := range entry.Web.Sections {
+				if section.Audience != nil {
+					reference(section.Audience.Actor, Actor)
+				}
+			}
+		case entry.Resource != nil:
+			for _, section := range entry.Resource.Sections {
+				check(section.Check)
+				if section.Action != nil {
+					for _, value := range section.Action.Checks {
+						check(value)
 					}
 				}
-			case entry.Resource != nil:
-				for _, section := range entry.Resource.Sections {
-					check(section.Check)
-					if section.Action != nil {
-						for _, value := range section.Action.Checks {
-							check(value)
-						}
-					}
-				}
-			case entry.Task != nil:
-				for _, trigger := range entry.Task.Triggers {
-					input(trigger.Input)
-				}
+			}
+		case entry.Task != nil:
+			for _, trigger := range entry.Task.Triggers {
+				input(trigger.Input)
 			}
 		}
 	}
@@ -166,7 +164,7 @@ func addScope(document *Document, revision *source.Document, data *grammar.Data)
 	if len(data.TypeParameters) == 0 {
 		return ""
 	}
-	id := ScopeID(fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s:%d:%d", revision.ID(), data.Pos.Line, data.Pos.Column)))))
+	id := ScopeID(fmt.Sprintf("%x", sha256.Sum256(fmt.Appendf(nil, "%s:%d:%d", revision.ID(), data.Pos.Line, data.Pos.Column))))
 	scope := Scope{ID: id, Span: source.Span{Start: revision.Offset(data.Pos.Line, data.Pos.Column), End: revision.Offset(data.EndPos.Line, data.EndPos.Column)}}
 	for _, parameter := range data.TypeParameters {
 		if parameter.Name == nil {

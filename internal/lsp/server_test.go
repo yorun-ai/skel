@@ -37,6 +37,7 @@ func TestServeLifecycle(t *testing.T) {
 
 	root := uri.File(t.TempDir())
 	result, err := server.Initialize(t.Context(), &protocol.InitializeParams{
+		//lint:ignore SA1019 Exercise initialization through the legacy rootUri fallback.
 		RootURI: &root, Capabilities: protocol.ClientCapabilities{},
 	})
 	require.NoError(t, err)

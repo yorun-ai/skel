@@ -247,7 +247,7 @@ func BenchmarkWorkspaceSingleFileChange(b *testing.B) {
 	b.ResetTimer()
 	for b.Loop() {
 		version++
-		sources[len(sources)-1].Content = []byte(fmt.Sprintf("domain benchmark.d39\nimport benchmark.d38\npub data Value { previous: benchmark.d38.Value\nvalue%d: string }\n", version))
+		sources[len(sources)-1].Content = fmt.Appendf(nil, "domain benchmark.d39\nimport benchmark.d38\npub data Value { previous: benchmark.d38.Value\nvalue%d: string }\n", version)
 		if diagnostics := analyzer.Analyze(sources); len(diagnostics) != 0 {
 			b.Fatal(diagnostics)
 		}

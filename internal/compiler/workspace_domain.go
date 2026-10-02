@@ -99,7 +99,7 @@ func (w *WorkspaceAnalyzer) analyzeWorkspaceDomain(
 		domain.state = workspaceDomainFailed
 		return false
 	}
-	return w.analyzeResolvedWorkspaceDomain(ctx, domain, imports, domainsByName, diagnostics)
+	return w.analyzeResolvedWorkspaceDomain(ctx, domain, imports, diagnostics)
 }
 
 func (w *WorkspaceAnalyzer) resolveWorkspaceDomainImports(
@@ -168,7 +168,6 @@ func (w *WorkspaceAnalyzer) analyzeResolvedWorkspaceDomain(
 	ctx context.Context,
 	domain *_WorkspaceDomain,
 	imports _WorkspaceImportResolution,
-	domainsByName map[string][]*_WorkspaceDomain,
 	diagnostics *[]Diagnostic,
 ) bool {
 	domain.fingerprint = w.graph.inputs[domain.key]

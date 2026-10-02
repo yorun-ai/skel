@@ -10,16 +10,6 @@ import (
 	"go.yorun.ai/skelc/internal/util/sliceutil"
 )
 
-func (p *Analysis) normalize() {
-	p.normalizeWithMissingImports(false)
-}
-
-// normalizeImport resolves references owned by the imported domain while
-// preserving qualified references whose transitive domains were not loaded.
-func (p *Analysis) normalizeImport() {
-	p.normalizeWithMissingImports(true)
-}
-
 func (p *Analysis) normalizeWithMissingImports(allowMissingImports bool) {
 	refs := &_RefContext{
 		enums:                  p.enumsMap,

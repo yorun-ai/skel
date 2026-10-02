@@ -2,7 +2,16 @@
 set -euo pipefail
 
 usage() {
-  printf 'usage: ci.sh <changes|verify>\n' >&2
+  printf 'usage: ci.sh <changes|static|verify>\n' >&2
+}
+
+# Keep local validation, the PR gate and cache warmup on the same pinned checks.
+static_checks() {
+  export GOWORK=off
+  go mod tidy -diff
+  go vet ./...
+  go run honnef.co/go/tools/cmd/staticcheck@v0.8.1 -checks='SA*,S1*,U1000' ./...
+  go run golang.org/x/tools/go/analysis/passes/nilness/cmd/nilness@v0.47.0 ./...
 }
 
 # classify_changes reads NUL-delimited changed paths from stdin and reports the
@@ -65,6 +74,9 @@ changes() {
 case "${1:-}" in
   changes)
     changes
+    ;;
+  static)
+    static_checks
     ;;
   verify)
     verify_ci_results <<< "${NEEDS:-}"

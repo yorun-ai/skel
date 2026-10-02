@@ -30,7 +30,7 @@ func prepareInput(ctx context.Context, loaded loader.Result, recoverSyntax bool)
 		if recoverSyntax {
 			input.Parsed, input.ParseDiagnostics, err = ParseSourceRecoveringContext(ctx, file.FilePath, file.Content)
 		} else {
-			input.Parsed, err = parseContentContext(ctx, file, true)
+			input.Parsed, err = parseContentContext(ctx, file)
 		}
 		if err != nil {
 			return nil, err

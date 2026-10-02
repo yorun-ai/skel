@@ -17,11 +17,10 @@ func (s *_Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocum
 	changed := s.workspace.RefreshDirectory(document.URI)
 	s.invalidateSemanticDiagnostics(ctx)
 	for _, documentURI := range changed {
-		if err := s.publishDiagnostics(ctx, documentURI); err != nil {
-			return err
-		}
+		s.publishDiagnostics(ctx, documentURI)
 	}
-	return s.publishDiagnostics(ctx, document.URI)
+	s.publishDiagnostics(ctx, document.URI)
+	return nil
 }
 
 func (s *_Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
@@ -36,7 +35,8 @@ func (s *_Server) DidChange(ctx context.Context, params *protocol.DidChangeTextD
 	}
 	s.putDocument(params.TextDocument.URI, change.Text, params.TextDocument.Version, true)
 	s.invalidateSemanticDiagnostics(ctx)
-	return s.publishDiagnostics(ctx, params.TextDocument.URI)
+	s.publishDiagnostics(ctx, params.TextDocument.URI)
+	return nil
 }
 
 func (s *_Server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
@@ -46,13 +46,15 @@ func (s *_Server) DidClose(ctx context.Context, params *protocol.DidCloseTextDoc
 	exists := s.workspace.Close(documentURI)
 	s.invalidateSemanticDiagnostics(ctx)
 	if exists {
-		return s.publishDiagnostics(ctx, documentURI)
+		s.publishDiagnostics(ctx, documentURI)
+		return nil
 	}
 	client, ok := protocol.ClientFromContext(ctx)
 	if !ok {
 		return nil
 	}
-	return s.publishDocumentDiagnostics(ctx, client, documentURI, nil)
+	s.publishDocumentDiagnostics(client, documentURI, nil)
+	return nil
 }
 
 func (s *_Server) DidChangeWatchedFiles(ctx context.Context, params *protocol.DidChangeWatchedFilesParams) error {
@@ -61,9 +63,7 @@ func (s *_Server) DidChangeWatchedFiles(ctx context.Context, params *protocol.Di
 	changed := s.workspace.ApplyFileChanges(params.Changes)
 	s.invalidateSemanticDiagnostics(ctx)
 	for _, documentURI := range changed {
-		if err := s.publishDiagnostics(ctx, documentURI); err != nil {
-			return err
-		}
+		s.publishDiagnostics(ctx, documentURI)
 	}
 	return nil
 }
@@ -89,9 +89,7 @@ func (s *_Server) DidChangeWorkspaceFolders(ctx context.Context, params *protoco
 		if snapshot.Document(documentURI) != nil {
 			continue
 		}
-		if err := s.publishDocumentDiagnostics(ctx, client, documentURI, nil); err != nil {
-			return err
-		}
+		s.publishDocumentDiagnostics(client, documentURI, nil)
 	}
 	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -130,13 +129,4 @@ func appendAnalysisWarnings(diagnostics Diagnostics, warnings []string) Diagnost
 		})
 	}
 	return diagnostics
-}
-
-func findDomainFile(sourceFiles []*loader.SourceFile) (*loader.SourceFile, error) {
-	for _, sourceFile := range sourceFiles {
-		if filepath.Base(sourceFile.FilePath) == loader.DomainFileName {
-			return sourceFile, nil
-		}
-	}
-	return nil, fmt.Errorf("%s not found", loader.DomainFileName)
 }

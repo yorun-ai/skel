@@ -59,9 +59,7 @@ jobs:
 
       - name: Populate static analysis cache
         if: matrix.mode == 'standard'
-        run: |
-          go mod tidy -diff
-          go vet ./...
+        run: bash .github/scripts/ci.sh static
 
       - name: Populate example module cache
         if: matrix.mode == 'standard'

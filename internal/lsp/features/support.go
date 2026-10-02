@@ -9,28 +9,8 @@ import (
 	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
 
-func positionOffset(content string, position protocol.Position) int {
-	return source.New(content).Offset(position)
-}
-
-func positionInNonCode(content string, position protocol.Position) bool {
-	return source.New(content).InNonCode(position)
-}
-
-func offsetPosition(content string, offset int) protocol.Position {
-	return source.New(content).Position(offset)
-}
-
-func offsetRange(content string, start, end int) protocol.Range {
-	return source.New(content).Range(start, end)
-}
-
 func utf16Length(value string) int {
 	return source.UTF16Length(value)
-}
-
-func scanIdentifiers(content string) []source.Token {
-	return source.New(content).IdentifierTokens()
 }
 
 func isIdentifierValue(value string) bool {

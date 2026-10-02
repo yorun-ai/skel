@@ -144,7 +144,7 @@ func (b *_WireSchemaBuilder) renderContainerSchema(
 	var rendered strings.Builder
 	rendered.WriteString("{\n")
 	rendered.WriteString(indentWire(depth + 1))
-	rendered.WriteString(fmt.Sprintf("kind: '%s',\n", kind))
+	fmt.Fprintf(&rendered, "kind: '%s',\n", kind)
 	for _, field := range fields {
 		rendered.WriteString(indentWire(depth + 1))
 		rendered.WriteString(field)

@@ -12,17 +12,14 @@ import (
 type _RefKind int
 
 const (
-	refKindNone _RefKind = iota
-	refKindDirect
+	refKindDirect _RefKind = iota
 	refKindNullable
 	refKindList
 	refKindMap
 )
 
-var hardRefKinds = []_RefKind{refKindDirect}
-
 func (rk _RefKind) isHard() bool {
-	return slices.Contains(hardRefKinds, rk)
+	return rk == refKindDirect
 }
 
 type _Refs map[*model.Data]_RefKind
@@ -44,23 +41,6 @@ func (r _Refs) override(refKind _RefKind, other _Refs) {
 	for refData := range other {
 		r.put(refKind, refData)
 	}
-}
-
-type _RefsMatrix map[*model.Data]_Refs
-
-func (rm _RefsMatrix) has(src *model.Data) bool {
-	_, exists := rm[src]
-	return exists
-}
-
-func (rm _RefsMatrix) refKind(src *model.Data, dst *model.Data) _RefKind {
-	if _, exists := rm[src]; !exists {
-		return refKindNone
-	}
-	if _, exists := rm[src][dst]; !exists {
-		return refKindNone
-	}
-	return rm[src][dst]
 }
 
 func referencedData(t *model.Type) _Refs {

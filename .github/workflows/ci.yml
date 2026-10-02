@@ -47,11 +47,8 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Check module metadata
-        run: go mod tidy -diff
-
-      - name: Run go vet
-        run: go vet ./...
+      - name: Run Go static checks
+        run: bash .github/scripts/ci.sh static
 
   go-race:
     name: Go race
