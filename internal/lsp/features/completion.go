@@ -7,7 +7,7 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/lsp/index"
+	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
 
 var completionKeywords = []string{
@@ -131,7 +131,7 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 	return result, nil
 }
 
-func symbolCompletion(definition index.Definition, domain string) protocol.CompletionItem {
+func symbolCompletion(definition workspace.Definition, domain string) protocol.CompletionItem {
 	item := protocol.CompletionItem{
 		Label: definition.Name, Kind: completionKind(definition.Kind), Detail: protocol.NewOptional(domain + "." + definition.Name),
 	}

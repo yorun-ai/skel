@@ -1,3 +1,5 @@
+// Package loader discovers Skel inputs and reads immutable source revisions
+// through filesystem, memory, or pinned Git providers. It does not parse syntax.
 package loader
 
 import (
@@ -41,7 +43,7 @@ type Result struct {
 type _Loader struct {
 	skelIn   string
 	ctx      context.Context
-	provider source.Provider
+	provider Provider
 
 	requireDomainFile bool
 	directory         bool
@@ -51,20 +53,20 @@ type _Loader struct {
 }
 
 func Load(skelIn string) (Result, error) {
-	return LoadFrom(context.Background(), source.FileSystem{}, skelIn)
+	return LoadFrom(context.Background(), FileSystem{}, skelIn)
 }
 
 // LoadFrom discovers the same input contract across disk and immutable providers.
-func LoadFrom(ctx context.Context, provider source.Provider, skelIn string) (Result, error) {
+func LoadFrom(ctx context.Context, provider Provider, skelIn string) (Result, error) {
 	return loadFrom(ctx, provider, skelIn, true)
 }
 
 // LoadWorkspaceFrom also accepts a directory of independent single-file inputs.
-func LoadWorkspaceFrom(ctx context.Context, provider source.Provider, skelIn string) (Result, error) {
+func LoadWorkspaceFrom(ctx context.Context, provider Provider, skelIn string) (Result, error) {
 	return loadFrom(ctx, provider, skelIn, false)
 }
 
-func loadFrom(ctx context.Context, provider source.Provider, skelIn string, requireDomain bool) (Result, error) {
+func loadFrom(ctx context.Context, provider Provider, skelIn string, requireDomain bool) (Result, error) {
 	sourceLoader := new(_Loader{skelIn: skelIn, ctx: ctx, provider: provider, requireDomainFile: requireDomain})
 	if err := sourceLoader.discoverFiles(); err != nil {
 		return Result{}, err

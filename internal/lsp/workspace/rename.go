@@ -4,13 +4,12 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/lsp/index"
 )
 
 // ValidateRename resolves the affected workspace against a hypothetical symbol
 // table. This catches both direct collisions and capture of generic references,
 // using exactly the same scope and precedence rules as normal binding.
-func (s Snapshot) ValidateRename(document *index.Document, key, newName string) error {
+func (s Snapshot) ValidateRename(document *Document, key, newName string) error {
 	oldID := binding.ParseKey(key)
 	if oldID.Name == newName {
 		return nil

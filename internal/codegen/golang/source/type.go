@@ -8,6 +8,8 @@ import (
 	"go.yorun.ai/skelc/internal/model"
 )
 
+type _Types struct{ bindings common.TypeBindings }
+
 type Type struct {
 	Plain          string
 	Imports        []*Import

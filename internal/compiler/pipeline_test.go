@@ -20,7 +20,7 @@ func TestPipelineMatchesDiskAndMemoryProviders(t *testing.T) {
 	}
 	disk, err := Compile(Option{SkelIn: root})
 	require.NoError(t, err)
-	memory := source.NewMemory(revisions...)
+	memory := loader.NewMemory(revisions...)
 	frozen, err := CompileImportFrom(t.Context(), memory, Option{SkelIn: root})
 	require.NoError(t, err)
 	require.Equal(t, disk.Domain.Hash(), frozen.Domain.Hash())

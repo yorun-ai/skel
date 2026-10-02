@@ -9,7 +9,6 @@ import (
 
 	"go.yorun.ai/skelc/internal/codegen/common"
 	"go.yorun.ai/skelc/internal/codegen/golang"
-	gomodule "go.yorun.ai/skelc/internal/codegen/golang/module"
 	"go.yorun.ai/skelc/internal/codegen/skeleton"
 	"go.yorun.ai/skelc/internal/codegen/typescript"
 	"go.yorun.ai/skelc/internal/compiler"
@@ -86,7 +85,7 @@ func normalizeGolangOption(option GolangOption) (golang.ResolvedOption, error) {
 			return golang.ResolvedOption{}, err
 		}
 		if field.value != "" {
-			if err := gomodule.ValidateModulePath(field.value, field.field); err != nil {
+			if err := golang.ValidateModulePath(field.value, field.field); err != nil {
 				return golang.ResolvedOption{}, err
 			}
 		}
@@ -112,7 +111,7 @@ func normalizeGolangOption(option GolangOption) (golang.ResolvedOption, error) {
 	}
 	for _, domain := range sortedMapKeys(imports) {
 		path := imports[domain]
-		if _, err := gomodule.ImportPath(path); err != nil {
+		if _, err := golang.ImportPath(path); err != nil {
 			return golang.ResolvedOption{}, optionvalidation.NewValidationError(optionvalidation.FieldGoImport, optionvalidation.RuleInvalid, err.Error())
 		}
 	}

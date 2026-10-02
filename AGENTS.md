@@ -12,8 +12,12 @@
 - `cmd/skelc` is the executable entry point; keep it thin and delegate CLI behavior to `internal/cli`.
 - `internal/cli` owns command definitions, flag-specific validation, terminal output, and exit codes. Generation commands call the root `skelc` API; input normalization, target-option normalization, and output-directory lifecycle must not be duplicated in CLI code.
 - Keep source loading, syntax parsing, semantic analysis and compatibility hashing separate. `internal/compiler` coordinates them and owns recovery, diagnostics, imports and incremental analysis; `internal/model` remains parser-independent.
-- `internal/schema` owns canonical schema projection, validation, diffing and baselines. `internal/codegen/golang/vineschema` adapts that projection to Vine with runtime metadata only.
+- `internal/source` owns immutable document revisions and byte locations; `internal/loader` owns input discovery and filesystem, memory, and Git providers.
+- `internal/schema` owns canonical schema projection, validation and diffing without compiler or input-loading dependencies. `internal/schema/sourcediff` coordinates compilation and source baselines for CLI and LSP comparisons. `internal/codegen/golang/vineschema` adapts the pure projection to Vine with runtime metadata only.
 - Target generators live in `internal/codegen/{golang,skeleton,typescript}`. Shared helpers in `internal/codegen/common` must not depend on a target generator; `internal/codegen/output` owns managed multi-target transactions.
+- Keep module metadata generation in its target generator package. TypeScript rendering and template payloads belong to `internal/codegen/typescript`; Go source rendering and Vine schema adaptation retain their separate boundaries.
+- `internal/lsp/workspace` owns document indexing, workspace state and immutable snapshots; analysis scheduling and language features consume those snapshots.
+- Prefer cohesive packages with responsibility-specific files. Add a package only for a meaningful dependency, ownership or reuse boundary, not for each implementation stage or helper.
 - `internal/formatter` owns pure Skel source formatting. The CLI owns in-place formatting and must validate all applicable inputs before writing files so a failed operation does not leave a partially updated source tree.
 - Keep implementation packages under `internal` unless they form part of the supported programmatic API. The root `skelc` facade exposes parsing and generation, while `model` exposes parser-independent semantic data required by custom generators. Keep public facade packages limited to aliases, constants, and narrowly scoped function forwarding to their matching implementation package.
 

@@ -5,7 +5,6 @@ package source
 import (
 	"crypto/sha256"
 	"sort"
-	"strings"
 	"unicode/utf8"
 )
 
@@ -103,8 +102,4 @@ func (d *Document) AnalysisPath() string {
 		return d.path
 	}
 	return string(d.id)
-}
-
-func EscapesRoot(path string) bool {
-	return path == ".." || strings.HasPrefix(path, "../") || strings.HasPrefix(path, "/")
 }

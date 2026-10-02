@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/source"
 )
 
 // AnalysisOptions makes entry-point differences explicit. Recovery happens in
@@ -53,7 +52,7 @@ func prepareInput(ctx context.Context, loaded loader.Result, recoverSyntax bool)
 
 // AnalyzeInputFromContext compiles an immutable workspace input using the same
 // parse, binding, validation and hashing stages as strict compilation.
-func AnalyzeInputFromContext(ctx context.Context, provider source.Provider, path string, requireDomainFile bool) (Diagnostics, []WorkspaceDomain, error) {
+func AnalyzeInputFromContext(ctx context.Context, provider loader.Provider, path string, requireDomainFile bool) (Diagnostics, []WorkspaceDomain, error) {
 	var loaded loader.Result
 	var err error
 	if requireDomainFile {

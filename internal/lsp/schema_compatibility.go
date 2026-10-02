@@ -13,6 +13,7 @@ import (
 	"go.yorun.ai/skelc/internal/lsp/features"
 	"go.yorun.ai/skelc/internal/lsp/workspace"
 	"go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skelc/internal/schema/sourcediff"
 )
 
 const (
@@ -92,7 +93,7 @@ func diffDocument(
 	for _, domain := range domains {
 		for _, candidate := range domain.Sources {
 			if filepath.Clean(candidate.Path) == filepath.Clean(document.AnalysisPath()) {
-				return schema.DiffWorkspaceDomain(ctx, analysis.FilesystemDomain(domain), schema.SourceDiffOption{BaselineSkelIn: option.Compatibility.BaselineSkelIn, Strict: option.Strict})
+				return sourcediff.DiffWorkspaceDomain(ctx, analysis.FilesystemDomain(domain), sourcediff.Option{BaselineSkelIn: option.Compatibility.BaselineSkelIn, Strict: option.Strict})
 			}
 		}
 	}

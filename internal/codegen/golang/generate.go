@@ -1,3 +1,5 @@
+// Package golang coordinates Go generation and owns target options, imports and
+// module metadata. Source rendering and Vine schema adaptation are subpackages.
 package golang
 
 import (
@@ -5,7 +7,6 @@ import (
 	"strings"
 
 	"go.yorun.ai/skelc/internal/codegen/common"
-	gomodule "go.yorun.ai/skelc/internal/codegen/golang/module"
 	"go.yorun.ai/skelc/internal/codegen/golang/source"
 	"go.yorun.ai/skelc/internal/codegen/golang/view"
 	"go.yorun.ai/skelc/internal/codegen/golang/vineschema"
@@ -166,7 +167,7 @@ func newGen(option _GenOption) (*_Gen, error) {
 
 func (g *_Gen) gen(validated common.ValidatedDomain) error {
 	if g.asModule {
-		if err := gomodule.Generate(gomodule.Option{
+		if err := generateModule(_ModuleOption{
 			Out:               g.out,
 			Module:            g.modName,
 			VineVersion:       g.vineVersion,

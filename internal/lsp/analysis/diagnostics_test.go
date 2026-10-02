@@ -11,14 +11,13 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/lsp/index"
 	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
 
 func TestSemanticStrictModePreservesCachedWarningSeverity(t *testing.T) {
 	documentURI := uri.File("/workspace/order.skel")
-	document := index.Build(documentURI, documentURI.FsPath(), "domain demo.order\nservice OrderService { method ping {} }\n", 1)
-	sources, paths := SemanticSources(map[uri.URI]*index.Document{documentURI: document})
+	document := workspace.BuildDocument(documentURI, documentURI.FsPath(), "domain demo.order\nservice OrderService { method ping {} }\n", 1)
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
 	analyzer := compiler.NewWorkspaceAnalyzer()
 	for _, strict := range []bool{false, true, false} {
 		diagnostics, domains, err := SemanticWorkspace(t.Context(), analyzer, sources, paths, strict)
@@ -36,9 +35,9 @@ func TestSemanticStrictModePreservesCachedWarningSeverity(t *testing.T) {
 func TestSemanticDiagnosticsDoNotResolveImportsAcrossDomainRoots(t *testing.T) {
 	userURI := uri.File("/workspace/user/user.skel")
 	orderURI := uri.File("/workspace/order/order.skel")
-	documents := map[uri.URI]*index.Document{
-		userURI:  index.Build(userURI, userURI.FsPath(), "domain demo.user\ndata User {}\n", 2),
-		orderURI: index.Build(orderURI, orderURI.FsPath(), "domain demo.order\nimport demo.user as user\ndata Order { owner: user.Missing }\n", 7),
+	documents := map[uri.URI]*workspace.Document{
+		userURI:  workspace.BuildDocument(userURI, userURI.FsPath(), "domain demo.user\ndata User {}\n", 2),
+		orderURI: workspace.BuildDocument(orderURI, orderURI.FsPath(), "domain demo.order\nimport demo.user as user\ndata Order { owner: user.Missing }\n", 7),
 	}
 
 	sources, paths := SemanticSources(documents)
@@ -49,8 +48,8 @@ func TestSemanticDiagnosticsDoNotResolveImportsAcrossDomainRoots(t *testing.T) {
 
 func TestSemanticDiagnosticsDoNotDuplicateSyntaxErrors(t *testing.T) {
 	documentURI := uri.File("/workspace/user.skel")
-	document := index.Build(documentURI, "/workspace/user.skel", "domain demo.user\ndata User {", 2)
-	sources, paths := SemanticSources(map[uri.URI]*index.Document{documentURI: document})
+	document := workspace.BuildDocument(documentURI, "/workspace/user.skel", "domain demo.user\ndata User {", 2)
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
 
 	diagnostics, err := SemanticDiagnostics(context.Background(), compiler.NewWorkspaceAnalyzer(), sources, paths)
 	require.NoError(t, err)
@@ -59,11 +58,11 @@ func TestSemanticDiagnosticsDoNotDuplicateSyntaxErrors(t *testing.T) {
 
 func TestSemanticDiagnosticsPublishMultipleErrorsForOneDocument(t *testing.T) {
 	documentURI := uri.File("/workspace/data.skel")
-	document := index.Build(documentURI, "/workspace/data.skel", `domain demo
+	document := workspace.BuildDocument(documentURI, "/workspace/data.skel", `domain demo
 data User { missing: MissingUser }
 data Order { missing: MissingOrder }
 `, 3)
-	sources, paths := SemanticSources(map[uri.URI]*index.Document{documentURI: document})
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
 
 	diagnostics, err := SemanticDiagnostics(context.Background(), compiler.NewWorkspaceAnalyzer(), sources, paths)
 	require.NoError(t, err)
@@ -75,8 +74,8 @@ data Order { missing: MissingOrder }
 
 func TestSemanticDiagnosticsIncludeDuplicateRelatedLocation(t *testing.T) {
 	documentURI := uri.File("/workspace/data.skel")
-	document := index.Build(documentURI, "/workspace/data.skel", "domain demo\ndata User {}\ndata User {}\n", 1)
-	sources, paths := SemanticSources(map[uri.URI]*index.Document{documentURI: document})
+	document := workspace.BuildDocument(documentURI, "/workspace/data.skel", "domain demo\ndata User {}\ndata User {}\n", 1)
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
 
 	diagnostics, err := SemanticDiagnostics(context.Background(), compiler.NewWorkspaceAnalyzer(), sources, paths)
 	require.NoError(t, err)
@@ -90,14 +89,14 @@ func TestSemanticDiagnosticsIncludeDuplicateRelatedLocation(t *testing.T) {
 func TestSemanticDiagnosticsKeepSameNamedDomainDirectoriesIndependent(t *testing.T) {
 	sourceURI := uri.File("/workspace/domain/base/skel/actor.skel")
 	generatedURI := uri.File("/workspace/domain/base/pub/skeled/skel/types.skel")
-	documents := map[uri.URI]*index.Document{
-		sourceURI: index.Build(
+	documents := map[uri.URI]*workspace.Document{
+		sourceURI: workspace.BuildDocument(
 			sourceURI,
 			sourceURI.FsPath(),
 			"domain base\npub resource User { action read }\n",
 			1,
 		),
-		generatedURI: index.Build(
+		generatedURI: workspace.BuildDocument(
 			generatedURI,
 			generatedURI.FsPath(),
 			"domain base\npub resource User { action read }\n",
@@ -114,14 +113,14 @@ func TestSemanticDiagnosticsKeepSameNamedDomainDirectoriesIndependent(t *testing
 func TestSemanticDiagnosticsMergeSameNamedDomainFilesWithDomainFile(t *testing.T) {
 	firstURI := uri.File("/workspace/domain/base/skel/first.skel")
 	secondURI := uri.File("/workspace/domain/base/skel/second.skel")
-	documents := map[uri.URI]*index.Document{
-		firstURI: index.Build(
+	documents := map[uri.URI]*workspace.Document{
+		firstURI: workspace.BuildDocument(
 			firstURI,
 			firstURI.FsPath(),
 			"domain base\ndata User {}\n",
 			1,
 		),
-		secondURI: index.Build(
+		secondURI: workspace.BuildDocument(
 			secondURI,
 			secondURI.FsPath(),
 			"domain base\ndata User {}\n",
@@ -130,7 +129,7 @@ func TestSemanticDiagnosticsMergeSameNamedDomainFilesWithDomainFile(t *testing.T
 	}
 
 	domainURI := uri.File("/workspace/domain/base/skel/domain.skel")
-	documents[domainURI] = index.Build(domainURI, domainURI.FsPath(), "domain base\n", 1)
+	documents[domainURI] = workspace.BuildDocument(domainURI, domainURI.FsPath(), "domain base\n", 1)
 
 	sources, paths := SemanticSources(documents)
 	diagnostics, err := SemanticDiagnostics(context.Background(), compiler.NewWorkspaceAnalyzer(), sources, paths)
@@ -140,14 +139,14 @@ func TestSemanticDiagnosticsMergeSameNamedDomainFilesWithDomainFile(t *testing.T
 }
 
 func TestSemanticDiagnosticsKeepStandaloneFormatterFixturesIndependent(t *testing.T) {
-	documents := map[uri.URI]*index.Document{}
+	documents := map[uri.URI]*workspace.Document{}
 	for _, name := range []string{"complete.input.skel", "complete.golden.skel"} {
 		path, err := filepath.Abs(filepath.Join("../../formatter/testdata", name))
 		require.NoError(t, err)
 		content, err := os.ReadFile(path)
 		require.NoError(t, err)
 		documentURI := uri.File(path)
-		documents[documentURI] = index.Build(documentURI, path, string(content), 1)
+		documents[documentURI] = workspace.BuildDocument(documentURI, path, string(content), 1)
 	}
 	sources, paths := SemanticSources(documents)
 	diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, true)
@@ -167,14 +166,14 @@ func TestSemanticDiagnosticsChangeGroupingWithDomainFile(t *testing.T) {
 	firstURI := uri.File("/workspace/first.skel")
 	secondURI := uri.File("/workspace/second.skel")
 	domainURI := uri.File("/workspace/domain.skel")
-	documents := map[uri.URI]*index.Document{
-		firstURI:  index.Build(firstURI, firstURI.FsPath(), "domain demo\ndata User {}\n", 1),
-		secondURI: index.Build(secondURI, secondURI.FsPath(), "domain demo\ndata Order { user: User }\n", 1),
+	documents := map[uri.URI]*workspace.Document{
+		firstURI:  workspace.BuildDocument(firstURI, firstURI.FsPath(), "domain demo\ndata User {}\n", 1),
+		secondURI: workspace.BuildDocument(secondURI, secondURI.FsPath(), "domain demo\ndata Order { user: User }\n", 1),
 	}
 	analyzer := compiler.NewWorkspaceAnalyzer()
 	for _, hasDomainFile := range []bool{false, true, false} {
 		if hasDomainFile {
-			documents[domainURI] = index.Build(domainURI, domainURI.FsPath(), "domain demo\n", 1)
+			documents[domainURI] = workspace.BuildDocument(domainURI, domainURI.FsPath(), "domain demo\n", 1)
 		} else {
 			delete(documents, domainURI)
 		}
@@ -223,10 +222,10 @@ func TestSemanticDiagnosticsRecoverAfterPartialGenerationNotifications(t *testin
 }
 
 func TestSemanticSourcesPreserveRemoteAuthority(t *testing.T) {
-	docs := map[uri.URI]*index.Document{}
+	docs := map[uri.URI]*workspace.Document{}
 	for _, raw := range []string{"vscode-remote://ssh-remote+a/workspace/input.skel", "vscode-remote://ssh-remote+b/workspace/input.skel", "file:///workspace/input.skel"} {
 		u := uri.URI(raw)
-		docs[u] = index.Build(u, u.FsPath(), "domain demo\ndata User { value: Missing }\n", 1)
+		docs[u] = workspace.BuildDocument(u, u.FsPath(), "domain demo\ndata User { value: Missing }\n", 1)
 	}
 	sources, paths := SemanticSources(docs)
 	require.Len(t, paths, 3)
@@ -247,10 +246,10 @@ func TestSemanticDirectorySourceRules(t *testing.T) {
 		{"sibling decorator", "domain demo\n", "@desc(\"wrong\")\ndomain demo\ndata User {}\n", compiler.DiagnosticCodeDomainDecorator},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			docs := map[uri.URI]*index.Document{}
+			docs := map[uri.URI]*workspace.Document{}
 			for name, text := range map[string]string{"domain.skel": tt.domain, "user.skel": tt.body} {
 				u := uri.File("/workspace/" + name)
-				docs[u] = index.Build(u, u.FsPath(), text, 1)
+				docs[u] = workspace.BuildDocument(u, u.FsPath(), text, 1)
 			}
 			sources, paths := SemanticSources(docs)
 			diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, false)
@@ -270,14 +269,14 @@ func TestSemanticDirectorySourceRules(t *testing.T) {
 }
 
 func TestRemoteDomainFileDoesNotGroupOtherAuthorities(t *testing.T) {
-	docs := map[uri.URI]*index.Document{}
+	docs := map[uri.URI]*workspace.Document{}
 	for raw, text := range map[string]string{
 		"vscode-remote://ssh-remote+a/workspace/domain.skel": "domain demo\n",
 		"vscode-remote://ssh-remote+a/workspace/user.skel":   "domain demo\ndata User {}\n",
 		"vscode-remote://ssh-remote+b/workspace/user.skel":   "domain other\ndata User {}\n",
 	} {
 		u := uri.URI(raw)
-		docs[u] = index.Build(u, u.FsPath(), text, 1)
+		docs[u] = workspace.BuildDocument(u, u.FsPath(), text, 1)
 	}
 	sources, paths := SemanticSources(docs)
 	diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, false)

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
-	gomodule "go.yorun.ai/skelc/internal/codegen/golang/module"
 	"go.yorun.ai/skelc/internal/optionvalidation"
 )
 
@@ -17,7 +16,7 @@ func ResolveOption(option Option) (ResolvedOption, error) {
 		if option.VineVersion != "" {
 			return ResolvedOption{}, optionvalidation.NewValidationError(optionvalidation.FieldGoVineVersion, optionvalidation.RuleInvalid, "go-vine-version is not used by api clients")
 		}
-		version, err := gomodule.ResolveVrpcVersion(option.VrpcVersion)
+		version, err := resolveVrpcVersion(option.VrpcVersion)
 		if err != nil {
 			return ResolvedOption{}, optionvalidation.NewValidationError(optionvalidation.FieldGoVrpcVersion, optionvalidation.RuleInvalid, err.Error())
 		}
@@ -26,7 +25,7 @@ func ResolveOption(option Option) (ResolvedOption, error) {
 		if option.VrpcVersion != "" {
 			return ResolvedOption{}, optionvalidation.NewValidationError(optionvalidation.FieldGoVrpcVersion, optionvalidation.RuleInvalid, "go-vrpc-version requires api")
 		}
-		version, err := gomodule.ResolveVineVersion(option.VineVersion)
+		version, err := resolveVineVersion(option.VineVersion)
 		if err != nil {
 			return ResolvedOption{}, optionvalidation.NewValidationError(optionvalidation.FieldGoVineVersion, optionvalidation.RuleInvalid, err.Error())
 		}

@@ -12,6 +12,7 @@ import (
 	"go.yorun.ai/skelc/internal/lsp/source"
 	"go.yorun.ai/skelc/internal/model"
 	"go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skelc/internal/schema/sourcediff"
 )
 
 type _CompatibilityDiagnosticData struct {
@@ -22,7 +23,7 @@ type _CompatibilityDiagnosticData struct {
 
 func appendCompatibilityDiagnostics(
 	ctx context.Context,
-	differ *schema.SourceDiffer,
+	differ *sourcediff.Differ,
 	diagnostics map[uri.URI][]protocol.Diagnostic,
 	domains []compiler.WorkspaceDomain,
 	sources []compiler.Source,
@@ -35,12 +36,12 @@ func appendCompatibilityDiagnostics(
 			return
 		}
 		fallback := domainFallback(domain, paths, contentByPath)
-		report, err := differ.DiffWorkspaceDomain(ctx, FilesystemDomain(domain), schema.SourceDiffOption{BaselineSkelIn: option.BaselineSkelIn})
+		report, err := differ.DiffWorkspaceDomain(ctx, FilesystemDomain(domain), sourcediff.Option{BaselineSkelIn: option.BaselineSkelIn})
 		if err != nil {
 			if ctx.Err() != nil {
 				return
 			}
-			if errors.Is(err, schema.ErrGitHistoryUnavailable) {
+			if errors.Is(err, sourcediff.ErrGitHistoryUnavailable) {
 				continue
 			}
 			if fallback.URI != "" {

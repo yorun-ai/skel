@@ -1,5 +1,6 @@
-// Package workspace owns the mutable set of documents visible to the language
-// server and exposes immutable snapshots for analysis and language features.
+// Package workspace builds document indexes, owns the mutable set of documents
+// visible to the language server, and exposes immutable snapshots for analysis
+// and language features.
 package workspace
 
 import (
@@ -11,7 +12,6 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/lsp/index"
 )
 
 // Store owns open documents, workspace roots, and on-disk document indexes.
@@ -19,7 +19,7 @@ type Store struct {
 	mu             sync.RWMutex
 	diskMu         sync.Mutex
 	cached         *Snapshot
-	documents      map[uri.URI]*index.Document
+	documents      map[uri.URI]*Document
 	open           map[uri.URI]bool
 	workspaceFiles map[uri.URI]map[uri.URI]struct{}
 	revision       uint64
@@ -28,7 +28,7 @@ type Store struct {
 // New creates an empty workspace store.
 func New() *Store {
 	return &Store{
-		documents:      map[uri.URI]*index.Document{},
+		documents:      map[uri.URI]*Document{},
 		open:           map[uri.URI]bool{},
 		workspaceFiles: map[uri.URI]map[uri.URI]struct{}{},
 	}
@@ -37,7 +37,7 @@ func New() *Store {
 // Put indexes an in-memory document. Open documents take precedence over
 // workspace files loaded from disk.
 func (s *Store) Put(documentURI uri.URI, content string, version int32, open bool) {
-	document := index.Build(documentURI, documentURI.FsPath(), content, version)
+	document := BuildDocument(documentURI, documentURI.FsPath(), content, version)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if previous := s.documents[documentURI]; open && s.open[documentURI] && previous != nil && version <= previous.Version {
@@ -63,10 +63,10 @@ func (s *Store) Close(documentURI uri.URI) bool {
 	previous := s.documents[documentURI]
 	tracked := s.documentTrackedLocked(documentURI)
 	s.mu.Unlock()
-	var document *index.Document
+	var document *Document
 	if tracked {
 		if content, err := os.ReadFile(documentURI.FsPath()); err == nil {
-			document = index.Build(documentURI, documentURI.FsPath(), string(content), 0)
+			document = BuildDocument(documentURI, documentURI.FsPath(), string(content), 0)
 		}
 	}
 	s.mu.Lock()
@@ -159,12 +159,12 @@ func (s *Store) refreshDirectory(directory uri.URI) []uri.URI {
 		if err != nil && !os.IsNotExist(err) {
 			continue
 		}
-		var document *index.Document
+		var document *Document
 		if err == nil {
 			if previous != nil && previous.Source == string(content) {
 				document = previous
 			} else {
-				document = index.Build(documentURI, documentURI.FsPath(), string(content), 0)
+				document = BuildDocument(documentURI, documentURI.FsPath(), string(content), 0)
 			}
 		}
 		s.mu.Lock()
@@ -193,7 +193,7 @@ func (s *Store) AddRoot(rootURI uri.URI) {
 	s.diskMu.Lock()
 	defer s.diskMu.Unlock()
 	rootPath := rootURI.FsPath()
-	documents := map[uri.URI]*index.Document{}
+	documents := map[uri.URI]*Document{}
 	_ = filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return nil
@@ -209,7 +209,7 @@ func (s *Store) AddRoot(rootURI uri.URI) {
 			return nil
 		}
 		documentURI := documentURI(rootURI, rootPath, path)
-		documents[documentURI] = index.Build(documentURI, path, string(content), 0)
+		documents[documentURI] = BuildDocument(documentURI, path, string(content), 0)
 		return nil
 	})
 
@@ -257,14 +257,14 @@ func (s *Store) Snapshot() Snapshot {
 			return snapshot
 		}
 		revision := s.revision
-		documents := make(map[uri.URI]*index.Document, len(s.documents))
-		ordered := make([]*index.Document, 0, len(s.documents))
+		documents := make(map[uri.URI]*Document, len(s.documents))
+		ordered := make([]*Document, 0, len(s.documents))
 		for documentURI, document := range s.documents {
 			documents[documentURI] = document
 			ordered = append(ordered, document)
 		}
 		s.mu.RUnlock()
-		slices.SortFunc(ordered, func(a, b *index.Document) int { return strings.Compare(string(a.URI), string(b.URI)) })
+		slices.SortFunc(ordered, func(a, b *Document) int { return strings.Compare(string(a.URI), string(b.URI)) })
 		snapshot := newSnapshot(revision, documents, ordered)
 		s.mu.Lock()
 		if s.revision == revision {
@@ -326,7 +326,7 @@ func contains(rootURI, documentURI uri.URI) bool {
 func (s *Store) Revision() uint64 { s.mu.RLock(); defer s.mu.RUnlock(); return s.revision }
 
 // Document reads a single immutable document without constructing a snapshot.
-func (s *Store) Document(documentURI uri.URI) *index.Document {
+func (s *Store) Document(documentURI uri.URI) *Document {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.documents[documentURI]

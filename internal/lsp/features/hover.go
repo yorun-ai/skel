@@ -6,7 +6,7 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/lsp/index"
+	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
 
 func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
@@ -48,7 +48,7 @@ func hoverResult(range_ protocol.Range, detail, name, description string) *proto
 	return &protocol.Hover{Contents: &protocol.MarkupContent{Kind: protocol.MarkupKindMarkdown, Value: value}, Range: &range_}
 }
 
-func symbolAt(symbols []index.Symbol, position protocol.Position) (index.Symbol, bool) {
+func symbolAt(symbols []workspace.Symbol, position protocol.Position) (workspace.Symbol, bool) {
 	for _, symbol := range symbols {
 		selection := selectionRange(symbol)
 		if containsPosition(selection, position) {
@@ -58,5 +58,5 @@ func symbolAt(symbols []index.Symbol, position protocol.Position) (index.Symbol,
 			return child, true
 		}
 	}
-	return index.Symbol{}, false
+	return workspace.Symbol{}, false
 }

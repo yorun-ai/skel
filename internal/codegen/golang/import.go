@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"go.yorun.ai/skelc/internal/codegen/common"
-	gomodule "go.yorun.ai/skelc/internal/codegen/golang/module"
 	"go.yorun.ai/skelc/internal/codegen/golang/view"
 	"go.yorun.ai/skelc/internal/model"
 )
@@ -62,7 +61,7 @@ func (g *_Gen) resolveExternalTypeImports() error {
 
 func (g *_Gen) goImportPath(domainName string) (string, error) {
 	if path := g.goImports[domainName]; path != "" {
-		return gomodule.ImportPath(path)
+		return ImportPath(path)
 	}
 	if g.modulePrefix == "" {
 		return "", fmt.Errorf("missing Go import for domain %s; pass --go-import %s=PACKAGE or --go-module-prefix", domainName, domainName)

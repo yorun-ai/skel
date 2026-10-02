@@ -10,8 +10,8 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/lsp/index"
-	"go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skelc/internal/lsp/workspace"
+	"go.yorun.ai/skelc/internal/schema/sourcediff"
 	"go.yorun.ai/skelc/internal/testutil"
 )
 
@@ -24,14 +24,14 @@ func TestCompatibilityDiagnosticsUseInMemorySourceAndImpactSeverity(t *testing.T
 	testutil.Commit(t, root, "baseline", "contract.skel", "other.skel")
 
 	documentURI := uri.File(path)
-	document := index.Build(documentURI, path, "domain demo\ndata User { id: string }\n", 2)
-	sources, paths := SemanticSources(map[uri.URI]*index.Document{documentURI: document})
+	document := workspace.BuildDocument(documentURI, path, "domain demo\ndata User { id: string }\n", 2)
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
 	analyzer := compiler.NewWorkspaceAnalyzer()
 	diagnostics, domains, err := SemanticWorkspace(t.Context(), analyzer, sources, paths, false)
 	require.NoError(t, err)
 	require.Empty(t, diagnostics)
 
-	appendCompatibilityDiagnostics(t.Context(), schema.NewSourceDiffer(), diagnostics, domains, sources, paths, CompatibilityOptions{Enabled: true})
+	appendCompatibilityDiagnostics(t.Context(), sourcediff.New(), diagnostics, domains, sources, paths, CompatibilityOptions{Enabled: true})
 	require.Len(t, diagnostics[documentURI], 1)
 	result := diagnostics[documentURI][0]
 	assert.Equal(t, protocol.String("schema.data.member.type.changed"), result.Code)
@@ -48,13 +48,13 @@ func TestCompatibilityDiagnosticsPlaceRemovedDeclarationAtDomain(t *testing.T) {
 	testutil.Commit(t, root, "baseline", "contract.skel")
 
 	documentURI := uri.File(path)
-	document := index.Build(documentURI, path, "domain demo\n", 2)
-	sources, paths := SemanticSources(map[uri.URI]*index.Document{documentURI: document})
+	document := workspace.BuildDocument(documentURI, path, "domain demo\n", 2)
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
 	diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, false)
 	require.NoError(t, err)
 	require.Empty(t, diagnostics)
 
-	appendCompatibilityDiagnostics(t.Context(), schema.NewSourceDiffer(), diagnostics, domains, sources, paths, CompatibilityOptions{Enabled: true})
+	appendCompatibilityDiagnostics(t.Context(), sourcediff.New(), diagnostics, domains, sources, paths, CompatibilityOptions{Enabled: true})
 	require.Len(t, diagnostics[documentURI], 1)
 	result := diagnostics[documentURI][0]
 	assert.Equal(t, protocol.String("schema.declaration.removed"), result.Code)
@@ -67,13 +67,13 @@ func TestCompatibilityDiagnosticsReportExplicitBaselineFailure(t *testing.T) {
 	baselinePath := filepath.Join(root, "baseline.skel")
 	require.NoError(t, os.WriteFile(baselinePath, []byte("domain demo\ndata User { id string }\n"), 0o600))
 	documentURI := uri.File(path)
-	document := index.Build(documentURI, path, "domain demo\ndata User { id: string }\n", 1)
-	sources, paths := SemanticSources(map[uri.URI]*index.Document{documentURI: document})
+	document := workspace.BuildDocument(documentURI, path, "domain demo\ndata User { id: string }\n", 1)
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
 	diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, false)
 	require.NoError(t, err)
 	require.Empty(t, diagnostics)
 
-	appendCompatibilityDiagnostics(t.Context(), schema.NewSourceDiffer(), diagnostics, domains, sources, paths,
+	appendCompatibilityDiagnostics(t.Context(), sourcediff.New(), diagnostics, domains, sources, paths,
 		CompatibilityOptions{Enabled: true, BaselineSkelIn: "baseline.skel"})
 	require.Len(t, diagnostics[documentURI], 1)
 	result := diagnostics[documentURI][0]

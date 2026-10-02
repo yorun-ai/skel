@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/lsp/index"
 	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skelc/internal/lsp/workspace"
 )
 
 func positionOffset(content string, position protocol.Position) int {
@@ -34,7 +34,7 @@ func scanIdentifiers(content string) []source.Token {
 }
 
 func isIdentifierValue(value string) bool {
-	return index.IsIdentifier(value)
+	return workspace.IsIdentifier(value)
 }
 
 func containsPosition(r protocol.Range, position protocol.Position) bool {
