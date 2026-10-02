@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -28,5 +29,44 @@ func TestDecodeRejectsInvalidSchemaDocuments(t *testing.T) {
 				t.Fatal("expected schema validation to fail")
 			}
 		})
+	}
+}
+
+func TestValidateRejectsCyclicTypesAndRequirements(t *testing.T) {
+	kind := new(Type{Kind: TypeKindList})
+	kind.Element = kind
+	requirement := new(Requirement{Mode: RequirementModeAll})
+	requirement.Children = []*Requirement{requirement}
+	documents := []*Document{
+		newTestDocument(&Declaration{Name: "Value", SkelName: "demo.Value", Kind: DeclarationTypeData, Data: new(DataSchema{Members: []*Member{{Name: "value", Type: kind}}})}),
+		newTestDocument(&Declaration{Name: "Service", SkelName: "demo.Service", Kind: DeclarationTypeService, Service: new(ServiceSchema{Auth: AuthModeUnset, Audiences: []*Audience{}, Methods: []*Method{}, Require: requirement})}),
+	}
+	for _, document := range documents {
+		var output bytes.Buffer
+		if err := Encode(&output, document); err == nil || output.Len() != 0 {
+			t.Fatalf("expected cycle to be rejected before encoding, got %v", err)
+		}
+		if err := Validate(document); err == nil || !strings.Contains(err.Error(), "cyclic") {
+			t.Fatalf("expected cycle error, got %v", err)
+		}
+	}
+}
+
+func TestDecodeRejectsNullRequirementChildren(t *testing.T) {
+	input := `{"format":"yorun.skel.schema","formatVersion":1,"domain":"demo","declarations":[{"name":"Service","type":"service","skelName":"demo.Service","service":{"audiences":[],"auth":"unset","methods":[],"require":{"mode":"all","children":[null]}}}]}`
+	if _, err := Decode(strings.NewReader(input)); err == nil {
+		t.Fatal("expected null requirement child error")
+	}
+}
+
+func TestValidateAllowsSharedTypesAndRequirements(t *testing.T) {
+	scalar := new(Type{Kind: TypeKindScalar, Name: "string"})
+	requirement := new(Requirement{Mode: RequirementModeCode, Code: "demo.File:read"})
+	document := newTestDocument(
+		&Declaration{Name: "Value", SkelName: "demo.Value", Kind: DeclarationTypeData, Data: new(DataSchema{Members: []*Member{{Name: "value", Type: new(Type{Kind: TypeKindMap, Key: scalar, Value: scalar})}}})},
+		&Declaration{Name: "Service", SkelName: "demo.Service", Kind: DeclarationTypeService, Service: new(ServiceSchema{Auth: AuthModeUnset, Audiences: []*Audience{}, Methods: []*Method{}, Require: new(Requirement{Mode: RequirementModeAll, Children: []*Requirement{requirement, requirement}})})},
+	)
+	if err := Validate(document); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -663,3 +663,31 @@ func assertTestFileStartsWithGeneratedMarker(t *testing.T, path string) {
 		t.Fatalf("expected %s to start with %q, got %q", path, marker, content)
 	}
 }
+
+func TestGeneratorsRejectNilTypeParameter(t *testing.T) {
+	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo.invalid", Data: []*model.Data{{Name: "Box", SkelName: "demo.invalid.Box", Kind: model.DataKindData, Pub: true, TypeParameters: []*model.TypeParameter{nil}}}})
+	for _, target := range []string{"Go", "TypeScript", "Skel"} {
+		t.Run(target, func(t *testing.T) {
+			out := filepath.Join(t.TempDir(), "generated")
+			if err := os.Mkdir(out, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			var err error
+			switch target {
+			case "Go":
+				err = skelc.GenerateGolang(domain, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out})
+			case "TypeScript":
+				err = skelc.GenerateTypeScript(domain, skelc.TypeScriptOption{ApiOnly: true, Out: out})
+			case "Skel":
+				err = skelc.GenerateSkeleton(domain, skelc.SkeletonOption{PubOnly: true, Out: out})
+			}
+			if err == nil || !strings.Contains(err.Error(), "nil type parameter") {
+				t.Fatalf("expected invalid model error, got %v", err)
+			}
+			entries, err := os.ReadDir(out)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("invalid model wrote output: %v, %v", entries, err)
+			}
+		})
+	}
+}

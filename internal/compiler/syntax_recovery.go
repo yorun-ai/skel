@@ -50,17 +50,23 @@ func parseSourceSegmentRecovering(path string, source []byte, segment parser.Sou
 		diagnostic := syntaxDiagnostic(path, source, err)
 		key := diagnostic.Position.String() + "\x00" + diagnostic.Message
 		if seen[key] {
-			return parsed.Content, diagnostics
+			return nil, diagnostics
 		}
 		seen[key] = true
 		diagnostics = append(diagnostics, diagnostic)
 		localPosition := diagnostic.Position
 		localPosition.Line -= segment.Line - 1
 		if !recoverSyntaxLine(&working, localPosition, diagnostic.Code == DiagnosticCodeSyntaxEOF) {
-			return parsed.Content, diagnostics
+			return nil, diagnostics
 		}
 	}
-	parsed, _ := parser.ParseSourceFragment(path, working, segment.Line, segment.Start)
+	// Partial trees can contain missing identifiers or unfinalized declarations.
+	// Only successfully parsed fragments are safe for semantic analysis, even
+	// when the diagnostic budget has been exhausted.
+	parsed, err := parser.ParseSourceFragment(path, working, segment.Line, segment.Start)
+	if err != nil {
+		return nil, diagnostics
+	}
 	return parsed.Content, diagnostics
 }
 

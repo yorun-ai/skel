@@ -72,6 +72,11 @@ func (s *_SourceSegmentScanner) consume(index int, token lexer.Token) {
 	if token.EOF() || s.elided[token.Type] {
 		return
 	}
+	// A decorator after a declaration on the same line belongs to the next
+	// declaration. Keep both in one fragment so its original column survives.
+	if token.Pos.Line == s.lastLine && token.Value == "@" && s.depth == 0 {
+		s.hasDeclaration = false
+	}
 	if token.Pos.Line != s.lastLine {
 		s.consumeFirstTokenOnLine(index, token)
 		s.lastLine = token.Pos.Line

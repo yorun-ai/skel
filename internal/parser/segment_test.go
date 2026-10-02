@@ -142,3 +142,17 @@ func TestSplitSourceSegmentsFallsBackToWholeSource(t *testing.T) {
 		t.Fatalf("lexing failures must fall back to one full segment: %+v", segments)
 	}
 }
+
+func TestSplitSourceSegmentsKeepsInlineDecoratorWithNextDeclaration(t *testing.T) {
+	source := []byte("domain demo @desc(\"next\")\ndata Value {}\ndata Other {}\n")
+	segments := SplitSourceSegments("demo.skel", source)
+	assertSourceSegmentInvariants(t, source, segments)
+	for _, segment := range segments {
+		if _, err := ParseSourceFragment("demo.skel", source[segment.Start:segment.End], segment.Line, segment.Start); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(segments) != 2 {
+		t.Fatalf("expected decorated declaration and domain to stay together, got %v", segments)
+	}
+}
