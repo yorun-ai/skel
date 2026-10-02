@@ -35,6 +35,9 @@ func parseTaskTriggers(reporter *_DiagnosticReporter, owner *grammar.Identifier,
 	valid := true
 
 	for _, grammarTrigger := range triggers {
+		if reporter.cancelled() {
+			break
+		}
 		trigger, triggerValid := parseTaskTrigger(reporter, grammarTrigger)
 		valid = triggerValid && valid
 		duplicatedPosition, duplicated := triggerPos[trigger.Name]
@@ -85,6 +88,9 @@ func parseTaskTrigger(reporter *_DiagnosticReporter, gt *grammar.TaskTrigger) (*
 	trigger.ArgumentsSensitive = inputMeta.Sensitive
 	argPos := map[string]lexer.Position{}
 	for _, grammarArgument := range gt.Input.Arguments {
+		if reporter.cancelled() {
+			break
+		}
 		arg, argumentValid := parseArgument(reporter, grammarArgument)
 		valid = argumentValid && valid
 		duplicatedPosition, duplicated := argPos[arg.Name]

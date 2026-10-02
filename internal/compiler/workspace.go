@@ -20,10 +20,12 @@ import (
 // Root identifies one logical compiler input so separate copies of the same
 // named domain in a larger editor workspace are not merged.
 type Source struct {
-	Path             string
-	Domain           string
-	Root             string
-	ExpectedDomain   string
+	Path           string
+	Domain         string
+	Root           string
+	ExpectedDomain string
+	// DirectoryInput enables the same domain.skel constraints as directory compilation.
+	DirectoryInput   bool
 	Content          []byte
 	Parsed           *grammar.SkelContent
 	ParseDiagnostics Diagnostics
@@ -40,6 +42,7 @@ type _CachedWorkspaceParse struct {
 // dependents whose import fingerprints consequently change.
 type WorkspaceAnalyzer struct {
 	mu      sync.Mutex
+	gate    chan struct{}
 	parses  map[string]_CachedWorkspaceParse
 	domains map[string]_CachedWorkspaceDomain
 	stats   WorkspaceAnalysisStats
@@ -65,7 +68,7 @@ type WorkspaceDomain struct {
 
 // NewWorkspaceAnalyzer creates an incremental workspace analyzer.
 func NewWorkspaceAnalyzer() *WorkspaceAnalyzer {
-	return &WorkspaceAnalyzer{parses: map[string]_CachedWorkspaceParse{}, domains: map[string]_CachedWorkspaceDomain{}}
+	return &WorkspaceAnalyzer{gate: make(chan struct{}, 1), parses: map[string]_CachedWorkspaceParse{}, domains: map[string]_CachedWorkspaceDomain{}}
 }
 
 // AnalyzeWorkspace performs syntax and semantic analysis over an in-memory
@@ -84,6 +87,15 @@ func (w *WorkspaceAnalyzer) Analyze(sources []Source) []Diagnostic {
 
 // AnalyzeContext analyzes a workspace snapshot and honors cancellation.
 func (w *WorkspaceAnalyzer) AnalyzeContext(ctx context.Context, sources []Source) ([]Diagnostic, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	select {
+	case w.gate <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	defer func() { <-w.gate }()
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.stats = WorkspaceAnalysisStats{}
@@ -94,6 +106,15 @@ func (w *WorkspaceAnalyzer) AnalyzeContext(ctx context.Context, sources []Source
 // AnalyzeDomainsContext analyzes a workspace snapshot and returns every
 // semantic domain that compiled successfully alongside its diagnostics.
 func (w *WorkspaceAnalyzer) AnalyzeDomainsContext(ctx context.Context, sources []Source) ([]Diagnostic, []WorkspaceDomain, error) {
+	if ctx.Err() != nil {
+		return nil, nil, ctx.Err()
+	}
+	select {
+	case w.gate <- struct{}{}:
+	case <-ctx.Done():
+		return nil, nil, ctx.Err()
+	}
+	defer func() { <-w.gate }()
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.stats = WorkspaceAnalysisStats{}
@@ -119,14 +140,21 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 		if err := ctx.Err(); err != nil {
 			return nil, nil, err
 		}
-		content, syntaxDiagnostics := w.parseWorkspaceSource(source)
+		content, syntaxDiagnostics := w.parseWorkspaceSource(ctx, source)
+		if ctx.Err() != nil {
+			return nil, nil, ctx.Err()
+		}
 		diagnostics = append(diagnostics, syntaxDiagnostics...)
 		if content == nil {
-			if source.Domain != "" {
+			name := source.Domain
+			if source.ExpectedDomain != "" {
+				name = source.ExpectedDomain
+			}
+			if name != "" {
 				domain := workspaceDomain(
 					domains,
-					workspaceDomainKey(source.Domain, source.Root),
-					source.Domain,
+					workspaceDomainKey(name, source.Root),
+					name,
 					source.Root,
 				)
 				domain.invalid = true
@@ -139,7 +167,21 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 				Code: DiagnosticCodeDomainMissing, Severity: DiagnosticSeverityError, Position: position, Range: sourceRangeAt(position, source.Content),
 				Message: "missing domain declaration",
 			})
+			if source.ExpectedDomain != "" {
+				workspaceDomain(domains, workspaceDomainKey(source.ExpectedDomain, source.Root), source.ExpectedDomain, source.Root).invalid = true
+			}
 			continue
+		}
+		if source.DirectoryInput {
+			if issue := inspectDirectorySource(source.Path, source.ExpectedDomain, content); issue != nil {
+				diagnostics = append(diagnostics, Diagnostic{Code: issue.code, Severity: DiagnosticSeverityError, Position: issue.position, Message: issue.message})
+				name := source.ExpectedDomain
+				if name == "" {
+					name = content.Domain.Name.String()
+				}
+				workspaceDomain(domains, workspaceDomainKey(name, source.Root), name, source.Root).invalid = true
+				continue
+			}
 		}
 		name := content.Domain.Name.String()
 		if source.ExpectedDomain != "" && name != source.ExpectedDomain {
@@ -228,7 +270,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 	return diagnostics, models, nil
 }
 
-func (w *WorkspaceAnalyzer) parseWorkspaceSource(source Source) (*grammar.SkelContent, Diagnostics) {
+func (w *WorkspaceAnalyzer) parseWorkspaceSource(ctx context.Context, source Source) (*grammar.SkelContent, Diagnostics) {
 	if source.Parsed != nil || len(source.ParseDiagnostics) > 0 {
 		w.stats.ReusedSources++
 		if len(source.ParseDiagnostics) > 0 {
@@ -242,7 +284,10 @@ func (w *WorkspaceAnalyzer) parseWorkspaceSource(source Source) (*grammar.SkelCo
 		return cached.content, append(Diagnostics{}, cached.diagnostics...)
 	}
 	w.stats.ParsedSources++
-	content, diagnostics := ParseSourceRecovering(source.Path, source.Content)
+	content, diagnostics, err := ParseSourceRecoveringContext(ctx, source.Path, source.Content)
+	if err != nil {
+		return nil, nil
+	}
 	w.parses[source.Path] = _CachedWorkspaceParse{hash: hash, content: content, diagnostics: append(Diagnostics{}, diagnostics...)}
 	return content, diagnostics
 }

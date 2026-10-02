@@ -17,7 +17,7 @@ func (s *Service) Definition(_ context.Context, params *protocol.DefinitionParam
 		return protocol.LocationSlice{}, nil
 	}
 	locations := make([]protocol.Location, 0)
-	for _, location := range snapshot.Definitions(occurrence.Key) {
+	for _, location := range snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key)) {
 		locations = append(locations, protocol.Location{URI: location.Document.URI, Range: location.Definition.Range})
 	}
 	sortLocations(locations)
@@ -36,10 +36,10 @@ func (s *Service) References(_ context.Context, params *protocol.ReferenceParams
 	}
 	locations := make([]protocol.Location, 0)
 	definitions := make(map[protocol.Location]bool)
-	for _, location := range snapshot.Definitions(occurrence.Key) {
+	for _, location := range snapshot.Definitions(snapshot.ResolveKey(document, occurrence.Key)) {
 		definitions[protocol.Location{URI: location.Document.URI, Range: location.Definition.Range}] = true
 	}
-	for _, occurrenceLocation := range snapshot.Occurrences(occurrence.Key) {
+	for _, occurrenceLocation := range snapshot.Occurrences(snapshot.ResolveKey(document, occurrence.Key)) {
 		location := protocol.Location{URI: occurrenceLocation.Document.URI, Range: occurrenceLocation.Occurrence.Range}
 		if params.Context.IncludeDeclaration || !definitions[location] {
 			locations = append(locations, location)

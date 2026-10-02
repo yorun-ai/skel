@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -271,5 +273,14 @@ func TestWorkspaceAnalysisHandlesEveryConfigEditingPrefix(t *testing.T) {
 				t.Fatalf("expected valid complete config, got %v", diagnostics)
 			}
 		})
+	}
+}
+
+func TestRecoveryContextCancelsWithoutPartialSyntax(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	content, diagnostics, err := ParseSourceRecoveringContext(ctx, "input.skel", []byte("domain demo\ndata User {"))
+	if !errors.Is(err, context.Canceled) || content != nil || diagnostics != nil {
+		t.Fatalf("unexpected cancelled recovery: %v %v %v", content, diagnostics, err)
 	}
 }

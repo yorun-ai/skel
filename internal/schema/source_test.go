@@ -3,6 +3,8 @@ package schema
 import (
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -181,4 +183,26 @@ func workspaceDomains(t *testing.T, sources []compiler.Source) []compiler.Worksp
 	require.Empty(t, diagnostics)
 	require.NotEmpty(t, domains)
 	return domains
+}
+
+func TestGitBaselinePreservesQuotedFileNames(t *testing.T) {
+	for _, name := range []string{"用户.skel", " leading.skel", "quoted\"name.skel", "line\nbreak.skel", "tab\tname.skel"} {
+		t.Run(name, func(t *testing.T) {
+			if runtime.GOOS == "windows" && strings.ContainsAny(name, "\"\n\t") {
+				t.Skip("unsupported Windows filename")
+			}
+			root := t.TempDir()
+			path := filepath.Join(root, name)
+			require.NoError(t, os.WriteFile(path, []byte("domain demo\ndata User { id: int }\n"), 0600))
+			testutil.InitRepository(t, root)
+			_, err := gitOutput(t.Context(), root, "config", "core.quotePath", "true")
+			require.NoError(t, err)
+			testutil.Commit(t, root, "baseline", name)
+			candidate := workspaceDomain(t, root, path, "domain demo\ndata User { id: string }\n")
+			report, err := NewSourceDiffer().DiffWorkspaceDomain(t.Context(), candidate, SourceDiffOption{})
+			require.NoError(t, err)
+			require.Len(t, report.Changes, 1)
+			assert.Equal(t, ImpactBreaking, report.Changes[0].Impact)
+		})
+	}
 }

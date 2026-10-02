@@ -235,3 +235,21 @@ func equivalentRelatedInformation(left, right []compiler.DiagnosticRelatedInform
 	}
 	return true
 }
+
+func BenchmarkWorkspaceSingleFileChange(b *testing.B) {
+	sources := benchmarkWorkspaceSources(40)
+	analyzer := compiler.NewWorkspaceAnalyzer()
+	if diagnostics := analyzer.Analyze(sources); len(diagnostics) != 0 {
+		b.Fatal(diagnostics)
+	}
+	version := 0
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		version++
+		sources[len(sources)-1].Content = []byte(fmt.Sprintf("domain benchmark.d39\nimport benchmark.d38\npub data Value { previous: benchmark.d38.Value\nvalue%d: string }\n", version))
+		if diagnostics := analyzer.Analyze(sources); len(diagnostics) != 0 {
+			b.Fatal(diagnostics)
+		}
+	}
+}

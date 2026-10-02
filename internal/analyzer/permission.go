@@ -17,6 +17,9 @@ func parseRequire(reporter *_DiagnosticReporter, gr *grammar.Require) (*model.Pe
 }
 
 func parseRequireExpr(reporter *_DiagnosticReporter, expr *grammar.RequireExpr) (*model.PermissionExpr, bool) {
+	if reporter.cancelled() {
+		return nil, false
+	}
 	if expr == nil {
 		return nil, false
 	}
@@ -29,6 +32,9 @@ func parseRequireExpr(reporter *_DiagnosticReporter, expr *grammar.RequireExpr) 
 		"unsupported require mode %s", expr.Mode)
 	children := make([]*model.PermissionExpr, 0, len(expr.Children))
 	for _, child := range expr.Children {
+		if reporter.cancelled() {
+			break
+		}
 		parsed, childValid := parseRequireExpr(reporter, child)
 		valid = childValid && valid
 		if parsed != nil {
@@ -64,8 +70,14 @@ func parseRequireTerm(term *grammar.RequireTerm) *model.PermissionCheckInvocatio
 func (p *Analysis) normalizeServiceTypes(service *model.Service, refs *_RefContext) bool {
 	valid := true
 	for _, method := range service.Methods {
+		if p.reporter.cancelled() {
+			break
+		}
 		valid = fixTypeRef(p.reporter, method.ResultType, refs) && valid
 		for _, arg := range method.Arguments {
+			if p.reporter.cancelled() {
+				break
+			}
 			valid = fixTypeRef(p.reporter, arg.Type, refs) && valid
 		}
 	}
@@ -75,6 +87,9 @@ func (p *Analysis) normalizeServiceTypes(service *model.Service, refs *_RefConte
 func (p *Analysis) normalizeServiceRequire(service *model.Service) bool {
 	valid := p.normalizeRequire(service.Require, false, nil, service.Pos)
 	for _, method := range service.Methods {
+		if p.reporter.cancelled() {
+			break
+		}
 		valid = p.normalizeRequire(method.Require, true, method, method.Pos) && valid
 	}
 	return valid
@@ -92,6 +107,9 @@ func (p *Analysis) normalizeRequire(require *model.PermissionRequire, allowCheck
 }
 
 func (p *Analysis) normalizeRequireExpr(expr *model.PermissionExpr, allowChecks bool, method *model.Method, ownerPos model.Position) (*model.PermissionExpr, bool) {
+	if p.reporter.cancelled() {
+		return nil, false
+	}
 	if expr.Mode == "" && expr.Check != nil {
 		return p.normalizeRequireItem(expr.Check, allowChecks, method, ownerPos)
 	}
@@ -99,6 +117,9 @@ func (p *Analysis) normalizeRequireExpr(expr *model.PermissionExpr, allowChecks 
 	valid := p.reporter.check(len(expr.Children) > 0, "%s require %s must have at least one item", ownerPos, expr.Mode)
 	children := make([]*model.PermissionExpr, 0, len(expr.Children))
 	for _, child := range expr.Children {
+		if p.reporter.cancelled() {
+			break
+		}
 		normalized, childValid := p.normalizeRequireExpr(child, allowChecks, method, ownerPos)
 		valid = childValid && valid
 		if normalized != nil {
@@ -145,6 +166,9 @@ func (p *Analysis) normalizeRequireItem(item *model.PermissionCheckInvocation, a
 	}
 	valid := true
 	for index, argument := range item.Arguments {
+		if p.reporter.cancelled() {
+			break
+		}
 		checkArgument := checkArguments[index]
 		argument.Name = checkArgument.Name
 		argument.Type = checkArgument.Type
@@ -195,6 +219,9 @@ func (p *Analysis) findResourceAction(resourceRef string, actionName string) (*m
 		return nil, nil
 	}
 	for _, action := range resource.Actions {
+		if p.reporter.cancelled() {
+			break
+		}
 		if action.Name == actionName {
 			return resource, action
 		}

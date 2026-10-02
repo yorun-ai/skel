@@ -41,7 +41,7 @@ func entryDefinition(entry *grammar.SkelEntry) (string, lexer.Position, protocol
 	}
 }
 
-func entrySymbol(source string, entry *grammar.SkelEntry, name, detail, description string, deprecated bool, kind protocol.SymbolKind, range_ protocol.Range) Symbol {
+func entrySymbol(source source.Buffer, entry *grammar.SkelEntry, name, detail, description string, deprecated bool, kind protocol.SymbolKind, range_ protocol.Range) Symbol {
 	children := []Symbol{}
 	switch {
 	case entry.Enum != nil:
@@ -109,7 +109,7 @@ func entrySymbol(source string, entry *grammar.SkelEntry, name, detail, descript
 	return finishSymbol(Symbol{Name: name, Detail: detail, Description: description, Deprecated: deprecated, Kind: kind, Range: range_, Children: children})
 }
 
-func dataMemberSymbols(source string, members []*grammar.DataMember) []Symbol {
+func dataMemberSymbols(source source.Buffer, members []*grammar.DataMember) []Symbol {
 	symbols := make([]Symbol, 0, len(members))
 	for _, member := range members {
 		symbols = append(symbols, newDecoratedSymbol(source, member.Name, "field", member.Decorators, protocol.SymbolKindField, nil))
@@ -117,7 +117,7 @@ func dataMemberSymbols(source string, members []*grammar.DataMember) []Symbol {
 	return symbols
 }
 
-func argumentSymbols(source string, arguments []*grammar.Argument) []Symbol {
+func argumentSymbols(source source.Buffer, arguments []*grammar.Argument) []Symbol {
 	symbols := make([]Symbol, 0, len(arguments))
 	for _, argument := range arguments {
 		symbols = append(symbols, newDecoratedSymbol(source, argument.Name, "parameter", argument.Decorators, protocol.SymbolKindVariable, nil))
@@ -125,7 +125,7 @@ func argumentSymbols(source string, arguments []*grammar.Argument) []Symbol {
 	return symbols
 }
 
-func resourceCheckSymbol(source string, check *grammar.ResourceCheck) Symbol {
+func resourceCheckSymbol(source source.Buffer, check *grammar.ResourceCheck) Symbol {
 	var arguments []*grammar.Argument
 	if check.Input != nil {
 		arguments = check.Input.Arguments
@@ -134,17 +134,17 @@ func resourceCheckSymbol(source string, check *grammar.ResourceCheck) Symbol {
 	return newDecoratedSymbol(source, check.Name, "check", check.Decorators, protocol.SymbolKindFunction, children)
 }
 
-func newDecoratedSymbol(source string, name *grammar.Identifier, detail string, decorators []*grammar.Decorator, kind protocol.SymbolKind, children []Symbol) Symbol {
+func newDecoratedSymbol(source source.Buffer, name *grammar.Identifier, detail string, decorators []*grammar.Decorator, kind protocol.SymbolKind, children []Symbol) Symbol {
 	description, deprecated := documentationFromDecoratorGroups(decorators)
 	return newSymbol(source, name, detail, description, deprecated, kind, children)
 }
 
-func newSymbol(source string, name *grammar.Identifier, detail, description string, deprecated bool, kind protocol.SymbolKind, children []Symbol) Symbol {
+func newSymbol(source source.Buffer, name *grammar.Identifier, detail, description string, deprecated bool, kind protocol.SymbolKind, children []Symbol) Symbol {
 	range_ := identifierRange(source, name.Pos, name.Value)
 	return finishSymbol(Symbol{Name: name.Value, Detail: detail, Description: description, Deprecated: deprecated, Kind: kind, Range: range_, Children: children})
 }
 
-func sectionSymbol(source, name string, pos lexer.Position, children []Symbol) Symbol {
+func sectionSymbol(source source.Buffer, name string, pos lexer.Position, children []Symbol) Symbol {
 	range_ := identifierRange(source, pos, name)
 	return finishSymbol(Symbol{Name: name, Detail: "actor auth section", Kind: protocol.SymbolKindObject, Range: range_, Children: children})
 }

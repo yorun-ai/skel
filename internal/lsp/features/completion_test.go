@@ -17,6 +17,7 @@ func TestServiceCompletesKeywordsTypesAndImportedSymbols(t *testing.T) {
 	statusURI := uri.File("/workspace/status.skel")
 	server.putDocument(userURI, "domain demo.user\ndata User {}\n", 1, true)
 	server.putDocument(orderURI, "domain demo.order\nimport demo.user as user\ndata Order { owner: user. }\n", 1, true)
+	server.putDocument(uri.File("/workspace/domain.skel"), "domain demo.order\n", 1, true)
 	server.putDocument(statusURI, "domain demo.order\nenum Status { ACTIVE }\n", 1, true)
 
 	result, err := server.service().Completion(t.Context(), &protocol.CompletionParams{

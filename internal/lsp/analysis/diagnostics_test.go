@@ -221,3 +221,74 @@ func TestSemanticDiagnosticsRecoverAfterPartialGenerationNotifications(t *testin
 		})
 	}
 }
+
+func TestSemanticSourcesPreserveRemoteAuthority(t *testing.T) {
+	docs := map[uri.URI]*index.Document{}
+	for _, raw := range []string{"vscode-remote://ssh-remote+a/workspace/input.skel", "vscode-remote://ssh-remote+b/workspace/input.skel", "file:///workspace/input.skel"} {
+		u := uri.URI(raw)
+		docs[u] = index.Build(u, u.FsPath(), "domain demo\ndata User { value: Missing }\n", 1)
+	}
+	sources, paths := SemanticSources(docs)
+	require.Len(t, paths, 3)
+	diagnostics, err := SemanticDiagnostics(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths)
+	require.NoError(t, err)
+	require.Len(t, diagnostics, 3)
+	for u := range docs {
+		require.Len(t, diagnostics[u], 1)
+		assert.Equal(t, protocol.String(compiler.DiagnosticCodeSemanticReference), diagnostics[u][0].Code)
+	}
+}
+
+func TestSemanticDirectorySourceRules(t *testing.T) {
+	for _, tt := range []struct{ name, domain, body, code string }{
+		{"missing header", "domain demo\n", "data User {}\n", compiler.DiagnosticCodeDomainMissing},
+		{"mismatch", "domain demo\n", "domain wrong\ndata User {}\n", compiler.DiagnosticCodeDomainMismatch},
+		{"domain entries", "domain demo\ndata User {}\n", "domain demo\n", compiler.DiagnosticCodeDomainFileContent},
+		{"sibling decorator", "domain demo\n", "@desc(\"wrong\")\ndomain demo\ndata User {}\n", compiler.DiagnosticCodeDomainDecorator},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			docs := map[uri.URI]*index.Document{}
+			for name, text := range map[string]string{"domain.skel": tt.domain, "user.skel": tt.body} {
+				u := uri.File("/workspace/" + name)
+				docs[u] = index.Build(u, u.FsPath(), text, 1)
+			}
+			sources, paths := SemanticSources(docs)
+			diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, false)
+			require.NoError(t, err)
+			assert.Empty(t, domains)
+			found := false
+			for _, items := range diagnostics {
+				for _, d := range items {
+					if d.Code == protocol.String(tt.code) {
+						found = true
+					}
+				}
+			}
+			assert.True(t, found, "diagnostics: %v", diagnostics)
+		})
+	}
+}
+
+func TestRemoteDomainFileDoesNotGroupOtherAuthorities(t *testing.T) {
+	docs := map[uri.URI]*index.Document{}
+	for raw, text := range map[string]string{
+		"vscode-remote://ssh-remote+a/workspace/domain.skel": "domain demo\n",
+		"vscode-remote://ssh-remote+a/workspace/user.skel":   "domain demo\ndata User {}\n",
+		"vscode-remote://ssh-remote+b/workspace/user.skel":   "domain other\ndata User {}\n",
+	} {
+		u := uri.URI(raw)
+		docs[u] = index.Build(u, u.FsPath(), text, 1)
+	}
+	sources, paths := SemanticSources(docs)
+	diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, false)
+	require.NoError(t, err)
+	assert.Empty(t, diagnostics)
+	require.Len(t, domains, 2)
+	for _, domain := range domains {
+		physical := FilesystemDomain(domain)
+		assert.NotContains(t, physical.Root, "://")
+		for _, src := range physical.Sources {
+			assert.NotContains(t, src.Path, "://")
+		}
+	}
+}

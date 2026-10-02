@@ -26,7 +26,7 @@ type _DecoratorTarget struct {
 }
 
 func allowedDecoratorsAt(document *index.Document, position protocol.Position) []string {
-	offset := positionOffset(document.Source, position)
+	offset := document.Buffer.Offset(position)
 	prefixStart := offset
 	for prefixStart > 0 {
 		r := document.Source[prefixStart-1]

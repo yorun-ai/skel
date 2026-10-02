@@ -103,3 +103,53 @@ func TestIndexOpenService(t *testing.T) {
 	assert.Equal(t, "open service", document.Symbols[0].Detail)
 	assert.Equal(t, "StorageService", document.Symbols[0].Name)
 }
+
+func TestOccurrencesOnlyIncludeGrammarReferences(t *testing.T) {
+	text := `domain demo
+import demo.other as other
+data User {}
+data Box {
+    User: string
+    value: list<map<string, User?>>
+    external: other.User
+}
+service UserService {
+    method User {
+        input { User: User }
+        output User
+    }
+}
+`
+	document := Build(uri.File("/audit/input.skel"), "/audit/input.skel", text, 1)
+	require.Empty(t, document.ParseDiagnostics)
+	keys := []string{}
+	for _, occurrence := range document.Occurrences {
+		keys = append(keys, occurrence.Key)
+	}
+	assert.Equal(t, []string{"demo.User", "demo.Box", "demo.User", "demo.other.User", "demo.UserService", "demo.User", "demo.User"}, keys)
+}
+
+func TestIncompleteOccurrencesRemainConservative(t *testing.T) {
+	document := Build(uri.File("/audit/input.skel"), "/audit/input.skel", "domain demo\ndata User {}\ndata Box {\n    User: string\n    owner: User\n", 1)
+	require.NotEmpty(t, document.ParseDiagnostics)
+	occurrences := 0
+	for _, value := range document.Occurrences {
+		if value.Key == "demo.User" {
+			occurrences++
+		}
+	}
+	assert.Equal(t, 2, occurrences) // declaration and recovered type, never the field
+}
+
+func TestRecoveryDoesNotTreatDecoratorWordsAsDeclarations(t *testing.T) {
+	document := Build(uri.File("/audit/input.skel"), "/audit/input.skel", "domain demo\n@desc(data Phantom {})\ndata User {}\ndata Broken {", 1)
+	require.NotEmpty(t, document.ParseDiagnostics)
+	for _, occurrence := range document.Occurrences {
+		assert.NotEqual(t, "demo.Phantom", occurrence.Key)
+	}
+	for _, definition := range document.Definitions {
+		if definition.Name == "Phantom" {
+			assert.False(t, definition.Confirmed)
+		}
+	}
+}

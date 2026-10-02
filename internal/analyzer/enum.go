@@ -32,6 +32,9 @@ func parseEnum(reporter *_DiagnosticReporter, ge *grammar.Enum) (*model.Enum, bo
 	itemPositionByName := map[string]lexer.Position{}
 
 	for _, grammarItem := range ge.Items {
+		if reporter.cancelled() {
+			break
+		}
 		item, itemValid := parseEnumItem(reporter, grammarItem)
 		valid = itemValid && valid
 		duplicatedPosition, duplicated := itemPositionByName[item.Name]

@@ -10,8 +10,9 @@ import (
 func (s *_Server) featureService() features.Service {
 	s.mu.RLock()
 	snippetSupport := s.snippetSupport
+	documentChangesSupport := s.documentChangesSupport
 	s.mu.RUnlock()
-	return features.Service{Snapshot: s.workspace.Snapshot(), SnippetSupport: snippetSupport}
+	return features.Service{Snapshot: s.workspace.Snapshot(), SnippetSupport: snippetSupport, DocumentChangesSupport: documentChangesSupport}
 }
 
 func (s *_Server) Completion(ctx context.Context, params *protocol.CompletionParams) (protocol.CompletionResult, error) {

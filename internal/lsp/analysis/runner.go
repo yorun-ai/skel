@@ -15,6 +15,7 @@ import (
 // Result is the semantic diagnostics produced for one workspace revision.
 type Result struct {
 	Revision    uint64
+	Generation  uint64
 	Diagnostics map[uri.URI][]protocol.Diagnostic
 }
 
@@ -84,6 +85,9 @@ func (r *Runner) Stop() {
 }
 
 func (r *Runner) run(ctx context.Context, generation uint64, snapshot workspace.Snapshot, option Options, accept func(Result)) {
+	if ctx.Err() != nil {
+		return
+	}
 	sources, paths := SemanticSources(snapshot.DocumentsMap())
 	diagnostics, domains, err := SemanticWorkspace(ctx, r.workspaceAnalyzer, sources, paths, option.Strict)
 	if err != nil {
@@ -93,12 +97,19 @@ func (r *Runner) run(ctx context.Context, generation uint64, snapshot workspace.
 		appendCompatibilityDiagnostics(ctx, r.compatibility, diagnostics, domains, sources, paths, option.Compatibility)
 	}
 	r.mu.Lock()
-	if generation != r.generation {
+	if generation != r.generation || ctx.Err() != nil {
 		r.mu.Unlock()
 		return
 	}
 	r.timer = nil
 	r.cancel = nil
 	r.mu.Unlock()
-	accept(Result{Revision: snapshot.Revision(), Diagnostics: diagnostics})
+	accept(Result{Generation: generation, Revision: snapshot.Revision(), Diagnostics: diagnostics})
+}
+
+// IsCurrent also rejects results superseded after the runner released its lock.
+func (r *Runner) IsCurrent(result Result) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return result.Generation == 0 || result.Generation == r.generation
 }

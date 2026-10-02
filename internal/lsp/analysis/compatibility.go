@@ -29,14 +29,17 @@ func appendCompatibilityDiagnostics(
 	paths map[string]uri.URI,
 	option CompatibilityOptions,
 ) {
-	contentByPath := make(map[string]string, len(sources))
-	for _, candidate := range sources {
-		contentByPath[filepath.Clean(candidate.Path)] = string(candidate.Content)
-	}
+	contentByPath := newSourceBuffers(sources)
 	for _, domain := range domains {
+		if ctx.Err() != nil {
+			return
+		}
 		fallback := domainFallback(domain, paths, contentByPath)
-		report, err := differ.DiffWorkspaceDomain(ctx, domain, schema.SourceDiffOption{BaselineSkelIn: option.BaselineSkelIn})
+		report, err := differ.DiffWorkspaceDomain(ctx, FilesystemDomain(domain), schema.SourceDiffOption{BaselineSkelIn: option.BaselineSkelIn})
 		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
 			if errors.Is(err, schema.ErrGitHistoryUnavailable) {
 				continue
 			}
@@ -71,7 +74,7 @@ type _CompatibilityLocation struct {
 	Range protocol.Range
 }
 
-func domainFallback(domain compiler.WorkspaceDomain, paths map[string]uri.URI, contents map[string]string) _CompatibilityLocation {
+func domainFallback(domain compiler.WorkspaceDomain, paths map[string]uri.URI, contents *_SourceBuffers) _CompatibilityLocation {
 	for _, candidate := range domain.Sources {
 		path := filepath.Clean(candidate.Path)
 		if documentURI, ok := paths[path]; ok {
@@ -80,7 +83,7 @@ func domainFallback(domain compiler.WorkspaceDomain, paths map[string]uri.URI, c
 				position.Line = candidate.Parsed.Domain.Name.Pos.Line
 				position.Column = candidate.Parsed.Domain.Name.Pos.Column
 			}
-			return _CompatibilityLocation{URI: documentURI, Range: positionRange(contents[path], position)}
+			return _CompatibilityLocation{URI: documentURI, Range: positionRange(contents.get(path), position)}
 		}
 	}
 	return _CompatibilityLocation{}
@@ -89,7 +92,7 @@ func domainFallback(domain compiler.WorkspaceDomain, paths map[string]uri.URI, c
 func compatibilityLocation(
 	position *model.Position,
 	paths map[string]uri.URI,
-	contents map[string]string,
+	contents *_SourceBuffers,
 	fallback _CompatibilityLocation,
 ) (uri.URI, protocol.Range) {
 	if position == nil || position.File == "" {
@@ -100,11 +103,11 @@ func compatibilityLocation(
 	if !ok {
 		return fallback.URI, fallback.Range
 	}
-	return documentURI, positionRange(contents[path], *position)
+	return documentURI, positionRange(contents.get(path), *position)
 }
 
-func positionRange(content string, position model.Position) protocol.Range {
-	range_ := source.New(content).IdentifierRange(position.Line, position.Column, "")
+func positionRange(content source.Buffer, position model.Position) protocol.Range {
+	range_ := content.IdentifierRange(position.Line, position.Column, "")
 	range_.End.Character++
 	return range_
 }

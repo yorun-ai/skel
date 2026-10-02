@@ -61,3 +61,22 @@ func TestInitializeAdvertisesSchemaCompatibilityCapabilities(t *testing.T) {
 		Diagnostics: true, IncludeCompatible: true, CodeLens: false, Baseline: "../baseline",
 	}, server.schemaCompatibility)
 }
+
+func TestRemoteSchemaCommandRetainsDocumentIdentity(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "contract.skel")
+	require.NoError(t, os.WriteFile(path, []byte("domain demo\ndata User { id: int }\n"), 0600))
+	testutil.InitRepository(t, root)
+	testutil.Commit(t, root, "baseline", "contract.skel")
+	server := newServer()
+	remote := uri.URI("vscode-remote://ssh-remote+host" + string(uri.File(path))[len("file://"):])
+	server.putDocument(remote, "domain demo\ndata User { id: string }\n", 1, true)
+	argument, err := json.Marshal(string(remote))
+	require.NoError(t, err)
+	value, err := server.ExecuteCommand(t.Context(), &protocol.ExecuteCommandParams{Command: commandSchemaDiff, Arguments: []protocol.LSPAny{argument}})
+	require.NoError(t, err)
+	var report schema.Report
+	require.NoError(t, json.Unmarshal(value, &report))
+	require.Len(t, report.Changes, 1)
+	assert.Equal(t, string(remote), report.Changes[0].Candidate.File)
+}

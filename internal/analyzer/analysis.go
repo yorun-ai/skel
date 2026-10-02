@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"context"
 	"go.yorun.ai/skelc/internal/model"
 	"go.yorun.ai/skelc/internal/parser/grammar"
 )
@@ -49,34 +50,69 @@ type _DomainImport struct {
 // validation failures. Invalid declarations are excluded from later global
 // validation stages to avoid dependent cascade diagnostics.
 func Analyze(content *grammar.SkelContent, importedDomains []*Analysis) (*Analysis, []error) {
+	domain, diagnostics, _ := AnalyzeContext(context.Background(), content, importedDomains)
+	return domain, diagnostics
+}
+
+// AnalyzeContext returns no partial analysis when cancelled.
+func AnalyzeContext(ctx context.Context, content *grammar.SkelContent, importedDomains []*Analysis) (*Analysis, []error, error) {
+	if ctx.Err() != nil {
+		return nil, nil, ctx.Err()
+	}
 	domain := newAnalysis(content)
+	domain.reporter.ctx = ctx
 	domainByName := map[string]*Analysis{}
 	for _, importedDomain := range importedDomains {
+		if ctx.Err() != nil {
+			return nil, nil, ctx.Err()
+		}
 		domainByName[importedDomain.Model().Name()] = importedDomain
 	}
 	if !domain.load() {
-		return domain, domain.reporter.result()
+		if ctx.Err() != nil {
+			return nil, nil, ctx.Err()
+		}
+		domain.reporter.ctx = nil
+		return domain, domain.reporter.result(), nil
 	}
 	diagnosticsBeforeImports := len(domain.reporter.errors)
 	domain.loadImports(domainByName)
-	if len(domain.reporter.errors) == diagnosticsBeforeImports {
+	if ctx.Err() == nil && len(domain.reporter.errors) == diagnosticsBeforeImports {
 		domain.normalize()
 	}
-	if len(domain.reporter.errors) == 0 {
+	if ctx.Err() == nil && len(domain.reporter.errors) == 0 {
 		domain.finalize()
 	}
-	return domain, domain.reporter.result()
+	if ctx.Err() != nil {
+		return nil, nil, ctx.Err()
+	}
+	domain.reporter.ctx = nil
+	return domain, domain.reporter.result(), nil
 }
 
 func AnalyzeImport(content *grammar.SkelContent) (*Analysis, []error) {
+	domain, diagnostics, _ := AnalyzeImportContext(context.Background(), content)
+	return domain, diagnostics
+}
+
+// AnalyzeImportContext analyzes unresolved imports without publishing cancelled work.
+func AnalyzeImportContext(ctx context.Context, content *grammar.SkelContent) (*Analysis, []error, error) {
+	if ctx.Err() != nil {
+		return nil, nil, ctx.Err()
+	}
 	domain := newAnalysis(content)
-	if domain.load() {
+	domain.reporter.ctx = ctx
+	if domain.load() && ctx.Err() == nil {
 		domain.normalizeImport()
 	}
-	if len(domain.reporter.errors) == 0 {
+	if ctx.Err() == nil && len(domain.reporter.errors) == 0 {
 		domain.finalize()
 	}
-	return domain, domain.reporter.result()
+	if ctx.Err() != nil {
+		return nil, nil, ctx.Err()
+	}
+	domain.reporter.ctx = nil
+	return domain, domain.reporter.result(), nil
 }
 
 // ResolveImports reanalyzes an import-only domain with its complete set of

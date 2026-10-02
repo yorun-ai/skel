@@ -200,3 +200,30 @@ func TestAnalyzeWorkspaceReportsMultipleMissingImports(t *testing.T) {
 	assert.Equal(t, DiagnosticCodeImportMissing, diagnostics[0].Code)
 	assert.Equal(t, DiagnosticCodeImportMissing, diagnostics[1].Code)
 }
+
+func TestWorkspaceHardCyclesUseRealEdges(t *testing.T) {
+	for _, tt := range []struct {
+		name, text string
+		cyclic     bool
+	}{
+		{"mixed soft and hard", "data Alpha { beta: Beta }\ndata Beta { alpha: Alpha gamma: Gamma? }\ndata Gamma { beta: Beta? }", true},
+		{"branching hard", "data Alpha { beta: Beta gamma: Gamma }\ndata Beta { alpha: Alpha }\ndata Gamma { alpha: Alpha }", true},
+		{"nullable break", "data Alpha { beta: Beta }\ndata Beta { alpha: Alpha? }", false},
+		{"self", "data Alpha { alpha: Alpha }", true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			for range 10 {
+				diagnostics := AnalyzeWorkspace([]Source{{Path: "input.skel", Content: []byte("domain demo\n" + tt.text)}})
+				if tt.cyclic && len(diagnostics) == 0 {
+					t.Fatal("hard cycle was accepted")
+				}
+				if !tt.cyclic && len(diagnostics) != 0 {
+					t.Fatalf("soft cycle rejected: %v", diagnostics)
+				}
+				if tt.cyclic && diagnostics[0].Message != "hard reference chain detected: Alpha -> Beta -> Alpha, try nullable/list/map instead" && tt.name != "self" {
+					t.Fatalf("unexpected cycle path: %v", diagnostics)
+				}
+			}
+		})
+	}
+}

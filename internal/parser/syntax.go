@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 
@@ -27,11 +28,12 @@ type SyntaxError struct {
 	UnexpectedEOF bool
 	Finalize      bool
 	cause         error
+	formatted     string
 }
 
 func (err *SyntaxError) Error() string {
-	if err.cause != nil {
-		return err.cause.Error()
+	if err.formatted != "" {
+		return err.formatted
 	}
 	if err.Position.Line > 0 {
 		return err.Position.String() + " " + err.Message
@@ -51,24 +53,39 @@ func ParseSource(path string, source []byte) (*grammar.SkelContent, error) {
 // ParseSourcePartial parses one source and preserves partial content and error
 // phase information for compiler recovery.
 func ParseSourcePartial(path string, source []byte) (SourceParseResult, error) {
-	content, err := sourceParser.Parse(path, bytes.NewReader(source))
-	return finalizeSource(content, err)
+	return ParseSourceContext(context.Background(), path, source)
 }
 
 // ParseSourceFragment parses a source fragment while retaining its original
 // line and byte offsets for compiler recovery.
 func ParseSourceFragment(path string, source []byte, line, offset int) (SourceParseResult, error) {
+	return ParseSourceFragmentContext(context.Background(), path, source, line, offset)
+}
+
+// ParseSourceContext stops token loading when the source snapshot is superseded.
+func ParseSourceContext(ctx context.Context, path string, source []byte) (SourceParseResult, error) {
+	return ParseSourceFragmentContext(ctx, path, source, 1, 0)
+}
+
+// ParseSourceFragmentContext retains original positions and supports cancellation.
+func ParseSourceFragmentContext(ctx context.Context, path string, source []byte, line, offset int) (SourceParseResult, error) {
+	if err := ctx.Err(); err != nil {
+		return SourceParseResult{}, err
+	}
 	lex, err := grammar.LexerDefinition().Lex(path, bytes.NewReader(source))
 	if err != nil {
 		return SourceParseResult{}, normalizeSyntaxError(err, false)
 	}
-	adjusted := &_OffsetLexer{lexer: lex, lineOffset: line - 1, byteOffset: offset}
+	adjusted := &_OffsetLexer{lexer: &_ContextLexer{ctx: ctx, lexer: lex}, lineOffset: line - 1, byteOffset: offset}
 	symbols := grammar.LexerDefinition().Symbols()
 	peeking, err := lexer.Upgrade(adjusted, symbols["Whitespace"], symbols["LineComment"], symbols["BlockComment"])
 	if err != nil {
 		return SourceParseResult{}, normalizeSyntaxError(err, false)
 	}
 	content, err := sourceParser.ParseFromLexer(peeking)
+	if ctx.Err() != nil {
+		return SourceParseResult{}, ctx.Err()
+	}
 	return finalizeSource(content, err)
 }
 
@@ -101,11 +118,19 @@ func normalizeSyntaxError(err error, finalize bool) error {
 	if err == nil {
 		return nil
 	}
-	failure := &SyntaxError{Message: err.Error(), Finalize: finalize, cause: err}
+	failure := &SyntaxError{Finalize: finalize, cause: err}
 	var parseError participle.Error
 	if errors.As(err, &parseError) {
 		failure.Position = SourcePosition(parseError.Position())
 		failure.Message = parseError.Message()
+		if _, direct := err.(participle.Error); direct {
+			failure.formatted = participle.Errorf(parseError.Position(), "%s", failure.Message).Error()
+		} else {
+			failure.formatted = err.Error()
+		}
+	} else {
+		failure.Message = err.Error()
+		failure.formatted = failure.Message
 	}
 	var unexpectedToken *participle.UnexpectedTokenError
 	var unexpectedEOF *grammar.UnexpectedEOFError
@@ -138,4 +163,16 @@ func (lex *_OffsetLexer) Next() (lexer.Token, error) {
 		err = participle.Errorf(position, "%s", parseError.Message())
 	}
 	return token, err
+}
+
+type _ContextLexer struct {
+	ctx   context.Context
+	lexer lexer.Lexer
+}
+
+func (lex *_ContextLexer) Next() (lexer.Token, error) {
+	if err := lex.ctx.Err(); err != nil {
+		return lexer.Token{}, err
+	}
+	return lex.lexer.Next()
 }

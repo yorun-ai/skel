@@ -2,6 +2,7 @@ package compiler
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"strings"
 
@@ -16,17 +17,29 @@ import (
 // initial token pass isolates top-level declarations so recovery reparses only
 // the declaration containing an error, never the complete source file.
 func ParseSourceRecovering(path string, source []byte) (*grammar.SkelContent, Diagnostics) {
-	parsed, err := parser.ParseSourcePartial(path, source)
+	content, diagnostics, _ := ParseSourceRecoveringContext(context.Background(), path, source)
+	return content, diagnostics
+}
+
+// ParseSourceRecoveringContext cancels token scanning and fragment recovery.
+func ParseSourceRecoveringContext(ctx context.Context, path string, source []byte) (*grammar.SkelContent, Diagnostics, error) {
+	parsed, err := parser.ParseSourceContext(ctx, path, source)
+	if ctx.Err() != nil {
+		return nil, nil, ctx.Err()
+	}
 	if err == nil {
-		return parsed.Content, nil
+		return parsed.Content, nil, nil
 	}
 
-	segments := parser.SplitSourceSegments(path, source)
+	segments := parser.SplitSourceSegmentsContext(ctx, path, source)
 	content := new(grammar.SkelContent)
 	diagnostics := Diagnostics{}
 	for _, segment := range segments {
+		if ctx.Err() != nil {
+			return nil, nil, ctx.Err()
+		}
 		remaining := analyzer.MaxDiagnosticsPerDomain - len(diagnostics)
-		fragment, fragmentDiagnostics := parseSourceSegmentRecovering(path, source, segment, remaining)
+		fragment, fragmentDiagnostics := parseSourceSegmentRecovering(ctx, path, source, segment, remaining)
 		diagnostics = append(diagnostics, fragmentDiagnostics...)
 		orderDiagnostics := mergeRecoveredContent(path, source, content, fragment)
 		remaining = analyzer.MaxDiagnosticsPerDomain - len(diagnostics)
@@ -35,17 +48,23 @@ func ParseSourceRecovering(path string, source []byte) (*grammar.SkelContent, Di
 		}
 		diagnostics = append(diagnostics, orderDiagnostics...)
 	}
-	return content, diagnostics
+	if ctx.Err() != nil {
+		return nil, nil, ctx.Err()
+	}
+	return content, diagnostics, nil
 }
 
-func parseSourceSegmentRecovering(path string, source []byte, segment parser.SourceSegment, limit int) (*grammar.SkelContent, Diagnostics) {
+func parseSourceSegmentRecovering(ctx context.Context, path string, source []byte, segment parser.SourceSegment, limit int) (*grammar.SkelContent, Diagnostics) {
 	working := append([]byte{}, source[segment.Start:segment.End]...)
 	diagnostics := Diagnostics{}
 	seen := map[string]bool{}
 	for len(diagnostics) < limit {
-		parsed, err := parser.ParseSourceFragment(path, working, segment.Line, segment.Start)
+		parsed, err := parser.ParseSourceFragmentContext(ctx, path, working, segment.Line, segment.Start)
 		if err == nil {
 			return parsed.Content, diagnostics
+		}
+		if ctx.Err() != nil {
+			return nil, nil
 		}
 		diagnostic := syntaxDiagnostic(path, source, err)
 		key := diagnostic.Position.String() + "\x00" + diagnostic.Message
@@ -63,7 +82,7 @@ func parseSourceSegmentRecovering(path string, source []byte, segment parser.Sou
 	// Partial trees can contain missing identifiers or unfinalized declarations.
 	// Only successfully parsed fragments are safe for semantic analysis, even
 	// when the diagnostic budget has been exhausted.
-	parsed, err := parser.ParseSourceFragment(path, working, segment.Line, segment.Start)
+	parsed, err := parser.ParseSourceFragmentContext(ctx, path, working, segment.Line, segment.Start)
 	if err != nil {
 		return nil, diagnostics
 	}
@@ -107,7 +126,7 @@ func declarationOrderDiagnostic(path string, source []byte, position model.Posit
 
 func syntaxDiagnostic(path string, source []byte, err error) Diagnostic {
 	position := model.Position{File: path, Line: 1, Column: 1}
-	message := err.Error()
+	message := ""
 	code := DiagnosticCodeSyntaxUnexpected
 	var syntaxError *parser.SyntaxError
 	if errors.As(err, &syntaxError) {
@@ -115,6 +134,8 @@ func syntaxDiagnostic(path string, source []byte, err error) Diagnostic {
 			position = syntaxError.Position
 		}
 		message = syntaxError.Message
+	} else {
+		message = err.Error()
 	}
 	if syntaxError != nil && syntaxError.Finalize {
 		code = DiagnosticCodeSyntaxFinalize

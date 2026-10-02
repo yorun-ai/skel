@@ -1,6 +1,8 @@
 package graphutil
 
 import (
+	"context"
+	"errors"
 	"slices"
 	"testing"
 )
@@ -50,4 +52,20 @@ func sortedCycles(cycles [][]string) [][]string {
 	}
 	slices.SortFunc(normalized, slices.Compare)
 	return normalized
+}
+
+func TestGraphContextCancellation(t *testing.T) {
+	graph := New[int]()
+	for i := range 1000 {
+		graph.AddEdge(i, (i+1)%1000)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	cycles, err := graph.FindCyclesContext(ctx)
+	if !errors.Is(err, context.Canceled) || cycles != nil {
+		t.Fatalf("unexpected cancelled traversal: %v %v", cycles, err)
+	}
+	if len(graph.FindCycles()) != 1 {
+		t.Fatal("cancellation damaged graph")
+	}
 }

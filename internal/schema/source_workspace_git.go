@@ -64,7 +64,7 @@ func projectGitBaseline(ctx context.Context, differ *SourceDiffer, candidate com
 		return document, cachedRoot, cachedErr
 	}
 	gitRoot := filepath.ToSlash(relativeRoot)
-	listArgs := []string{"ls-tree", "-r", "--name-only", "HEAD"}
+	listArgs := []string{"ls-tree", "-r", "-z", "--name-only", head}
 	if relativeRoot != "." {
 		listArgs = append(listArgs, "--", gitRoot)
 	}
@@ -73,8 +73,7 @@ func projectGitBaseline(ctx context.Context, differ *SourceDiffer, candidate com
 		return nil, "", gitHistoryError(root, err)
 	}
 	sources := []compiler.Source{}
-	for _, name := range strings.Split(names, "\n") {
-		name = strings.TrimSpace(name)
+	for _, name := range strings.Split(names, "\x00") {
 		if name == "" || filepath.Ext(name) != ".skel" {
 			continue
 		}
@@ -85,7 +84,7 @@ func projectGitBaseline(ctx context.Context, differ *SourceDiffer, candidate com
 		} else if filepath.Clean(filepath.Dir(filepath.FromSlash(name))) != filepath.Clean(relativeRoot) {
 			continue
 		}
-		content, showErr := gitBytes(ctx, repositoryRoot, "show", "HEAD:"+name)
+		content, showErr := gitBytes(ctx, repositoryRoot, "show", head+":"+name)
 		if showErr != nil {
 			return nil, "", gitHistoryError(root, showErr)
 		}

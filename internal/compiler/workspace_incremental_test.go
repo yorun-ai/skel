@@ -75,3 +75,15 @@ pub service OrderService {
 		t.Fatalf("unexpected diagnostics after dependent reanalysis: %v", diagnostics)
 	}
 }
+
+func TestCancelledAnalysisDoesNotWaitForBusyAnalyzer(t *testing.T) {
+	analyzer := NewWorkspaceAnalyzer()
+	analyzer.gate <- struct{}{}
+	defer func() { <-analyzer.gate }()
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	_, _, err := analyzer.AnalyzeDomainsContext(ctx, nil)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected cancellation, got %v", err)
+	}
+}

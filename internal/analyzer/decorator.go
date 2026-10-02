@@ -31,6 +31,9 @@ func parseDecoratorMeta(reporter *_DiagnosticReporter, decorators []*grammar.Dec
 	meta := _DecoratorMeta{}
 	valid := true
 	for _, decorator := range decorators {
+		if reporter.cancelled() {
+			break
+		}
 		switch decorator.Name.Value {
 		case "desc":
 			accepted := reporter.check(ctx.allowDesc, "%s unexpected decorator %s", decorator.Name.Pos, "@"+decorator.Name.Value)

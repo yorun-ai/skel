@@ -90,6 +90,9 @@ func parseActorCredential(reporter *_DiagnosticReporter, ga *grammar.Actor, auth
 	valid = reporter.check(len(credential.Members) > 0, "%s actor credential must have at least one member", credentialSection.Pos) && valid
 	hasRequiredField := false
 	for _, member := range credential.Members {
+		if reporter.cancelled() {
+			break
+		}
 		valid = reporter.check(member.Type.Kind == model.TypeKindScalar && member.Type.Scalar == model.ScalarString,
 			"%s actor credential member %s must be string or string?", member.Pos, member.Name) && valid
 		if !member.Type.Nullable {
@@ -115,9 +118,15 @@ func parseActorInfo(reporter *_DiagnosticReporter, ga *grammar.Actor, authSectio
 	members := make([]*grammar.DataMember, 0, len(infoSection.Members))
 	identifierField := ""
 	for _, source := range infoSection.Members {
+		if reporter.cancelled() {
+			break
+		}
 		member := *source
 		member.Decorators = nil
 		for _, decorator := range source.Decorators {
+			if reporter.cancelled() {
+				break
+			}
 			if decorator.Name.Value != "identifier" {
 				member.Decorators = append(member.Decorators, decorator)
 				continue
@@ -138,6 +147,9 @@ func parseActorInfo(reporter *_DiagnosticReporter, ga *grammar.Actor, authSectio
 	info.Sensitive = meta.Sensitive
 	info.Pub = ga.Pub
 	for _, member := range info.Members {
+		if reporter.cancelled() {
+			break
+		}
 		if member.Name == identifierField {
 			kind := member.Type
 			valid = reporter.check(kind.Kind == model.TypeKindScalar && !kind.Nullable &&
@@ -153,6 +165,9 @@ func actorAuthSection(reporter *_DiagnosticReporter, ga *grammar.Actor) (*gramma
 	var authPos lexer.Position
 	valid := true
 	for _, section := range ga.Sections {
+		if reporter.cancelled() {
+			break
+		}
 		if section.Auth == nil {
 			continue
 		}
@@ -180,6 +195,9 @@ func actorPermissionDeclared(reporter *_DiagnosticReporter, ga *grammar.Actor) (
 	var permissionPos lexer.Position
 	valid := true
 	for _, section := range ga.Sections {
+		if reporter.cancelled() {
+			break
+		}
 		if section.Permission == nil {
 			continue
 		}
@@ -203,6 +221,9 @@ func parseActorVias(reporter *_DiagnosticReporter, owner *grammar.Identifier, gr
 	parsedVias := make([]*model.ActorVia, 0, len(grammarVias))
 	viaPos := map[string]lexer.Position{}
 	for _, grammarVia := range grammarVias {
+		if reporter.cancelled() {
+			break
+		}
 		via, viaValid := parseActorVia(reporter, grammarVia)
 		valid = viaValid && valid
 		duplicatedPosition, duplicated := viaPos[via.Name]

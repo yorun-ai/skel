@@ -30,6 +30,9 @@ func parseMethods(reporter *_DiagnosticReporter, owner *grammar.Identifier, meth
 	valid := true
 
 	for _, grammarMethod := range methods {
+		if reporter.cancelled() {
+			break
+		}
 		method, methodValid := parseMethod(reporter, grammarMethod)
 		valid = methodValid && valid
 		duplicatedPosition, duplicated := methodPos[method.Name]
@@ -84,6 +87,9 @@ func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*model.Meth
 		method.ArgumentsSensitive = inputMeta.Sensitive
 		argPos := map[string]lexer.Position{}
 		for _, grammarArgument := range input.Arguments {
+			if reporter.cancelled() {
+				break
+			}
 			arg, argumentValid := parseArgument(reporter, grammarArgument)
 			valid = argumentValid && valid
 			duplicatedPosition, duplicated := argPos[arg.Name]

@@ -11,7 +11,6 @@ import (
 	"go.yorun.ai/skelc/internal/compiler"
 	"go.yorun.ai/skelc/internal/lsp/analysis"
 	"go.yorun.ai/skelc/internal/lsp/features"
-	"go.yorun.ai/skelc/internal/lsp/source"
 	"go.yorun.ai/skelc/internal/lsp/workspace"
 	"go.yorun.ai/skelc/internal/schema"
 )
@@ -37,7 +36,7 @@ func (s *_Server) CodeLens(_ context.Context, params *protocol.CodeLensParams) (
 	range_ := protocol.Range{}
 	if document.Parsed != nil && document.Parsed.Domain != nil && document.Parsed.Domain.Name != nil {
 		position := document.Parsed.Domain.Name.Pos
-		range_ = source.New(document.Source).IdentifierRange(position.Line, position.Column, document.Parsed.Domain.Name.String())
+		range_ = document.Buffer.IdentifierRange(position.Line, position.Column, document.Parsed.Domain.Name.String())
 	}
 	argument, _ := json.Marshal(string(params.TextDocument.URI))
 	return []protocol.CodeLens{{
@@ -92,13 +91,13 @@ func diffDocument(
 	}
 	for _, domain := range domains {
 		for _, candidate := range domain.Sources {
-			if filepath.Clean(candidate.Path) == filepath.Clean(document.Path) {
-				return schema.DiffWorkspaceDomain(ctx, domain, schema.SourceDiffOption{BaselineSkelIn: option.Compatibility.BaselineSkelIn, Strict: option.Strict})
+			if filepath.Clean(candidate.Path) == filepath.Clean(document.AnalysisPath()) {
+				return schema.DiffWorkspaceDomain(ctx, analysis.FilesystemDomain(domain), schema.SourceDiffOption{BaselineSkelIn: option.Compatibility.BaselineSkelIn, Strict: option.Strict})
 			}
 		}
 	}
 	for _, diagnostic := range diagnostics {
-		if filepath.Clean(diagnostic.Position.File) == filepath.Clean(document.Path) {
+		if filepath.Clean(diagnostic.Position.File) == filepath.Clean(document.AnalysisPath()) {
 			return nil, fmt.Errorf("cannot compare an invalid Skel domain: %s", diagnostic.Message)
 		}
 	}

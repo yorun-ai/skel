@@ -1,45 +1,88 @@
 package analyzer
 
 import (
+	"context"
+	"slices"
 	"strings"
 
 	"go.yorun.ai/skelc/internal/model"
 	"go.yorun.ai/skelc/internal/util/graphutil"
-	"go.yorun.ai/skelc/internal/util/sliceutil"
 )
 
 func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {
 	graph := graphutil.New[*model.Data]()
-	refs := _RefsMatrix{}
-
-	for _, dataType := range dataList {
-		if refs.has(dataType) {
+	edges := map[*model.Data][]*model.Data{}
+	for _, data := range dataList {
+		if p.reporter.cancelled() {
+			return
+		}
+		if _, seen := edges[data]; seen {
 			continue
 		}
-
-		refs[dataType] = _Refs{}
-		for _, member := range dataType.Members {
-			refs[dataType].merge(referencedData(member.Type))
+		edges[data] = nil
+		refs := _Refs{}
+		for _, member := range data.Members {
+			if p.reporter.cancelled() {
+				return
+			}
+			refs.merge(referencedData(member.Type))
 		}
-		for refData := range refs[dataType] {
-			graph.AddEdge(dataType, refData)
-		}
-	}
-
-	for _, cycle := range graph.FindCycles() {
-		cycle = append(cycle, cycle[0])
-		isHard := true
-
-		for si, di := 0, 1; di < len(cycle); si, di = si+1, di+1 {
-			if !refs.refKind(cycle[si], cycle[di]).isHard() {
-				isHard = false
-				break
+		for target, kind := range refs {
+			if p.reporter.cancelled() {
+				return
+			}
+			if kind.isHard() {
+				edges[data] = append(edges[data], target)
 			}
 		}
-
-		if isHard {
-			names := sliceutil.Map(cycle, func(dataType *model.Data) string { return dataType.Name })
-			p.reporter.reportf("%s hard reference chain detected: %s, try nullable/list/map instead", cycle[0].Pos, strings.Join(names, " -> "))
+		slices.SortFunc(edges[data], func(a, b *model.Data) int { return strings.Compare(a.Name, b.Name) })
+		for _, target := range edges[data] {
+			graph.AddEdge(data, target)
+		}
+	}
+	ctx := p.reporter.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	components, err := graph.FindCyclesContext(ctx)
+	if err != nil {
+		return
+	}
+	for _, component := range components {
+		if p.reporter.cancelled() {
+			return
+		}
+		// A strongly connected component is a set, not an ordered cycle. Follow
+		// edges inside it until a node repeats to obtain a real diagnostic path.
+		members := map[*model.Data]bool{}
+		for _, data := range component {
+			members[data] = true
+		}
+		slices.SortFunc(component, func(a, b *model.Data) int { return strings.Compare(a.Name, b.Name) })
+		positions := map[*model.Data]int{}
+		path := []*model.Data{}
+		current := component[0]
+		for {
+			if p.reporter.cancelled() {
+				return
+			}
+			if start, ok := positions[current]; ok {
+				cycle := append(path[start:], current)
+				names := make([]string, len(cycle))
+				for i, data := range cycle {
+					names[i] = data.Name
+				}
+				p.reporter.reportf("%s hard reference chain detected: %s, try nullable/list/map instead", current.Pos, strings.Join(names, " -> "))
+				break
+			}
+			positions[current] = len(path)
+			path = append(path, current)
+			for _, target := range edges[current] {
+				if members[target] {
+					current = target
+					break
+				}
+			}
 		}
 	}
 }

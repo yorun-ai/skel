@@ -3,9 +3,9 @@
 package source
 
 import (
+	"sort"
 	"strings"
 	"unicode"
-	"unicode/utf16"
 	"unicode/utf8"
 
 	"go.lsp.dev/protocol"
@@ -14,6 +14,7 @@ import (
 // Buffer is an immutable view of source text.
 type Buffer struct {
 	content string
+	lines   []int
 }
 
 // Token is a lightweight token used while a document is syntactically
@@ -26,7 +27,13 @@ type Token struct {
 
 // New creates a source buffer.
 func New(content string) Buffer {
-	return Buffer{content: content}
+	lines := []int{0}
+	for offset := 0; offset < len(content); offset++ {
+		if content[offset] == '\n' {
+			lines = append(lines, offset+1)
+		}
+	}
+	return Buffer{content: content, lines: lines}
 }
 
 // String returns the original source text.
@@ -36,14 +43,10 @@ func (b Buffer) String() string {
 
 // Offset converts an LSP UTF-16 position to a byte offset.
 func (b Buffer) Offset(position protocol.Position) int {
-	lineStart := 0
-	for line := uint32(0); line < position.Line && lineStart < len(b.content); line++ {
-		next := strings.IndexByte(b.content[lineStart:], '\n')
-		if next < 0 {
-			return len(b.content)
-		}
-		lineStart += next + 1
+	if int(position.Line) >= len(b.lines) {
+		return len(b.content)
 	}
+	lineStart := b.lines[position.Line]
 	offset := lineStart
 	units := uint32(0)
 	for offset < len(b.content) && b.content[offset] != '\n' && units < position.Character {
@@ -63,9 +66,12 @@ func (b Buffer) Offset(position protocol.Position) int {
 
 // Position converts a byte offset to an LSP UTF-16 position.
 func (b Buffer) Position(offset int) protocol.Position {
+	if len(b.lines) == 0 {
+		return protocol.Position{}
+	}
 	offset = min(max(offset, 0), len(b.content))
-	line := strings.Count(b.content[:offset], "\n")
-	lineStart := strings.LastIndexByte(b.content[:offset], '\n') + 1
+	line := sort.Search(len(b.lines), func(i int) bool { return b.lines[i] > offset }) - 1
+	lineStart := b.lines[max(line, 0)]
 	return protocol.Position{Line: uint32(line), Character: uint32(UTF16Length(b.content[lineStart:offset]))}
 }
 
@@ -235,7 +241,14 @@ func (b Buffer) IdentifierTokens() []Token {
 
 // UTF16Length returns the number of UTF-16 code units in value.
 func UTF16Length(value string) int {
-	return len(utf16.Encode([]rune(value)))
+	length := 0
+	for _, r := range value {
+		length++
+		if r > 0xffff {
+			length++
+		}
+	}
+	return length
 }
 
 // FirstRune returns the first rune in value.
@@ -245,9 +258,12 @@ func FirstRune(value string) rune {
 }
 
 func (b Buffer) line(line int) string {
-	lines := strings.Split(b.content, "\n")
-	if line < 0 || line >= len(lines) {
+	if line < 0 || line >= len(b.lines) {
 		return ""
 	}
-	return strings.TrimSuffix(lines[line], "\r")
+	start, end := b.lines[line], len(b.content)
+	if line+1 < len(b.lines) {
+		end = b.lines[line+1] - 1
+	}
+	return strings.TrimSuffix(b.content[start:end], "\r")
 }

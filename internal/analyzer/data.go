@@ -98,6 +98,9 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.D
 	memberPos := map[string]lexer.Position{}
 
 	for _, grammarTypeParameter := range gs.TypeParameters {
+		if reporter.cancelled() {
+			break
+		}
 		typeParameter, parameterValid := parseTypeParameter(reporter, grammarTypeParameter)
 		valid = parameterValid && valid
 		duplicatedPosition, duplicated := typeParamPos[typeParameter.Name]
@@ -111,6 +114,9 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.D
 	}
 
 	for _, grammarMember := range gs.Members {
+		if reporter.cancelled() {
+			break
+		}
 		member, memberValid := parseDataMember(reporter, grammarMember, kind)
 		valid = memberValid && valid
 		valid = reporter.check(member.Name != skelmeta.SensitiveMarkerFieldName(),

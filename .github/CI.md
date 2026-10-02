@@ -21,7 +21,7 @@ changes skip those jobs while the required gate still completes successfully:
 | --- | --- |
 | Go static | Module metadata drift and full-repository `go vet` |
 | Go race | Full-repository tests with the race detector |
-| Examples | Generate both examples and compile their generated Go modules |
+| Examples | Generate both examples, compile their Go modules, and type-check their TypeScript clients against the pinned published vRPC runtime |
 
 All Go commands use `GOWORK=off`, including commands in generated modules.
 Race tests disable Go's automatic vet pass because the static job runs the full
@@ -83,3 +83,9 @@ CHANGE_BASE=$(git rev-parse HEAD~1) CHANGE_HEAD=$(git rev-parse HEAD) \
 
 When editing a job's commands, also execute those commands locally and keep
 generated example output outside the repository.
+
+The Examples job uses Node.js 24 and `.github/scripts/typecheck-generated.mjs`.
+Its isolated temporary workspace installs the exact versions and integrity hashes
+from `.github/typescript/package-lock.json`; it never substitutes sibling runtime
+source. Cross-domain example imports resolve through TypeScript paths. Update the
+fixture lockfile deliberately when changing the tested runtime or TypeScript version.
