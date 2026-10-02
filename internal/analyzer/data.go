@@ -144,7 +144,6 @@ func parseDataMember(reporter *_DiagnosticReporter, gsm *grammar.DataMember, kin
 		allowDesc:       true,
 		allowExample:    true,
 		allowSensitive:  true,
-		allowNoTrim:     kind == model.DataKindConfig,
 		allowDeprecated: true,
 		requireDesc:     true,
 	})
@@ -159,7 +158,6 @@ func parseDataMember(reporter *_DiagnosticReporter, gsm *grammar.DataMember, kin
 		DeprecatedReason: meta.DeprecatedReason,
 		Example:          meta.Example,
 		Sensitive:        meta.Sensitive,
-		NoTrim:           meta.NoTrim,
 		Type:             memberType,
 	}, valid
 }

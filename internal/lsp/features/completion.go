@@ -15,7 +15,7 @@ var completionKeywords = []string{
 	"api", "open", "payload", "permission", "pub", "require", "resource", "service", "task", "trigger", "via", "web",
 }
 
-var completionDecorators = []string{"deprecated", "desc", "example", "identifier", "noTrim", "sensitive"}
+var completionDecorators = []string{"deprecated", "desc", "example", "identifier", "sensitive"}
 
 var completionTypes = []string{
 	"binary", "bool", "decimal", "duration", "float", "int", "json", "list", "localdate",

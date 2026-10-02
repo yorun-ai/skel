@@ -74,8 +74,6 @@ type DataMember struct {
 	Example string
 	// Sensitive reports whether generated Go values mark this member for redaction.
 	Sensitive bool
-	// NoTrim preserves whitespace in this config field's string values.
-	NoTrim bool
 	// Type is the member's resolved semantic type.
 	Type *Type
 }

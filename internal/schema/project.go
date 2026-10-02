@@ -181,7 +181,7 @@ func projectMembers(values []*model.DataMember) []*Member {
 	for _, value := range values {
 		members = append(members, &Member{
 			Metadata: metadata(value.Description, value.Deprecated, value.DeprecatedReason),
-			Name:     value.Name, Example: value.Example, Sensitive: value.Sensitive, NoTrim: value.NoTrim, Type: projectType(value.Type), Pos: value.Pos,
+			Name:     value.Name, Example: value.Example, Sensitive: value.Sensitive, Type: projectType(value.Type), Pos: value.Pos,
 		})
 	}
 	return members

@@ -133,17 +133,12 @@ func validateEnum(value *EnumSchema) error {
 }
 
 func validateData(value *DataSchema) error {
-	return validateDataMembers(value, false)
+	return validateDataMembers(value)
 }
 
-func validateDataMembers(value *DataSchema, allowNoTrim bool) error {
+func validateDataMembers(value *DataSchema) error {
 	if value.Members == nil {
 		return fmt.Errorf("data members are required")
-	}
-	for _, member := range value.Members {
-		if member != nil && member.NoTrim && !allowNoTrim {
-			return fmt.Errorf("noTrim is only supported on config members")
-		}
 	}
 	return validateMembers(value.Members)
 }
@@ -159,7 +154,7 @@ func validateDataDeclaration(kind DeclarationType, value *DataSchema) error {
 			return fmt.Errorf("%s declaration contains config lifecycle %q", kind, value.Lifecycle)
 		}
 	}
-	return validateDataMembers(value, kind == DeclarationTypeConfig)
+	return validateDataMembers(value)
 }
 
 func validateMembers(values []*Member) error {

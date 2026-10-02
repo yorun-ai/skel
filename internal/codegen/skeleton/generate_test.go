@@ -422,11 +422,10 @@ pub service UserService {
 	}
 }
 
-func TestPublicConfigPreservesNoTrim(t *testing.T) {
+func TestPublicConfigPreservesSensitive(t *testing.T) {
 	domain, _ := parseDomainForTest(t, "domain.skel", "domain demo\n", "config.skel", `domain demo
 pub config TextConfig instant {
     @sensitive
-    @noTrim
     value: string?
 }
 `, nil)
@@ -439,7 +438,7 @@ pub config TextConfig instant {
 		t.Fatal(err)
 	}
 	member := parsed.Domain.Configs()[0].Members[0]
-	if !member.NoTrim || !member.Sensitive {
+	if !member.Sensitive {
 		t.Fatalf("lost config decorators: %+v", member)
 	}
 }

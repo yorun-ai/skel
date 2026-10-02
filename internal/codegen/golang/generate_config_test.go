@@ -17,14 +17,10 @@ func TestGeneratedConfigTags(t *testing.T) {
 			input := filepath.Join(dir, "config.skel")
 			source := "domain demo\nconfig TextConfig " + lifecycle + ` {
     plain: string
-    @noTrim
     raw: string
-    @noTrim
     optional: string?
-    @noTrim
     items: list<string?>?
     @sensitive
-    @noTrim
     values: map<string, string?>?
     @sensitive
     secret: string
@@ -45,8 +41,8 @@ func TestGeneratedConfigTags(t *testing.T) {
 				t.Fatalf("unexpected YAML tag in:\n%s", content)
 			}
 			for _, tag := range []string{
-				"`json:\"plain\"`", `json:"raw" skel:"noTrim"`, `json:"optional" skel:"noTrim"`,
-				`json:"items" skel:"noTrim"`, `json:"values" skel:"sensitive,noTrim"`, `json:"secret" skel:"sensitive"`,
+				"`json:\"plain\"`", "`json:\"raw\"`", "`json:\"optional\"`",
+				"`json:\"items\"`", `json:"values" skel:"sensitive"`, `json:"secret" skel:"sensitive"`,
 			} {
 				if !strings.Contains(content, tag) {
 					t.Fatalf("missing %s in:\n%s", tag, content)

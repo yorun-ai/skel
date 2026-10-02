@@ -249,18 +249,6 @@ func compileTestDomain(t *testing.T, name string, source []byte) *model.Domain {
 	return result.Domain
 }
 
-func TestFormatNoTrim(t *testing.T) {
-	input := []byte("domain demo\nconfig TextConfig eternal{@noTrim\nvalue:string?}")
-	got := formatTestSource(t, input)
-	want := "domain demo\n\nconfig TextConfig eternal {\n    @noTrim\n    value: string?\n}\n"
-	if string(got) != want {
-		t.Fatalf("got %q, want %q", got, want)
-	}
-	if second := formatTestSource(t, got); string(second) != string(got) {
-		t.Fatal("format is not idempotent")
-	}
-}
-
 func TestActorIdentifierRoundTrip(t *testing.T) {
 	source := []byte("domain demo\npub actor UserActor{via client{} auth{credential{token:string}info{\n// stable identity\n@identifier\nid:int\n}}}\n")
 	before := compileTestDomain(t, "actor.skel", source)

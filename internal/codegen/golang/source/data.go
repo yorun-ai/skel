@@ -99,7 +99,6 @@ type DataMember struct {
 	SkelName     string
 	Sensitive    bool
 	Identifier   bool
-	NoTrim       bool
 }
 
 func castDataMember(p *model.DataMember) *DataMember {
@@ -114,7 +113,6 @@ func castDataMember(p *model.DataMember) *DataMember {
 		Type:      memberType,
 		SkelName:  p.Name,
 		Sensitive: p.Sensitive,
-		NoTrim:    p.NoTrim,
 	}
 }
 

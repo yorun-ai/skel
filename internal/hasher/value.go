@@ -23,7 +23,6 @@ type _MemberHashValue struct {
 	DeprecatedReason string          `json:"deprecatedReason,omitempty"`
 	Example          string          `json:"example,omitempty"`
 	Sensitive        bool            `json:"sensitive,omitempty"`
-	NoTrim           bool            `json:"noTrim,omitempty"`
 	Type             *_TypeHashValue `json:"type,omitempty"`
 }
 
