@@ -145,6 +145,6 @@ func castDataType(p *model.Type) *Type {
 
 func castTypeParameter(p *model.Type) *Type {
 	return &Type{
-		Plain: p.TypeParameter.Name,
+		Plain: common.ChooseString(p.Nullable, p.TypeParameter.Name+" | null", p.TypeParameter.Name),
 	}
 }

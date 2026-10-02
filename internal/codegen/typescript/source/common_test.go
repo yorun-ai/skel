@@ -102,3 +102,28 @@ func renderTemplate(t *testing.T, template string, payload any) string {
 	}
 	return content
 }
+
+func TestCastNullableTypeParameterInCollectionsAndArguments(t *testing.T) {
+	parameter := codegentest.TypeParam("TValue")
+	plain := codegentest.TypeParamType(parameter)
+	nullable := codegentest.NullableType(codegentest.TypeParamType(parameter))
+	box := &model.Data{Name: "Box", TypeParameters: []*model.TypeParameter{parameter}}
+	for _, test := range []struct {
+		name string
+		kind *model.Type
+		want string
+	}{
+		{name: "parameter", kind: plain, want: "TValue"},
+		{name: "nullable parameter", kind: nullable, want: "TValue | null"},
+		{name: "list elements", kind: codegentest.ListType(nullable), want: "Array<TValue | null>"},
+		{name: "map values", kind: codegentest.MapType(codegentest.StringType(), nullable), want: "Record<string, TValue | null>"},
+		{name: "nested generic", kind: codegentest.DataType(box, nullable), want: "Box<TValue | null>"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got := castType(test.kind)
+			if got.Plain != test.want {
+				t.Fatalf("type: got %q want %q", got.Plain, test.want)
+			}
+		})
+	}
+}
