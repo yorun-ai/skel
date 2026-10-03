@@ -50,12 +50,7 @@ func generateModule(option _ModuleOption) error {
 		return fmt.Errorf("add Go version statement: %w", err)
 	}
 
-	runtimeModule, runtimeVersion := vineModule, option.VineVersion
-	if option.Api {
-		runtimeModule, runtimeVersion = "go.yorun.ai/vrpc", option.VrpcVersion
-	}
-	extra := append([]string{decimalModule + "@" + decimalVersion, runtimeModule + "@" + runtimeVersion}, option.ExtraDependencies...)
-	dependencies, err := goModDependencies(option.Imports, extra)
+	dependencies, err := moduleDependencies(option)
 	if err != nil {
 		return err
 	}
@@ -72,4 +67,13 @@ func generateModule(option _ModuleOption) error {
 	renderer := common.NewRenderer(option.Out)
 	renderer.Write(goModFilename, string(content))
 	return renderer.Err()
+}
+
+func moduleDependencies(option _ModuleOption) ([]_GoImportDependency, error) {
+	runtimeModule, runtimeVersion := vineModule, option.VineVersion
+	if option.Api {
+		runtimeModule, runtimeVersion = "go.yorun.ai/vrpc", option.VrpcVersion
+	}
+	extra := append([]string{decimalModule + "@" + decimalVersion, runtimeModule + "@" + runtimeVersion}, option.ExtraDependencies...)
+	return goModDependencies(option.Imports, extra)
 }

@@ -15,7 +15,9 @@ import (
 
 	"go.yorun.ai/skelc"
 	"go.yorun.ai/skelc/diagnostic"
+	"go.yorun.ai/skelc/internal/testutil"
 	"go.yorun.ai/skelc/model"
+	"golang.org/x/mod/modfile"
 )
 
 func TestParseStrictMigrationRules(t *testing.T) {
@@ -650,5 +652,260 @@ func TestGeneratorsRejectNilTypeParameter(t *testing.T) {
 				t.Fatalf("invalid model wrote output: %v, %v", entries, err)
 			}
 		})
+	}
+}
+
+// b's public contract needs c for parsing, even when a uses only b.Token or its actor.
+func TestCompileModulesSeparateResolutionMappingsFromDependencies(t *testing.T) {
+	for _, tc := range []struct {
+		name, source               string
+		full, public, regular, api []string
+	}{
+		{"external actor", "pub data Payload { id: uuid }\nweb GatewayWeb { for b.AgentActor }", nil, nil, nil, nil},
+		{"unused transitive contract", "pub data Payload { token: b.Token }", []string{"b"}, []string{"b"}, nil, []string{"b"}},
+		{"split output boundaries", "pub data Payload { access: c.Access }\ndata PrivatePayload { token: b.Token }", []string{"b", "c"}, []string{"c"}, []string{"b"}, []string{"c"}},
+		{"generic arguments", "pub data Payload { values: map<string, b.Box<c.Access>> }", []string{"b", "c"}, []string{"b", "c"}, nil, []string{"b", "c"}},
+		{"public service implementation", "pub service ExampleService { method get { output b.Token } }", []string{"b"}, []string{"b"}, []string{"b"}, nil},
+		{"actor and resource helpers", `pub actor LocalActor {
+    via client {}
+    auth { credential { token: string } info { access: c.Access } }
+}
+pub resource LocalResource {
+    check byToken { input { token: b.Token } }
+    action read
+}
+api service ExampleApiService { for LocalActor via client method ping {} }`, []string{"b", "c"}, []string{"b", "c"}, nil, nil},
+		{"config event and task", `pub config ExampleConfig eternal { token: b.Token }
+pub event ExampleEvent { payload { access: c.Access } }
+task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b", "c"}, []string{"b", "c"}, []string{"b", "c"}, nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			a, b, c := filepath.Join(root, "a.skel"), filepath.Join(root, "b.skel"), filepath.Join(root, "c.skel")
+			imports := "import b\n"
+			if strings.Contains(tc.source, "c.") {
+				imports += "import c\n"
+			}
+			writeTestFile(t, a, "domain a\n"+imports+tc.source+"\n")
+			writeTestFile(t, b, "domain b\nimport c\npub data Token { id: uuid access: c.Access }\npub data Box<TItem> { items: list<TItem> }\npub actor AgentActor { via client {} }\npub service AccessService { method get { output c.Access } }\n")
+			writeTestFile(t, c, "domain c\npub data Access { id: uuid }\n")
+			input := skelc.Input{SkelIn: a, SkelImports: map[string]string{"b": b, "c": c}}
+			mappings := map[string]string{"b": "example.com/bpub@v1.2.3", "c": "example.com/cpub@v1.3.0", "unused": "example.com/unused@v1.4.0"}
+			dependencyOutputs := map[bool]map[string]string{}
+			for _, api := range []bool{false, true} {
+				dependencyOutputs[api] = map[string]string{}
+				for name, entry := range map[string]string{"b": b, "c": c} {
+					out := filepath.Join(root, map[bool]string{false: "pubdeps", true: "apideps"}[api], name)
+					dependencyImports := map[string]string{}
+					if name == "b" {
+						dependencyImports["c"] = c
+					}
+					if _, err := skelc.CompileGolang(skelc.Input{SkelIn: entry, SkelImports: dependencyImports}, skelc.GolangOption{
+						CompilerVersion: "v0.0.0-dev", PubOnly: !api, ApiOnly: api, AsModule: true, Module: "example.com/" + name + "pub", Out: out, Imports: mappings,
+					}); err != nil {
+						t.Fatal(err)
+					}
+					dependencyOutputs[api][name] = out
+				}
+			}
+			for _, mode := range []string{"full", "pub", "api", "split"} {
+				t.Run(mode, func(t *testing.T) {
+					out := filepath.Join(root, mode)
+					opts := skelc.GolangOption{CompilerVersion: "v0.0.0-dev", AsModule: true, Module: "example.com/a", Out: out, Imports: mappings}
+					want := tc.full
+					switch mode {
+					case "pub":
+						opts.PubOnly = true
+						want = tc.public
+					case "api":
+						opts.ApiOnly = true
+						want = tc.api
+					case "split":
+						opts.PubOut = out + "pub"
+						opts.PubModule = "example.com/apub"
+						want = tc.regular
+					}
+					if _, err := skelc.CompileGolang(input, opts); err != nil {
+						t.Fatal(err)
+					}
+					assertGeneratedDomainRequires(t, out, want)
+					if mode == "split" {
+						assertGeneratedDomainRequires(t, opts.PubOut, tc.public)
+						content, err := os.ReadFile(filepath.Join(out, "go.mod"))
+						if err != nil {
+							t.Fatal(err)
+						}
+						if !strings.Contains(string(content), "example.com/apub ") {
+							t.Fatal("split output lost its own public-module dependency")
+						}
+					}
+					t.Run("compile", func(t *testing.T) {
+						testutil.RequireToolchain(t)
+						// Use generated local dependencies; go.work must not hide a
+						// missing requirement in any generated module.
+						for name, dir := range dependencyOutputs[mode == "api"] {
+							testutil.Go(t, out, "mod", "edit", "-replace=example.com/"+name+"pub="+dir)
+						}
+						if mode == "split" {
+							testutil.Go(t, out, "mod", "edit", "-replace=example.com/apub="+opts.PubOut)
+						}
+						testutil.Go(t, out, "mod", "tidy")
+						files, err := filepath.Glob(filepath.Join(out, "*.go"))
+						if err != nil {
+							t.Fatal(err)
+						}
+						if len(files) > 0 {
+							testutil.Go(t, out, "test", "./...")
+						}
+					})
+				})
+			}
+			tsOut := filepath.Join(root, "ts")
+			if _, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{ApiOnly: true, AsModule: true, Module: "@example/a", Out: tsOut, Imports: map[string]string{"b": "@example/b@1.2.3", "c": "@example/c@1.3.0", "unused": "@example/unused@1.4.0"}}); err != nil {
+				t.Fatal(err)
+			}
+			manifest, err := os.ReadFile(filepath.Join(tsOut, "package.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range []string{"b", "c", "unused"} {
+				want := false
+				for _, dep := range tc.api {
+					want = want || dep == name
+				}
+				if strings.Contains(string(manifest), `"@example/`+name+`"`) != want {
+					t.Fatalf("wrong TypeScript dependency %s: %s", name, manifest)
+				}
+			}
+			if mappings["unused"] != "example.com/unused@v1.4.0" || len(mappings) != 3 {
+				t.Fatal("generation mutated caller's import mappings")
+			}
+		})
+	}
+}
+
+func assertGeneratedDomainRequires(t *testing.T, out string, want []string) {
+	t.Helper()
+	content, err := os.ReadFile(filepath.Join(out, "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	file, err := modfile.Parse("go.mod", content, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	requires := map[string]string{}
+	for _, require := range file.Require {
+		requires[require.Mod.Path] = require.Mod.Version
+	}
+	// Cross-check model-based dependencies against independently parsed output.
+	paths := map[string]bool{}
+	files, err := filepath.Glob(filepath.Join(out, "*.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range files {
+		parsed, err := stdparser.ParseFile(token.NewFileSet(), path, nil, stdparser.ImportsOnly)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, spec := range parsed.Imports {
+			path, err := strconv.Unquote(spec.Path.Value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			paths[path] = true
+		}
+	}
+	for _, path := range []string{"example.com/bpub", "example.com/cpub", "example.com/unused"} {
+		if paths[path] != (requires[path] != "") {
+			t.Fatalf("dependency %s disagrees with generated imports: %s", path, content)
+		}
+	}
+	for name, version := range map[string]string{"b": "v1.2.3", "c": "v1.3.0", "unused": "v1.4.0"} {
+		used := false
+		for _, dep := range want {
+			used = used || dep == name
+		}
+		got := requires["example.com/"+name+"pub"]
+		if name == "unused" {
+			got = requires["example.com/unused"]
+		}
+		if used && got != version || !used && got != "" {
+			t.Fatalf("dependency %s = %q, used=%v: %s", name, got, used, content)
+		}
+	}
+}
+
+func TestCompileGolangIncludesUsedPrefixDerivedDependencies(t *testing.T) {
+	for _, api := range []bool{false, true} {
+		t.Run(map[bool]string{false: "backend", true: "api"}[api], func(t *testing.T) {
+			root := t.TempDir()
+			a, b := filepath.Join(root, "a.skel"), filepath.Join(root, "b.skel")
+			writeTestFile(t, a, "domain a\nimport b\npub data Payload { token: b.Token }\n")
+			writeTestFile(t, b, "domain b\npub data Token { id: string }\n")
+			out := filepath.Join(root, "out")
+			if _, err := skelc.CompileGolang(skelc.Input{SkelIn: a, SkelImports: map[string]string{"b": b}}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: api, AsModule: true, ModulePrefix: "example.com/gen", Out: out}); err != nil {
+				t.Fatal(err)
+			}
+			content, err := os.ReadFile(filepath.Join(out, "go.mod"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			suffix := map[bool]string{false: "pub", true: "api"}[api]
+			if !strings.Contains(string(content), "example.com/gen/b"+suffix+" v0.0.0-00010101000000-000000000000") {
+				t.Fatalf("missing inferred dependency: %s", content)
+			}
+		})
+	}
+}
+
+func TestCompileGolangDependencyConflictCompatibility(t *testing.T) {
+	for _, api := range []bool{false, true} {
+		for _, used := range []int{0, 1, 2} {
+			t.Run(fmt.Sprintf("api=%v/used=%d", api, used), func(t *testing.T) {
+				root := t.TempDir()
+				a := filepath.Join(root, "a.skel")
+				first, second := filepath.Join(root, "first.skel"), filepath.Join(root, "second.skel")
+				writeTestFile(t, first, "domain first\npub data Value { id: string }\n")
+				writeTestFile(t, second, "domain second\npub data Value { id: string }\n")
+				source := "domain a\nimport first\nimport second\npub data Payload { id: string\n"
+				if used > 0 {
+					source += "first: first.Value\n"
+				}
+				if used > 1 {
+					source += "second: second.Value\n"
+				}
+				writeTestFile(t, a, source+"}\n")
+				out := filepath.Join(root, "out")
+				sentinel := filepath.Join(out, "sentinel.go")
+				original := "// Code generated by skelc. DO NOT EDIT.\npackage sentinel\n"
+				writeTestFile(t, sentinel, original)
+				_, err := skelc.CompileGolang(skelc.Input{SkelIn: a, SkelImports: map[string]string{"first": first, "second": second}}, skelc.GolangOption{
+					CompilerVersion: "v0.0.0-dev", ApiOnly: api, AsModule: true, Module: "example.com/a", Out: out,
+					Imports: map[string]string{"first": "example.com/shared@v1.0.0", "second": "example.com/shared@v1.1.0"},
+				})
+				if !api || used == 2 {
+					if err == nil || !strings.Contains(err.Error(), "conflicting") {
+						t.Fatalf("expected dependency conflict, got %v", err)
+					}
+					got, readErr := os.ReadFile(sentinel)
+					if readErr != nil || string(got) != original {
+						t.Fatalf("conflict changed existing output: %s, %v", got, readErr)
+					}
+					return
+				}
+				if err != nil {
+					t.Fatal(err)
+				}
+				content, err := os.ReadFile(filepath.Join(out, "go.mod"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if strings.Contains(string(content), "example.com/shared v1.0.0") != (used == 1) || strings.Contains(string(content), "v1.1.0") {
+					t.Fatalf("unused mapping affected API dependencies: %s", content)
+				}
+			})
+		}
 	}
 }

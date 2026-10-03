@@ -109,6 +109,17 @@ func Generate(domain *model.Domain, resolved ResolvedOption) error {
 }
 
 func newGen(option _GenOption) (*_Gen, error) {
+	// Backend modes historically validate all mappings. API mode validates
+	// only its selected dependencies when generating the module below.
+	if option.AsModule && option.Mode != view.ModeApi {
+		if _, err := moduleDependencies(_ModuleOption{
+			Imports: option.Imports, VineVersion: option.VineVersion,
+			Api: option.Mode == view.ModeApi, VrpcVersion: option.VrpcVersion,
+			ExtraDependencies: option.ExtraDependencies,
+		}); err != nil {
+			return nil, err
+		}
+	}
 	g := &_Gen{
 		domain:            option.Domain,
 		mode:              option.Mode,
@@ -148,32 +159,22 @@ func newGen(option _GenOption) (*_Gen, error) {
 	if err := g.resolveExternalTypeImports(); err != nil {
 		return nil, err
 	}
-	if g.mode == view.ModeApi {
-		imports := map[string]string{}
-		common.VisitTypes(common.ApiTypeRoots(g.view.Data, g.view.Services), func(kind *model.Type) {
-			if kind.ExternalDomain == "" {
-				return
-			}
-			path := g.goImports[kind.ExternalDomain]
-			if path == "" {
-				path = g.bindings[kind].Path
-			}
-			imports[kind.ExternalDomain] = path
-		})
-		g.goImports = imports
-	}
 	return g, nil
 }
 
 func (g *_Gen) gen(validated common.ValidatedDomain) error {
 	if g.asModule {
+		imports, err := g.usedModuleImports()
+		if err != nil {
+			return err
+		}
 		if err := generateModule(_ModuleOption{
 			Out:               g.out,
 			Module:            g.modName,
 			VineVersion:       g.vineVersion,
 			Api:               g.mode == view.ModeApi,
 			VrpcVersion:       g.vrpcVersion,
-			Imports:           g.goImports,
+			Imports:           imports,
 			ExtraDependencies: g.extraDependencies,
 		}); err != nil {
 			return err
