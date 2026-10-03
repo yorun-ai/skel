@@ -6,6 +6,24 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.23.2] - 2026-10-04
+
+### Fixed
+
+- Derive Go module domain dependencies from each generation view instead of
+  including every supplied import mapping. Public, regular, full, and API
+  outputs retain the packages they reference and the specified versions,
+  including dependencies inferred from a module prefix.
+- Keep transitive contract-resolution mappings separate from direct generated
+  package dependencies, using shared external-domain analysis for Go and
+  TypeScript. Preserve backend and API dependency-conflict validation behavior.
+
+### Upgrade Notes
+
+- Regenerate Go modules to obtain the filtered dependency metadata. No Skel,
+  CLI, or generated API migration is required. Continue using `go mod tidy`
+  to maintain indirect dependencies and checksums.
+
 ## [0.23.1] - 2026-10-02
 
 ### Fixed
@@ -627,7 +645,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.23.1...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.23.2...HEAD
+[0.23.2]: https://github.com/yorun-ai/skelc/compare/v0.23.1...v0.23.2
 [0.23.1]: https://github.com/yorun-ai/skelc/compare/v0.23.0...v0.23.1
 [0.23.0]: https://github.com/yorun-ai/skelc/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/yorun-ai/skelc/compare/v0.22.0...v0.22.1
