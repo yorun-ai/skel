@@ -6,6 +6,21 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.23.3] - 2026-10-04
+
+### Added
+
+- Add `skelc schema import --skel-in <file-or-directory>` to query direct
+  domain imports without loading dependency contracts or supplying import
+  mappings. JSON results include domain names, explicit aliases and source
+  locations, preserve declarations across files, and use stable ordering.
+- Expose the import-query response type through the public `command` package.
+
+### Upgrade Notes
+
+- Existing commands and generated output remain unchanged. No migration or
+  regeneration is required.
+
 ## [0.23.2] - 2026-10-04
 
 ### Fixed
@@ -645,7 +660,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.23.2...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.23.3...HEAD
+[0.23.3]: https://github.com/yorun-ai/skelc/compare/v0.23.2...v0.23.3
 [0.23.2]: https://github.com/yorun-ai/skelc/compare/v0.23.1...v0.23.2
 [0.23.1]: https://github.com/yorun-ai/skelc/compare/v0.23.0...v0.23.1
 [0.23.0]: https://github.com/yorun-ai/skelc/compare/v0.22.1...v0.23.0
