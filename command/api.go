@@ -40,3 +40,6 @@ type VersionResult = internalcommand.VersionResult
 
 // VersionGolangCodeGenResult reports Vine compatibility for generated Go code.
 type VersionGolangCodeGenResult = internalcommand.VersionGolangCodeGenResult
+
+// SchemaImport is one direct import returned by skelc schema import.
+type SchemaImport = internalcommand.SchemaImport

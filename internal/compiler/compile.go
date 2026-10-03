@@ -9,6 +9,7 @@ import (
 
 	"go.yorun.ai/skelc/internal/loader"
 	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skelc/internal/parser"
 )
 
 type Option struct {
@@ -18,6 +19,9 @@ type Option struct {
 }
 
 type Result struct {
+	// Imports retains direct source declarations, including repeated imports
+	// across files. Their Domain pointers are intentionally unset.
+	Imports       []*model.Import
 	Domain        *model.Domain
 	ImportAliases map[string]string
 	Diagnostics   Diagnostics
@@ -104,7 +108,18 @@ func compileFrom(ctx context.Context, provider loader.Provider, option Option, u
 	}
 	for _, domain := range domains {
 		if domain.Root == sources[0].Root && domain.Name == sources[0].ExpectedDomain {
-			return Result{Domain: domain.Model, ImportAliases: domain.ImportAliases, Diagnostics: diagnostics}, nil
+			imports := make([]*model.Import, 0)
+			for _, source := range sources {
+				for _, declaration := range source.Parsed.Imports {
+					item := &model.Import{Name: declaration.Domain.String(), Pos: parser.SourcePosition(declaration.Pos)}
+					if declaration.Alias != nil {
+						item.Alias = declaration.Alias.Value
+						item.ExplicitAlias = true
+					}
+					imports = append(imports, item)
+				}
+			}
+			return Result{Domain: domain.Model, ImportAliases: domain.ImportAliases, Imports: imports, Diagnostics: diagnostics}, nil
 		}
 	}
 	return Result{}, fmt.Errorf("no complete domain in %s", option.SkelIn)
