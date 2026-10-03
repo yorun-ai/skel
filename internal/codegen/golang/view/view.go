@@ -18,6 +18,7 @@ const (
 )
 
 type Domain struct {
+	mode      Mode
 	Enums     []*model.Enum
 	Data      []*model.Data
 	Configs   []*model.Data
@@ -31,6 +32,7 @@ type Domain struct {
 
 func Full(domain *model.Domain) *Domain {
 	return &Domain{
+		mode:      ModeFull,
 		Enums:     domain.Enums(),
 		Data:      domain.Data(),
 		Configs:   domain.Configs(),
@@ -46,7 +48,7 @@ func Full(domain *model.Domain) *Domain {
 func Build(mode Mode, domain *model.Domain) (*Domain, error) {
 	if mode == ModeApi {
 		api := common.BuildApiView(domain)
-		return &Domain{Enums: api.Enums, Data: api.Data, Services: api.Services}, nil
+		return &Domain{mode: mode, Enums: api.Enums, Data: api.Data, Services: api.Services}, nil
 	}
 	if mode == ModePub {
 		public, err := common.BuildPublicView(domain)
@@ -54,6 +56,7 @@ func Build(mode Mode, domain *model.Domain) (*Domain, error) {
 			return nil, err
 		}
 		return &Domain{
+			mode:      mode,
 			Enums:     public.Enums,
 			Data:      public.Data,
 			Configs:   public.Configs,
@@ -76,6 +79,7 @@ func Build(mode Mode, domain *model.Domain) (*Domain, error) {
 		return nil, err
 	}
 	return &Domain{
+		mode:      mode,
 		Enums:     without(domain.Enums(), public.Enums),
 		Data:      without(domain.Data(), public.Data),
 		Configs:   filterNonPubData(domain.Configs()),

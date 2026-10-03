@@ -1,6 +1,7 @@
 package view
 
 import (
+	"slices"
 	"testing"
 
 	"go.yorun.ai/skelc/internal/model"
@@ -80,5 +81,31 @@ func TestFullViewKeepsEveryDeclaration(t *testing.T) {
 
 	if len(full.Data) != 2 || len(full.Enums) != 2 || len(full.Resources) != 2 || len(full.Services) != 2 {
 		t.Fatalf("unexpected full view: %+v", full)
+	}
+}
+
+func TestViewTypeRootsRespectArgumentSource(t *testing.T) {
+	declared := &model.Type{Kind: model.TypeKindScalar}
+	injected := &model.Type{Kind: model.TypeKindScalar}
+	domain := model.NewDomainFromSpec(model.DomainSpec{
+		Name: "demo",
+		Services: []*model.Service{{Name: "ExampleApiService", Api: true, Methods: []*model.Method{{
+			Arguments: []*model.Argument{
+				{Name: "input", Type: declared, Source: model.ArgumentSourceDeclared},
+				{Name: "code", Type: injected, Source: model.ArgumentSourcePermissionCode},
+			},
+		}}}},
+	})
+	for _, mode := range []Mode{ModeApi, ModeFull, ModeRegular} {
+		t.Run(string(mode), func(t *testing.T) {
+			view, err := Build(mode, domain)
+			if err != nil {
+				t.Fatal(err)
+			}
+			roots := view.TypeRoots()
+			if !slices.Contains(roots, declared) || slices.Contains(roots, injected) != (mode != ModeApi) {
+				t.Fatalf("wrong argument roots for %s: %v", mode, roots)
+			}
+		})
 	}
 }

@@ -56,10 +56,8 @@ func (g *_Gen) tsImportPath(domainName string) string {
 
 func (g *_Gen) resolvedModuleImports() map[string]string {
 	imports := make(map[string]string, len(g.domain.Imports()))
-	common.VisitTypes(common.ApiTypeRoots(g.apiView.Data, g.apiView.Services), func(kind *model.Type) {
-		if kind.ExternalDomain != "" {
-			imports[kind.ExternalDomain] = g.tsImportPath(kind.ExternalDomain)
-		}
-	})
+	for _, domain := range common.ExternalDomains(common.ApiTypeRoots(g.apiView.Data, g.apiView.Services)) {
+		imports[domain] = g.tsImportPath(domain)
+	}
 	return imports
 }
