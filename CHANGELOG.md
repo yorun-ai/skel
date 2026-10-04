@@ -6,6 +6,26 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-10-05
+
+### Changed
+
+- Require and default generated Go modules to Vine v0.27.0.
+- Replace `auth guest` and `AuthModeGuest` with `auth anonymous` and
+  `AuthModeAnonymous` throughout the compiler, schemas, generation, and LSP.
+  The previous guest spelling is no longer accepted.
+- Emit only canonical authentication schema values. Legacy bare `auth`/`noauth`
+  remain accepted with warnings but generate `required`/`optional` for Rpc and
+  `required`/`off` for web. Omitted method modes generate `inherit`; omitted
+  service and web modes generate `required`.
+- Warn when web declarations omit auth, and reject the omission under `--strict`,
+  matching API services. Non-API service omissions remain warning-free.
+
+### Fixed
+
+- Treat legacy method `unset` to `inherit` and service `unset` to `required` as
+  compatible schema migrations. Changes from legacy web defaults remain risky.
+
 ## [0.25.0] - 2026-10-05
 
 ### Added
@@ -769,7 +789,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.26.0...HEAD
+[0.26.0]: https://github.com/yorun-ai/skelc/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/yorun-ai/skelc/compare/v0.24.2...v0.25.0
 [0.24.2]: https://github.com/yorun-ai/skelc/compare/v0.24.1...v0.24.2
 [0.24.1]: https://github.com/yorun-ai/skelc/compare/v0.24.0...v0.24.1
