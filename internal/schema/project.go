@@ -240,7 +240,7 @@ func projectService(domainName string, importAliases map[string]string, value *m
 			Audiences: projectAudiences(domainName, importAliases, value.Audiences),
 			Api:       value.Api,
 			Ext:       value.Ext,
-			Auth:      normalizedAuth(value.Auth),
+			Auth:      normalizedServiceAuth(value),
 			Require:   projectRequirement(value.Require), Methods: methods,
 		},
 	}
@@ -272,7 +272,7 @@ func projectWeb(domainName string, importAliases map[string]string, value *model
 	return &Declaration{
 		Metadata: metadata(value.Description, value.Deprecated, value.DeprecatedReason),
 		Name:     value.Name, Kind: DeclarationTypeWeb, SkelName: value.SkelName, Pos: value.Pos,
-		Web: &WebSchema{Audiences: projectAudiences(domainName, importAliases, value.Audiences), MountPath: value.MountPath},
+		Web: &WebSchema{Auth: normalizedWebAuth(value.Auth), Audiences: projectAudiences(domainName, importAliases, value.Audiences), MountPath: value.MountPath},
 	}
 }
 
@@ -332,4 +332,18 @@ func kindOrder(kind DeclarationType) int {
 	default:
 		return 99
 	}
+}
+
+func normalizedWebAuth(mode model.AuthMode) AuthMode {
+	if mode == "" || mode == model.AuthModeUnset {
+		return ""
+	}
+	return AuthMode(mode)
+}
+
+func normalizedServiceAuth(service *model.Service) AuthMode {
+	if service.Api && (service.Auth == "" || service.Auth == model.AuthModeUnset) {
+		return AuthModeRequired
+	}
+	return normalizedAuth(service.Auth)
 }

@@ -18,6 +18,26 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.
 	audiences, audiencesValid := parseWebAudiences(reporter, gw.Audiences)
 	valid = audiencesValid && valid
 	valid = reporter.check(len(audiences) > 0, "%s web %s must declare at least one actor", gw.Name.Pos, gw.Name.Value) && valid
+	authMode := model.AuthModeUnset
+	var authMarker *grammar.AuthMarker
+	for _, section := range gw.Sections {
+		if section.Auth == nil {
+			continue
+		}
+		if authMarker != nil {
+			reporter.reportDuplicatef("%s duplicated web auth marker", section.Auth.Pos)
+			valid = false
+			continue
+		}
+		authMarker = section.Auth
+		if authMarker.Value == "off" {
+			authMode = model.AuthModeOff
+		} else {
+			parsed, ok := parseAuthMode(reporter, authMarker, model.AuthModeUnset)
+			authMode = parsed
+			valid = ok && valid
+		}
+	}
 	mountPath := ""
 	for index, mount := range gw.Mounts {
 		if reporter.cancelled() {
@@ -37,6 +57,8 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.
 		Deprecated:       meta.Deprecated,
 		DeprecatedReason: meta.DeprecatedReason,
 		Audiences:        audiences,
+		Auth:             authMode,
+		AuthPos:          authMarkerPosition(authMarker),
 		MountPath:        mountPath,
 	}, valid
 }

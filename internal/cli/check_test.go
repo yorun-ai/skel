@@ -32,7 +32,7 @@ func TestRunSkelcCheckStrictMigrationDiagnostics(t *testing.T) {
 			if test.strict {
 				exitCode = ExitCodeUnsatisfied
 			}
-			if result.ExitCode != exitCode || checked.Valid == test.strict || len(checked.Diagnostics) != 3 {
+			if result.ExitCode != exitCode || checked.Valid == test.strict || len(checked.Diagnostics) != 4 {
 				t.Fatalf("unexpected strict check: %+v", result)
 			}
 			for _, item := range checked.Diagnostics {

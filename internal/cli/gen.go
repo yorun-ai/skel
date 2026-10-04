@@ -152,7 +152,7 @@ func compilerVersion() (string, error) {
 
 func newGenGoFlags() []ucli.Flag {
 	return []ucli.Flag{
-		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate Portal API clients"},
+		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate portal API clients"},
 		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
 		&ucli.BoolFlag{Name: flagGenPub, Usage: "generate backend public contracts"},
 		&ucli.StringFlag{Name: flagGenGoVrpcVersion, Usage: "vRPC module version for API clients"},
@@ -197,7 +197,7 @@ func parseGenGoCommand(cmd *ucli.Command) (skelc.Input, skelc.GolangOption, erro
 
 func newGenGoModuleFlags() []ucli.Flag {
 	return []ucli.Flag{
-		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate Portal API clients"},
+		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate portal API clients"},
 		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
 		&ucli.BoolFlag{Name: flagGenPub, Usage: "generate backend public contracts"},
 		&ucli.StringFlag{Name: flagGenGoVrpcVersion, Usage: "vRPC module version for API clients"},
@@ -282,7 +282,7 @@ func parseGenSkelCommand(cmd *ucli.Command) (skelc.Input, skelc.SkeletonOption, 
 
 func newGenTSFlags() []ucli.Flag {
 	return []ucli.Flag{
-		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate Portal API clients"},
+		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate portal API clients"},
 		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
 		&ucli.StringFlag{Name: flagGenSkelIn, Usage: "skeleton input file or directory"},
 		&ucli.StringFlag{Name: flagGenTSOut, Usage: "TypeScript output directory"},

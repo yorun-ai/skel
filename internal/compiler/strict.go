@@ -10,7 +10,7 @@ func ApplyStrictMode(diagnostics Diagnostics) {
 			continue
 		}
 		switch item.Code {
-		case diagnostic.CodeServiceModifier, diagnostic.CodeServiceClientRules:
+		case diagnostic.CodeServiceModifier, diagnostic.CodeServiceClientRules, diagnostic.CodeAuthLegacy, diagnostic.CodeApiAuthMissing:
 			item.Severity = DiagnosticSeverityError
 		}
 	}

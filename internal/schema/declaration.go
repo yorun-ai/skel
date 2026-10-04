@@ -136,6 +136,7 @@ type RequirementCheckArgument struct {
 
 type WebSchema struct {
 	Audiences []*Audience `json:"audiences"`
+	Auth      AuthMode    `json:"auth,omitempty"`
 	MountPath string      `json:"mountPath,omitempty"`
 }
 

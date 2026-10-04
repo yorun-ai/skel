@@ -11,6 +11,7 @@ pub data User {
 
 api service UserApiService {
     for ClientActor via client
+    auth required
 
     method getUser {
         input {

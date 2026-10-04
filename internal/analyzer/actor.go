@@ -266,7 +266,7 @@ func buildActorAuthService(actor *model.Actor) *model.Service {
 		Name:       "auth",
 		SkelName:   "auth",
 		Pos:        actor.Pos,
-		Auth:       model.AuthModeAuth,
+		Auth:       model.AuthModeRequired,
 		Arguments:  []*model.Argument{credentialArgument},
 		ResultType: infoType,
 	}
@@ -304,7 +304,7 @@ func buildActorPermissionService(actor *model.Actor) *model.Service {
 		Name:      "checkCodes",
 		SkelName:  "checkCodes",
 		Pos:       actor.Pos,
-		Auth:      model.AuthModeAuth,
+		Auth:      model.AuthModeRequired,
 		Arguments: []*model.Argument{codesArgument},
 		ResultType: &model.Type{
 			Kind: model.TypeKindMap,

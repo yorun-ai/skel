@@ -12,8 +12,8 @@ func TestGenerationActorFlags(t *testing.T) {
 	writeCLIFile(t, source, `domain demo.user
 actor UserActor { via client {} }
 actor AdminActor { via client {} }
-api service UserApiService { for UserActor via client method ping {} }
-api service AdminApiService { for AdminActor via client method ping {} }
+api service UserApiService { for UserActor via client auth required method ping {} }
+api service AdminApiService { for AdminActor via client auth required method ping {} }
 `)
 	for _, target := range []string{"go", "go-module", "ts"} {
 		t.Run(target, func(t *testing.T) {

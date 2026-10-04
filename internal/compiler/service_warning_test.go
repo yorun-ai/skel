@@ -11,9 +11,9 @@ import (
 func TestServiceWarningsAndApiModifiers(t *testing.T) {
 	source := Source{Path: "/workspace/api.skel", Content: []byte(`domain demo.order
 service LegacyService { method ping {} }
-pub service DualService { method ping { noauth } }
+pub service DualService { method ping { auth optional } }
 actor TestActor { via client {} }
-api service ClientApiService { for TestActor via client method ping {} }
+api service ClientApiService { for TestActor via client auth required method ping {} }
 pub service BackendService { method ping {} }
 `)}
 	analyzer := NewWorkspaceAnalyzer()
@@ -103,7 +103,7 @@ func TestApiServiceRequiresActorAudience(t *testing.T) {
 		}
 		source.Content = []byte("domain demo.order\nactor ClientActor { via client {} }\napi service OrderApiService { for ClientActor via client " + auth + " method ping {} }\n")
 		diagnostics, _, err := analyzer.analyze(context.Background(), []Source{source}, true)
-		if err != nil || len(diagnostics) != 0 {
+		if err != nil || Diagnostics(diagnostics).HasErrors() {
 			t.Fatalf("valid audience rejected: %v, %v", diagnostics, err)
 		}
 	}

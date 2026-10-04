@@ -33,6 +33,7 @@ func (g *_Gen) buildWebSchema(value *model.Web, projected *contractschema.Declar
 		DeprecatedReason: projected.DeprecatedReason,
 		Audiences:        g.buildActorAudienceSchemas(projected.Web.Audiences),
 		MountPath:        projected.Web.MountPath,
+		AuthMode:         _AuthMode(projected.Web.Auth),
 	}
 }
 

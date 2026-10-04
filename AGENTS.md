@@ -36,6 +36,8 @@
 
 ## Documentation
 
+- Use lowercase `portal`, `web`, `hub`, and `link` in prose, comments, and CLI help. Preserve the spelling of actual code identifiers, GoDoc declaration names, and language examples.
+
 - Read the relevant `skel-site` references before changing syntax, CLI behavior or generated output. Correct existing descriptions made inaccurate by a change and document new user-facing features; internal changes and fixes restoring documented behavior need no new site content.
 - Keep `README.md` and `README.zh-CN.md` synchronized, including language-switch links, commands, compatibility notes, and license information.
 - `skel-site/docs/language/syntax.md` is the detailed English Skel language

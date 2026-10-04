@@ -102,6 +102,7 @@ type Web struct {
 
 type WebSection struct {
 	Audience *WebAudience `parser:"  (?= \"for\") @@"`
+	Auth     *AuthMarker  `parser:"| (?= (\"auth\" | \"noauth\")) @@"`
 	Mount    *WebMount    `parser:"| @@"`
 }
 

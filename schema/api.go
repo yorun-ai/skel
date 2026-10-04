@@ -57,6 +57,15 @@ const (
 
 	// AuthModeUnset inherits authentication behavior from the enclosing context.
 	AuthModeUnset = internalschema.AuthModeUnset
+	// AuthModeRequired requires valid credentials.
+	AuthModeRequired = internalschema.AuthModeRequired
+	// AuthModeOptional allows anonymous callers and authenticates supplied credentials.
+	AuthModeOptional = internalschema.AuthModeOptional
+	// AuthModeGuest allows only anonymous callers and rejects supplied invalid credentials.
+	AuthModeGuest = internalschema.AuthModeGuest
+	// AuthModeOff bypasses portal authentication for web declarations.
+	AuthModeOff = internalschema.AuthModeOff
+
 	// AuthModeAuth requires an authenticated actor.
 	AuthModeAuth = internalschema.AuthModeAuth
 	// AuthModeNoAuth explicitly permits unauthenticated access.
@@ -83,7 +92,7 @@ type ConfigLifecycle = internalschema.ConfigLifecycle
 // TypeKind identifies the normalized representation carried by a Type.
 type TypeKind = internalschema.TypeKind
 
-// AuthMode identifies the authentication behavior of a service or method.
+// AuthMode identifies the authentication behavior of a service, method, or web.
 type AuthMode = internalschema.AuthMode
 
 // RequirementMode identifies one node in a normalized permission expression.

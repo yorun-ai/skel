@@ -27,7 +27,7 @@ func buildResourceCheckService(domainName string, resource *model.Resource) *mod
 		Pos:      resource.Pos,
 		Name:     serviceName,
 		SkelName: domainName + "." + serviceName,
-		Auth:     model.AuthModeAuth,
+		Auth:     model.AuthModeRequired,
 		Methods:  methods,
 	}
 }
@@ -199,7 +199,7 @@ func parseResourceCheck(reporter *_DiagnosticReporter, actionName string, gc *gr
 		Description:        meta.Description,
 		Deprecated:         meta.Deprecated,
 		DeprecatedReason:   meta.DeprecatedReason,
-		Auth:               model.AuthModeAuth,
+		Auth:               model.AuthModeRequired,
 		Arguments:          args,
 		InputDescription:   inputDescription,
 		ArgumentsSensitive: inputSensitive,

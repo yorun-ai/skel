@@ -18,6 +18,10 @@ type Web struct {
 	DeprecatedReason string
 	// Audiences lists actors allowed to access the entry point.
 	Audiences []*ActorAudience
+	// Auth is the declared authentication mode; unset retains runtime defaults.
+	Auth AuthMode
+	// AuthPos is the auth marker source position, or zero when omitted.
+	AuthPos Position
 	// MountPath is the optional absolute HTTP mount path; empty means unspecified.
 	MountPath string
 }

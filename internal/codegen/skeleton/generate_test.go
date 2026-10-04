@@ -560,3 +560,21 @@ func TestPublicConfigStructuredTypesRoundTrip(t *testing.T) {
 		t.Fatal("public config lost nested binary type")
 	}
 }
+
+func TestGenPreservesAuthSyntax(t *testing.T) {
+	for _, marker := range []string{"auth required", "auth optional", "auth guest", "auth", "noauth"} {
+		t.Run(marker, func(t *testing.T) {
+			domain, _ := parseDomainForTest(t, "demo/domain.skel", "domain demo\n", "demo/service.skel", "domain demo\npub service UserService { "+marker+" method ping { "+marker+" } }\n", nil)
+			out := t.TempDir()
+			mustGenerateForTest(t, domain, Option{Out: out, PubOnly: true})
+			generated, err := compiler.Compile(compiler.Option{SkelIn: out})
+			if err != nil {
+				t.Fatal(err)
+			}
+			before, after := domain.Services()[0], generated.Domain.Services()[0]
+			if after.Auth != before.Auth || after.Methods[0].Auth != before.Methods[0].Auth {
+				t.Fatalf("auth changed during roundtrip: %q", marker)
+			}
+		})
+	}
+}

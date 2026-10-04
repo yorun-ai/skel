@@ -10,7 +10,7 @@ type {{ .ClientImplName }} struct {
     rpcClient *vrpc.Client
 }
 
-// {{ .ClientCtorName }} uses the supplied Portal client and its credentials.
+// {{ .ClientCtorName }} uses the supplied portal client and its credentials.
 func {{ .ClientCtorName }}(rpcClient *vrpc.Client) {{ .ClientName }} {
     return &{{ .ClientImplName }}{rpcClient: rpcClient}
 }

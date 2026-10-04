@@ -46,6 +46,7 @@ pub data User {
 
 api service UserApiService {
     for ClientActor via client
+    auth required
 
     method getUser {
         input {
@@ -56,7 +57,7 @@ api service UserApiService {
 }
 ```
 
-This defines an API service called through Portal. `pub service` instead exposes a backend contract across domains; `pub` and `api` cannot be combined. API authentication defaults to `auth`, with `noauth` available for anonymous methods. Every API service must declare at least one `for Actor`, including anonymous APIs.
+This defines an API service called through portal. `pub service` instead exposes a backend contract across domains; `pub` and `api` cannot be combined. API services declare `auth required`, `auth optional`, or `auth guest`. Omission warns and defaults to `required`; `--strict` requires a service-level declaration. Legacy `auth`/`noauth` warn, retain old schema values, and fail under `--strict`. Every API service must declare at least one `for Actor`, including anonymous APIs.
 
 Validate and format the contract first:
 
@@ -128,9 +129,9 @@ events, resources and permissions, web capabilities, and tasks:
 
 Use `skelc --strict check --skel-in ./skel` to reject declarations accepted only for compatibility. Strict mode is off by default and also applies to generation and schema commands. Go integrations set `Input.Strict`; LSP clients can use `skelc --strict lsp` or the `strict` initialization/configuration setting. See the [CLI reference](https://skel.yorun.ai/docs/cli#strict-mode) for scope and diagnostics.
 
-### Give a Web a stable frontend mount path
+### Give a web a stable frontend mount path
 
-Use `mount /path` when a Web serves a frontend build whose public URL prefix
+Use `mount /path` when a web serves a frontend build whose public URL prefix
 must remain stable across builds and deployments:
 
 ```skel
@@ -143,8 +144,8 @@ web ConsoleWeb {
 The mount is a fixed, immutable path prefix for the frontend entry point and
 its static assets. Keep it unchanged when clients, bookmarks, CDN rules, or
 reverse-proxy configuration depend on that prefix. Omitting `mount` leaves the
-Web unrestricted by a declared mount path; `mount /` explicitly declares the
-root path. Changing the value is a breaking Web contract change.
+web unrestricted by a declared mount path; `mount /` explicitly declares the
+root path. Changing the value is a breaking web contract change.
 
 ### Organize a Domain as a Directory
 

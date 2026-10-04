@@ -48,7 +48,7 @@ func validateService(value *ServiceSchema) error {
 
 func validateAuth(value AuthMode) error {
 	switch value {
-	case AuthModeUnset, AuthModeAuth, AuthModeNoAuth:
+	case AuthModeUnset, AuthModeAuth, AuthModeNoAuth, AuthModeRequired, AuthModeOptional, AuthModeGuest:
 		return nil
 	default:
 		return fmt.Errorf("unsupported authentication mode %q", value)

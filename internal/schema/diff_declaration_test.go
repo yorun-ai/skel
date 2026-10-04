@@ -232,3 +232,22 @@ func TestWebMountDiff(t *testing.T) {
 		}
 	}
 }
+
+func TestWebAuthDiff(t *testing.T) {
+	for _, test := range []struct {
+		before, after AuthMode
+		code          string
+	}{
+		{AuthModeOptional, AuthModeRequired, "web.auth.tightened"},
+		{AuthModeRequired, AuthModeOptional, "web.auth.relaxed"},
+		{AuthModeOptional, AuthModeGuest, "web.auth.tightened"},
+		{AuthModeGuest, AuthModeOff, "web.auth.changed"},
+	} {
+		baseline := &Declaration{Kind: DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &WebSchema{Auth: test.before}}
+		candidate := &Declaration{Kind: DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &WebSchema{Auth: test.after}}
+		changes := diffChanges(func(diff *_Diff) { diff.compareDeclaration(baseline, candidate) })
+		if len(changes) != 1 || changes[0].Code != test.code || changes[0].Impact != ImpactDangerous {
+			t.Fatalf("auth diff: %+v", changes)
+		}
+	}
+}

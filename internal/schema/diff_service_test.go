@@ -61,8 +61,8 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 		changes := diffChanges(func(diff *_Diff) {
 			for _, prefix := range []string{"service", "method"} {
 				diff.compareAuth("owner", prefix, AuthModeUnset, AuthModeNoAuth, model.Position{}, model.Position{})
-				diff.compareAuth("owner", prefix, AuthModeUnset, AuthModeAuth, model.Position{}, model.Position{})
-				diff.compareAuth("owner", prefix, AuthModeAuth, AuthModeUnset, model.Position{}, model.Position{})
+				diff.compareAuth("owner", prefix, AuthModeOptional, AuthModeAuth, model.Position{}, model.Position{})
+				diff.compareAuth("owner", prefix, AuthModeAuth, AuthModeOptional, model.Position{}, model.Position{})
 			}
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
@@ -132,5 +132,43 @@ func TestExtServiceCompatibility(t *testing.T) {
 		expected := ImpactBreaking
 		coverage := &_RuleCoverage{covered: map[string]ImpactLevel{}}
 		coverage.assert(t, changes, map[string]ImpactLevel{"service.ext.changed": expected})
+	}
+}
+
+func TestAuthModeTransitionClassification(t *testing.T) {
+	for _, prefix := range []string{"service", "method", "web"} {
+		for _, test := range []struct {
+			before, after AuthMode
+			change        string
+			impact        ImpactLevel
+		}{
+			{AuthModeRequired, AuthModeGuest, "changed", ImpactDangerous},
+			{AuthModeGuest, AuthModeRequired, "changed", ImpactDangerous},
+			{AuthModeOptional, AuthModeRequired, "tightened", ImpactDangerous},
+			{AuthModeOptional, AuthModeGuest, "tightened", ImpactDangerous},
+			{AuthModeRequired, AuthModeOptional, "relaxed", ImpactDangerous},
+			{AuthModeGuest, AuthModeOptional, "relaxed", ImpactDangerous},
+			{AuthModeUnset, AuthModeRequired, "changed", ImpactDangerous},
+			{AuthModeRequired, AuthModeUnset, "changed", ImpactDangerous},
+			{AuthModeAuth, AuthModeRequired, "changed", ImpactCompatible},
+			{AuthModeRequired, AuthModeAuth, "changed", ImpactCompatible},
+		} {
+			changes := diffChanges(func(diff *_Diff) {
+				diff.compareAuth("owner", prefix, test.before, test.after, model.Position{}, model.Position{})
+			})
+			if len(changes) != 1 || changes[0].Code != prefix+".auth."+test.change || changes[0].Impact != test.impact {
+				t.Fatalf("%s %s -> %s: %+v", prefix, test.before, test.after, changes)
+			}
+		}
+		equivalent := AuthModeOptional
+		if prefix == "web" {
+			equivalent = AuthModeOff
+		}
+		changes := diffChanges(func(diff *_Diff) {
+			diff.compareAuth("owner", prefix, AuthModeNoAuth, equivalent, model.Position{}, model.Position{})
+		})
+		if len(changes) != 1 || changes[0].Impact != ImpactCompatible {
+			t.Fatalf("%s legacy noauth: %+v", prefix, changes)
+		}
 	}
 }

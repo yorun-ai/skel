@@ -36,7 +36,7 @@ enum Status { @desc("active") ACTIVE }`,
  }`,
 	`api service FileApiService {
  for ClientActor via client
- auth
+ auth required
  method get {
  require any(FileResource:read, all(FileResource:read:owner(id)))
  input { @desc("id") id: uuid }

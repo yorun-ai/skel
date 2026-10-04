@@ -76,6 +76,11 @@ func validateDomain(domain *model.Domain, seen map[*model.Domain]bool) error {
 		if web == nil {
 			return fmt.Errorf("generated model contains nil web")
 		}
+		if web.Auth != model.AuthModeOff {
+			if err := validateAuthMode(web.Auth); err != nil {
+				return fmt.Errorf("web %s: %w", web.Name, err)
+			}
+		}
 		if web.MountPath != "" {
 			if err := webpath.Validate(web.MountPath); err != nil {
 				return fmt.Errorf("web %s has invalid mount path: %w", web.Name, err)

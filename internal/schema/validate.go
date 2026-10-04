@@ -105,6 +105,11 @@ func validateDeclarationBody(declaration *Declaration) error {
 		if declaration.Web.Audiences == nil {
 			return fmt.Errorf("web audiences are required")
 		}
+		if mode := declaration.Web.Auth; mode != "" && mode != AuthModeOff {
+			if err := validateAuth(mode); err != nil {
+				return err
+			}
+		}
 		if declaration.Web.MountPath != "" {
 			if err := webpath.Validate(declaration.Web.MountPath); err != nil {
 				return fmt.Errorf("invalid web mount path: %w", err)

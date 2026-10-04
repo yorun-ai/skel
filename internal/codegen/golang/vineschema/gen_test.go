@@ -95,3 +95,28 @@ func TestGenSchemaGoRendersDeprecatedFields(t *testing.T) {
 		}
 	}
 }
+
+func TestGenSchemaGoRendersWebAuthModes(t *testing.T) {
+	for _, mode := range []model.AuthMode{model.AuthModeUnset, model.AuthModeRequired, model.AuthModeOptional, model.AuthModeGuest, model.AuthModeOff, model.AuthModeAuth, model.AuthModeNoAuth} {
+		t.Run(string(mode), func(t *testing.T) {
+			pkg := buildModelDomainForTest(t, model.DomainSpec{Name: "demo.user", Webs: []*model.Web{{Name: "ConsoleWeb", Auth: mode}}})
+			out := filepath.Join(t.TempDir(), "skeled")
+			newGen(Option{Domain: pkg, View: mustView(t, view.ModeFull, pkg), Mode: view.ModeFull, PackageName: "skeled", Out: out}).gen()
+			content, err := os.ReadFile(filepath.Join(out, schemaGoFilename))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if mode == model.AuthModeUnset {
+				if strings.Contains(string(content), "AuthMode:") {
+					t.Fatalf("unset web mode should preserve legacy field omission: %s", content)
+				}
+			} else {
+				literal, err := renderAuthModeLiteral(_AuthMode(mode))
+				if err != nil {
+					t.Fatal(err)
+				}
+				codegentest.AssertGoSourceContains(t, string(content), "AuthMode: "+literal)
+			}
+		})
+	}
+}

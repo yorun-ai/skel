@@ -73,7 +73,11 @@ func (s *_HashState) dataHash(data *model.Data) string {
 
 func (s *_HashState) webHash(web *model.Web) string {
 	return s.memoHash("web", web.SkelName, func() string {
-		return s.hashValue(_WebHashValue{
+		auth := web.Auth
+		if auth == model.AuthModeUnset {
+			auth = ""
+		}
+		return s.hashValue(_WebHashValue{Auth: auth,
 			MountPath:        web.MountPath,
 			Name:             web.Name,
 			SkelName:         web.SkelName,
