@@ -18,11 +18,11 @@ func MigrationDiagnostics(domain *model.Domain) Diagnostics {
 		for _, method := range service.Methods {
 			result = append(result, authMigrationDiagnostic(method.Auth, method.AuthPos, service.Name+"/"+method.Name, false)...)
 		}
+		if service.Api && (service.Auth == "" || service.Auth == model.AuthModeUnset) {
+			result = append(result, Diagnostic{Code: diagnostic.CodeApiAuthMissing, Severity: DiagnosticSeverityWarning, Position: service.Pos, Range: span,
+				Message: fmt.Sprintf("API service %s must explicitly declare auth required, auth optional, or auth anonymous; defaults to required", service.Name)})
+		}
 		if service.Api {
-			if service.Auth == "" || service.Auth == model.AuthModeUnset {
-				result = append(result, Diagnostic{Code: diagnostic.CodeApiAuthMissing, Severity: DiagnosticSeverityWarning, Position: service.Pos, Range: span,
-					Message: fmt.Sprintf("API service %s must explicitly declare auth required, auth optional, or auth guest; defaults to required", service.Name)})
-			}
 			continue
 		}
 		if !service.Public() {
@@ -42,6 +42,13 @@ func MigrationDiagnostics(domain *model.Domain) Diagnostics {
 	}
 	for _, web := range domain.Webs() {
 		result = append(result, authMigrationDiagnostic(web.Auth, web.AuthPos, web.Name, true)...)
+		if web.Auth == "" || web.Auth == model.AuthModeUnset {
+			end := web.Pos
+			end.Column += len(web.Name)
+			result = append(result, Diagnostic{Code: diagnostic.CodeWebAuthMissing, Severity: DiagnosticSeverityWarning, Position: web.Pos,
+				Range:   diagnostic.SourceRange{Start: web.Pos, End: end},
+				Message: fmt.Sprintf("web %s must explicitly declare auth required, auth optional, auth anonymous, or auth off; defaults to required", web.Name)})
+		}
 	}
 	return result
 }

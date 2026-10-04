@@ -335,14 +335,18 @@ func kindOrder(kind DeclarationType) int {
 }
 
 func normalizedWebAuth(mode model.AuthMode) AuthMode {
-	if mode == "" || mode == model.AuthModeUnset {
-		return ""
+	switch mode {
+	case "", model.AuthModeUnset, model.AuthModeAuth:
+		return AuthModeRequired
+	case model.AuthModeNoAuth:
+		return AuthModeOff
+	default:
+		return AuthMode(mode)
 	}
-	return AuthMode(mode)
 }
 
 func normalizedServiceAuth(service *model.Service) AuthMode {
-	if service.Api && (service.Auth == "" || service.Auth == model.AuthModeUnset) {
+	if service.Auth == "" || service.Auth == model.AuthModeUnset {
 		return AuthModeRequired
 	}
 	return normalizedAuth(service.Auth)

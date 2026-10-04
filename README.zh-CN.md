@@ -57,7 +57,7 @@ api service UserApiService {
 }
 ```
 
-这里定义了经 portal 调用的 API 服务。`pub service` 则是跨领域后端契约，`pub` 与 `api` 不能同时使用。API 服务声明 `auth required`、`auth optional` 或 `auth guest`。省略时警告并默认 `required`；`--strict` 要求服务级声明。旧 `auth/noauth` 警告并保留旧 schema 值，在严格模式下报错。 每个 API 服务必须至少声明一条 `for Actor`，匿名 API 也不例外。
+这里定义了经 portal 调用的 API 服务。`pub service` 则是跨领域后端契约，`pub` 与 `api` 不能同时使用。API 服务声明 `auth required`、`auth optional` 或 `auth anonymous`。省略时警告并默认 `required`；`--strict` 要求服务级声明。旧 `auth/noauth` 警告并生成 `required`/`optional`，在严格模式下报错。 每个 API 服务必须至少声明一条 `for Actor`，匿名 API 也不例外。
 
 先检查并格式化契约：
 

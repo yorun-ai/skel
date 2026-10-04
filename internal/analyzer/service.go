@@ -136,7 +136,7 @@ func parseAuthMode(reporter *_DiagnosticReporter, marker *grammar.AuthMarker, de
 		return defaultMode, true
 	}
 	switch marker.Value {
-	case "required", "optional", "guest":
+	case "required", "optional", "anonymous":
 		return model.AuthMode(marker.Value), true
 	case "off":
 		reporter.reportf("%s auth off is only supported on web declarations", marker.Pos)

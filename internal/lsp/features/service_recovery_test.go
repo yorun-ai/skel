@@ -43,7 +43,7 @@ enum Status { @desc("active") ACTIVE }`,
  output Box<Status>
  }
  }`,
-	`web FileWeb { for ClientActor via client mount /files }`,
+	`web FileWeb { for ClientActor via client auth required mount /files }`,
 	`task RebuildTask { trigger atTime { input { @desc("id") id: uuid } } }`,
 }
 

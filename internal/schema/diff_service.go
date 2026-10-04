@@ -111,13 +111,13 @@ func (c *_Diff) compareAuth(owner, prefix string, baseline, candidate AuthMode, 
 	}
 	code := prefix + ".auth.changed"
 	impact := ImpactDangerous
-	before, after := authComparisonMode(baseline, prefix == "web"), authComparisonMode(candidate, prefix == "web")
+	before, after := authComparisonMode(baseline, prefix), authComparisonMode(candidate, prefix)
 	switch {
 	case before == after:
 		impact = ImpactCompatible
-	case before == AuthModeOptional && (after == AuthModeRequired || after == AuthModeGuest):
+	case before == AuthModeOptional && (after == AuthModeRequired || after == AuthModeAnonymous):
 		code = prefix + ".auth.tightened"
-	case after == AuthModeOptional && (before == AuthModeRequired || before == AuthModeGuest):
+	case after == AuthModeOptional && (before == AuthModeRequired || before == AuthModeAnonymous):
 		code = prefix + ".auth.relaxed"
 	}
 	c.add(impact, code, owner, fmt.Sprintf("authentication changed from %s to %s", baseline, candidate), baselinePos, candidatePos)
@@ -138,17 +138,26 @@ func (c *_Diff) compareRequirement(owner, prefix string, baseline, candidate *Re
 }
 
 // Legacy spellings are compared by their runtime meaning without changing schema values.
-func authComparisonMode(mode AuthMode, web bool) AuthMode {
+func authComparisonMode(mode AuthMode, declaration string) AuthMode {
 	switch mode {
 	case AuthModeAuth:
 		return AuthModeRequired
 	case AuthModeNoAuth:
-		if web {
+		if declaration == "web" {
 			return AuthModeOff
 		}
 		return AuthModeOptional
-	case "":
-		return AuthModeUnset
+	case "", AuthModeUnset:
+		switch declaration {
+		case "service":
+			return AuthModeRequired
+		case "method":
+			return AuthModeInherit
+		default:
+			// Legacy web defaults depended on actor configuration, so no explicit
+			// mode is unconditionally equivalent.
+			return AuthModeUnset
+		}
 	default:
 		return mode
 	}

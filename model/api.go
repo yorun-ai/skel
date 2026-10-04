@@ -21,15 +21,14 @@ const (
 	ConfigLifecycleEternal = internalmodel.ConfigLifecycleEternal
 	// ConfigLifecycleInstant identifies the instant config lifecycle.
 	ConfigLifecycleInstant = internalmodel.ConfigLifecycleInstant
-
 	// AuthModeUnset inherits authentication behavior from the enclosing context.
 	AuthModeUnset = internalmodel.AuthModeUnset
 	// AuthModeRequired requires valid credentials.
 	AuthModeRequired = internalmodel.AuthModeRequired
 	// AuthModeOptional allows anonymous callers and authenticates supplied credentials.
 	AuthModeOptional = internalmodel.AuthModeOptional
-	// AuthModeGuest allows only anonymous callers and rejects supplied invalid credentials.
-	AuthModeGuest = internalmodel.AuthModeGuest
+	// AuthModeAnonymous allows only anonymous callers and rejects supplied invalid credentials.
+	AuthModeAnonymous = internalmodel.AuthModeAnonymous
 	// AuthModeOff bypasses portal authentication for web declarations.
 	AuthModeOff = internalmodel.AuthModeOff
 

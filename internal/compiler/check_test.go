@@ -109,7 +109,7 @@ func TestCheckWebMountDiagnostics(t *testing.T) {
 	} {
 		t.Run(test.body, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "mount.skel")
-			writeFile(t, path, "domain demo\nactor ClientActor { via client {} }\nweb PortalWeb {\n    "+test.body+"\n    for ClientActor\n}\ndata Later { id: string }\n")
+			writeFile(t, path, "domain demo\nactor ClientActor { via client {} }\nweb PortalWeb {\n    "+test.body+"\n    for ClientActor\n    auth required\n}\ndata Later { id: string }\n")
 			result, err := Check(Option{SkelIn: path, Strict: true})
 			require.NoError(t, err)
 			require.Len(t, result.Diagnostics, 1)

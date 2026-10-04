@@ -22,7 +22,7 @@ func (m *AuthMarker) Parse(lex *lexer.PeekingLexer) error {
 	m.Value = token.Value
 	if token.Value == "auth" {
 		switch lex.Peek().Value {
-		case "required", "optional", "guest", "off":
+		case "required", "optional", "anonymous", "off":
 			m.Value = lex.Next().Value
 		}
 	}

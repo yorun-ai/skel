@@ -53,13 +53,15 @@ const (
 type AuthMode string
 
 const (
-	AuthModeUnset AuthMode = "unset"
+	// AuthModeInherit uses the enclosing service authentication mode on methods.
+	AuthModeInherit AuthMode = "inherit"
+	AuthModeUnset   AuthMode = "unset"
 	// AuthModeRequired requires valid credentials.
 	AuthModeRequired AuthMode = "required"
 	// AuthModeOptional allows anonymous callers and authenticates supplied credentials.
 	AuthModeOptional AuthMode = "optional"
-	// AuthModeGuest allows only anonymous callers and rejects supplied invalid credentials.
-	AuthModeGuest AuthMode = "guest"
+	// AuthModeAnonymous allows only anonymous callers and rejects supplied invalid credentials.
+	AuthModeAnonymous AuthMode = "anonymous"
 	// AuthModeOff bypasses portal authentication for web declarations.
 	AuthModeOff AuthMode = "off"
 

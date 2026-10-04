@@ -94,8 +94,14 @@ func metadata(description string, deprecated bool, reason string) Metadata {
 }
 
 func normalizedAuth(value model.AuthMode) AuthMode {
-	if value == "" {
-		return AuthModeUnset
+	switch value {
+	case "", model.AuthModeUnset:
+		return AuthModeInherit
+	case model.AuthModeAuth:
+		return AuthModeRequired
+	case model.AuthModeNoAuth:
+		return AuthModeOptional
+	default:
+		return AuthMode(value)
 	}
-	return AuthMode(value)
 }

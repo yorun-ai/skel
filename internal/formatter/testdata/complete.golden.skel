@@ -87,4 +87,5 @@ task RefreshTask {
 
 web PortalWeb {
     for ClientActor via openapi
+    auth required
 }

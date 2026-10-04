@@ -36,9 +36,3 @@ type _MethodSchema struct {
 }
 
 type _AuthMode string
-
-const (
-	authModeUnset  _AuthMode = "unset"
-	authModeAuth   _AuthMode = "auth"
-	authModeNoAuth _AuthMode = "noauth"
-)

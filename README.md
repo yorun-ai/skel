@@ -57,7 +57,7 @@ api service UserApiService {
 }
 ```
 
-This defines an API service called through portal. `pub service` instead exposes a backend contract across domains; `pub` and `api` cannot be combined. API services declare `auth required`, `auth optional`, or `auth guest`. Omission warns and defaults to `required`; `--strict` requires a service-level declaration. Legacy `auth`/`noauth` warn, retain old schema values, and fail under `--strict`. Every API service must declare at least one `for Actor`, including anonymous APIs.
+This defines an API service called through portal. `pub service` instead exposes a backend contract across domains; `pub` and `api` cannot be combined. API services declare `auth required`, `auth optional`, or `auth anonymous`. Omission warns and defaults to `required`; `--strict` requires a service-level declaration. Legacy `auth`/`noauth` warn, generate `required`/`optional`, and fail under `--strict`. Every API service must declare at least one `for Actor`, including anonymous APIs.
 
 Validate and format the contract first:
 

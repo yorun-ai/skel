@@ -60,7 +60,7 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 	t.Run("authentication", func(t *testing.T) {
 		changes := diffChanges(func(diff *_Diff) {
 			for _, prefix := range []string{"service", "method"} {
-				diff.compareAuth("owner", prefix, AuthModeUnset, AuthModeNoAuth, model.Position{}, model.Position{})
+				diff.compareAuth("owner", prefix, AuthModeRequired, AuthModeAnonymous, model.Position{}, model.Position{})
 				diff.compareAuth("owner", prefix, AuthModeOptional, AuthModeAuth, model.Position{}, model.Position{})
 				diff.compareAuth("owner", prefix, AuthModeAuth, AuthModeOptional, model.Position{}, model.Position{})
 			}
@@ -142,12 +142,12 @@ func TestAuthModeTransitionClassification(t *testing.T) {
 			change        string
 			impact        ImpactLevel
 		}{
-			{AuthModeRequired, AuthModeGuest, "changed", ImpactDangerous},
-			{AuthModeGuest, AuthModeRequired, "changed", ImpactDangerous},
+			{AuthModeRequired, AuthModeAnonymous, "changed", ImpactDangerous},
+			{AuthModeAnonymous, AuthModeRequired, "changed", ImpactDangerous},
 			{AuthModeOptional, AuthModeRequired, "tightened", ImpactDangerous},
-			{AuthModeOptional, AuthModeGuest, "tightened", ImpactDangerous},
+			{AuthModeOptional, AuthModeAnonymous, "tightened", ImpactDangerous},
 			{AuthModeRequired, AuthModeOptional, "relaxed", ImpactDangerous},
-			{AuthModeGuest, AuthModeOptional, "relaxed", ImpactDangerous},
+			{AuthModeAnonymous, AuthModeOptional, "relaxed", ImpactDangerous},
 			{AuthModeUnset, AuthModeRequired, "changed", ImpactDangerous},
 			{AuthModeRequired, AuthModeUnset, "changed", ImpactDangerous},
 			{AuthModeAuth, AuthModeRequired, "changed", ImpactCompatible},
@@ -156,7 +156,11 @@ func TestAuthModeTransitionClassification(t *testing.T) {
 			changes := diffChanges(func(diff *_Diff) {
 				diff.compareAuth("owner", prefix, test.before, test.after, model.Position{}, model.Position{})
 			})
-			if len(changes) != 1 || changes[0].Code != prefix+".auth."+test.change || changes[0].Impact != test.impact {
+			impact := test.impact
+			if prefix == "service" && (test.before == AuthModeUnset || test.after == AuthModeUnset) {
+				impact = ImpactCompatible
+			}
+			if len(changes) != 1 || changes[0].Code != prefix+".auth."+test.change || changes[0].Impact != impact {
 				t.Fatalf("%s %s -> %s: %+v", prefix, test.before, test.after, changes)
 			}
 		}
@@ -169,6 +173,30 @@ func TestAuthModeTransitionClassification(t *testing.T) {
 		})
 		if len(changes) != 1 || changes[0].Impact != ImpactCompatible {
 			t.Fatalf("%s legacy noauth: %+v", prefix, changes)
+		}
+	}
+}
+
+func TestAuthModeDefaultMigrationClassification(t *testing.T) {
+	for _, legacy := range []AuthMode{"", AuthModeUnset} {
+		for _, test := range []struct {
+			declaration string
+			canonical   AuthMode
+			impact      ImpactLevel
+		}{
+			{"method", AuthModeInherit, ImpactCompatible},
+			{"service", AuthModeRequired, ImpactCompatible},
+			{"web", AuthModeRequired, ImpactDangerous},
+			{"web", AuthModeOff, ImpactDangerous},
+			{"web", AuthModeOptional, ImpactDangerous},
+			{"method", AuthModeRequired, ImpactDangerous},
+		} {
+			changes := diffChanges(func(diff *_Diff) {
+				diff.compareAuth("owner", test.declaration, legacy, test.canonical, model.Position{}, model.Position{})
+			})
+			if len(changes) != 1 || changes[0].Impact != test.impact {
+				t.Fatalf("%s %q -> %s: %+v", test.declaration, legacy, test.canonical, changes)
+			}
 		}
 	}
 }

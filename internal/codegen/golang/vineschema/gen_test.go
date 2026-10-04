@@ -97,7 +97,7 @@ func TestGenSchemaGoRendersDeprecatedFields(t *testing.T) {
 }
 
 func TestGenSchemaGoRendersWebAuthModes(t *testing.T) {
-	for _, mode := range []model.AuthMode{model.AuthModeUnset, model.AuthModeRequired, model.AuthModeOptional, model.AuthModeGuest, model.AuthModeOff, model.AuthModeAuth, model.AuthModeNoAuth} {
+	for _, mode := range []model.AuthMode{model.AuthModeUnset, model.AuthModeRequired, model.AuthModeOptional, model.AuthModeAnonymous, model.AuthModeOff, model.AuthModeAuth, model.AuthModeNoAuth} {
 		t.Run(string(mode), func(t *testing.T) {
 			pkg := buildModelDomainForTest(t, model.DomainSpec{Name: "demo.user", Webs: []*model.Web{{Name: "ConsoleWeb", Auth: mode}}})
 			out := filepath.Join(t.TempDir(), "skeled")
@@ -106,17 +106,19 @@ func TestGenSchemaGoRendersWebAuthModes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if mode == model.AuthModeUnset {
-				if strings.Contains(string(content), "AuthMode:") {
-					t.Fatalf("unset web mode should preserve legacy field omission: %s", content)
-				}
-			} else {
-				literal, err := renderAuthModeLiteral(_AuthMode(mode))
-				if err != nil {
-					t.Fatal(err)
-				}
-				codegentest.AssertGoSourceContains(t, string(content), "AuthMode: "+literal)
+			expected := mode
+			switch mode {
+			case model.AuthModeUnset, model.AuthModeAuth:
+				expected = model.AuthModeRequired
+			case model.AuthModeNoAuth:
+				expected = model.AuthModeOff
 			}
+			literal, err := renderAuthModeLiteral(_AuthMode(expected))
+			if err != nil {
+				t.Fatal(err)
+			}
+			codegentest.AssertGoSourceContains(t, string(content), "AuthMode: "+literal)
+
 		})
 	}
 }

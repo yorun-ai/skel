@@ -10,8 +10,8 @@ const (
 	AuthModeRequired AuthMode = "required"
 	// AuthModeOptional allows anonymous callers and authenticates supplied credentials.
 	AuthModeOptional AuthMode = "optional"
-	// AuthModeGuest allows only anonymous callers and rejects supplied invalid credentials.
-	AuthModeGuest AuthMode = "guest"
+	// AuthModeAnonymous allows only anonymous callers and rejects supplied invalid credentials.
+	AuthModeAnonymous AuthMode = "anonymous"
 	// AuthModeOff bypasses portal authentication for web declarations.
 	AuthModeOff AuthMode = "off"
 

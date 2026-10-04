@@ -61,7 +61,7 @@ func authMarker(mode model.AuthMode) string {
 	if mode == model.AuthModeAuth || mode == model.AuthModeNoAuth {
 		return string(mode)
 	}
-	if mode == model.AuthModeRequired || mode == model.AuthModeOptional || mode == model.AuthModeGuest || mode == model.AuthModeOff {
+	if mode == model.AuthModeRequired || mode == model.AuthModeOptional || mode == model.AuthModeAnonymous || mode == model.AuthModeOff {
 		return "auth " + string(mode)
 	}
 	return ""
