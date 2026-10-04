@@ -6,6 +6,41 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-10-04
+
+### Added
+
+- Add repeatable `--actor <domain.Actor>` filters to Go and TypeScript API
+  client generation. Multiple actors select the union of their API services;
+  omitting the flag continues to generate all API services.
+- Add `ext service` for contracts implemented by other domains: public Go
+  output exports servers, while the defining domain's regular output provides
+  clients.
+- Add `ext event` for events emitted by other domains: public Go output exports
+  emitters, while the defining domain's regular output provides listeners.
+  Both outputs share the public payload type, including imported generic data.
+- Preserve extension markers in public Skel contracts and normalized and Vine
+  runtime schemas. Formatting and language-server features recognize `ext`;
+  compatibility hashes and schema diffs account for extension direction changes.
+
+### Changed
+
+- Replace `open service` with `ext service` and remove the `open` modifier.
+- Require every `api service` to declare at least one actor audience with `for`.
+- Raise both the default and minimum supported Vine version for generated Go
+  modules to v0.25.1.
+
+### Upgrade Notes
+
+- Replace `open service` with `ext service` and regenerate public and regular
+  packages together. Extension clients now belong to the defining domain's
+  regular package; external implementations use the public server contract.
+- Add `for Actor` to API services that lack an audience. Anonymous API services
+  still declare an actor and use `noauth` to allow anonymous calls.
+- Use fully qualified actor names with `--actor`; the flag requires `--api`.
+- Upgrade Vine to v0.25.1 or later before using regenerated Go packages.
+  Normalized service schemas now use `ext` in place of `open`.
+
 ## [0.23.3] - 2026-10-04
 
 ### Added
@@ -660,7 +695,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.23.3...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/yorun-ai/skelc/compare/v0.23.3...v0.24.0
 [0.23.3]: https://github.com/yorun-ai/skelc/compare/v0.23.2...v0.23.3
 [0.23.2]: https://github.com/yorun-ai/skelc/compare/v0.23.1...v0.23.2
 [0.23.1]: https://github.com/yorun-ai/skelc/compare/v0.23.0...v0.23.1
