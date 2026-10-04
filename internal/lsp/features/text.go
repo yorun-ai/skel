@@ -61,7 +61,7 @@ func completionValuesBeforePositionBuffer(buffer lsource.Buffer, position protoc
 	if len(fields) == 0 {
 		return nil
 	}
-	if fields[0] == "pub" || fields[0] == "api" || fields[0] == "open" {
+	if fields[0] == "pub" || fields[0] == "api" || fields[0] == "ext" {
 		fields = fields[1:]
 		if len(fields) == 0 {
 			return nil

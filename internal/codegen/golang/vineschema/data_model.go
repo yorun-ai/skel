@@ -43,6 +43,7 @@ type _ConfigSchema struct {
 }
 
 type _EventSchema struct {
+	Ext              bool
 	Name             string
 	SkelName         string
 	Description      string

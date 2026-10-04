@@ -14,7 +14,7 @@ func TestNewGenDerivesModuleAndPackageName(t *testing.T) {
 	pkg := buildModelDomainForTest(t, codegentest.DomainModel("demo.user.profile"))
 
 	gen, err := newGen(_GenOption{
-		VineVersion: "v0.20.2",
+		VineVersion: "v0.25.1",
 		Mode:        view.ModeFull,
 		Domain:      pkg,
 		Out:         filepath.Join(t.TempDir(), "skeled"),
@@ -36,7 +36,7 @@ func TestNewGenKeepsDomainDerivedPackageNameForModuleOutput(t *testing.T) {
 
 	gen, err := newGen(_GenOption{
 		ModulePrefix: "github.com/acme/skel",
-		VineVersion:  "v0.20.2",
+		VineVersion:  "v0.25.1",
 		Mode:         view.ModeFull,
 		Domain:       pkg,
 		Out:          filepath.Join(t.TempDir(), "skeled"),
@@ -59,7 +59,7 @@ func TestNewGenDerivesPubModuleAndPackageName(t *testing.T) {
 
 	gen, err := newGen(_GenOption{
 		ModulePrefix: "github.com/acme/skel",
-		VineVersion:  "v0.20.2",
+		VineVersion:  "v0.25.1",
 		Mode:         view.ModePub,
 		Domain:       pkg,
 		Out:          filepath.Join(t.TempDir(), "skeled"),
@@ -81,7 +81,7 @@ func TestNewGenRejectsInvalidLocalPackageNameFromOutputDir(t *testing.T) {
 	pkg := buildModelDomainForTest(t, codegentest.DomainModel("demo.user.profile"))
 
 	_, err := newGen(_GenOption{
-		VineVersion: "v0.20.2",
+		VineVersion: "v0.25.1",
 		Mode:        view.ModeFull,
 		Domain:      pkg,
 		Out:         filepath.Join(t.TempDir(), "my-skel go"),
@@ -95,7 +95,7 @@ func TestNewGenRejectsKeywordLocalPackageNameFromOutputDir(t *testing.T) {
 	pkg := buildModelDomainForTest(t, codegentest.DomainModel("demo.user.profile"))
 
 	_, err := newGen(_GenOption{
-		VineVersion: "v0.20.2",
+		VineVersion: "v0.25.1",
 		Mode:        view.ModeFull,
 		Domain:      pkg,
 		Out:         filepath.Join(t.TempDir(), "go"),

@@ -46,6 +46,7 @@ type DataMember struct {
 }
 
 type Event struct {
+	Ext            bool
 	Pos            lexer.Position
 	Decorators     []*Decorator
 	Pub            bool
@@ -66,7 +67,7 @@ type Service struct {
 	Decorators []*Decorator
 	Pub        bool
 	Api        bool
-	Open       bool
+	Ext        bool
 	Name       *Identifier       `parser:"@@"`
 	Sections   []*ServiceSection `parser:"\"{\" (Newline)* (@@ (Newline)*)* \"}\""`
 

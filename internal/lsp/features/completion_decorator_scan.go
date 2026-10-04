@@ -26,8 +26,8 @@ func optionalPubOffsetBefore(source string, offset int) int {
 		end--
 	}
 	pub := "pub"
-	if end >= 4 && source[end-4:end] == "open" {
-		pub = "open"
+	if end >= 3 && source[end-3:end] == "ext" {
+		pub = "ext"
 	}
 	if end >= 3 && source[end-3:end] == "api" {
 		pub = "api"

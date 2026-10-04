@@ -374,3 +374,23 @@ func TestServiceCompletesFullDomainQualifier(t *testing.T) {
 		assert.True(t, hasCompletion(result.(protocol.CompletionItemSlice), "User"))
 	}
 }
+
+func TestExtensionModifierCompletion(t *testing.T) {
+	fixture := newFixture()
+	documentURI := uri.File("/workspace/ext.skel")
+	fixture.putDocument(documentURI, "domain demo\n", 1, true)
+	result, err := fixture.service().Completion(t.Context(), &protocol.CompletionParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: documentURI}, Position: protocol.Position{Line: 1},
+		},
+	})
+	require.NoError(t, err)
+	found := false
+	for _, item := range result.(protocol.CompletionItemSlice) {
+		if item.Label == "ext" {
+			found = true
+		}
+		assert.NotEqual(t, "open", item.Label)
+	}
+	assert.True(t, found, "extension modifier must be offered")
+}

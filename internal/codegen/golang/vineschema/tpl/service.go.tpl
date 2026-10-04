@@ -3,7 +3,7 @@
 {{- end }}
 
 {{- define "serviceSchemaValue" -}}
-{Name: {{ quote .Name }}, SkelName: {{ quote .SkelName }}{{ if .Description }}, Description: {{ quote .Description }}{{ end }}{{ template "deprecatedFields" . }}, Hash: {{ quote .Hash }}, Pub: {{ .Pub }}{{ if .Api }}, Api: true{{ end }}, AuthMode: {{ authLiteral .AuthMode }}{{ if .Audiences }}, Audiences: []*skel.ActorAudienceSchema{ {{- range $actor := .Audiences }}{{ template "actorAudienceSchema" $actor }}, {{- end }} }{{ end }}{{ if .Require }}, Require: {{ template "permissionRequire" .Require }}{{ end }}{{ template "methodSchemaList" .Methods }}}
+{Name: {{ quote .Name }}, SkelName: {{ quote .SkelName }}{{ if .Description }}, Description: {{ quote .Description }}{{ end }}{{ template "deprecatedFields" . }}, Hash: {{ quote .Hash }}, Pub: {{ .Pub }}{{ if .Api }}, Api: true{{ end }}{{ if .Ext }}, Ext: true{{ end }}, AuthMode: {{ authLiteral .AuthMode }}{{ if .Audiences }}, Audiences: []*skel.ActorAudienceSchema{ {{- range $actor := .Audiences }}{{ template "actorAudienceSchema" $actor }}, {{- end }} }{{ end }}{{ if .Require }}, Require: {{ template "permissionRequire" .Require }}{{ end }}{{ template "methodSchemaList" .Methods }}}
 {{- end }}
 
 {{- define "actorAudienceSchema" -}}

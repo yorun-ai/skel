@@ -14,7 +14,7 @@ func TestTopLevelDeclarationKeywordsMatchSkelEntryGrammar(t *testing.T) {
 	keywords := make([]string, 0, entryType.NumField())
 	for index := range entryType.NumField() {
 		field := entryType.Field(index)
-		if field.Name == "Pos" || field.Name == "Decorators" || field.Name == "Pub" || field.Name == "Api" || field.Name == "Open" {
+		if field.Name == "Pos" || field.Name == "Decorators" || field.Name == "Pub" || field.Name == "Api" || field.Name == "Ext" {
 			continue
 		}
 		match := quotedKeyword.FindStringSubmatch(field.Tag.Get("parser"))

@@ -21,7 +21,7 @@ func MigrationDiagnostics(domain *model.Domain) Diagnostics {
 			result = append(result, Diagnostic{
 				Code: diagnostic.CodeServiceModifier, Severity: DiagnosticSeverityWarning,
 				Position: service.Pos, Range: span,
-				Message: fmt.Sprintf("service %s has no modifier; declare pub for backend calls, open for reusable server contracts, or api for Portal clients", service.Name),
+				Message: fmt.Sprintf("service %s has no modifier; declare pub for backend calls, ext for reusable server contracts, or api for Portal clients", service.Name),
 			})
 		}
 		if service.HasClientRules() {

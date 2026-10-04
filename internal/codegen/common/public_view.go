@@ -27,7 +27,7 @@ func BuildPublicView(domain *model.Domain) (*PublicView, error) {
 		Configs:   filter(domain.Configs(), func(value *model.Data) bool { return value.Pub }),
 		Actors:    filter(domain.Actors(), func(value *model.Actor) bool { return value.Pub }),
 		Resources: filter(domain.Resources(), func(value *model.Resource) bool { return value.Pub }),
-		Events:    filter(domain.Events(), func(value *model.Data) bool { return value.Pub }),
+		Events:    filter(domain.Events(), func(value *model.Data) bool { return value.Public() }),
 		Services:  filter(domain.Services(), func(value *model.Service) bool { return value.Public() }),
 	}
 	collectViewData(domain, view)

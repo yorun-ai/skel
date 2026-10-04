@@ -10,8 +10,8 @@ func validateService(service *model.Service) error {
 	if service == nil {
 		return fmt.Errorf("generated model contains nil service")
 	}
-	if service.Open && (service.Pub || service.Api) {
-		return fmt.Errorf("open, api and pub are mutually exclusive")
+	if service.Ext && (service.Pub || service.Api) {
+		return fmt.Errorf("ext, api and pub are mutually exclusive")
 	}
 	if service.Api && service.Pub {
 		return fmt.Errorf("service %s cannot combine api and pub", service.Name)

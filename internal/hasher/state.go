@@ -61,6 +61,7 @@ func (s *_HashState) dataHash(data *model.Data) string {
 			Deprecated:       data.Deprecated,
 			DeprecatedReason: data.DeprecatedReason,
 			Kind:             data.Kind,
+			Ext:              data.Ext,
 			Pub:              data.Pub,
 			Sensitive:        data.Sensitive,
 			Lifecycle:        string(data.Lifecycle),

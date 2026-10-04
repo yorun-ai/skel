@@ -219,3 +219,18 @@ func TestFillHashesIncludesApiBoundary(t *testing.T) {
 		t.Fatal("API boundary must not change method signatures")
 	}
 }
+
+func TestFillHashesIncludesServiceDirection(t *testing.T) {
+	pubDomain := newHashTestDomain(t, "Storage contract")
+	extDomain := newHashTestDomain(t, "Storage contract")
+	pubDomain.Services()[0].Pub = true
+	extDomain.Services()[0].Pub = false
+	extDomain.Services()[0].Ext = true
+	fillHashes(t, pubDomain, extDomain)
+	if pubDomain.Services()[0].Hash == extDomain.Services()[0].Hash || pubDomain.Hash() == extDomain.Hash() {
+		t.Fatal("contract direction must affect service and domain hashes")
+	}
+	if pubDomain.Services()[0].Methods[0].Hash != extDomain.Services()[0].Methods[0].Hash {
+		t.Fatal("service direction changed method wire hashes")
+	}
+}

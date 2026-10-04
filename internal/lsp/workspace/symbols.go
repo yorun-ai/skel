@@ -29,8 +29,8 @@ func entryDefinition(entry *grammar.SkelEntry) (string, lexer.Position, protocol
 		protocolKind, detail = protocol.SymbolKindObject, "resource"
 	case binding.Service:
 		protocolKind, detail = protocol.SymbolKindInterface, "service"
-		if entry.Service.Open {
-			detail = "open service"
+		if entry.Service.Ext {
+			detail = "ext service"
 		}
 		if entry.Service.Api {
 			detail = "api service"
@@ -39,6 +39,9 @@ func entryDefinition(entry *grammar.SkelEntry) (string, lexer.Position, protocol
 		protocolKind, detail = protocol.SymbolKindInterface, "web"
 	case binding.Event:
 		protocolKind, detail = protocol.SymbolKindEvent, "event"
+		if entry.Event.Ext {
+			detail = "ext event"
+		}
 	case binding.Task:
 		protocolKind, detail = protocol.SymbolKindFunction, "task"
 	}

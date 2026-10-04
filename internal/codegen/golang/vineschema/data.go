@@ -44,6 +44,7 @@ func (g *_Gen) buildConfigSchema(value *model.Data, projected *contractschema.De
 
 func (g *_Gen) buildEventSchema(value *model.Data, projected *contractschema.Declaration) *_EventSchema {
 	return &_EventSchema{
+		Ext:  projected.Data.Ext,
 		Name: projected.Name, SkelName: projected.SkelName, Hash: value.Hash,
 		Description: projected.Description, Deprecated: projected.Deprecated,
 		DeprecatedReason: projected.DeprecatedReason, Pub: projected.Pub,

@@ -31,6 +31,8 @@ func parseEvent(reporter *_DiagnosticReporter, ge *grammar.Event) (*model.Data, 
 		Members:        members,
 		TypeParameters: ge.TypeParameters,
 	}, model.DataKindEvent)
+	event.Ext = ge.Ext
+	valid = reporter.checkNot(ge.Ext && ge.Pub, "%s ext and pub are mutually exclusive", ge.Name.Pos) && valid
 	if ge.Payload == nil {
 		return event, valid
 	}

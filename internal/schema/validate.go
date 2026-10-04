@@ -67,14 +67,17 @@ func validateDeclarationBody(declaration *Declaration) error {
 		valid = declaration.Enum != nil
 	case DeclarationTypeData, DeclarationTypeConfig, DeclarationTypeEvent:
 		valid = declaration.Data != nil
+		if valid && declaration.Data.Ext && (declaration.Kind != DeclarationTypeEvent || !declaration.Pub) {
+			return fmt.Errorf("ext is only allowed on public events")
+		}
 	case DeclarationTypeActor:
 		valid = declaration.Actor != nil
 	case DeclarationTypeResource:
 		valid = declaration.Resource != nil
 	case DeclarationTypeService:
 		valid = declaration.Service != nil
-		if valid && declaration.Service.Open && (!declaration.Pub || declaration.Service.Api) {
-			return fmt.Errorf("open services must be public and cannot be api")
+		if valid && declaration.Service.Ext && (!declaration.Pub || declaration.Service.Api) {
+			return fmt.Errorf("ext services must be public and cannot be api")
 		}
 		if valid && declaration.Pub && declaration.Service.Api {
 			return fmt.Errorf("api and pub are mutually exclusive")
@@ -133,6 +136,9 @@ func validateEnum(value *EnumSchema) error {
 }
 
 func validateData(value *DataSchema) error {
+	if value.Ext {
+		return fmt.Errorf("inline data cannot be ext")
+	}
 	return validateDataMembers(value)
 }
 

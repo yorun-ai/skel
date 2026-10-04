@@ -12,6 +12,7 @@ func (g *_Gen) buildServiceSchema(value *model.Service, projected *contractschem
 		DeprecatedReason: projected.DeprecatedReason,
 		Pub:              projected.Pub,
 		Api:              projected.Service.Api,
+		Ext:              projected.Service.Ext,
 		AuthMode:         _AuthMode(projected.Service.Auth),
 		Audiences:        g.buildActorAudienceSchemas(projected.Service.Audiences),
 		Require:          g.buildPermRequireSchema(value.Require, projected.Service.Require),

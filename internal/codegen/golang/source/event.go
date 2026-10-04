@@ -26,6 +26,8 @@ type EventGoPayload struct {
 }
 
 type Event struct {
+	Ext                       bool
+	PayloadAlias              bool
 	Name                      string
 	SkelName                  string
 	Hash                      string
@@ -65,6 +67,7 @@ func (g *_Gen) buildEventGoPayload() *EventGoPayload {
 	}
 	for _, tokenEvent := range g.view.Events {
 		castedEvent := g.castEvent(tokenEvent, g.eventListenerOnly(tokenEvent), g.eventEmitterOnly(tokenEvent))
+		castedEvent.PayloadAlias = g.isSplitRegular() && tokenEvent.Ext
 		payload.Events = append(payload.Events, castedEvent)
 	}
 
@@ -74,11 +77,11 @@ func (g *_Gen) buildEventGoPayload() *EventGoPayload {
 }
 
 func (g *_Gen) eventListenerOnly(event *model.Data) bool {
-	return g.isSplitPub() && event.Pub
+	return (g.isSplitPub() && event.Pub) || (g.isSplitRegular() && event.Ext)
 }
 
 func (g *_Gen) eventEmitterOnly(event *model.Data) bool {
-	return g.isSplitRegular() && event.Pub
+	return (g.isSplitRegular() && event.Pub) || (g.isSplitPub() && event.Ext)
 }
 
 func (g *_Gen) castEvent(p *model.Data, listenerOnly bool, emitterOnly bool) *Event {
@@ -86,6 +89,7 @@ func (g *_Gen) castEvent(p *model.Data, listenerOnly bool, emitterOnly bool) *Ev
 	methodName := strings.TrimSuffix(eventName, "Event")
 	event_ := &Event{
 		Name:                      eventName,
+		Ext:                       p.Ext,
 		SkelName:                  p.SkelName,
 		Hash:                      p.Hash,
 		SpecName:                  fmt.Sprintf("_%sSpec", eventName),
@@ -120,6 +124,9 @@ func buildEventImports(events []*Event) []*Import {
 	for _, event := range events {
 		if !event.EmitterOnly {
 			imports.add(&Import{Path: "go.yorun.ai/vine/core/ex"})
+		}
+		if event.PayloadAlias {
+			continue
 		}
 		for _, member := range event.Members {
 			imports.addMany(collectTypeImports(member.Type))

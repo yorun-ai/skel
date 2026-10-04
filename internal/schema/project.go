@@ -157,7 +157,7 @@ func projectEnum(value *model.Enum) *Declaration {
 func projectData(value *model.Data) *Declaration {
 	return &Declaration{
 		Metadata: metadata(value.Description, value.Deprecated, value.DeprecatedReason),
-		Pub:      value.Pub, Name: value.Name, Kind: DeclarationType(value.Kind), SkelName: value.SkelName, Pos: value.Pos,
+		Pub:      value.Public(), Name: value.Name, Kind: DeclarationType(value.Kind), SkelName: value.SkelName, Pos: value.Pos,
 		Data: projectDataSchema(value),
 	}
 }
@@ -171,7 +171,7 @@ func projectDataSchema(value *model.Data) *DataSchema {
 		typeParameters = append(typeParameters, parameter.Name)
 	}
 	return &DataSchema{
-		Lifecycle: ConfigLifecycle(value.Lifecycle), Sensitive: value.Sensitive,
+		Lifecycle: ConfigLifecycle(value.Lifecycle), Sensitive: value.Sensitive, Ext: value.Ext,
 		TypeParameters: typeParameters, Members: projectMembers(value.Members),
 	}
 }
@@ -239,7 +239,7 @@ func projectService(domainName string, importAliases map[string]string, value *m
 		Service: &ServiceSchema{
 			Audiences: projectAudiences(domainName, importAliases, value.Audiences),
 			Api:       value.Api,
-			Open:      value.Open,
+			Ext:       value.Ext,
 			Auth:      normalizedAuth(value.Auth),
 			Require:   projectRequirement(value.Require), Methods: methods,
 		},

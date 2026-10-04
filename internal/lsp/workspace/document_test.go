@@ -97,11 +97,19 @@ service UserService {
 	assert.LessOrEqual(t, lspsource.ComparePosition(method.Children[0].Range.End, method.Range.End), 0)
 }
 
-func TestIndexOpenService(t *testing.T) {
-	document := BuildDocument(uri.File("/workspace/open.skel"), "/workspace/open.skel", "domain demo\nopen service StorageService { method ping {} }\n", 1)
+func TestIndexExtService(t *testing.T) {
+	document := BuildDocument(uri.File("/workspace/ext.skel"), "/workspace/ext.skel", "domain demo\next service StorageService { method ping {} }\n", 1)
 	require.Len(t, document.Symbols, 1)
-	assert.Equal(t, "open service", document.Symbols[0].Detail)
+	assert.Equal(t, "ext service", document.Symbols[0].Detail)
 	assert.Equal(t, "StorageService", document.Symbols[0].Name)
+}
+
+func TestIndexExtEvent(t *testing.T) {
+	document := BuildDocument(uri.File("/workspace/ext.skel"), "/workspace/ext.skel", "domain demo\next event AuditRecordedEvent { payload { message: string } }\n", 1)
+	require.Len(t, document.Symbols, 1)
+	assert.Equal(t, "ext event", document.Symbols[0].Detail)
+	assert.Equal(t, "AuditRecordedEvent", document.Symbols[0].Name)
+	require.Len(t, document.Symbols[0].Children, 1)
 }
 
 func TestOccurrencesOnlyIncludeGrammarReferences(t *testing.T) {

@@ -13,6 +13,7 @@ type EnumItem struct {
 }
 
 type DataSchema struct {
+	Ext            bool            `json:"ext,omitempty"`
 	Lifecycle      ConfigLifecycle `json:"lifecycle,omitempty"`
 	Sensitive      bool            `json:"sensitive,omitempty"`
 	TypeParameters []string        `json:"typeParameters,omitempty"`
@@ -75,7 +76,7 @@ type ResourceCheck struct {
 type ServiceSchema struct {
 	Audiences []*Audience  `json:"audiences"`
 	Api       bool         `json:"api,omitempty"`
-	Open      bool         `json:"open,omitempty"`
+	Ext       bool         `json:"ext,omitempty"`
 	Auth      AuthMode     `json:"auth"`
 	Require   *Requirement `json:"require,omitempty"`
 	Methods   []*Method    `json:"methods"`

@@ -6,6 +6,17 @@ import (
 	"go.yorun.ai/skelc/internal/model"
 )
 
+func TestEventDirectionChangesAreBreaking(t *testing.T) {
+	for _, ext := range []bool{false, true} {
+		changes := diffChanges(func(diff *_Diff) {
+			diff.compareData("demo.audit.AuditRecordedEvent", &DataSchema{Ext: ext}, &DataSchema{Ext: !ext})
+		})
+		if len(changes) != 1 || changes[0].Code != "event.ext.changed" || changes[0].Impact != ImpactBreaking {
+			t.Fatalf("unexpected direction diff: %+v", changes)
+		}
+	}
+}
+
 func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 	t.Helper()
 	t.Run("document and declaration", func(t *testing.T) {
