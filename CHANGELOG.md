@@ -6,6 +6,25 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.24.1] - 2026-10-04
+
+### Changed
+
+- Simplify generated Go API client initialization with
+  `vrpc.MustGetMethodInfo`, replacing repeated lookup and panic blocks with
+  one assignment per method.
+- Raise the default and minimum Go API client runtime to
+  `go.yorun.ai/vrpc` v0.13.0. Reject older explicitly selected versions before
+  modifying generated output.
+
+### Upgrade Notes
+
+- Regenerate Go API clients to obtain the simplified initialization. Update
+  their vRPC dependency to v0.13.0 or later; generated standalone modules
+  select it automatically. Existing generated clients can continue to be used.
+- Skel contracts, generated client method signatures and wire behavior are
+  unchanged. Backend Vine requirements are unchanged.
+
 ## [0.24.0] - 2026-10-04
 
 ### Added
@@ -695,7 +714,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.24.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.24.1...HEAD
+[0.24.1]: https://github.com/yorun-ai/skelc/compare/v0.24.0...v0.24.1
 [0.24.0]: https://github.com/yorun-ai/skelc/compare/v0.23.3...v0.24.0
 [0.23.3]: https://github.com/yorun-ai/skelc/compare/v0.23.2...v0.23.3
 [0.23.2]: https://github.com/yorun-ai/skelc/compare/v0.23.1...v0.23.2
