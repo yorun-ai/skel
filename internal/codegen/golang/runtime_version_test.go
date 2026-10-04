@@ -13,10 +13,10 @@ func TestResolveOptionSelectsRuntime(t *testing.T) {
 		t.Fatalf("backend: %+v, %v", backend, err)
 	}
 	client, err := ResolveOption(Option{ApiOnly: true})
-	if err != nil || client.Options().VrpcVersion != "v0.12.0" || client.Options().VineVersion != "" {
+	if err != nil || client.Options().VrpcVersion != "v0.13.0" || client.Options().VineVersion != "" {
 		t.Fatalf("client: %+v, %v", client, err)
 	}
-	for _, option := range []Option{{VrpcVersion: "v0.12.0"}, {ApiOnly: true, VineVersion: "v0.25.1"}} {
+	for _, option := range []Option{{VrpcVersion: "v0.13.0"}, {ApiOnly: true, VineVersion: "v0.25.1"}} {
 		if _, err := ResolveOption(option); err == nil {
 			t.Fatalf("accepted unused version: %+v", option)
 		}

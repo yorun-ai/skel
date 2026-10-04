@@ -8,8 +8,8 @@ import (
 	"golang.org/x/mod/module"
 )
 
-const defaultVrpcVersion = "v0.12.0"
-const minimumVrpcVersion = "v0.12.0"
+const defaultVrpcVersion = "v0.13.0"
+const minimumVrpcVersion = "v0.13.0"
 
 func resolveVrpcVersion(version string) (string, error) {
 	version = strings.TrimSpace(version)
