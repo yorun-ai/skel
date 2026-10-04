@@ -44,7 +44,7 @@ func Generate(domain *model.Domain, resolved ResolvedOption) error {
 		if option.ApiOnly {
 			mode = view.ModeApi
 		}
-		g, err := newGen(_GenOption{Mode: mode, Domain: domain, Out: option.Out, AsModule: option.AsModule, Module: option.Module, ModulePrefix: option.ModulePrefix, Imports: option.Imports, VineVersion: option.VineVersion, VrpcVersion: option.VrpcVersion, CompilerVersion: option.CompilerVersion})
+		g, err := newGen(_GenOption{ApiFilter: option.ApiFilter, Mode: mode, Domain: domain, Out: option.Out, AsModule: option.AsModule, Module: option.Module, ModulePrefix: option.ModulePrefix, Imports: option.Imports, VineVersion: option.VineVersion, VrpcVersion: option.VrpcVersion, CompilerVersion: option.CompilerVersion})
 		if err != nil {
 			return err
 		}
@@ -134,7 +134,7 @@ func newGen(option _GenOption) (*_Gen, error) {
 		out:               option.Out,
 	}
 	var err error
-	g.view, err = view.Build(option.Mode, option.Domain)
+	g.view, err = view.Build(option.Mode, option.Domain, option.ApiFilter)
 	if err != nil {
 		return nil, err
 	}

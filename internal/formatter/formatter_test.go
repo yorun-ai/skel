@@ -297,7 +297,7 @@ func TestActorIdentifierRoundTrip(t *testing.T) {
 }
 
 func TestApiServiceRoundTrip(t *testing.T) {
-	input := []byte("domain demo.order\n// client endpoint\napi   service  OrderApiService{method ping{}}\n")
+	input := []byte("domain demo.order\nactor ClientActor{via client{}}\n// client endpoint\napi   service  OrderApiService{for ClientActor via client method ping{}}\n")
 	before := compileTestDomain(t, "api.skel", input)
 	formatted := formatTestSource(t, input)
 	after := compileTestDomain(t, "api.skel", formatted)
@@ -308,7 +308,7 @@ func TestApiServiceRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !parsed.Entries[0].Service.Api || parsed.Entries[0].Service.Pub {
+	if !parsed.Entries[1].Service.Api || parsed.Entries[1].Service.Pub {
 		t.Fatalf("lost API modifier: %s", formatted)
 	}
 	if string(formatTestSource(t, formatted)) != string(formatted) {

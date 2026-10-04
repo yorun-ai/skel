@@ -13,7 +13,7 @@ func TestStrictCompilationChecksImportedMigrationRules(t *testing.T) {
 	dependency := filepath.Join(dir, "shared.skel")
 	entry := filepath.Join(dir, "order.skel")
 	writeFile(t, dependency, "domain demo.shared\npub data Item { id: string }\npub service LegacyService { noauth method ping {} }\n")
-	writeFile(t, entry, "domain demo.order\nimport demo.shared as shared\napi service OrderApiService { method get { output shared.Item } }\n")
+	writeFile(t, entry, "domain demo.order\nimport demo.shared as shared\nactor TestActor { via client {} }\napi service OrderApiService { for TestActor via client method get { output shared.Item } }\n")
 	option := Option{SkelIn: entry, SkelImports: map[string]string{"demo.shared": dependency}}
 	result, err := Compile(option)
 	if err != nil || len(result.Diagnostics) != 1 || result.Diagnostics[0].Severity != DiagnosticSeverityWarning {
@@ -34,7 +34,7 @@ func TestStrictCompilationChecksImportedMigrationRules(t *testing.T) {
 func TestStrictCompilationPreservesLoaderWarnings(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "domain.skel"), "domain demo.order\n")
-	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.order\napi service OrderApiService { method ping {} }\npub service BackendService { method ping {} }\n")
+	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.order\nactor TestActor { via client {} }\napi service OrderApiService { for TestActor via client method ping {} }\npub service BackendService { method ping {} }\n")
 	writeFile(t, filepath.Join(dir, ".hidden.skel"), "ignored")
 	for _, compile := range []func(Option) (Result, error){Compile, CompileImport} {
 		result, err := compile(Option{SkelIn: dir, Strict: true})

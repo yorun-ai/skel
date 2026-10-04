@@ -17,6 +17,7 @@ type _OptionValidationKey struct {
 }
 
 var optionValidationMessages = map[_OptionValidationKey]string{
+	{optionvalidation.FieldApiActor, optionvalidation.RuleRequiresApi}:                 "flag actor requires api",
 	{optionvalidation.FieldSkelInput, optionvalidation.RuleRequired}:                   "missing flag skel-in",
 	{optionvalidation.FieldGoOutput, optionvalidation.RuleRequired}:                    "missing output flag",
 	{optionvalidation.FieldGoModuleIdentity, optionvalidation.RuleRequired}:            "missing flag go-module or go-module-prefix",

@@ -1,6 +1,9 @@
 package typescript
 
+import "go.yorun.ai/skelc/internal/codegen/common"
+
 type Option struct {
+	ApiFilter   common.ApiFilter
 	AsModule    bool
 	Out         string
 	Module      string

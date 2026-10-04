@@ -24,6 +24,7 @@ func parseService(reporter *_DiagnosticReporter, gs *grammar.Service) (*model.Se
 	valid = reporter.checkNot(meta.HasExample, "%s service does not support decorator @example", gs.Name.Pos) && valid
 	audiences, audiencesValid := parseServiceAudiences(reporter, serviceAudiences(gs))
 	valid = audiencesValid && valid
+	valid = reporter.checkNot(gs.Api && audiencesValid && len(audiences) == 0, "%s API service must declare at least one for Actor", gs.Name.Pos) && valid
 	authMarker, authValid := serviceAuthMarker(reporter, gs)
 	valid = authValid && valid
 	authMode, authModeValid := parseAuthMode(reporter, authMarker, model.AuthModeUnset)

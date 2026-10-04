@@ -24,6 +24,7 @@ const (
 	flagGenGoPubOut       = "go-pub-out"
 	flagGenTSOut          = "ts-out"
 	flagGenApi            = "api"
+	flagGenActor          = "actor"
 	flagGenGoVrpcVersion  = "go-vrpc-version"
 	flagGenGoModulePrefix = "go-module-prefix"
 	flagGenGoModule       = "go-module"
@@ -152,6 +153,7 @@ func compilerVersion() (string, error) {
 func newGenGoFlags() []ucli.Flag {
 	return []ucli.Flag{
 		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate Portal API clients"},
+		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
 		&ucli.BoolFlag{Name: flagGenPub, Usage: "generate backend public contracts"},
 		&ucli.StringFlag{Name: flagGenGoVrpcVersion, Usage: "vRPC module version for API clients"},
 		&ucli.StringFlag{Name: flagGenSkelIn, Usage: "skeleton input file or directory"},
@@ -182,6 +184,7 @@ func parseGenGoCommand(cmd *ucli.Command) (skelc.Input, skelc.GolangOption, erro
 	}
 
 	option := skelc.GolangOption{
+		ApiFilter:   skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor)},
 		Imports:     goImports,
 		PubOnly:     cmd.Bool(flagGenPub),
 		ApiOnly:     cmd.Bool(flagGenApi),
@@ -195,6 +198,7 @@ func parseGenGoCommand(cmd *ucli.Command) (skelc.Input, skelc.GolangOption, erro
 func newGenGoModuleFlags() []ucli.Flag {
 	return []ucli.Flag{
 		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate Portal API clients"},
+		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
 		&ucli.BoolFlag{Name: flagGenPub, Usage: "generate backend public contracts"},
 		&ucli.StringFlag{Name: flagGenGoVrpcVersion, Usage: "vRPC module version for API clients"},
 		&ucli.StringFlag{Name: flagGenSkelIn, Usage: "skeleton input file or directory"},
@@ -230,6 +234,7 @@ func parseGenGoModuleCommand(cmd *ucli.Command) (skelc.Input, skelc.GolangOption
 	}
 
 	option := skelc.GolangOption{
+		ApiFilter:    skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor)},
 		PubOnly:      cmd.Bool(flagGenPub),
 		ApiOnly:      cmd.Bool(flagGenApi),
 		VrpcVersion:  cmd.String(flagGenGoVrpcVersion),
@@ -278,6 +283,7 @@ func parseGenSkelCommand(cmd *ucli.Command) (skelc.Input, skelc.SkeletonOption, 
 func newGenTSFlags() []ucli.Flag {
 	return []ucli.Flag{
 		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate Portal API clients"},
+		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
 		&ucli.StringFlag{Name: flagGenSkelIn, Usage: "skeleton input file or directory"},
 		&ucli.StringFlag{Name: flagGenTSOut, Usage: "TypeScript output directory"},
 		&ucli.StringSliceFlag{Name: flagGenSkelImport, Usage: "skel dependency mapping in domain=path form; repeat for transitive imports"},
@@ -307,6 +313,7 @@ func parseGenTSCommand(cmd *ucli.Command) (skelc.Input, skelc.TypeScriptOption, 
 		Strict:      cmd.Bool(flagStrict),
 	}
 	option := skelc.TypeScriptOption{
+		ApiFilter:   skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor)},
 		ApiOnly:     cmd.Bool(flagGenApi),
 		Out:         cmd.String(flagGenTSOut),
 		AsModule:    cmd.Bool(flagGenTSAsModule),

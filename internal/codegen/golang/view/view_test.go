@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"go.yorun.ai/skelc/internal/codegen/common"
 	"go.yorun.ai/skelc/internal/model"
 )
 
@@ -89,7 +90,7 @@ func TestViewTypeRootsRespectArgumentSource(t *testing.T) {
 	injected := &model.Type{Kind: model.TypeKindScalar}
 	domain := model.NewDomainFromSpec(model.DomainSpec{
 		Name: "demo",
-		Services: []*model.Service{{Name: "ExampleApiService", Api: true, Methods: []*model.Method{{
+		Services: []*model.Service{{Name: "ExampleApiService", Api: true, Audiences: []*model.ActorAudience{{Actor: "ClientActor"}}, Methods: []*model.Method{{
 			Arguments: []*model.Argument{
 				{Name: "input", Type: declared, Source: model.ArgumentSourceDeclared},
 				{Name: "code", Type: injected, Source: model.ArgumentSourcePermissionCode},
@@ -98,7 +99,7 @@ func TestViewTypeRootsRespectArgumentSource(t *testing.T) {
 	})
 	for _, mode := range []Mode{ModeApi, ModeFull, ModeRegular} {
 		t.Run(string(mode), func(t *testing.T) {
-			view, err := Build(mode, domain)
+			view, err := Build(mode, domain, common.ApiFilter{})
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -91,7 +91,7 @@ func TestNewGenDerivesExternalTypeImportsFromTypeScriptModuleScope(t *testing.T)
 			ExplicitAlias: true,
 		}},
 		Data:     []*model.Data{order},
-		Services: []*model.Service{{Name: "OrderService", Api: true, Methods: []*model.Method{{Name: "get", ResultType: codegentest.DataType(order)}}}},
+		Services: []*model.Service{{Name: "OrderService", Api: true, Audiences: []*model.ActorAudience{{Actor: "ClientActor"}}, Methods: []*model.Method{{Name: "get", ResultType: codegentest.DataType(order)}}}},
 	})
 
 	gen := newGen(pkg, filepath.Join(t.TempDir(), "ts"), Option{

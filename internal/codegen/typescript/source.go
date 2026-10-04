@@ -66,7 +66,10 @@ func newGen(domain *model.Domain, outputDir string, options ...Option) *_Gen {
 		}
 		g.pkgName = buildPackageName(scope, g.domain.Name())
 	}
-	g.apiView = common.BuildApiView(domain)
+	g.apiView, g.err = common.BuildApiView(domain, option.ApiFilter)
+	if g.err != nil {
+		return g
+	}
 	g.resolveExternalTypeImports()
 	g.types = _Types{bindings: g.bindings}
 	return g

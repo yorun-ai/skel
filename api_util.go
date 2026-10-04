@@ -33,6 +33,13 @@ func normalizeInput(input Input) (compiler.Option, error) {
 }
 
 func normalizeGolangOption(option GolangOption) (golang.ResolvedOption, error) {
+	if len(option.ApiFilter.Actors) > 0 && !option.ApiOnly {
+		return golang.ResolvedOption{}, optionvalidation.NewValidationError(optionvalidation.FieldApiActor, optionvalidation.RuleRequiresApi, "actor filter requires api")
+	}
+	apiFilter, err := common.NormalizeApiFilter(option.ApiFilter)
+	if err != nil {
+		return golang.ResolvedOption{}, err
+	}
 	if option.ApiOnly && option.PubOnly {
 		return golang.ResolvedOption{}, fmt.Errorf("api and pub are mutually exclusive")
 	}
@@ -117,6 +124,7 @@ func normalizeGolangOption(option GolangOption) (golang.ResolvedOption, error) {
 	}
 
 	resolved, err := golang.ResolveOption(golang.Option{
+		ApiFilter:       apiFilter,
 		PubOnly:         option.PubOnly,
 		ApiOnly:         option.ApiOnly,
 		VrpcVersion:     option.VrpcVersion,
@@ -140,7 +148,7 @@ func validateGolangImports(domain *model.Domain, option golang.Option) error {
 	var apiDomains map[string]bool
 	if option.ApiOnly {
 		var err error
-		apiDomains, err = apiImportDomains(domain)
+		apiDomains, err = apiImportDomains(domain, option.ApiFilter)
 		if err != nil {
 			return err
 		}
@@ -161,6 +169,13 @@ func validateGolangImports(domain *model.Domain, option golang.Option) error {
 }
 
 func normalizeTypeScriptOption(option TypeScriptOption) (typescript.Option, error) {
+	if len(option.ApiFilter.Actors) > 0 && !option.ApiOnly {
+		return typescript.Option{}, optionvalidation.NewValidationError(optionvalidation.FieldApiActor, optionvalidation.RuleRequiresApi, "actor filter requires api")
+	}
+	apiFilter, err := common.NormalizeApiFilter(option.ApiFilter)
+	if err != nil {
+		return typescript.Option{}, err
+	}
 	if !option.ApiOnly {
 		return typescript.Option{}, fmt.Errorf("TypeScript generation requires api")
 	}
@@ -197,6 +212,7 @@ func normalizeTypeScriptOption(option TypeScriptOption) (typescript.Option, erro
 	}
 
 	return typescript.Option{
+		ApiFilter:   apiFilter,
 		AsModule:    option.AsModule,
 		Out:         out,
 		Module:      module,
@@ -206,7 +222,7 @@ func normalizeTypeScriptOption(option TypeScriptOption) (typescript.Option, erro
 }
 
 func validateTypeScriptImports(domain *model.Domain, option typescript.Option) error {
-	apiDomains, err := apiImportDomains(domain)
+	apiDomains, err := apiImportDomains(domain, option.ApiFilter)
 	if err != nil {
 		return err
 	}
@@ -367,11 +383,14 @@ func sortedMapKeys(values map[string]string) []string {
 	return keys
 }
 
-func apiImportDomains(domain *model.Domain) (map[string]bool, error) {
+func apiImportDomains(domain *model.Domain, selection common.ApiFilter) (map[string]bool, error) {
 	if err := common.ValidateDomain(domain); err != nil {
 		return nil, err
 	}
-	view := common.BuildApiView(domain)
+	view, err := common.BuildApiView(domain, selection)
+	if err != nil {
+		return nil, err
+	}
 	domains := map[string]bool{}
 	common.VisitTypes(common.ApiTypeRoots(view.Data, view.Services), func(kind *model.Type) {
 		if kind.ExternalDomain != "" {

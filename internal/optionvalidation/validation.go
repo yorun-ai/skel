@@ -6,6 +6,7 @@ package optionvalidation
 type Field string
 
 const (
+	FieldApiActor                 Field = "api.actor"
 	FieldSkelInput                Field = "skel.input"
 	FieldSkelImport               Field = "skel.import"
 	FieldGoOutput                 Field = "go.output"
@@ -31,6 +32,7 @@ const (
 type Rule string
 
 const (
+	RuleRequiresApi          Rule = "requires-api"
 	RuleRequired             Rule = "required"
 	RuleRequiresModule       Rule = "requires-module"
 	RuleRequiresPublicOutput Rule = "requires-public-output"

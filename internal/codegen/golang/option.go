@@ -1,11 +1,13 @@
 package golang
 
 import (
+	"go.yorun.ai/skelc/internal/codegen/common"
 	"go.yorun.ai/skelc/internal/codegen/golang/view"
 	"go.yorun.ai/skelc/internal/model"
 )
 
 type Option struct {
+	ApiFilter       common.ApiFilter
 	CompilerVersion string
 	AsModule        bool
 	PubOnly         bool
@@ -33,9 +35,10 @@ func (o ResolvedOption) WithOutputs(out, pubOut string) ResolvedOption {
 }
 
 type _GenOption struct {
-	AsModule bool
-	Out      string
-	Module   string
+	ApiFilter common.ApiFilter
+	AsModule  bool
+	Out       string
+	Module    string
 
 	CompilerVersion string
 	Imports         map[string]string

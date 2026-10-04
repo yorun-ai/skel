@@ -28,9 +28,10 @@ func TestBuildApiViewCollectsClientDataAndDependencies(t *testing.T) {
 		Data:  []*model.Data{payload, dependency, unused},
 		Enums: []*model.Enum{status, {Name: "UnusedStatus"}},
 		Services: []*model.Service{{
-			Name:     "UserService",
-			SkelName: "demo.user.UserService",
-			Api:      true,
+			Name:      "UserService",
+			SkelName:  "demo.user.UserService",
+			Api:       true,
+			Audiences: []*model.ActorAudience{{Actor: "UserActor"}},
 			Methods: []*model.Method{{
 				Name:       "get",
 				SkelName:   "get",
@@ -39,7 +40,10 @@ func TestBuildApiViewCollectsClientDataAndDependencies(t *testing.T) {
 		}},
 	})
 
-	view := BuildApiView(domain)
+	view, err := BuildApiView(domain, ApiFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if len(view.Services) != 1 || view.Services[0].SkelName != "demo.user.UserService" {
 		t.Fatalf("expected the client service, got %+v", view.Services)
@@ -70,7 +74,10 @@ func TestBuildApiViewKeepsPublicTypesAndSkipsExternalDependencies(t *testing.T) 
 		Data: []*model.Data{pubData, local},
 	})
 
-	view := BuildApiView(domain)
+	view, err := BuildApiView(domain, ApiFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !containsData(view.Data, pubData) {
 		t.Fatalf("public data must stay in the API view: %+v", view.Data)
