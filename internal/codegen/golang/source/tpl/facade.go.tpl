@@ -69,7 +69,13 @@ var {{ $service.ERClientCtorName }} = {{ $.PubPackageName }}.{{ $service.ERClien
 {{ end }}
 {{ if $.Events -}}
 {{ range $event := $.Events -}}
+{{ if $event.Ext }}
+type {{ $event.Name }} = {{ $.PubPackageName }}.{{ $event.Name }}
+type {{ $event.EmitterName }} = {{ $.PubPackageName }}.{{ $event.EmitterName }}
+var {{ $event.EmitterCtorName }} = {{ $.PubPackageName }}.{{ $event.EmitterCtorName }}
+{{ else }}
 type {{ $event.ListenerName }} = {{ $.PubPackageName }}.{{ $event.ListenerName }}
 type {{ $event.DefaultListenerName }} = {{ $.PubPackageName }}.{{ $event.DefaultListenerName }}
+{{ end }}
 {{ end -}}
 {{ end -}}

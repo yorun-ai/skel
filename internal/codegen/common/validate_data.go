@@ -14,6 +14,9 @@ func validateDataGraph(data *model.Data, seen map[*model.Data]bool) error {
 	if data == nil {
 		return fmt.Errorf("generated model contains nil data")
 	}
+	if data.Ext && (data.Kind != model.DataKindEvent || data.Pub) {
+		return fmt.Errorf("ext is only allowed on events and cannot be combined with pub")
+	}
 	if seen[data] {
 		return nil
 	}

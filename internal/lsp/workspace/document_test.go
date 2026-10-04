@@ -104,6 +104,14 @@ func TestIndexExtService(t *testing.T) {
 	assert.Equal(t, "StorageService", document.Symbols[0].Name)
 }
 
+func TestIndexExtEvent(t *testing.T) {
+	document := BuildDocument(uri.File("/workspace/ext.skel"), "/workspace/ext.skel", "domain demo\next event AuditRecordedEvent { payload { message: string } }\n", 1)
+	require.Len(t, document.Symbols, 1)
+	assert.Equal(t, "ext event", document.Symbols[0].Detail)
+	assert.Equal(t, "AuditRecordedEvent", document.Symbols[0].Name)
+	require.Len(t, document.Symbols[0].Children, 1)
+}
+
 func TestOccurrencesOnlyIncludeGrammarReferences(t *testing.T) {
 	text := `domain demo
 import demo.other as other

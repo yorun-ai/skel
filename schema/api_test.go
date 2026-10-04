@@ -166,3 +166,26 @@ func TestFacadeExtensionServiceCodec(t *testing.T) {
 		t.Fatal("accepted extension API schema")
 	}
 }
+
+func TestFacadeExtensionEventCodec(t *testing.T) {
+	document := new(schema.Document{Format: schema.Format, FormatVersion: schema.FormatVersion, Domain: "demo.audit", Declarations: []*schema.Declaration{{Pub: true, Name: "AuditRecordedEvent", Kind: schema.DeclarationTypeEvent, SkelName: "demo.audit.AuditRecordedEvent", Data: &schema.DataSchema{Ext: true, Members: []*schema.Member{}}}}})
+	var encoded bytes.Buffer
+	if err := schema.Encode(&encoded, document); err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := schema.Decode(bytes.NewReader(encoded.Bytes()))
+	if err != nil || !decoded.Declarations[0].Data.Ext {
+		t.Fatalf("lost extension event: %v", err)
+	}
+	document.Declarations[0].Pub = false
+	if err := schema.Validate(document); err == nil {
+		t.Fatal("accepted non-public extension event")
+	}
+	document.Declarations[0].Pub = true
+	for _, kind := range []schema.DeclarationType{schema.DeclarationTypeData, schema.DeclarationTypeConfig} {
+		document.Declarations[0].Kind = kind
+		if err := schema.Validate(document); err == nil {
+			t.Fatalf("accepted ext %s", kind)
+		}
+	}
+}

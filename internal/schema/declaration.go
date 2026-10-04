@@ -13,6 +13,7 @@ type EnumItem struct {
 }
 
 type DataSchema struct {
+	Ext            bool            `json:"ext,omitempty"`
 	Lifecycle      ConfigLifecycle `json:"lifecycle,omitempty"`
 	Sensitive      bool            `json:"sensitive,omitempty"`
 	TypeParameters []string        `json:"typeParameters,omitempty"`

@@ -69,6 +69,9 @@ func (c *_Diff) compareEnum(owner string, baseline, candidate *EnumSchema) {
 }
 
 func (c *_Diff) compareData(owner string, baseline, candidate *DataSchema) {
+	if baseline.Ext != candidate.Ext {
+		c.add(ImpactBreaking, "event.ext.changed", owner, "event extension direction changed", model.Position{}, model.Position{})
+	}
 	if baseline.Lifecycle != candidate.Lifecycle {
 		c.add(ImpactDangerous, "config.lifecycle.changed", owner,
 			fmt.Sprintf("config lifecycle changed from %s to %s", baseline.Lifecycle, candidate.Lifecycle), model.Position{}, model.Position{})

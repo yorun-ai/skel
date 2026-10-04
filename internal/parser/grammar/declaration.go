@@ -46,6 +46,7 @@ type DataMember struct {
 }
 
 type Event struct {
+	Ext            bool
 	Pos            lexer.Position
 	Decorators     []*Decorator
 	Pub            bool

@@ -99,11 +99,8 @@ func TestPublicServer(t *testing.T) {
 		if _, err := skelc.CompileGolang(skelc.Input{SkelIn: skelOut, Strict: true}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/standalone", AsModule: true, PubOnly: pubOnly}); err != nil {
 			t.Fatal(err)
 		}
-		replaceExtTestVine(t, out)
 		testutil.Go(t, out, "build", "-mod=mod", "./...")
 	}
-	replaceExtTestVine(t, pub)
-	replaceExtTestVine(t, regular)
 	testutil.Go(t, pub, "build", "-mod=mod", "./...")
 	testutil.Go(t, regular, "mod", "edit", "-replace=example.com/storagepub="+pub)
 	testutil.Go(t, regular, "test", "-mod=mod", "./...")
@@ -137,13 +134,5 @@ api service HealthApiService { for ClientActor via client noauth method ping {} 
 				t.Fatalf("incorrect API boundary: %s", contents)
 			}
 		})
-	}
-}
-
-// A local Vine checkout can validate new schema fields before its next release.
-func replaceExtTestVine(t *testing.T, directory string) {
-	t.Helper()
-	if vineDir := os.Getenv("SKELC_TEST_VINE_DIR"); vineDir != "" {
-		testutil.Go(t, directory, "mod", "edit", "-replace=go.yorun.ai/vine="+vineDir)
 	}
 }

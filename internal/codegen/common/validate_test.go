@@ -86,6 +86,21 @@ func TestValidateDomainAllowsRecursiveDataAndSharedTypes(t *testing.T) {
 	}
 }
 
+func TestValidateExtensionEventModifier(t *testing.T) {
+	for _, data := range []*model.Data{
+		{Name: "Invalid", Kind: model.DataKindData, Ext: true},
+		{Name: "InvalidConfig", Kind: model.DataKindConfig, Ext: true},
+		{Name: "InvalidEvent", Kind: model.DataKindEvent, Pub: true, Ext: true},
+	} {
+		if err := validateData(data); err == nil {
+			t.Fatalf("accepted invalid extension: %+v", data)
+		}
+	}
+	if err := validateData(&model.Data{Name: "AuditRecordedEvent", Kind: model.DataKindEvent, Ext: true}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestValidateDomainRejectsMalformedReferencedData(t *testing.T) {
 	referenced := new(model.Data{Name: "Nested", Kind: model.DataKindData, Members: []*model.DataMember{nil}})
 	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{{Name: "Value", Kind: model.DataKindData, Members: []*model.DataMember{{Name: "nested", Type: new(model.Type{Kind: model.TypeKindData, Data: referenced})}}}}})

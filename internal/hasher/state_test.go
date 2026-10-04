@@ -1,6 +1,19 @@
 package hasher
 
-import "testing"
+import (
+	"go.yorun.ai/skelc/internal/model"
+	"testing"
+)
+
+func TestEventDirectionChangesHashes(t *testing.T) {
+	plainDomain, plainEvent := newHashDataKindTestDomain(model.DataKindEvent)
+	extDomain, extEvent := newHashDataKindTestDomain(model.DataKindEvent)
+	extEvent.Ext = true
+	fillHashes(t, plainDomain, extDomain)
+	if plainEvent.Hash == extEvent.Hash || plainDomain.Hash() == extDomain.Hash() {
+		t.Fatal("event direction must change event and domain hashes")
+	}
+}
 
 func TestFillHashesIncludesActorCredential(t *testing.T) {
 	oldDomain := newHashActorCredentialTestDomain(t, "subject")

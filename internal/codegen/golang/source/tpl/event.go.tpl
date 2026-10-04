@@ -25,6 +25,7 @@ var {{ $event.SpecName }} = &event.EventSpec{
 {{- end }}
 }
 
+{{ if not $event.PayloadAlias }}
 {{- if $event.CommentLines }}
 {{- range $line := $event.CommentLines }}
 // {{ $line }}
@@ -47,6 +48,7 @@ type {{ $event.Name }} struct { {{ range $member := $event.Members }}
 func ({{ $event.Name }}) {{ $event.MarkerMethodName }}() {}
 {{- end }}
 
+{{ end }}
 {{ if not $event.ListenerOnly -}}
 type {{ $event.EmitterName }} interface {
 	{{ $event.EmitterMethodName }}(event *{{ $event.Name }}, _emOpts ...event.EmitOption)

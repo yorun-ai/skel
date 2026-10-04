@@ -55,6 +55,7 @@ type _DataHashValue struct {
 	Deprecated       bool                `json:"deprecated,omitempty"`
 	DeprecatedReason string              `json:"deprecatedReason,omitempty"`
 	Kind             model.DataKind      `json:"kind,omitempty"`
+	Ext              bool                `json:"ext,omitempty"`
 	Pub              bool                `json:"pub,omitempty"`
 	Sensitive        bool                `json:"sensitive,omitempty"`
 	Lifecycle        string              `json:"lifecycle,omitempty"`

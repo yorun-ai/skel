@@ -12,6 +12,22 @@ import (
 	"go.yorun.ai/skelc/internal/parser/grammar"
 )
 
+func TestExtensionEventRoundTrip(t *testing.T) {
+	source := []byte("domain demo.audit\n// extension contract\n@desc(\"Audit input\")\next event AuditRecordedEvent{ @sensitive payload{message:string}}\n")
+	formatted := formatTestSource(t, source)
+	checkTestSource(t, "event.skel", formatted)
+	content, err := parser.ParseSource("event.skel", formatted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !content.Entries[0].Event.Ext {
+		t.Fatal("formatter lost ext modifier")
+	}
+	if string(formatTestSource(t, formatted)) != string(formatted) {
+		t.Fatal("format is not idempotent")
+	}
+}
+
 func TestSourceGolden(t *testing.T) {
 	input := readTestFile(t, "complete.input.skel")
 	want := readTestFile(t, "complete.golden.skel")

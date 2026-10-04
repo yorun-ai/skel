@@ -46,6 +46,8 @@ type Data struct {
 	Lifecycle ConfigLifecycle
 	// Pub reports whether the declaration belongs to the public contract.
 	Pub bool
+	// Ext exports an event emitter contract for other domains.
+	Ext bool
 	// Sensitive reports whether values of this data type are sensitive as a whole.
 	Sensitive bool
 	// TypeParameters lists generic type parameters in declaration order.
@@ -53,6 +55,9 @@ type Data struct {
 	// Members lists the declaration's fields in source order.
 	Members []*DataMember
 }
+
+// Public reports whether the declaration is exported by pub or ext.
+func (d *Data) Public() bool { return d.Pub || d.Ext }
 
 // IsGeneric reports whether d declares one or more type parameters.
 func (d *Data) IsGeneric() bool { return len(d.TypeParameters) > 0 }

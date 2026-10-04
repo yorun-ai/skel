@@ -34,8 +34,8 @@ func (content *SkelContent) Finalize() error {
 		return nil
 	}
 	for _, entry := range content.Entries {
-		if entry.Ext && (entry.Pub || entry.Api || entry.Service == nil) {
-			return participle.Errorf(entry.Pos, "ext is only allowed on services and cannot be combined with pub or api")
+		if entry.Ext && (entry.Pub || entry.Api || (entry.Service == nil && entry.Event == nil)) {
+			return participle.Errorf(entry.Pos, "ext is only allowed on services and events and cannot be combined with pub or api")
 		}
 		if entry.Api && (entry.Pub || entry.Service == nil) {
 			return participle.Errorf(entry.Pos, "api is only allowed on services and cannot be combined with pub")
@@ -70,6 +70,7 @@ func (content *SkelContent) Finalize() error {
 		case entry.Event != nil:
 			entry.Event.Decorators = entry.Decorators
 			entry.Event.Pub = entry.Pub
+			entry.Event.Ext = entry.Ext
 		case entry.Task != nil:
 			entry.Task.Decorators = entry.Decorators
 		}

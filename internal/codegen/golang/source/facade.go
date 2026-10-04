@@ -99,7 +99,7 @@ func (g *_Gen) genFacadeGo() {
 		}
 	}
 	for _, event := range g.Domain.Events() {
-		if event.Pub {
+		if event.Public() {
 			payload.Events = append(payload.Events, g.castEvent(event, true, false))
 		}
 	}
@@ -128,7 +128,7 @@ func hasPubEnum(enums []*model.Enum) bool {
 
 func hasPubData(dataList []*model.Data) bool {
 	for _, data := range dataList {
-		if data.Pub {
+		if data.Public() {
 			return true
 		}
 	}

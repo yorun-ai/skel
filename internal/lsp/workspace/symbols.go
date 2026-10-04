@@ -39,6 +39,9 @@ func entryDefinition(entry *grammar.SkelEntry) (string, lexer.Position, protocol
 		protocolKind, detail = protocol.SymbolKindInterface, "web"
 	case binding.Event:
 		protocolKind, detail = protocol.SymbolKindEvent, "event"
+		if entry.Event.Ext {
+			detail = "ext event"
+		}
 	case binding.Task:
 		protocolKind, detail = protocol.SymbolKindFunction, "task"
 	}

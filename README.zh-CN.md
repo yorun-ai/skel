@@ -15,7 +15,7 @@ skelc 是 Skel 契约语言的编译器和命令行工具。你可以用 `.skel`
 - 让服务端和客户端共享同一份类型与服务契约
 - 在生成代码前发现语法、命名、类型和跨 domain 引用错误
 - 生成可直接加入项目的 Go module 和 TypeScript client
-- 发布标记为 `pub` 的领域边界，或使用 `ext service` 导出可供其他 domain 实现的服务端契约
+- 发布标记为 `pub` 的领域边界；使用 `ext service` 供其他 domain 实现服务，使用 `ext event` 供其他 domain 发出事件
 - 格式化和校验契约
 - 为 Binary 参数自动生成 vRPC 传输信息，以便应用使用 CBOR 高效传输二进制数据
 
