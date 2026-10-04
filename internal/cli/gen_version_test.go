@@ -22,7 +22,7 @@ func TestGenerationVersionErrorsAreInvalidArgumentsAndPreserveOutput(t *testing.
 		t.Run(flags[len(flags)-1], func(t *testing.T) {
 			root := t.TempDir()
 			source := filepath.Join(root, "source.skel")
-			if err := os.WriteFile(source, []byte("domain demo.test\napi service TestApiService { method ping {} }\n"), 0600); err != nil {
+			if err := os.WriteFile(source, []byte("domain demo.test\nactor TestActor { via client {} }\napi service TestApiService { for TestActor via client method ping {} }\n"), 0600); err != nil {
 				t.Fatal(err)
 			}
 			out := filepath.Join(root, "generated")

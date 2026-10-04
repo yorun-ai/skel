@@ -19,7 +19,7 @@ func TestGenerationReusesSemanticModelAcrossTargetsAndGoroutines(t *testing.T) {
 	root := t.TempDir()
 	shared, consumer := filepath.Join(root, "shared.skel"), filepath.Join(root, "consumer.skel")
 	writeFileForTest(t, shared, "domain shared.user\npub enum State { READY }\npub data Value { state: State }\n")
-	writeFileForTest(t, consumer, "domain consumer\nimport shared.user\npub data Box<TItem> { value: TItem }\napi service ReadApiService { method get { output Box<shared.user.Value> } }\n")
+	writeFileForTest(t, consumer, "domain consumer\nimport shared.user\npub data Box<TItem> { value: TItem }\nactor TestActor { via client {} }\napi service ReadApiService { for TestActor via client method get { output Box<shared.user.Value> } }\n")
 	compiled, err := compiler.Compile(compiler.Option{SkelIn: consumer, SkelImports: map[string]string{"shared.user": shared}})
 	if err != nil {
 		t.Fatal(err)

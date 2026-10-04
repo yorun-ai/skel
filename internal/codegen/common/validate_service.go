@@ -16,6 +16,9 @@ func validateService(service *model.Service) error {
 	if service.Api && service.Pub {
 		return fmt.Errorf("service %s cannot combine api and pub", service.Name)
 	}
+	if service.Api && len(service.Audiences) == 0 {
+		return fmt.Errorf("API service %s must declare at least one for Actor", service.Name)
+	}
 	if err := validateAuthMode(service.Auth); err != nil {
 		return fmt.Errorf("service %s: %w", service.Name, err)
 	}

@@ -12,7 +12,8 @@ func TestServiceWarningsAndApiModifiers(t *testing.T) {
 	source := Source{Path: "/workspace/api.skel", Content: []byte(`domain demo.order
 service LegacyService { method ping {} }
 pub service DualService { method ping { noauth } }
-api service ClientApiService { method ping {} }
+actor TestActor { via client {} }
+api service ClientApiService { for TestActor via client method ping {} }
 pub service BackendService { method ping {} }
 `)}
 	analyzer := NewWorkspaceAnalyzer()
@@ -45,7 +46,7 @@ func TestApiServiceNameSuffix(t *testing.T) {
 		{declaration: "service OrderService", valid: true},
 	} {
 		t.Run(test.declaration, func(t *testing.T) {
-			source := Source{Path: "/workspace/api.skel", Content: []byte("domain demo.order\n" + test.declaration + " { method ping {} }\n")}
+			source := Source{Path: "/workspace/api.skel", Content: []byte("domain demo.order\n" + test.declaration + " { for TestActor via client method ping {} }\nactor TestActor { via client {} }\n")}
 			analyzer := NewWorkspaceAnalyzer()
 			for range 2 {
 				diagnostics, _, err := analyzer.analyze(context.Background(), []Source{source}, true)
@@ -79,6 +80,31 @@ func TestOpenServiceIncrementalAnalysis(t *testing.T) {
 		}
 		if len(domains) != 1 || domains[0].Model.Services()[0].Open != (modifier == "open") {
 			t.Fatalf("stale open modifier after %s", modifier)
+		}
+	}
+}
+
+func TestApiServiceRequiresActorAudience(t *testing.T) {
+	analyzer := NewWorkspaceAnalyzer()
+	for _, auth := range []string{"", "noauth", "auth"} {
+		source := Source{Path: "/workspace/api.skel", Content: []byte("domain demo.order\napi service OrderApiService { " + auth + " method ping {} }\n")}
+		for range 2 {
+			diagnostics, _, err := analyzer.analyze(context.Background(), []Source{source}, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(diagnostics) != 1 {
+				t.Fatalf("unexpected diagnostics: %v", diagnostics)
+			}
+			d := diagnostics[0]
+			if d.Code != diagnostic.CodeSemanticValidation || d.Severity != DiagnosticSeverityError || d.Range.Start.File != source.Path || d.Range.Start.Line != 2 || !strings.Contains(d.Message, "at least one for Actor") {
+				t.Fatalf("unexpected diagnostic: %+v", d)
+			}
+		}
+		source.Content = []byte("domain demo.order\nactor ClientActor { via client {} }\napi service OrderApiService { for ClientActor via client " + auth + " method ping {} }\n")
+		diagnostics, _, err := analyzer.analyze(context.Background(), []Source{source}, true)
+		if err != nil || len(diagnostics) != 0 {
+			t.Fatalf("valid audience rejected: %v, %v", diagnostics, err)
 		}
 	}
 }

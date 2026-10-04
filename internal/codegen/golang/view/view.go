@@ -45,9 +45,12 @@ func Full(domain *model.Domain) *Domain {
 	}
 }
 
-func Build(mode Mode, domain *model.Domain) (*Domain, error) {
+func Build(mode Mode, domain *model.Domain, selection common.ApiFilter) (*Domain, error) {
 	if mode == ModeApi {
-		api := common.BuildApiView(domain)
+		api, err := common.BuildApiView(domain, selection)
+		if err != nil {
+			return nil, err
+		}
 		return &Domain{mode: mode, Enums: api.Enums, Data: api.Data, Services: api.Services}, nil
 	}
 	if mode == ModePub {
@@ -93,7 +96,9 @@ func Build(mode Mode, domain *model.Domain) (*Domain, error) {
 }
 
 // New constructs a generation view and reports invalid modes or public views.
-func New(mode Mode, domain *model.Domain) (*Domain, error) { return Build(mode, domain) }
+func New(mode Mode, domain *model.Domain) (*Domain, error) {
+	return Build(mode, domain, common.ApiFilter{})
+}
 
 func without[T any](all, excluded []*T) []*T {
 	seen := map[*T]bool{}

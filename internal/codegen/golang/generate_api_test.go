@@ -44,7 +44,7 @@ api service OrderApiService {
     }
     method ping {}
 }
-api service HealthApiService { method ping {} }
+api service HealthApiService { for ClientActor via client method ping {} }
 pub service BackendService { method ping {} }
 `)
 	sharedOut, out := filepath.Join(root, "sharedapi"), filepath.Join(root, "orderapi")
@@ -208,7 +208,8 @@ import demo.backend as backend
 data Item { id: string }
 data Unused { hidden: string }
 pub enum State { READY }
-api service OrderApiService { method get { output Item } }
+actor TestActor { via client {} }
+api service OrderApiService { for TestActor via client method get { output Item } }
 service LegacyService { method get { noauth output Item } }
 pub service BackendService { method get { output backend.Internal } }
 service HiddenService { method ping {} }
@@ -252,7 +253,8 @@ func TestApiBackendSchemaAndClientBoundary(t *testing.T) {
 	root := t.TempDir()
 	entry := filepath.Join(root, "order.skel")
 	writeFileForTest(t, entry, `domain demo.order
-api service OrderApiService { method ping {} }
+actor TestActor { via client {} }
+api service OrderApiService { for TestActor via client method ping {} }
 pub service BackendService { method ping {} }
 `)
 	input := skelc.Input{SkelIn: entry}
@@ -314,7 +316,7 @@ func TestCrossDomainImportAliasCollisions(t *testing.T) {
 			declarations = "import second.user\nimport first.user\n"
 		}
 		input := filepath.Join(t.TempDir(), "app.skel")
-		writeFileForTest(t, input, "domain demo.app\n"+declarations+"data Pair { first: first.user.Value second: second.user.Value }\napi service AppApiService { method get { output Pair } }\n")
+		writeFileForTest(t, input, "domain demo.app\n"+declarations+"data Pair { first: first.user.Value second: second.user.Value }\nactor TestActor { via client {} }\napi service AppApiService { for TestActor via client method get { output Pair } }\n")
 		out := filepath.Join(t.TempDir(), "appapi")
 		if _, err := skelc.CompileGolang(skelc.Input{SkelIn: input, SkelImports: imports}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Module: "example.com/appapi", Out: out, Imports: goImports}); err != nil {
 			t.Fatal(err)

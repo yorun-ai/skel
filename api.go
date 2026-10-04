@@ -13,6 +13,7 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skelc/diagnostic"
+	"go.yorun.ai/skelc/internal/codegen/common"
 	"go.yorun.ai/skelc/internal/codegen/golang"
 	"go.yorun.ai/skelc/internal/codegen/output"
 	"go.yorun.ai/skelc/internal/codegen/skeleton"
@@ -101,6 +102,9 @@ func Parse(input Input) (ParseResult, error) {
 	return ParseResult{Domain: parsed.Domain, Diagnostics: parsed.Diagnostics}, nil
 }
 
+// ApiFilter selects API services by fully qualified actor names.
+type ApiFilter = common.ApiFilter
+
 // GolangOption configures Go generation.
 type GolangOption struct {
 	// CompilerVersion identifies the actual skelc version embedded in generated metadata.
@@ -114,6 +118,8 @@ type GolangOption struct {
 	PubOnly bool
 	// ApiOnly generates standalone Portal clients.
 	ApiOnly bool
+	// ApiFilter limits API clients to services declaring one of its actors. Requires ApiOnly.
+	ApiFilter ApiFilter
 	// Out is the output directory for generated Go files.
 	Out string
 	// Module is the module path used when AsModule is true.
@@ -139,6 +145,8 @@ type GolangOption struct {
 type TypeScriptOption struct {
 	// ApiOnly is required for TypeScript client generation.
 	ApiOnly bool
+	// ApiFilter limits API clients to services declaring one of its actors. Requires ApiOnly.
+	ApiFilter ApiFilter
 	// AsModule emits package metadata for a standalone npm package.
 	AsModule bool
 	// Out is the output directory for generated TypeScript files.

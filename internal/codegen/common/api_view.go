@@ -1,17 +1,82 @@
 package common
 
-import "go.yorun.ai/skelc/internal/model"
+import (
+	"fmt"
+	"strings"
+
+	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skelc/internal/optionvalidation"
+	"go.yorun.ai/skelc/internal/util/nameutil"
+)
+
+// ApiFilter selects API services by their declared actor audiences.
+type ApiFilter struct {
+	// Actors contains fully qualified actor names. Empty selects all API services.
+	// Multiple names select the union of matching services, regardless of transport.
+	Actors []string
+}
 
 // BuildApiView selects client services and all locally owned API data dependencies.
 // Explicitly public types remain available for clients of other domains.
-func BuildApiView(domain *model.Domain) *PublicView {
+func BuildApiView(domain *model.Domain, selection ApiFilter) (*PublicView, error) {
+	selected := map[string]bool{}
+	for _, name := range selection.Actors {
+		found := false
+		for _, actor := range domain.Actors() {
+			found = found || name == domain.Name()+"."+actor.Name
+		}
+		for _, imported := range domain.Imports() {
+			for _, actor := range imported.Domain.Actors() {
+				found = found || name == imported.Domain.Name()+"."+actor.Name
+			}
+		}
+		if !found {
+			return nil, optionvalidation.NewValidationError(optionvalidation.FieldApiActor, optionvalidation.RuleInvalid, fmt.Sprintf("unknown fully qualified API actor %q", name))
+		}
+		selected[name] = true
+	}
 	result := &PublicView{
-		Data:     filter(domain.Data(), func(d *model.Data) bool { return d.Pub }),
-		Enums:    filter(domain.Enums(), func(e *model.Enum) bool { return e.Pub }),
-		Services: filter(domain.Services(), func(s *model.Service) bool { return s.ClientApi() }),
+		Data:  filter(domain.Data(), func(d *model.Data) bool { return d.Pub }),
+		Enums: filter(domain.Enums(), func(e *model.Enum) bool { return e.Pub }),
+		Services: filter(domain.Services(), func(s *model.Service) bool {
+			return s.ClientApi() && (len(selected) == 0 || matchesApiActors(domain, s, selected))
+		}),
 	}
 	collectViewData(domain, result)
-	return result
+	return result, nil
+}
+
+func matchesApiActors(domain *model.Domain, service *model.Service, selected map[string]bool) bool {
+	for _, audience := range service.Audiences {
+		qualifier, name, qualified := nameutil.SplitQualified(audience.Actor)
+		if !qualified {
+			if selected[domain.Name()+"."+audience.Actor] {
+				return true
+			}
+			continue
+		}
+		for _, imported := range domain.Imports() {
+			if qualifier == imported.Alias || qualifier == imported.Name {
+				if selected[imported.Domain.Name()+"."+name] {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// NormalizeApiFilter copies and trims actor names without mutating caller options.
+func NormalizeApiFilter(selection ApiFilter) (ApiFilter, error) {
+	result := ApiFilter{}
+	for _, value := range selection.Actors {
+		name := strings.TrimSpace(value)
+		if qualifier, local, ok := nameutil.SplitQualified(name); !ok || qualifier == "" || local == "" {
+			return ApiFilter{}, optionvalidation.NewValidationError(optionvalidation.FieldApiActor, optionvalidation.RuleInvalid, fmt.Sprintf("API actor %q must be a fully qualified name", value))
+		}
+		result.Actors = append(result.Actors, name)
+	}
+	return result, nil
 }
 
 func collectViewData(domain *model.Domain, view *PublicView) {
