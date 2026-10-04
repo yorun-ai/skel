@@ -240,8 +240,8 @@ func TestWebAuthDiff(t *testing.T) {
 	}{
 		{AuthModeOptional, AuthModeRequired, "web.auth.tightened"},
 		{AuthModeRequired, AuthModeOptional, "web.auth.relaxed"},
-		{AuthModeOptional, AuthModeGuest, "web.auth.tightened"},
-		{AuthModeGuest, AuthModeOff, "web.auth.changed"},
+		{AuthModeOptional, AuthModeAnonymous, "web.auth.tightened"},
+		{AuthModeAnonymous, AuthModeOff, "web.auth.changed"},
 	} {
 		baseline := &Declaration{Kind: DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &WebSchema{Auth: test.before}}
 		candidate := &Declaration{Kind: DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &WebSchema{Auth: test.after}}

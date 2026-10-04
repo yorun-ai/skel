@@ -19,11 +19,11 @@ api service SessionApiService {
  auth required
  method profile {}
  method browse { auth optional }
- method login { auth guest }
+ method login { auth anonymous }
 }
 web RequiredWeb { for ClientActor via client auth required }
 web OptionalWeb { for ClientActor via client auth optional }
-web GuestWeb { for ClientActor via client auth guest }
+web AnonymousWeb { for ClientActor via client auth anonymous }
 web OffWeb { for ClientActor via client auth off }
 `)
 	out := filepath.Join(root, "auth")
@@ -38,9 +38,9 @@ import (
 func TestAuthModes(t *testing.T) {
  if _DomainSchema.Services[0].AuthMode != skel.AuthModeRequired { t.Fatal("wrong service auth") }
  methods:=_DomainSchema.Services[0].Methods
- want:=map[string]skel.AuthMode{"profile":skel.AuthModeUnset,"browse":skel.AuthModeOptional,"login":skel.AuthModeGuest}
+ want:=map[string]skel.AuthMode{"profile":skel.AuthModeInherit,"browse":skel.AuthModeOptional,"login":skel.AuthModeAnonymous}
  for _,method:=range methods { if method.AuthMode!=want[method.Name] { t.Fatalf("method %s: %s",method.Name,method.AuthMode) } }
- webs:=map[string]skel.AuthMode{"RequiredWeb":skel.AuthModeRequired,"OptionalWeb":skel.AuthModeOptional,"GuestWeb":skel.AuthModeGuest,"OffWeb":skel.AuthModeOff}
+ webs:=map[string]skel.AuthMode{"RequiredWeb":skel.AuthModeRequired,"OptionalWeb":skel.AuthModeOptional,"AnonymousWeb":skel.AuthModeAnonymous,"OffWeb":skel.AuthModeOff}
  for _,web:=range _DomainSchema.Webs { if web.AuthMode!=webs[web.Name] { t.Fatalf("web %s: %s",web.Name,web.AuthMode) } }
 }
 `)

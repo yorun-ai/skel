@@ -122,11 +122,11 @@ func TestBuildDomainSchemaCopiesHashes(t *testing.T) {
 	if len(meta.Services[0].Methods) != 1 || meta.Services[0].Methods[0].Hash != "method-hash" {
 		t.Fatalf("unexpected method hash: %+v", meta.Services[0].Methods)
 	}
-	if string(meta.Services[0].AuthMode) != string(model.AuthModeUnset) {
-		t.Fatalf("expected service auth unset, got %s", meta.Services[0].AuthMode)
+	if string(meta.Services[0].AuthMode) != string(model.AuthModeRequired) {
+		t.Fatalf("expected service auth required, got %s", meta.Services[0].AuthMode)
 	}
-	if string(meta.Services[0].Methods[0].AuthMode) != string(model.AuthModeUnset) {
-		t.Fatalf("expected method auth unset, got %s", meta.Services[0].Methods[0].AuthMode)
+	if string(meta.Services[0].Methods[0].AuthMode) != "inherit" {
+		t.Fatalf("expected method auth inherit, got %s", meta.Services[0].Methods[0].AuthMode)
 	}
 }
 

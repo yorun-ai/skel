@@ -29,7 +29,7 @@ func validateService(value *ServiceSchema) error {
 		if method.Arguments == nil {
 			return fmt.Errorf("service method %s arguments are required", method.Name)
 		}
-		if err := validateAuth(method.Auth); err != nil {
+		if err := validateMethodAuth(method.Auth); err != nil {
 			return fmt.Errorf("service method %s: %w", method.Name, err)
 		}
 		seen[method.Name] = true
@@ -46,9 +46,16 @@ func validateService(value *ServiceSchema) error {
 	return nil
 }
 
+func validateMethodAuth(value AuthMode) error {
+	if value == AuthModeInherit {
+		return nil
+	}
+	return validateAuth(value)
+}
+
 func validateAuth(value AuthMode) error {
 	switch value {
-	case AuthModeUnset, AuthModeAuth, AuthModeNoAuth, AuthModeRequired, AuthModeOptional, AuthModeGuest:
+	case AuthModeUnset, AuthModeAuth, AuthModeNoAuth, AuthModeRequired, AuthModeOptional, AuthModeAnonymous:
 		return nil
 	default:
 		return fmt.Errorf("unsupported authentication mode %q", value)

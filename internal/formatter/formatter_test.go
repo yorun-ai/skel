@@ -346,8 +346,8 @@ func TestExtServiceRoundTrip(t *testing.T) {
 }
 
 func TestWebMountFormattingRoundTrip(t *testing.T) {
-	source := []byte("domain demo\nactor ClientActor { via client {} }\nweb PortalWeb{\nmount\t/* base */\t/portal/v1-assets/ // keep\nfor ClientActor\n}\n")
-	want := "domain demo\n\nactor ClientActor {\n    via client {}\n}\n\nweb PortalWeb {\n    mount /* base */ /portal/v1-assets/ // keep\n    for ClientActor\n}\n"
+	source := []byte("domain demo\nactor ClientActor { via client {} }\nweb PortalWeb{\nmount\t/* base */\t/portal/v1-assets/ // keep\nfor ClientActor\nauth required\n}\n")
+	want := "domain demo\n\nactor ClientActor {\n    via client {}\n}\n\nweb PortalWeb {\n    mount /* base */ /portal/v1-assets/ // keep\n    for ClientActor\n    auth required\n}\n"
 	got := formatTestSource(t, source)
 	if string(got) != want {
 		t.Fatalf("formatted source:\n%s", got)
@@ -359,7 +359,7 @@ func TestWebMountFormattingRoundTrip(t *testing.T) {
 }
 
 func TestFullDomainReferencesRoundTrip(t *testing.T) {
-	input := []byte("domain demo\nimport ws.sandbox\nimport other.sandbox as other\npub data Payload{value:ws.sandbox.Value alias:other.Value}\nweb ProxyWeb{for ws.sandbox.SandboxActor}\n")
+	input := []byte("domain demo\nimport ws.sandbox\nimport other.sandbox as other\npub data Payload{value:ws.sandbox.Value alias:other.Value}\nweb ProxyWeb{for ws.sandbox.SandboxActor auth required}\n")
 	formatted := formatTestSource(t, input)
 	checkTestSource(t, "domain.skel", formatted)
 	if again := formatTestSource(t, formatted); string(again) != string(formatted) {
@@ -373,7 +373,7 @@ func TestFullDomainReferencesRoundTrip(t *testing.T) {
 func TestFormatExplicitAuthModes(t *testing.T) {
 	source := []byte(`domain demo.user
 actor ClientActor { via client {} }
-api service UserApiService { for ClientActor via client auth required method ping { auth optional } method login { auth guest } }
+api service UserApiService { for ClientActor via client auth required method ping { auth optional } method login { auth anonymous } }
 web ConsoleWeb { for ClientActor via client auth off mount / }
 `)
 	formatted := formatTestSource(t, source)

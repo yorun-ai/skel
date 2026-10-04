@@ -55,14 +55,16 @@ const (
 	// TypeKindMap identifies a map type.
 	TypeKindMap = internalschema.TypeKindMap
 
+	// AuthModeInherit uses the enclosing service authentication mode on methods.
+	AuthModeInherit = internalschema.AuthModeInherit
 	// AuthModeUnset inherits authentication behavior from the enclosing context.
 	AuthModeUnset = internalschema.AuthModeUnset
 	// AuthModeRequired requires valid credentials.
 	AuthModeRequired = internalschema.AuthModeRequired
 	// AuthModeOptional allows anonymous callers and authenticates supplied credentials.
 	AuthModeOptional = internalschema.AuthModeOptional
-	// AuthModeGuest allows only anonymous callers and rejects supplied invalid credentials.
-	AuthModeGuest = internalschema.AuthModeGuest
+	// AuthModeAnonymous allows only anonymous callers and rejects supplied invalid credentials.
+	AuthModeAnonymous = internalschema.AuthModeAnonymous
 	// AuthModeOff bypasses portal authentication for web declarations.
 	AuthModeOff = internalschema.AuthModeOff
 

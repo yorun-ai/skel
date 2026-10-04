@@ -76,16 +76,12 @@ func renderAuthModeLiteral(mode _AuthMode) (string, error) {
 		return "skel.AuthModeRequired", nil
 	case "optional":
 		return "skel.AuthModeOptional", nil
-	case "guest":
-		return "skel.AuthModeGuest", nil
+	case "anonymous":
+		return "skel.AuthModeAnonymous", nil
 	case "off":
 		return "skel.AuthModeOff", nil
-	case authModeUnset:
-		return "skel.AuthModeUnset", nil
-	case authModeAuth:
-		return "skel.AuthModeAuth", nil
-	case authModeNoAuth:
-		return "skel.AuthModeNoAuth", nil
+	case "inherit":
+		return "skel.AuthModeInherit", nil
 	default:
 		return "", fmt.Errorf("unsupported auth mode %q", mode)
 	}

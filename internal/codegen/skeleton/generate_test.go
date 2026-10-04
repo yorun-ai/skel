@@ -562,7 +562,7 @@ func TestPublicConfigStructuredTypesRoundTrip(t *testing.T) {
 }
 
 func TestGenPreservesAuthSyntax(t *testing.T) {
-	for _, marker := range []string{"auth required", "auth optional", "auth guest", "auth", "noauth"} {
+	for _, marker := range []string{"auth required", "auth optional", "auth anonymous", "auth", "noauth"} {
 		t.Run(marker, func(t *testing.T) {
 			domain, _ := parseDomainForTest(t, "demo/domain.skel", "domain demo\n", "demo/service.skel", "domain demo\npub service UserService { "+marker+" method ping { "+marker+" } }\n", nil)
 			out := t.TempDir()

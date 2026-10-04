@@ -98,7 +98,7 @@ func TestProjectMapsCompatibilityFields(t *testing.T) {
 	}
 
 	service := Find(document, string(DeclarationTypeService), "demo.contract.Documents")
-	if service == nil || service.Pos != servicePos || service.Service.Auth != AuthModeNoAuth {
+	if service == nil || service.Pos != servicePos || service.Service.Auth != AuthModeOptional {
 		t.Fatalf("service projection = %#v", service)
 	}
 	if !reflect.DeepEqual(service.Service.Audiences, []*Audience{new(Audience{Actor: "demo.contract.Caller", Via: "client", Pos: servicePos})}) {
@@ -108,7 +108,7 @@ func TestProjectMapsCompatibilityFields(t *testing.T) {
 		t.Fatalf("requirement projection = %#v", service.Service.Require)
 	}
 	method := service.Service.Methods[0]
-	if method.Pos != methodPos || method.Auth != AuthModeAuth || method.Result.Kind != TypeKindImportedReference || method.Result.Name != "demo.contract.Record" {
+	if method.Pos != methodPos || method.Auth != AuthModeRequired || method.Result.Kind != TypeKindImportedReference || method.Result.Name != "demo.contract.Record" {
 		t.Fatalf("method projection = %#v", method)
 	}
 	if len(method.Arguments) != 1 || method.Arguments[0].Type.Name != "string" || !method.Arguments[0].Sensitive {
@@ -138,9 +138,9 @@ func TestProjectMapsModelEnums(t *testing.T) {
 			semantic model.AuthMode
 			wire     AuthMode
 		}{
-			{semantic: model.AuthModeUnset, wire: AuthModeUnset},
-			{semantic: model.AuthModeAuth, wire: AuthModeAuth},
-			{semantic: model.AuthModeNoAuth, wire: AuthModeNoAuth},
+			{semantic: model.AuthModeUnset, wire: AuthModeInherit},
+			{semantic: model.AuthModeAuth, wire: AuthModeRequired},
+			{semantic: model.AuthModeNoAuth, wire: AuthModeOptional},
 		}
 		for _, test := range tests {
 			if got := normalizedAuth(test.semantic); got != test.wire {

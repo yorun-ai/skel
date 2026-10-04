@@ -117,9 +117,9 @@ func authCompletionValues(buffer lsource.Buffer, offset int) []string {
 	}
 	switch declaration {
 	case "web":
-		return []string{"required", "optional", "guest", "off"}
+		return []string{"required", "optional", "anonymous", "off"}
 	case "service":
-		return []string{"required", "optional", "guest"}
+		return []string{"required", "optional", "anonymous"}
 	default:
 		return nil
 	}

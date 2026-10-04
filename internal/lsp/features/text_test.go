@@ -12,9 +12,9 @@ func TestAuthModeCompletions(t *testing.T) {
 		source string
 		want   []string
 	}{
-		{"api service UserApiService {\n auth ", []string{"required", "optional", "guest"}},
-		{"pub service UserService { method ping {\n auth op", []string{"required", "optional", "guest"}},
-		{"web ConsoleWeb {\n // service IgnoredService {\n auth ", []string{"required", "optional", "guest", "off"}},
+		{"api service UserApiService {\n auth ", []string{"required", "optional", "anonymous"}},
+		{"pub service UserService { method ping {\n auth op", []string{"required", "optional", "anonymous"}},
+		{"web ConsoleWeb {\n // service IgnoredService {\n auth ", []string{"required", "optional", "anonymous", "off"}},
 		{"actor ClientActor {\n auth ", nil},
 	} {
 		buffer := lsource.New(test.source)

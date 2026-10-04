@@ -11,14 +11,14 @@ import (
 )
 
 func TestCompileAuthModes(t *testing.T) {
-	for _, mode := range []string{"required", "optional", "guest", "auth", "noauth", ""} {
+	for _, mode := range []string{"required", "optional", "anonymous", "auth", "noauth", ""} {
 		t.Run(mode, func(t *testing.T) {
 			marker := mode
 			if mode != "auth" && mode != "noauth" && mode != "" {
 				marker = "auth " + mode
 			}
 			path := filepath.Join(t.TempDir(), "domain.skel")
-			writeFile(t, path, "domain demo.user\nactor ClientActor { via client {} }\napi service UserApiService { for ClientActor via client "+marker+" method ping { auth guest } }\n")
+			writeFile(t, path, "domain demo.user\nactor ClientActor { via client {} }\napi service UserApiService { for ClientActor via client "+marker+" method ping { auth anonymous } }\n")
 			result, err := Compile(Option{SkelIn: path})
 			if err != nil {
 				t.Fatal(err)
@@ -45,10 +45,13 @@ func TestCompileAuthModes(t *testing.T) {
 					continue
 				}
 				expected := mode
-				if expected == "" {
+				if expected == "" || expected == "auth" {
 					expected = "required"
 				}
-				if string(d.Service.Auth) != expected || d.Service.Methods[0].Auth != schema.AuthModeGuest {
+				if expected == "noauth" {
+					expected = "optional"
+				}
+				if string(d.Service.Auth) != expected || d.Service.Methods[0].Auth != schema.AuthModeAnonymous {
 					t.Fatalf("unexpected projected auth: %+v", d.Service)
 				}
 			}
@@ -61,7 +64,7 @@ func TestCompileAuthModes(t *testing.T) {
 }
 
 func TestCompileWebAuthModes(t *testing.T) {
-	for _, mode := range []string{"required", "optional", "guest", "off", "auth", "noauth", ""} {
+	for _, mode := range []string{"required", "optional", "anonymous", "off", "auth", "noauth", ""} {
 		t.Run(mode, func(t *testing.T) {
 			marker := mode
 			if mode != "auth" && mode != "noauth" && mode != "" {
@@ -77,13 +80,20 @@ func TestCompileWebAuthModes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			expected := mode
+			switch mode {
+			case "", "auth":
+				expected = "required"
+			case "noauth":
+				expected = "off"
+			}
 			for _, d := range document.Declarations {
-				if d.Web != nil && string(d.Web.Auth) != mode {
-					t.Fatalf("web auth = %q, want %q", d.Web.Auth, mode)
+				if d.Web != nil && string(d.Web.Auth) != expected {
+					t.Fatalf("web auth = %q, want %q", d.Web.Auth, expected)
 				}
 			}
 			_, err = Compile(Option{SkelIn: path, Strict: true})
-			if (err != nil) != (mode == "auth" || mode == "noauth") {
+			if (err != nil) != (mode == "auth" || mode == "noauth" || mode == "") {
 				t.Fatalf("strict: %v", err)
 			}
 		})
@@ -142,7 +152,7 @@ actor ClientActor {
 api service UserApiService {
  for ClientActor via client
  auth /* service policy */ required
- method ping { auth /* method policy */ guest }
+ method ping { auth /* method policy */ anonymous }
 }
 `)
 	result, err := Compile(Option{SkelIn: path, Strict: true})
@@ -151,5 +161,65 @@ api service UserApiService {
 	}
 	if len(result.Diagnostics) != 0 || !result.Domain.Actors()[0].AuthEnabled {
 		t.Fatalf("actor auth deprecated: %+v", result)
+	}
+}
+
+func TestCompileProjectsOnlyCanonicalAuthModes(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "domain.skel")
+	writeFile(t, path, `domain demo.auth
+actor ClientActor { via client {} }
+api service SessionApiService {
+ for ClientActor via client
+ noauth
+ method omitted {}
+ method protected { auth }
+ method public { noauth }
+}
+pub service BackendService { method call {} }
+ext service ExtensionService { method call {} }
+web ConsoleWeb { for ClientActor via client noauth }
+`)
+	result, err := Compile(Option{SkelIn: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Diagnostics) != 4 {
+		t.Fatalf("expected four legacy warnings: %v", result.Diagnostics)
+	}
+	for _, item := range result.Diagnostics {
+		if item.Code != diagnostic.CodeAuthLegacy {
+			t.Fatal(item)
+		}
+	}
+	document, err := schema.Project(result.Domain, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, declaration := range document.Declarations {
+		if declaration.Web != nil && declaration.Web.Auth != schema.AuthModeOff {
+			t.Fatal(declaration.Web.Auth)
+		}
+		if declaration.Service == nil {
+			continue
+		}
+		want := schema.AuthModeRequired
+		if declaration.Service.Api {
+			want = schema.AuthModeOptional
+		}
+		if declaration.Service.Auth != want {
+			t.Fatalf("%s: %s", declaration.Name, declaration.Service.Auth)
+		}
+		for _, method := range declaration.Service.Methods {
+			want := schema.AuthModeInherit
+			switch method.Name {
+			case "protected":
+				want = schema.AuthModeRequired
+			case "public":
+				want = schema.AuthModeOptional
+			}
+			if method.Auth != want {
+				t.Fatalf("%s/%s: %s", declaration.Name, method.Name, method.Auth)
+			}
+		}
 	}
 }

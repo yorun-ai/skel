@@ -87,4 +87,5 @@ at:localdatetime
 
 web PortalWeb{
 for ClientActor via openapi
+auth required
 }
