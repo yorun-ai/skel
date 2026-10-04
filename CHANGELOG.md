@@ -6,6 +6,47 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-10-05
+
+### Added
+
+- Explicit `auth required`, `auth optional`, and `auth guest` declarations on
+  services and methods, plus web-only `auth off`.
+- Web authentication modes in canonical schemas, compatibility hashes, schema
+  diffs, and generated Go runtime metadata.
+- Source-accurate migration diagnostics and LSP quick fixes for legacy auth
+  markers, with context-aware completion of supported modes.
+
+### Changed
+
+- API services without a service-level auth declaration warn and generate
+  required authentication; strict mode rejects the omission. Methods may omit
+  auth and inherit their service's mode.
+- Bare auth/noauth remain accepted and preserve their legacy schema values,
+  but emit migration warnings and are rejected by strict mode. Existing
+  non-API service compatibility remains supported.
+- Raise the minimum and default Vine dependency to v0.26.0 and use its named
+  authentication constants in generated Go code.
+- Refresh examples and normalize component-name casing in comments, CLI help,
+  diagnostics, and generated client comments.
+
+### Fixed
+
+- Classify required/guest transitions as authentication-mode changes rather
+  than tightened or relaxed authentication. Equivalent legacy spellings are
+  compatible changes; inherited modes are not assumed to have a fixed policy.
+
+### Upgrade Notes
+
+- Upgrade Vine to v0.26.0 or later before using regenerated backend Go code.
+  Explicitly selecting older Vine versions is rejected.
+- For strict compilation, replace bare auth with `auth required`, and Rpc
+  noauth with `auth optional`. Give each API service an explicit service-level
+  mode even when its methods already declare their own modes.
+- Rpc services and methods cannot use `auth off`; it is reserved for web
+  handlers that own authentication. Actor `auth { credential / info }` blocks
+  retain their existing syntax.
+
 ## [0.24.2] - 2026-10-04
 
 ### Fixed
@@ -728,7 +769,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.24.2...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/yorun-ai/skelc/compare/v0.24.2...v0.25.0
 [0.24.2]: https://github.com/yorun-ai/skelc/compare/v0.24.1...v0.24.2
 [0.24.1]: https://github.com/yorun-ai/skelc/compare/v0.24.0...v0.24.1
 [0.24.0]: https://github.com/yorun-ai/skelc/compare/v0.23.3...v0.24.0
