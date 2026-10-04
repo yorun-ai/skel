@@ -16,6 +16,8 @@ func TestValidateDomainRejectsMalformedNestedModels(t *testing.T) {
 		{name: "api permission callback", spec: model.DomainSpec{Actors: []*model.Actor{{Name: "Client", PermService: &model.Service{Name: "Permission", Api: true}}}}, expected: "cannot be used as a framework callback"},
 		{name: "api resource callback", spec: model.DomainSpec{Resources: []*model.Resource{{Name: "Document", CheckService: &model.Service{Name: "Check", Api: true}}}}, expected: "cannot be used as a framework callback"},
 		{name: "api missing actor", spec: model.DomainSpec{Services: []*model.Service{{Name: "OrderApiService", Api: true}}}, expected: "at least one for Actor"},
+		{name: "ext and pub", spec: model.DomainSpec{Services: []*model.Service{{Name: "StorageService", Ext: true, Pub: true}}}, expected: "ext, api and pub are mutually exclusive"},
+		{name: "ext and api", spec: model.DomainSpec{Services: []*model.Service{{Name: "StorageApiService", Ext: true, Api: true}}}, expected: "ext, api and pub are mutually exclusive"},
 		{name: "api and pub", spec: model.DomainSpec{Services: []*model.Service{{Name: "OrderService", Api: true, Pub: true}}}, expected: "cannot combine api and pub"},
 		{name: "nil import", spec: model.DomainSpec{Imports: []*model.Import{nil}}, expected: "nil import"},
 		{name: "missing imported domain", spec: model.DomainSpec{Imports: []*model.Import{{Name: "shared"}}}, expected: "has no domain model"},

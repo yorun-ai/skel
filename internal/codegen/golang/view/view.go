@@ -2,7 +2,6 @@ package view
 
 import (
 	"fmt"
-	"slices"
 
 	"go.yorun.ai/skelc/internal/codegen/common"
 	"go.yorun.ai/skelc/internal/model"
@@ -90,7 +89,7 @@ func Build(mode Mode, domain *model.Domain, selection common.ApiFilter) (*Domain
 		Resources: filterNonPubResources(domain.Resources()),
 		Webs:      domain.Webs(),
 		Events:    domain.Events(),
-		Services:  slices.DeleteFunc(slices.Clone(domain.Services()), func(s *model.Service) bool { return s.Open }),
+		Services:  domain.Services(),
 		Tasks:     domain.Tasks(),
 	}, nil
 }

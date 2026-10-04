@@ -62,7 +62,7 @@ type Service struct {
 	Hash                   string
 	CommentLines           []string
 	DeprecatedCommentLines []string
-	Open                   bool
+	Ext                    bool
 	ClientOnly             bool
 	ServerOnly             bool
 
@@ -89,18 +89,22 @@ type Service struct {
 }
 
 func (g *_Gen) serviceClientOnly(service *model.Service) bool {
-	return g.isSplitPub() && service.Pub
+	return (g.isSplitPub() && service.Pub) || (g.isSplitRegular() && service.Ext)
 }
 
 func (g *_Gen) serviceServerOnly(service *model.Service) bool {
-	return service.Api || (g.isSplitRegular() && service.Pub)
+	return service.Api || (g.isSplitRegular() && service.Pub) || (g.isSplitPub() && service.Ext)
 }
 
 func (g *_Gen) castService(p *model.Service, clientOnly bool, serverOnly bool) *Service {
+	return g.types.castService(p, clientOnly, serverOnly)
+}
+
+func (r _Types) castService(p *model.Service, clientOnly bool, serverOnly bool) *Service {
 	names := buildServiceNames(p.Name)
 	service := &Service{
 		Name:                    names.Name,
-		Open:                    p.Open,
+		Ext:                     p.Ext,
 		SkelName:                p.SkelName,
 		Hash:                    p.Hash,
 		ClientOnly:              clientOnly,
@@ -136,7 +140,7 @@ func (g *_Gen) castService(p *model.Service, clientOnly bool, serverOnly bool) *
 	}
 	service.Methods = make([]*ServiceMethod, 0, len(p.Methods))
 	for _, method := range p.Methods {
-		castedMethod := g.types.castServiceMethod(p, method)
+		castedMethod := r.castServiceMethod(p, method)
 		service.Methods = append(service.Methods, castedMethod)
 	}
 
@@ -151,46 +155,7 @@ func (g *_Gen) castService(p *model.Service, clientOnly bool, serverOnly bool) *
 }
 
 func (r _Types) castActorAuthService(p *model.Service) *Service {
-	names := buildServiceNames(p.Name)
-	service := &Service{
-		Name:                    names.Name,
-		SkelName:                p.SkelName,
-		Hash:                    p.Hash,
-		ServerOnly:              true,
-		SpecName:                names.SpecName,
-		BaseName:                names.BaseName,
-		ServerName:              names.ServerName,
-		DefaultServerName:       names.DefaultServerName,
-		ClientName:              names.ClientName,
-		ClientImplName:          names.ClientImplName,
-		ClientCtorName:          names.ClientCtorName,
-		ERBaseName:              names.ERBaseName,
-		ERServerName:            names.ERServerName,
-		WrapperERServerName:     names.WrapperERServerName,
-		WrapperERServerCtorName: names.WrapperERServerCtorName,
-		DefaultERServerName:     names.DefaultERServerName,
-		ERClientName:            names.ERClientName,
-		ERClientImplName:        names.ERClientImplName,
-		ERClientCtorName:        names.ERClientCtorName,
-		CommentLines: deprecatedGoDocLines(
-			goDocLines(names.ServerName, p.Description),
-			names.ServerName,
-			p.DeprecatedReason,
-		),
-		DeprecatedCommentLines: deprecatedGoDocParagraph(p.DeprecatedReason),
-		Methods:                make([]*ServiceMethod, 0, len(p.Methods)),
-	}
-	for _, method := range p.Methods {
-		castedMethod := r.castServiceMethod(p, method)
-		service.Methods = append(service.Methods, castedMethod)
-	}
-	for _, method := range service.Methods {
-		if method.ArgumentsData != nil {
-			service.HasMethodArguments = true
-			break
-		}
-	}
-	return service
+	return r.castService(p, false, true)
 }
 
 func buildServiceImports(services []*Service) []*Import {

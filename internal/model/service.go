@@ -32,8 +32,8 @@ type Service struct {
 	Pub bool
 	// Api restricts invocation to the Portal client entry path.
 	Api bool
-	// Open exports both client and server contracts to other domains.
-	Open bool
+	// Ext exports the server contract for implementation by other domains.
+	Ext bool
 	// Audiences lists actors allowed to call the service.
 	Audiences []*ActorAudience
 	// Auth is the service-level authentication mode.
@@ -140,10 +140,10 @@ func (s *Service) HasClientRules() bool {
 	return false
 }
 
-// ClientApi includes explicit API services and legacy services with client rules.
-func (s *Service) ClientApi() bool { return s.Api || s.HasClientRules() }
+// ClientApi includes API services and legacy client rules, excluding extension contracts.
+func (s *Service) ClientApi() bool { return !s.Ext && (s.Api || s.HasClientRules()) }
 
-// Public reports whether the service is exported by pub or open.
+// Public reports whether the service is exported by pub or ext.
 func (s *Service) Public() bool {
-	return s.Pub || s.Open
+	return s.Pub || s.Ext
 }

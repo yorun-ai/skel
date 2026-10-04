@@ -52,18 +52,19 @@ const (
 {{ end }}
 {{ if $.Services -}}
 {{ range $service := $.Services -}}
-{{ if $service.Open }}
+{{ if $service.Ext }}
 type {{ $service.ServerName }} = {{ $.PubPackageName }}.{{ $service.ServerName }}
 type {{ $service.ERServerName }} = {{ $.PubPackageName }}.{{ $service.ERServerName }}
 type {{ $service.DefaultServerName }} = {{ $.PubPackageName }}.{{ $service.DefaultServerName }}
 type {{ $service.DefaultERServerName }} = {{ $.PubPackageName }}.{{ $service.DefaultERServerName }}
 
-{{ end }}
+{{ else }}
 type {{ $service.ClientName }} = {{ $.PubPackageName }}.{{ $service.ClientName }}
 type {{ $service.ERClientName }} = {{ $.PubPackageName }}.{{ $service.ERClientName }}
 
 var {{ $service.ClientCtorName }} = {{ $.PubPackageName }}.{{ $service.ClientCtorName }}
 var {{ $service.ERClientCtorName }} = {{ $.PubPackageName }}.{{ $service.ERClientCtorName }}
+{{ end }}
 {{ end -}}
 {{ end }}
 {{ if $.Events -}}

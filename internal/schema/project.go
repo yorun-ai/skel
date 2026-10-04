@@ -239,7 +239,7 @@ func projectService(domainName string, importAliases map[string]string, value *m
 		Service: &ServiceSchema{
 			Audiences: projectAudiences(domainName, importAliases, value.Audiences),
 			Api:       value.Api,
-			Open:      value.Open,
+			Ext:       value.Ext,
 			Auth:      normalizedAuth(value.Auth),
 			Require:   projectRequirement(value.Require), Methods: methods,
 		},

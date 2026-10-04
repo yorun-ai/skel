@@ -9,12 +9,8 @@ import (
 )
 
 func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema) {
-	if baseline.Open != candidate.Open {
-		impact := ImpactCompatible
-		if baseline.Open {
-			impact = ImpactBreaking
-		}
-		c.add(impact, "service.open.changed", owner, "public server contract availability changed", model.Position{}, model.Position{})
+	if baseline.Ext != candidate.Ext {
+		c.add(ImpactBreaking, "service.ext.changed", owner, "service contract direction changed", model.Position{}, model.Position{})
 	}
 	if baseline.Api != candidate.Api {
 		c.add(ImpactBreaking, "service.api.changed", owner, "service invocation boundary changed", model.Position{}, model.Position{})

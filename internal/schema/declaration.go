@@ -75,7 +75,7 @@ type ResourceCheck struct {
 type ServiceSchema struct {
 	Audiences []*Audience  `json:"audiences"`
 	Api       bool         `json:"api,omitempty"`
-	Open      bool         `json:"open,omitempty"`
+	Ext       bool         `json:"ext,omitempty"`
 	Auth      AuthMode     `json:"auth"`
 	Require   *Requirement `json:"require,omitempty"`
 	Methods   []*Method    `json:"methods"`

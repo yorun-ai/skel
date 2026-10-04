@@ -443,10 +443,10 @@ pub config TextConfig instant {
 	}
 }
 
-func TestGenPreservesOpenServiceModifier(t *testing.T) {
+func TestGenPreservesExtServiceModifier(t *testing.T) {
 	domain, _ := parseDomainForTest(t, "demo/domain.skel", "domain demo.storage\n", "demo/service.skel", `domain demo.storage
 data Item { value: string }
-open service StorageService {
+ext service StorageService {
     method get {
         input { key: string }
         output Item
@@ -463,8 +463,8 @@ pub service LookupService { method ping {} }
 		t.Fatal(err)
 	}
 	services := parsed.Domain.Services()
-	if len(services) != 2 || !services[1].Open {
-		t.Fatalf("public Skel lost open modifier: %+v", services)
+	if len(services) != 2 || !services[1].Ext {
+		t.Fatalf("public Skel lost ext modifier: %+v", services)
 	}
 }
 

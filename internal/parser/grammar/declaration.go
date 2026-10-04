@@ -66,7 +66,7 @@ type Service struct {
 	Decorators []*Decorator
 	Pub        bool
 	Api        bool
-	Open       bool
+	Ext        bool
 	Name       *Identifier       `parser:"@@"`
 	Sections   []*ServiceSection `parser:"\"{\" (Newline)* (@@ (Newline)*)* \"}\""`
 

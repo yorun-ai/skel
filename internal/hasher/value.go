@@ -124,6 +124,7 @@ type _ResourceCheck struct {
 }
 
 type _ServiceHashValue struct {
+	Ext              bool                  `json:"ext,omitempty"`
 	Name             string                `json:"name"`
 	SkelName         string                `json:"skelName"`
 	Description      string                `json:"description,omitempty"`

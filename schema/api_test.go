@@ -135,3 +135,34 @@ func stringsOf[T ~string](values ...T) []string {
 	}
 	return result
 }
+
+func TestFacadeExtensionServiceCodec(t *testing.T) {
+	document := new(schema.Document{
+		Format: schema.Format, FormatVersion: schema.FormatVersion, Domain: "demo.storage",
+		Declarations: []*schema.Declaration{new(schema.Declaration{
+			Pub: true, Name: "StorageService", Kind: schema.DeclarationTypeService, SkelName: "demo.storage.StorageService",
+			Service: new(schema.ServiceSchema{Ext: true, Auth: schema.AuthModeUnset, Audiences: []*schema.Audience{}, Methods: []*schema.Method{}}),
+		})},
+	})
+	var encoded bytes.Buffer
+	if err := schema.Encode(&encoded, document); err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := schema.Decode(bytes.NewReader(encoded.Bytes()))
+	if err != nil || !decoded.Declarations[0].Service.Ext {
+		t.Fatalf("lost extension contract: %v", err)
+	}
+	legacy := bytes.ReplaceAll(encoded.Bytes(), []byte(`"ext"`), []byte(`"open"`))
+	if _, err := schema.Decode(bytes.NewReader(legacy)); err == nil {
+		t.Fatal("accepted removed open schema field")
+	}
+	document.Declarations[0].Pub = false
+	if err := schema.Validate(document); err == nil {
+		t.Fatal("accepted a non-public extension schema")
+	}
+	document.Declarations[0].Pub = true
+	document.Declarations[0].Service.Api = true
+	if err := schema.Validate(document); err == nil {
+		t.Fatal("accepted extension API schema")
+	}
+}

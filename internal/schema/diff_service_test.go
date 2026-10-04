@@ -124,16 +124,13 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 	})
 }
 
-func TestOpenServiceCompatibility(t *testing.T) {
-	for _, open := range []bool{false, true} {
+func TestExtServiceCompatibility(t *testing.T) {
+	for _, ext := range []bool{false, true} {
 		changes := diffChanges(func(diff *_Diff) {
-			diff.compareService("owner", &ServiceSchema{Open: open}, &ServiceSchema{Open: !open})
+			diff.compareService("owner", &ServiceSchema{Ext: ext}, &ServiceSchema{Ext: !ext})
 		})
-		expected := ImpactCompatible
-		if open {
-			expected = ImpactBreaking
-		}
+		expected := ImpactBreaking
 		coverage := &_RuleCoverage{covered: map[string]ImpactLevel{}}
-		coverage.assert(t, changes, map[string]ImpactLevel{"service.open.changed": expected})
+		coverage.assert(t, changes, map[string]ImpactLevel{"service.ext.changed": expected})
 	}
 }

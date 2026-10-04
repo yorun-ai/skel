@@ -97,10 +97,10 @@ service UserService {
 	assert.LessOrEqual(t, lspsource.ComparePosition(method.Children[0].Range.End, method.Range.End), 0)
 }
 
-func TestIndexOpenService(t *testing.T) {
-	document := BuildDocument(uri.File("/workspace/open.skel"), "/workspace/open.skel", "domain demo\nopen service StorageService { method ping {} }\n", 1)
+func TestIndexExtService(t *testing.T) {
+	document := BuildDocument(uri.File("/workspace/ext.skel"), "/workspace/ext.skel", "domain demo\next service StorageService { method ping {} }\n", 1)
 	require.Len(t, document.Symbols, 1)
-	assert.Equal(t, "open service", document.Symbols[0].Detail)
+	assert.Equal(t, "ext service", document.Symbols[0].Detail)
 	assert.Equal(t, "StorageService", document.Symbols[0].Name)
 }
 

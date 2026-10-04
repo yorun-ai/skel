@@ -316,13 +316,13 @@ func TestApiServiceRoundTrip(t *testing.T) {
 	}
 }
 
-func TestOpenServiceRoundTrip(t *testing.T) {
-	input := []byte("domain demo.storage\n// reusable contract\nopen   service  StorageService{method ping{}}\n")
-	before := compileTestDomain(t, "open.skel", input)
+func TestExtServiceRoundTrip(t *testing.T) {
+	input := []byte("domain demo.storage\n// reusable contract\next   service  StorageService{method ping{}}\n")
+	before := compileTestDomain(t, "ext.skel", input)
 	formatted := formatTestSource(t, input)
-	after := compileTestDomain(t, "open.skel", formatted)
-	if !after.Services()[0].Open || before.Hash() != after.Hash() {
-		t.Fatalf("lost open contract: %s", formatted)
+	after := compileTestDomain(t, "ext.skel", formatted)
+	if !after.Services()[0].Ext || before.Hash() != after.Hash() {
+		t.Fatalf("lost ext contract: %s", formatted)
 	}
 	if string(formatTestSource(t, formatted)) != string(formatted) {
 		t.Fatalf("unstable format: %s", formatted)
