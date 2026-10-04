@@ -93,6 +93,17 @@ pub service BackendService { method ping {} }
 	if strings.Count(string(service), "func init()") != 1 || !strings.Contains(string(service), "vrpc.Register(_HealthApiServiceSpec)") || !strings.Contains(string(service), "vrpc.Register(_OrderApiServiceSpec)") {
 		t.Fatalf("expected shared init and standalone service specs: %s", service)
 	}
+	if !strings.Contains(string(service), `_OrderApiServiceGetMethod = vrpc.MustGetMethodInfo("shop.order.OrderApiService", "get")`) {
+		t.Fatalf("missing required method lookup: %s", service)
+	}
+	mod, err := os.ReadFile(filepath.Join(out, "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(mod), "go.yorun.ai/vrpc v0.13.0") {
+		t.Fatalf("unexpected API runtime dependency: %s", mod)
+	}
+
 	if strings.Contains(string(service), "BackendService") || strings.Contains(string(service), "ResponseMetadata") || strings.Contains(string(service), "go.yorun.ai/vine") {
 		t.Fatalf("unexpected API client: %s", service)
 	}

@@ -2,13 +2,7 @@ package {{ .PackageName }}
 {{ template "imports" . }}
 func init() {
     {{ range $s := .Services }}vrpc.Register({{ .SpecName }})
-    {{ range .Methods }}{
-        method, ok := vrpc.GetMethodInfo("{{ $s.SkelName }}", "{{ .SkelName }}")
-        if !ok {
-            panic("missing generated vRPC method: {{ $s.SkelName }}/{{ .SkelName }}")
-        }
-        _{{ $s.Name }}{{ .Name }}Method = method
-    }
+    {{ range .Methods }}_{{ $s.Name }}{{ .Name }}Method = vrpc.MustGetMethodInfo("{{ $s.SkelName }}", "{{ .SkelName }}")
     {{ end }}{{ end }}
 }
 {{ range .Services }}
