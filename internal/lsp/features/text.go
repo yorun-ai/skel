@@ -67,6 +67,9 @@ func completionValuesBeforePositionBuffer(buffer lsource.Buffer, position protoc
 			return nil
 		}
 	}
+	if fields[0] == "auth" && (len(fields) == 1 || (len(fields) == 2 && isIdentifierValue(fields[1]))) {
+		return authCompletionValues(buffer, offset)
+	}
 	trailingSpace := offset > lineStart && (source[offset-1] == ' ' || source[offset-1] == '\t')
 	if len(fields) >= 2 && fields[0] == "config" {
 		switch {
@@ -88,4 +91,36 @@ func completionValuesBeforePositionBuffer(buffer lsource.Buffer, position protoc
 
 func isLetterOrDigit(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r)
+}
+
+// authCompletionValues uses the tolerant token stream while an auth clause is incomplete.
+func authCompletionValues(buffer lsource.Buffer, offset int) []string {
+	depth := 0
+	declaration := ""
+	for _, token := range buffer.IdentifierTokens() {
+		if token.Start >= offset {
+			break
+		}
+		switch token.Value {
+		case "{":
+			depth++
+		case "}":
+			depth--
+			if depth == 0 {
+				declaration = ""
+			}
+		case "service", "web", "actor", "data", "config", "event", "task", "resource", "enum":
+			if depth == 0 {
+				declaration = token.Value
+			}
+		}
+	}
+	switch declaration {
+	case "web":
+		return []string{"required", "optional", "guest", "off"}
+	case "service":
+		return []string{"required", "optional", "guest"}
+	default:
+		return nil
+	}
 }

@@ -6,6 +6,15 @@ type AuthMode string
 const (
 	// AuthModeUnset inherits authentication behavior from the enclosing context.
 	AuthModeUnset AuthMode = "unset"
+	// AuthModeRequired requires valid credentials.
+	AuthModeRequired AuthMode = "required"
+	// AuthModeOptional allows anonymous callers and authenticates supplied credentials.
+	AuthModeOptional AuthMode = "optional"
+	// AuthModeGuest allows only anonymous callers and rejects supplied invalid credentials.
+	AuthModeGuest AuthMode = "guest"
+	// AuthModeOff bypasses portal authentication for web declarations.
+	AuthModeOff AuthMode = "off"
+
 	// AuthModeAuth requires an authenticated actor.
 	AuthModeAuth AuthMode = "auth"
 	// AuthModeNoAuth explicitly allows unauthenticated access.
@@ -30,7 +39,7 @@ type Service struct {
 	DeprecatedReason string
 	// Pub reports whether the service uses the pub modifier.
 	Pub bool
-	// Api restricts invocation to the Portal client entry path.
+	// Api restricts invocation to the portal client entry path.
 	Api bool
 	// Ext exports the server contract for implementation by other domains.
 	Ext bool
@@ -38,6 +47,8 @@ type Service struct {
 	Audiences []*ActorAudience
 	// Auth is the service-level authentication mode.
 	Auth AuthMode
+	// AuthPos is the auth marker source position, or zero when omitted.
+	AuthPos Position
 	// Require is the service-level permission requirement.
 	Require *PermissionRequire
 	// Methods lists methods in source order.
@@ -75,6 +86,8 @@ type Method struct {
 	Example string
 	// Auth is the method-level authentication mode.
 	Auth AuthMode
+	// AuthPos is the auth marker source position, or zero when omitted.
+	AuthPos Position
 	// Require is the method-level permission requirement.
 	Require *PermissionRequire
 	// Arguments lists input arguments in source order.
@@ -127,7 +140,7 @@ type Argument struct {
 	Type *Type
 }
 
-// HasClientRules reports whether a service declares Portal admission rules.
+// HasClientRules reports whether a service declares portal admission rules.
 func (s *Service) HasClientRules() bool {
 	if len(s.Audiences) > 0 || (s.Auth != "" && s.Auth != AuthModeUnset) || s.Require != nil {
 		return true

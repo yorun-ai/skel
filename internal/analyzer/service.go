@@ -43,6 +43,7 @@ func parseService(reporter *_DiagnosticReporter, gs *grammar.Service) (*model.Se
 		Ext:              gs.Ext,
 		Audiences:        audiences,
 		Auth:             authMode,
+		AuthPos:          authMarkerPosition(authMarker),
 		Require:          require,
 		Description:      meta.Description,
 		Deprecated:       meta.Deprecated,
@@ -135,6 +136,11 @@ func parseAuthMode(reporter *_DiagnosticReporter, marker *grammar.AuthMarker, de
 		return defaultMode, true
 	}
 	switch marker.Value {
+	case "required", "optional", "guest":
+		return model.AuthMode(marker.Value), true
+	case "off":
+		reporter.reportf("%s auth off is only supported on web declarations", marker.Pos)
+		return defaultMode, false
 	case string(model.AuthModeAuth):
 		return model.AuthModeAuth, true
 	case string(model.AuthModeNoAuth):
@@ -181,4 +187,11 @@ func parseServiceAudiences(reporter *_DiagnosticReporter, audiences []*grammar.S
 		})
 	}
 	return parsed, valid
+}
+
+func authMarkerPosition(marker *grammar.AuthMarker) model.Position {
+	if marker == nil {
+		return model.Position{}
+	}
+	return position(marker.Pos)
 }

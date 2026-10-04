@@ -6,7 +6,7 @@ import (
 	"unicode"
 )
 
-// Validate checks a literal absolute Web mount path without normalizing it.
+// Validate checks a literal absolute web mount path without normalizing it.
 func Validate(value string) error {
 	if !strings.HasPrefix(value, "/") {
 		return fmt.Errorf("must start with /")

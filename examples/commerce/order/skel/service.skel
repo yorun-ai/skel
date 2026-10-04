@@ -3,7 +3,7 @@ domain commerce.order
 @desc("Queries and commands for customer orders")
 api service OrderApiService {
     for CustomerActor via client
-    auth
+    auth required
     require any(Order:read, identity.user.User:read)
 
     method list {

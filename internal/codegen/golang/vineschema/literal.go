@@ -72,6 +72,14 @@ func renderActorViaLiteral(method _ActorVia) (string, error) {
 
 func renderAuthModeLiteral(mode _AuthMode) (string, error) {
 	switch mode {
+	case "required":
+		return "skel.AuthModeRequired", nil
+	case "optional":
+		return "skel.AuthModeOptional", nil
+	case "guest":
+		return "skel.AuthModeGuest", nil
+	case "off":
+		return "skel.AuthModeOff", nil
 	case authModeUnset:
 		return "skel.AuthModeUnset", nil
 	case authModeAuth:

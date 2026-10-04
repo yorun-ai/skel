@@ -86,7 +86,7 @@ func validateArguments(owner string, arguments []*model.Argument, data *model.Da
 
 func validateAuthMode(mode model.AuthMode) error {
 	switch mode {
-	case "", model.AuthModeUnset, model.AuthModeAuth, model.AuthModeNoAuth:
+	case "", model.AuthModeUnset, model.AuthModeAuth, model.AuthModeNoAuth, model.AuthModeRequired, model.AuthModeOptional, model.AuthModeGuest:
 		return nil
 	default:
 		return fmt.Errorf("unsupported auth mode %q", mode)

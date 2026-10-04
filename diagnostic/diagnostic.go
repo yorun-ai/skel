@@ -4,6 +4,8 @@ package diagnostic
 import "go.yorun.ai/skelc/model"
 
 const (
+	CodeAuthLegacy         = "auth.legacy-marker"
+	CodeApiAuthMissing     = "service.missing-auth"
 	CodeServiceModifier    = "service.legacy-modifier"
 	CodeServiceClientRules = "service.legacy-client-rules"
 	CodeSyntaxUnexpected   = "syntax.unexpected-token"

@@ -49,11 +49,20 @@ const (
 	TypeKindMap               TypeKind = "map"
 )
 
-// AuthMode identifies the authentication behavior of a service or method.
+// AuthMode identifies the authentication behavior of a service, method, or web.
 type AuthMode string
 
 const (
-	AuthModeUnset  AuthMode = "unset"
+	AuthModeUnset AuthMode = "unset"
+	// AuthModeRequired requires valid credentials.
+	AuthModeRequired AuthMode = "required"
+	// AuthModeOptional allows anonymous callers and authenticates supplied credentials.
+	AuthModeOptional AuthMode = "optional"
+	// AuthModeGuest allows only anonymous callers and rejects supplied invalid credentials.
+	AuthModeGuest AuthMode = "guest"
+	// AuthModeOff bypasses portal authentication for web declarations.
+	AuthModeOff AuthMode = "off"
+
 	AuthModeAuth   AuthMode = "auth"
 	AuthModeNoAuth AuthMode = "noauth"
 )

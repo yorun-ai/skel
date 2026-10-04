@@ -64,6 +64,7 @@ type _DataHashValue struct {
 }
 
 type _WebHashValue struct {
+	Auth             model.AuthMode        `json:"auth,omitempty"`
 	MountPath        string                `json:"mountPath,omitempty"`
 	Name             string                `json:"name"`
 	SkelName         string                `json:"skelName"`

@@ -51,12 +51,12 @@ func TestResultsEncodeStableJSON(t *testing.T) {
 				Platform:  "darwin/arm64",
 				GoVersion: "go1.27.1",
 				GolangCodeGen: VersionGolangCodeGenResult{
-					MinimumVineVersion: "v0.25.1",
-					DefaultVineVersion: "v0.25.1",
+					MinimumVineVersion: "v0.26.0",
+					DefaultVineVersion: "v0.26.0",
 				},
 			},
 			want: `{"name":"skelc","version":"v0.21.0","platform":"darwin/arm64","goVersion":"go1.27.1",` +
-				`"golangCodeGen":{"minimumVineVersion":"v0.25.1","defaultVineVersion":"v0.25.1"}}`,
+				`"golangCodeGen":{"minimumVineVersion":"v0.26.0","defaultVineVersion":"v0.26.0"}}`,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {

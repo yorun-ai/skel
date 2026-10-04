@@ -110,12 +110,17 @@ func (c *_Diff) compareAuth(owner, prefix string, baseline, candidate AuthMode, 
 		return
 	}
 	code := prefix + ".auth.changed"
-	if candidate == AuthModeAuth {
+	impact := ImpactDangerous
+	before, after := authComparisonMode(baseline, prefix == "web"), authComparisonMode(candidate, prefix == "web")
+	switch {
+	case before == after:
+		impact = ImpactCompatible
+	case before == AuthModeOptional && (after == AuthModeRequired || after == AuthModeGuest):
 		code = prefix + ".auth.tightened"
-	} else if baseline == AuthModeAuth {
+	case after == AuthModeOptional && (before == AuthModeRequired || before == AuthModeGuest):
 		code = prefix + ".auth.relaxed"
 	}
-	c.add(ImpactDangerous, code, owner, fmt.Sprintf("authentication changed from %s to %s", baseline, candidate), baselinePos, candidatePos)
+	c.add(impact, code, owner, fmt.Sprintf("authentication changed from %s to %s", baseline, candidate), baselinePos, candidatePos)
 }
 
 func (c *_Diff) compareRequirement(owner, prefix string, baseline, candidate *Requirement, baselinePos, candidatePos model.Position) {
@@ -130,4 +135,21 @@ func (c *_Diff) compareRequirement(owner, prefix string, baseline, candidate *Re
 		code, message = prefix+".require.removed", "permission requirement was removed"
 	}
 	c.add(ImpactDangerous, code, owner, message, baselinePos, candidatePos)
+}
+
+// Legacy spellings are compared by their runtime meaning without changing schema values.
+func authComparisonMode(mode AuthMode, web bool) AuthMode {
+	switch mode {
+	case AuthModeAuth:
+		return AuthModeRequired
+	case AuthModeNoAuth:
+		if web {
+			return AuthModeOff
+		}
+		return AuthModeOptional
+	case "":
+		return AuthModeUnset
+	default:
+		return mode
+	}
 }

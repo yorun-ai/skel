@@ -71,6 +71,7 @@ func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*model.Meth
 		Deprecated:       meta.Deprecated,
 		DeprecatedReason: meta.DeprecatedReason,
 		Auth:             authMode,
+		AuthPos:          authMarkerPosition(methodAuthMarker(gm)),
 		Require:          require,
 		Arguments:        []*model.Argument{},
 	}

@@ -42,4 +42,5 @@ type _WebSchema struct {
 	DeprecatedReason string
 	Hash             string
 	Audiences        []*_ActorAudienceSchema
+	AuthMode         _AuthMode
 }

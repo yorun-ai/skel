@@ -369,3 +369,16 @@ func TestFullDomainReferencesRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestFormatExplicitAuthModes(t *testing.T) {
+	source := []byte(`domain demo.user
+actor ClientActor { via client {} }
+api service UserApiService { for ClientActor via client auth required method ping { auth optional } method login { auth guest } }
+web ConsoleWeb { for ClientActor via client auth off mount / }
+`)
+	formatted := formatTestSource(t, source)
+	checkTestSource(t, "auth.skel", formatted)
+	if string(formatTestSource(t, formatted)) != string(formatted) {
+		t.Fatal("auth formatting is not idempotent")
+	}
+}

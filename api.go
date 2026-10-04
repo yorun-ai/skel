@@ -116,7 +116,7 @@ type GolangOption struct {
 	AsModule bool
 	// PubOnly generates backend public contracts. It is mutually exclusive with ApiOnly.
 	PubOnly bool
-	// ApiOnly generates standalone Portal clients.
+	// ApiOnly generates standalone portal clients.
 	ApiOnly bool
 	// ApiFilter limits API clients to services declaring one of its actors. Requires ApiOnly.
 	ApiFilter ApiFilter

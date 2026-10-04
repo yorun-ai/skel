@@ -38,6 +38,7 @@ func (c *_Diff) compareDeclaration(baseline, candidate *Declaration) {
 	case DeclarationTypeService:
 		c.compareService(candidate.SkelName, baseline.Service, candidate.Service)
 	case DeclarationTypeWeb:
+		c.compareAuth(candidate.SkelName, "web", baseline.Web.Auth, candidate.Web.Auth, baseline.Pos, candidate.Pos)
 		c.compareAudiences(candidate.SkelName, "web.audience", baseline.Web.Audiences, candidate.Web.Audiences)
 		if baseline.Web.MountPath != candidate.Web.MountPath {
 			c.add(ImpactBreaking, "web.mount-path.changed", candidate.SkelName,

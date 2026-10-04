@@ -59,15 +59,14 @@ id:uuid
 
 api service UserApiService{
 for ClientActor via client
-auth
-
+auth required
 require any(
 User:read,
 User:update:owner(actor.info.subject)
 )
 @desc("Get user")
 method get{
-noauth
+auth optional
 input{
 @desc("User identifier")
 @example("42")
