@@ -6,6 +6,27 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-10-05
+
+### Added
+
+- Opt-in `--api --prune` generation for Go and TypeScript, retaining selected
+  actor services, explicit type roots, and their local type dependencies.
+- Repeatable `--type domain.Type` roots for data and enums, including type-only
+  exports and unions with actor selections.
+- `schema dep --api` and the public `QueryApiDependencies` API, reporting
+  selected local declarations and external type references with the same
+  selection rules as generation.
+
+### Upgrade Notes
+
+- Existing API generation retains its behavior unless `--prune` is supplied.
+  Pruning requires at least one `--actor` or `--type`; `--type` requires pruning.
+  Unreferenced public data and enums are omitted in prune mode.
+- Dependency queries follow local types and report foreign type boundaries.
+  Callers exporting multiple domains must combine those type roots and query
+  the referenced domains before generation.
+
 ## [0.26.0] - 2026-10-05
 
 ### Changed
@@ -789,7 +810,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/yorun-ai/skelc/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/yorun-ai/skelc/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/yorun-ai/skelc/compare/v0.24.2...v0.25.0
 [0.24.2]: https://github.com/yorun-ai/skelc/compare/v0.24.1...v0.24.2
