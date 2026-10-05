@@ -173,7 +173,7 @@ skelc gen skel \
   --skel-out ./generated/public-skel
 ```
 
-TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含 API 服务及其数据依赖，以及供跨领域 import 使用的显式公开 data、enum。传入 `--prune` 并用可重复的 `--actor domain.Actor` 和/或 `--name domain.Type` 指定起点后，只保留这些起点的类型依赖闭包。只有类型起点时不选择服务；`--name` 要求 `--prune`，裁剪至少需要一个起点。`--type` 保留为 `--name` 的兼容别名。这些参数适用于 Go、Go module 和 TypeScript API 输出。
+TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含 API 服务及其数据依赖，以及供跨领域 import 使用的显式公开 data、enum。传入 `--prune` 并用可重复的 `--actor domain.Actor` 和/或 `--name domain.Type` 指定起点后，只保留这些起点的类型依赖闭包。只有类型起点时不选择服务；`--name` 要求 `--prune`，裁剪至少需要一个起点。`--name` 替代 `--type`，已有命令需更新参数名。这些参数适用于 Go、Go module 和 TypeScript API 输出。
 
 ### 引用其他 domain
 
