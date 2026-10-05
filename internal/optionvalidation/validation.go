@@ -9,6 +9,7 @@ const (
 	FieldApiActor                 Field = "api.actor"
 	FieldApiPrune                 Field = "api.prune"
 	FieldApiType                  Field = "api.type"
+	FieldSchemaView               Field = "schema.view"
 	FieldSkelInput                Field = "skel.input"
 	FieldSkelImport               Field = "skel.import"
 	FieldGoOutput                 Field = "go.output"
