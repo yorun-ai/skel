@@ -14,7 +14,7 @@ func newSchemaDepCommand() *ucli.Command {
 		&ucli.BoolFlag{Name: flagGenApi, Usage: "query API dependencies (required)"},
 		&ucli.BoolFlag{Name: flagGenPrune, Usage: "retain only selected API roots and their type dependencies"},
 		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; repeat to select multiple actors"},
-		&ucli.StringSliceFlag{Name: flagGenName, Aliases: []string{"type"}, Usage: "fully qualified local data or enum root; requires --prune, repeat to select multiple types"},
+		&ucli.StringSliceFlag{Name: flagGenName, Usage: "fully qualified local data or enum root; requires --prune, repeat to select multiple types"},
 		&ucli.StringFlag{Name: flagGenSkelIn, Usage: "skeleton input file or directory"},
 		&ucli.StringSliceFlag{Name: flagGenSkelImport, Usage: "skel dependency mapping in domain=path form; repeat for transitive imports"},
 	}, Action: func(_ context.Context, cmd *ucli.Command) error {

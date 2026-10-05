@@ -176,7 +176,7 @@ skelc gen skel \
   --skel-out ./generated/public-skel
 ```
 
-TypeScript generation requires `--api` and rejects `--pub`. By default, API clients include API services and their data dependencies, plus explicitly public data and enums for cross-domain imports. Add `--prune` with repeatable `--actor domain.Actor` and/or `--name domain.Type` roots to retain only their type closure. Type-only roots select no services; `--name` requires `--prune`, and pruning requires at least one root. `--type` remains a compatibility alias for `--name`. These options apply to Go, Go module and TypeScript API output.
+TypeScript generation requires `--api` and rejects `--pub`. By default, API clients include API services and their data dependencies, plus explicitly public data and enums for cross-domain imports. Add `--prune` with repeatable `--actor domain.Actor` and/or `--name domain.Type` roots to retain only their type closure. Type-only roots select no services; `--name` requires `--prune`, and pruning requires at least one root. `--name` replaces `--type`; update existing invocations to the new spelling. These options apply to Go, Go module and TypeScript API output.
 
 ### Reference Other Domains
 

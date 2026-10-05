@@ -19,18 +19,17 @@ data Value { status: Status }
 api service ReadApiService { for UserActor via client auth anonymous method read { output Value } }
 `)
 	base := []string{"schema", "dep", "--api", "--skel-in", source}
-	// Repeated names select a union; the published --type spelling remains valid.
-	for _, flag := range []string{"--name", "--type"} {
-		result := Run(append(append([]string{}, base...), "--prune", flag, "demo.Status", flag, "demo.Unused"))
-		var report skelc.ApiDependencyReport
-		if result.ExitCode != 0 || json.Unmarshal([]byte(result.Stdout), &report) != nil {
-			t.Fatalf("%s: %+v", flag, result)
-		}
-		if len(report.Services) != 0 || len(report.Data) != 1 || report.Data[0] != "demo.Unused" || len(report.Enums) != 1 || report.Enums[0] != "demo.Status" {
-			t.Fatalf("%s: %+v", flag, report)
-		}
-		assertCommandErrorMessage(t, Run(append(append([]string{}, base...), flag, "demo.Status")), "flag name requires prune")
+	// Repeated names select a union without selecting any services.
+	result := Run(append(append([]string{}, base...), "--prune", "--name", "demo.Status", "--name", "demo.Unused"))
+	var report skelc.ApiDependencyReport
+	if result.ExitCode != 0 || json.Unmarshal([]byte(result.Stdout), &report) != nil {
+		t.Fatalf("%+v", result)
 	}
+	if len(report.Services) != 0 || len(report.Data) != 1 || report.Data[0] != "demo.Unused" || len(report.Enums) != 1 || report.Enums[0] != "demo.Status" {
+		t.Fatalf("%+v", report)
+	}
+	assertCommandErrorMessage(t, Run(append(append([]string{}, base...), "--name", "demo.Status")), "flag name requires prune")
+	assertCommandErrorMessage(t, Run(append(append([]string{}, base...), "--prune", "--type", "demo.Status")), "flag provided but not defined: -type")
 	for _, extra := range [][]string{nil, {"--prune", "--actor", "demo.UserActor"}, {"--prune", "--name", "demo.Status"}, {"--prune", "--actor", "demo.UserActor", "--name", "demo.Unused"}} {
 		result := Run(append(append([]string{}, base...), extra...))
 		var report skelc.ApiDependencyReport
@@ -51,7 +50,7 @@ api service ReadApiService { for UserActor via client auth anonymous method read
 			t.Fatalf("accepted %v: %+v", args, result)
 		}
 	}
-	result := Run([]string{"schema", "dep", "--skel-in", source})
+	result = Run([]string{"schema", "dep", "--skel-in", source})
 	assertCommandErrorMessage(t, result, "flag api is required for schema dep")
 	for _, target := range []string{"go", "go-module", "ts"} {
 		args := []string{"gen", target, "--api", "--prune", "--name", "demo.Status", "--skel-in", source}
@@ -67,7 +66,7 @@ api service ReadApiService { for UserActor via client auth anonymous method read
 		assertGenerationResult(t, Run(args))
 		legacyArgs := append([]string{}, args...)
 		legacyArgs[4] = "--type"
-		assertGenerationResult(t, Run(legacyArgs))
+		assertCommandErrorMessage(t, Run(legacyArgs), "flag provided but not defined: -type")
 		noAPI := append(append([]string{}, args[:2]...), args[3:]...)
 		assertCommandErrorMessage(t, Run(noAPI), "flag prune requires api")
 	}

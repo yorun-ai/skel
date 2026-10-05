@@ -553,7 +553,6 @@ api service WriteApiService { for WriterActor via client auth anonymous method w
 		{"type only", []string{"--api", "--prune", "--name", "demo.Value"}, []string{"data:Value", "enum:Status"}},
 		{"repeated names", []string{"--api", "--prune", "--name", "demo.Value", "--name", "demo.Unused"}, []string{"data:Unused", "data:Value", "enum:Status"}},
 		{"actor and name union", []string{"--api", "--prune", "--actor", "demo.UserActor", "--name", "demo.Unused"}, []string{"data:Unused", "data:Value", "enum:Status", "service:ReadApiService"}},
-		{"legacy name", []string{"--api", "--prune", "--type", "demo.Value"}, []string{"data:Value", "enum:Status"}},
 		{"kind after selection", []string{"--api", "--prune", "--actor", "demo.UserActor", "enum"}, []string{"enum:Status"}},
 		{"no matching services", []string{"--api", "--prune", "--actor", "demo.WriterActor", "data"}, []string{}},
 	} {
@@ -606,7 +605,7 @@ func TestSchemaListViewImportsAndErrors(t *testing.T) {
 		{"--pub", "--api"}, {"--actor", "demo.UserActor"}, {"--prune"}, {"--name", "demo.Value"},
 		{"--pub", "--actor", "demo.UserActor"}, {"--api", "--prune"}, {"--api", "--name", "demo.Value"},
 		{"--api", "--prune", "--name", "Value"}, {"--skel-import", "shared=" + shared},
-		{"--api", "--skel-import", "broken"},
+		{"--api", "--skel-import", "broken"}, {"--api", "--prune", "--type", "demo.Value"},
 	} {
 		result := Run(append(append([]string{}, base...), flags...))
 		failure := decodeCommandError(t, result)

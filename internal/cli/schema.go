@@ -194,7 +194,7 @@ func newSchemaListFlags() []ucli.Flag {
 		&ucli.BoolFlag{Name: flagGenApi, Usage: "list API generation declarations"},
 		&ucli.BoolFlag{Name: flagGenPrune, Usage: "retain only selected API roots and their type dependencies; requires --api"},
 		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
-		&ucli.StringSliceFlag{Name: flagGenName, Aliases: []string{"type"}, Usage: "fully qualified local data or enum root; requires --api --prune, repeat to select multiple types"},
+		&ucli.StringSliceFlag{Name: flagGenName, Usage: "fully qualified local data or enum root; requires --api --prune, repeat to select multiple types"},
 		&ucli.StringSliceFlag{Name: flagGenSkelImport, Usage: "skel dependency mapping in domain=path form; requires --pub or --api, repeat for transitive imports"},
 	}
 }
