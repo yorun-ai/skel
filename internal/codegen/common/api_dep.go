@@ -5,15 +5,12 @@ import (
 	"slices"
 
 	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skelc/internal/schema"
 )
 
 // ApiTypeDependency identifies a foreign declaration, not a generic instantiation.
 // Generic arguments are reported independently in their owning domains.
-type ApiTypeDependency struct {
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
-	Kind   string `json:"kind"`
-}
+type ApiTypeDependency = schema.Dependency
 
 // ApiDependencyReport describes exactly the selected API declaration view.
 type ApiDependencyReport struct {
