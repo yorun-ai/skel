@@ -6,6 +6,37 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-10-06
+
+### Added
+
+- `schema list --pub` and `schema list --api` query the corresponding generation
+  views, including local type dependencies, using the generators' selection rules.
+- API declaration lists support actor selection, pruning, repeatable `--name`
+  roots, and transitive `--skel-import` mappings. The positional `TYPE` filter
+  applies after selection, and empty results are returned as `[]`.
+
+### Changed
+
+- Rename API data/enum root selection from `--type` to `--name` across Go,
+  Go module and TypeScript generation and `schema dep`. The previous spelling
+  is no longer accepted.
+- Version tags now trigger binary builds and automatic GitHub Release creation.
+  Releases are published only after all four platform archives and their
+  downloaded checksums have been verified.
+
+### Upgrade Notes
+
+- Replace `--type domain.Type` with `--name domain.Type` in generation and
+  dependency-query commands. Selection rules and generated output are unchanged.
+- Default `schema list` keeps its shallow inspection and existing JSON format.
+  Generation-view queries require complete import mappings and validate the
+  selected view. Entries retain their original `pub` attributes; referenced
+  private types can appear with `pub: false`.
+- Release maintainers should merge release preparation and push the version tag;
+  manually publishing a Release no longer triggers builds. Retry failed builds
+  using the same tag without moving it or replacing published attachments.
+
 ## [0.27.0] - 2026-10-05
 
 ### Added
@@ -810,7 +841,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.28.0...HEAD
+[0.28.0]: https://github.com/yorun-ai/skelc/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/yorun-ai/skelc/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/yorun-ai/skelc/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/yorun-ai/skelc/compare/v0.24.2...v0.25.0
