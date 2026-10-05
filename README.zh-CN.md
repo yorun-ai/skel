@@ -173,11 +173,11 @@ skelc gen skel \
   --skel-out ./generated/public-skel
 ```
 
-TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含 API 服务及其数据依赖，以及供跨领域 import 使用的显式公开 data、enum。传入 `--prune` 并用可重复的 `--actor domain.Actor` 和/或 `--type domain.Type` 指定起点后，只保留这些起点的类型依赖闭包。只有类型起点时不选择服务；`--type` 要求 `--prune`，裁剪至少需要一个起点。这些参数适用于 Go、Go module 和 TypeScript API 输出。
+TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含 API 服务及其数据依赖，以及供跨领域 import 使用的显式公开 data、enum。传入 `--prune` 并用可重复的 `--actor domain.Actor` 和/或 `--name domain.Type` 指定起点后，只保留这些起点的类型依赖闭包。只有类型起点时不选择服务；`--name` 要求 `--prune`，裁剪至少需要一个起点。`--type` 保留为 `--name` 的兼容别名。这些参数适用于 Go、Go module 和 TypeScript API 输出。
 
 ### 引用其他 domain
 
-在 `.skel` 中声明 `import` 后，生成命令通过可重复使用的 `--skel-import domain=PATH` 指定完整的传递依赖图。skelc 会分析全部依赖，但只为 `--skel-in` 指定的目标生成代码。生成 Go module 或 TypeScript 时，再使用对应的 `--go-import`、`--go-module-prefix` 或 `--ts-import` 映射目标语言的 package。`schema dep --api` 接受相同的 `--prune`、`--actor`、`--type` 和 `--skel-import` 选择参数，以 JSON 返回选中的本领域声明与外部类型依赖；查询和生成共用选择规则。其他 schema 命令不接受依赖映射，而是把 import 符号保留为不透明的完整名称。完整示例见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli)。
+在 `.skel` 中声明 `import` 后，生成命令通过可重复使用的 `--skel-import domain=PATH` 指定完整的传递依赖图。skelc 会分析全部依赖，但只为 `--skel-in` 指定的目标生成代码。生成 Go module 或 TypeScript 时，再使用对应的 `--go-import`、`--go-module-prefix` 或 `--ts-import` 映射目标语言的 package。`schema dep --api` 接受相同的 `--prune`、`--actor`、`--name` 和 `--skel-import` 选择参数，以 JSON 返回选中的本领域声明与外部类型依赖；查询和生成共用选择规则。`schema list --pub` 和 `schema list --api` 也接受依赖映射，列出对应生成视图中的声明。默认 `schema list` 及其他 schema 检查命令不接受依赖映射，而是把 import 符号保留为不透明的完整名称。完整示例见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli)。
 
 ### 查询、生成快照、查看差异和格式化
 
@@ -194,8 +194,10 @@ skelc format --check --skel-in ./skel
 
 除 LSP 外，所有命令都在 stdout 输出一个格式化 JSON 结果；help 保持文本，LSP 使用
 JSON-RPC。`schema list` 返回声明摘要 JSON 数组，`schema get TYPE SKEL_NAME` 返回单个
-完整的规范化声明对象；声明不存在时返回 JSON `null`，两者都属于成功查询。所有 schema
-命令都处理完整 domain，每个声明继续保留自己的 `pub` 标记。
+完整的规范化声明对象；声明不存在时返回 JSON `null`，两者都属于成功查询。不传视图参数时，
+`schema list` 查询完整 domain；传 `--pub` 或 `--api` 查询对应生成视图。API 选择通过
+`--actor`、`--prune`、`--name` 使用与生成相同的规则。可选位置参数 `TYPE` 在选择完成后过滤结果。
+每项保留原本的 `pub` 标记，包括因引用进入视图的私有类型。空列表为 `[]`，不包含外部领域声明。
 
 快照 JSON 按确定顺序排列，并带有带版本的 schema 格式标识。`schema snapshot` 始终把
 JSON 写到标准输出，需要保存快照时使用重定向。源码位置可用于实时 diff 时的定位，但

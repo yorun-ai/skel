@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -521,5 +522,112 @@ func TestSchemaImportEmptyAndInvalidInputs(t *testing.T) {
 		if result.ExitCode != ExitCodeError || failure.Code != tc.code {
 			t.Fatalf("args %v: got %+v, want %s", tc.args, result, tc.code)
 		}
+	}
+}
+
+func TestSchemaListGenerationViews(t *testing.T) {
+	source := filepath.Join(t.TempDir(), "source.skel")
+	writeCLIFile(t, source, `domain demo
+pub actor UserActor { via client {} }
+actor WriterActor { via client {} }
+enum Status { READY DONE }
+data Value { status: Status }
+pub data Unused { value: string }
+pub config SettingsConfig eternal { enabled: bool }
+pub resource Record { action view }
+pub event ChangedEvent { payload { value: string } }
+pub service BackendService { method read { output Value } }
+ext service StorageService { method read { output Value } }
+api service ReadApiService { for UserActor via client auth anonymous method read { output Value } }
+api service WriteApiService { for WriterActor via client auth anonymous method write { output string } }
+`)
+	for _, test := range []struct {
+		name  string
+		flags []string
+		want  []string
+	}{
+		{"public", []string{"--pub"}, []string{"actor:UserActor", "config:SettingsConfig", "data:Unused", "data:Value", "enum:Status", "event:ChangedEvent", "resource:Record", "service:BackendService", "service:StorageService"}},
+		{"api", []string{"--api"}, []string{"data:Unused", "data:Value", "enum:Status", "service:ReadApiService", "service:WriteApiService"}},
+		{"actor without pruning", []string{"--api", "--actor", "demo.UserActor"}, []string{"data:Unused", "data:Value", "enum:Status", "service:ReadApiService"}},
+		{"pruned actor", []string{"--api", "--prune", "--actor", "demo.UserActor"}, []string{"data:Value", "enum:Status", "service:ReadApiService"}},
+		{"type only", []string{"--api", "--prune", "--name", "demo.Value"}, []string{"data:Value", "enum:Status"}},
+		{"repeated names", []string{"--api", "--prune", "--name", "demo.Value", "--name", "demo.Unused"}, []string{"data:Unused", "data:Value", "enum:Status"}},
+		{"actor and name union", []string{"--api", "--prune", "--actor", "demo.UserActor", "--name", "demo.Unused"}, []string{"data:Unused", "data:Value", "enum:Status", "service:ReadApiService"}},
+		{"legacy name", []string{"--api", "--prune", "--type", "demo.Value"}, []string{"data:Value", "enum:Status"}},
+		{"kind after selection", []string{"--api", "--prune", "--actor", "demo.UserActor", "enum"}, []string{"enum:Status"}},
+		{"no matching services", []string{"--api", "--prune", "--actor", "demo.WriterActor", "data"}, []string{}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			args := append([]string{"schema", "list", "--skel-in", source}, test.flags...)
+			result := Run(args)
+			var entries []*schemas.Entry
+			if result.ExitCode != ExitCodeSuccess || json.Unmarshal([]byte(result.Stdout), &entries) != nil {
+				t.Fatalf("%+v", result)
+			}
+			got := make([]string, 0, len(entries))
+			for _, entry := range entries {
+				got = append(got, string(entry.Kind)+":"+entry.Name)
+				if entry.SkelName != "demo."+entry.Name {
+					t.Fatalf("noncanonical entry: %+v", entry)
+				}
+				if (entry.Name == "Value" || entry.Name == "Status" || strings.HasSuffix(entry.Name, "ApiService")) && entry.Pub {
+					t.Fatalf("selection changed public attribute: %+v", entry)
+				}
+			}
+			slices.Sort(got)
+			if !slices.Equal(got, test.want) || entries == nil {
+				t.Fatalf("got %v, want %v; output=%s", got, test.want, result.Stdout)
+			}
+			if again := Run(args); again.Stdout != result.Stdout {
+				t.Fatalf("unstable output: %s / %s", result.Stdout, again.Stdout)
+			}
+		})
+	}
+}
+
+func TestSchemaListViewImportsAndErrors(t *testing.T) {
+	source := filepath.Join(t.TempDir(), "source.skel")
+	shared := filepath.Join(t.TempDir(), "source.skel")
+	writeCLIFile(t, shared, "domain shared\npub data Money { value: int }\n")
+	writeCLIFile(t, source, "domain demo\nimport shared as external\npub data Value { money: external.Money }\n")
+	base := []string{"schema", "list", "--skel-in", source}
+	for _, mode := range []string{"--pub", "--api"} {
+		result := Run(append(append([]string{}, base...), mode, "--skel-import", "shared="+shared))
+		var entries []*schemas.Entry
+		if result.ExitCode != ExitCodeSuccess || json.Unmarshal([]byte(result.Stdout), &entries) != nil || len(entries) != 1 || entries[0].SkelName != "demo.Value" {
+			t.Fatalf("foreign declarations leaked into %s: %+v", mode, result)
+		}
+		failure := decodeCommandError(t, Run(append(append([]string{}, base...), mode)))
+		if failure.Code != command.ErrorCodeCompilationFailed || !strings.Contains(failure.Message, "shared") {
+			t.Fatalf("missing import hidden: %+v", failure)
+		}
+	}
+	for _, flags := range [][]string{
+		{"--pub", "--api"}, {"--actor", "demo.UserActor"}, {"--prune"}, {"--name", "demo.Value"},
+		{"--pub", "--actor", "demo.UserActor"}, {"--api", "--prune"}, {"--api", "--name", "demo.Value"},
+		{"--api", "--prune", "--name", "Value"}, {"--skel-import", "shared=" + shared},
+		{"--api", "--skel-import", "broken"},
+	} {
+		result := Run(append(append([]string{}, base...), flags...))
+		failure := decodeCommandError(t, result)
+		if failure.Code != command.ErrorCodeInvalidArgument {
+			t.Fatalf("wrong error for %v: %+v", flags, result)
+		}
+	}
+	writeCLIFile(t, source, "domain demo\nservice LegacyService { method ping {} }\n")
+	for _, mode := range []string{"--pub", "--api"} {
+		result := Run([]string{"schema", "list", mode, "--skel-in", source})
+		if result.ExitCode != ExitCodeSuccess || result.Stdout != "[]\n" || !strings.Contains(result.Stderr, `"severity":"warning"`) {
+			t.Fatalf("warnings mixed with empty result: %+v", result)
+		}
+		failure := decodeCommandError(t, Run([]string{"--strict", "schema", "list", mode, "--skel-in", source}))
+		if failure.Code != command.ErrorCodeCompilationFailed {
+			t.Fatalf("strict ignored: %+v", failure)
+		}
+	}
+	writeCLIFile(t, source, "domain demo\nactor UserActor { via client {} }\npub service ReadService { for UserActor method ping {} }\n")
+	failure := decodeCommandError(t, Run([]string{"schema", "list", "--pub", "--skel-in", source}))
+	if failure.Code != command.ErrorCodeCompilationFailed || !strings.Contains(failure.Message, "non-pub actor") {
+		t.Fatalf("public view validation skipped: %+v", failure)
 	}
 }
