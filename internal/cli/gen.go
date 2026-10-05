@@ -25,6 +25,8 @@ const (
 	flagGenTSOut          = "ts-out"
 	flagGenApi            = "api"
 	flagGenActor          = "actor"
+	flagGenPrune          = "prune"
+	flagGenType           = "type"
 	flagGenGoVrpcVersion  = "go-vrpc-version"
 	flagGenGoModulePrefix = "go-module-prefix"
 	flagGenGoModule       = "go-module"
@@ -154,6 +156,8 @@ func newGenGoFlags() []ucli.Flag {
 	return []ucli.Flag{
 		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate portal API clients"},
 		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
+		&ucli.BoolFlag{Name: flagGenPrune, Usage: "retain only selected API roots and their type dependencies; requires --api"},
+		&ucli.StringSliceFlag{Name: flagGenType, Usage: "fully qualified local data or enum root; requires --api --prune, repeat to select multiple types"},
 		&ucli.BoolFlag{Name: flagGenPub, Usage: "generate backend public contracts"},
 		&ucli.StringFlag{Name: flagGenGoVrpcVersion, Usage: "vRPC module version for API clients"},
 		&ucli.StringFlag{Name: flagGenSkelIn, Usage: "skeleton input file or directory"},
@@ -184,7 +188,7 @@ func parseGenGoCommand(cmd *ucli.Command) (skelc.Input, skelc.GolangOption, erro
 	}
 
 	option := skelc.GolangOption{
-		ApiFilter:   skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor)},
+		ApiFilter:   skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenType)},
 		Imports:     goImports,
 		PubOnly:     cmd.Bool(flagGenPub),
 		ApiOnly:     cmd.Bool(flagGenApi),
@@ -199,6 +203,8 @@ func newGenGoModuleFlags() []ucli.Flag {
 	return []ucli.Flag{
 		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate portal API clients"},
 		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
+		&ucli.BoolFlag{Name: flagGenPrune, Usage: "retain only selected API roots and their type dependencies; requires --api"},
+		&ucli.StringSliceFlag{Name: flagGenType, Usage: "fully qualified local data or enum root; requires --api --prune, repeat to select multiple types"},
 		&ucli.BoolFlag{Name: flagGenPub, Usage: "generate backend public contracts"},
 		&ucli.StringFlag{Name: flagGenGoVrpcVersion, Usage: "vRPC module version for API clients"},
 		&ucli.StringFlag{Name: flagGenSkelIn, Usage: "skeleton input file or directory"},
@@ -234,7 +240,7 @@ func parseGenGoModuleCommand(cmd *ucli.Command) (skelc.Input, skelc.GolangOption
 	}
 
 	option := skelc.GolangOption{
-		ApiFilter:    skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor)},
+		ApiFilter:    skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenType)},
 		PubOnly:      cmd.Bool(flagGenPub),
 		ApiOnly:      cmd.Bool(flagGenApi),
 		VrpcVersion:  cmd.String(flagGenGoVrpcVersion),
@@ -284,6 +290,8 @@ func newGenTSFlags() []ucli.Flag {
 	return []ucli.Flag{
 		&ucli.BoolFlag{Name: flagGenApi, Usage: "generate portal API clients"},
 		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
+		&ucli.BoolFlag{Name: flagGenPrune, Usage: "retain only selected API roots and their type dependencies; requires --api"},
+		&ucli.StringSliceFlag{Name: flagGenType, Usage: "fully qualified local data or enum root; requires --api --prune, repeat to select multiple types"},
 		&ucli.StringFlag{Name: flagGenSkelIn, Usage: "skeleton input file or directory"},
 		&ucli.StringFlag{Name: flagGenTSOut, Usage: "TypeScript output directory"},
 		&ucli.StringSliceFlag{Name: flagGenSkelImport, Usage: "skel dependency mapping in domain=path form; repeat for transitive imports"},
@@ -313,7 +321,7 @@ func parseGenTSCommand(cmd *ucli.Command) (skelc.Input, skelc.TypeScriptOption, 
 		Strict:      cmd.Bool(flagStrict),
 	}
 	option := skelc.TypeScriptOption{
-		ApiFilter:   skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor)},
+		ApiFilter:   skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenType)},
 		ApiOnly:     cmd.Bool(flagGenApi),
 		Out:         cmd.String(flagGenTSOut),
 		AsModule:    cmd.Bool(flagGenTSAsModule),

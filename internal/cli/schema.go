@@ -36,6 +36,7 @@ func newSchemaCommand() *ucli.Command {
 		Commands: []*ucli.Command{
 			newSchemaListCommand(),
 			newSchemaImportCommand(),
+			newSchemaDepCommand(),
 			newSchemaGetCommand(),
 			newSchemaSnapshotCommand(),
 			newSchemaDiffCommand(),

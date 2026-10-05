@@ -173,11 +173,11 @@ skelc gen skel \
   --skel-out ./generated/public-skel
 ```
 
-TypeScript 生成必须传 `--api`，不接受 `--pub`。API 输出包含 API 服务及其数据依赖，以及供跨领域 import 使用的显式公开 data、enum。
+TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含 API 服务及其数据依赖，以及供跨领域 import 使用的显式公开 data、enum。传入 `--prune` 并用可重复的 `--actor domain.Actor` 和/或 `--type domain.Type` 指定起点后，只保留这些起点的类型依赖闭包。只有类型起点时不选择服务；`--type` 要求 `--prune`，裁剪至少需要一个起点。这些参数适用于 Go、Go module 和 TypeScript API 输出。
 
 ### 引用其他 domain
 
-在 `.skel` 中声明 `import` 后，生成命令通过可重复使用的 `--skel-import domain=PATH` 指定完整的传递依赖图。skelc 会分析全部依赖，但只为 `--skel-in` 指定的目标生成代码。生成 Go module 或 TypeScript 时，再使用对应的 `--go-import`、`--go-module-prefix` 或 `--ts-import` 映射目标语言的 package。schema 命令不接受依赖映射，而是把 import 符号保留为不透明的完整名称。完整示例见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli)。
+在 `.skel` 中声明 `import` 后，生成命令通过可重复使用的 `--skel-import domain=PATH` 指定完整的传递依赖图。skelc 会分析全部依赖，但只为 `--skel-in` 指定的目标生成代码。生成 Go module 或 TypeScript 时，再使用对应的 `--go-import`、`--go-module-prefix` 或 `--ts-import` 映射目标语言的 package。`schema dep --api` 接受相同的 `--prune`、`--actor`、`--type` 和 `--skel-import` 选择参数，以 JSON 返回选中的本领域声明与外部类型依赖；查询和生成共用选择规则。其他 schema 命令不接受依赖映射，而是把 import 符号保留为不透明的完整名称。完整示例见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli)。
 
 ### 查询、生成快照、查看差异和格式化
 

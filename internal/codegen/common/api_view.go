@@ -9,16 +9,40 @@ import (
 	"go.yorun.ai/skelc/internal/util/nameutil"
 )
 
-// ApiFilter selects API services by their declared actor audiences.
+// ApiFilter selects API service/type roots and optionally prunes public types.
 type ApiFilter struct {
-	// Actors contains fully qualified actor names. Empty selects all API services.
+	// Actors contains fully qualified actor names. Empty selects all API services
+	// unless Prune is enabled, in which case it selects no services.
 	// Multiple names select the union of matching services, regardless of transport.
 	Actors []string
+	// Prune retains only selected services/types and their local type closure.
+	Prune bool
+	// Types lists fully qualified local data/enum roots; requires Prune.
+	Types []string
 }
 
 // BuildApiView selects client services and all locally owned API data dependencies.
-// Explicitly public types remain available for clients of other domains.
+// Without pruning, explicitly public types remain available for other domains.
 func BuildApiView(domain *model.Domain, selection ApiFilter) (*PublicView, error) {
+	var err error
+	selection, err = NormalizeApiFilter(selection)
+	if err != nil {
+		return nil, err
+	}
+	types := map[string]bool{}
+	for _, name := range selection.Types {
+		found := false
+		for _, d := range domain.Data() {
+			found = found || name == domain.Name()+"."+d.Name
+		}
+		for _, e := range domain.Enums() {
+			found = found || name == domain.Name()+"."+e.Name
+		}
+		if !found {
+			return nil, optionvalidation.NewValidationError(optionvalidation.FieldApiType, optionvalidation.RuleInvalid, fmt.Sprintf("unknown local API data or enum %q", name))
+		}
+		types[name] = true
+	}
 	selected := map[string]bool{}
 	for _, name := range selection.Actors {
 		found := false
@@ -36,10 +60,10 @@ func BuildApiView(domain *model.Domain, selection ApiFilter) (*PublicView, error
 		selected[name] = true
 	}
 	result := &PublicView{
-		Data:  filter(domain.Data(), func(d *model.Data) bool { return d.Pub }),
-		Enums: filter(domain.Enums(), func(e *model.Enum) bool { return e.Pub }),
+		Data:  filter(domain.Data(), func(d *model.Data) bool { return (!selection.Prune && d.Pub) || types[domain.Name()+"."+d.Name] }),
+		Enums: filter(domain.Enums(), func(e *model.Enum) bool { return (!selection.Prune && e.Pub) || types[domain.Name()+"."+e.Name] }),
 		Services: filter(domain.Services(), func(s *model.Service) bool {
-			return s.ClientApi() && (len(selected) == 0 || matchesApiActors(domain, s, selected))
+			return s.ClientApi() && ((!selection.Prune && len(selected) == 0) || matchesApiActors(domain, s, selected))
 		}),
 	}
 	collectViewData(domain, result)
@@ -66,9 +90,15 @@ func matchesApiActors(domain *model.Domain, service *model.Service, selected map
 	return false
 }
 
-// NormalizeApiFilter copies and trims actor names without mutating caller options.
+// NormalizeApiFilter validates roots and copies their names without mutating caller options.
 func NormalizeApiFilter(selection ApiFilter) (ApiFilter, error) {
-	result := ApiFilter{}
+	if len(selection.Types) > 0 && !selection.Prune {
+		return ApiFilter{}, optionvalidation.NewValidationError(optionvalidation.FieldApiType, optionvalidation.RuleRequiresPrune, "type filter requires prune")
+	}
+	if selection.Prune && len(selection.Actors) == 0 && len(selection.Types) == 0 {
+		return ApiFilter{}, optionvalidation.NewValidationError(optionvalidation.FieldApiPrune, optionvalidation.RuleRequired, "prune requires at least one actor or type")
+	}
+	result := ApiFilter{Prune: selection.Prune}
 	for _, value := range selection.Actors {
 		name := strings.TrimSpace(value)
 		if qualifier, local, ok := nameutil.SplitQualified(name); !ok || qualifier == "" || local == "" {
@@ -76,7 +106,31 @@ func NormalizeApiFilter(selection ApiFilter) (ApiFilter, error) {
 		}
 		result.Actors = append(result.Actors, name)
 	}
+	for _, value := range selection.Types {
+		name := strings.TrimSpace(value)
+		if qualifier, local, ok := nameutil.SplitQualified(name); !ok || qualifier == "" || local == "" {
+			return ApiFilter{}, optionvalidation.NewValidationError(optionvalidation.FieldApiType, optionvalidation.RuleInvalid, fmt.Sprintf("API type %q must be a fully qualified data or enum name", value))
+		}
+		result.Types = append(result.Types, name)
+	}
 	return result, nil
+}
+
+// ValidateApiFilterMode rejects API selection flags on non-API targets.
+func ValidateApiFilterMode(selection ApiFilter, api bool) error {
+	if api {
+		return nil
+	}
+	if len(selection.Actors) > 0 {
+		return optionvalidation.NewValidationError(optionvalidation.FieldApiActor, optionvalidation.RuleRequiresApi, "actor filter requires api")
+	}
+	if selection.Prune {
+		return optionvalidation.NewValidationError(optionvalidation.FieldApiPrune, optionvalidation.RuleRequiresApi, "prune requires api")
+	}
+	if len(selection.Types) > 0 {
+		return optionvalidation.NewValidationError(optionvalidation.FieldApiType, optionvalidation.RuleRequiresApi, "type filter requires api")
+	}
+	return nil
 }
 
 func collectViewData(domain *model.Domain, view *PublicView) {
