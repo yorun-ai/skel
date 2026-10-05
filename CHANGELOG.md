@@ -6,6 +6,24 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-10-06
+
+### Added
+
+- `schema dep` supports complete-domain and `--pub` dependency views alongside
+  the existing `--api` view, reporting selected local declarations and direct
+  external references, including actors and permission resources.
+- Expose `QuerySchemaDependencies` for programmatic queries of these views.
+
+### Changed
+
+- Replace `schema import` with `scan imports` for scanning direct source import
+  declarations without loading dependencies. Update existing scripts to the new
+  command; its JSON output is unchanged.
+- Expose `command.ScanImport`; retain `command.SchemaImport` as a deprecated alias.
+- Share dependency item types between API and schema queries without changing
+  their JSON output, and strengthen traversal regression coverage.
+
 ## [0.28.0] - 2026-10-06
 
 ### Added
@@ -841,7 +859,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.28.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.29.0...HEAD
+[0.29.0]: https://github.com/yorun-ai/skelc/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/yorun-ai/skelc/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/yorun-ai/skelc/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/yorun-ai/skelc/compare/v0.25.0...v0.26.0
