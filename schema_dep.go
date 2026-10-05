@@ -44,11 +44,8 @@ func QuerySchemaDependencies(input Input, selection SchemaDependencyOption) (Sch
 		report := new(SchemaDependencyReport{
 			Domain:   result.Report.Domain,
 			Services: result.Report.Services, Data: result.Report.Data, Enums: result.Report.Enums,
-			Dependencies: []SchemaDeclarationDependency{},
+			Dependencies: result.Report.Dependencies,
 		})
-		for _, dependency := range result.Report.Dependencies {
-			report.Dependencies = append(report.Dependencies, schema.Dependency{Domain: dependency.Domain, Name: dependency.Name, Kind: dependency.Kind})
-		}
 		return SchemaDependencyResult{Report: report, Diagnostics: result.Diagnostics}, nil
 	}
 	parsed, err := Parse(input)
