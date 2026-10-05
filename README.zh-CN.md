@@ -125,7 +125,7 @@ permission、web 和 task：
 
 ## 常用工作流
 
-使用 `skelc --strict check --skel-in ./skel` 拒绝仅为兼容而保留的旧写法。严格模式默认关闭，也适用于生成和 schema 命令。Go 集成设置 `Input.Strict`；LSP 客户端可使用 `skelc --strict lsp` 或初始化、配置中的 `strict` 选项。作用范围和诊断规则见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli#strict-mode)。
+使用 `skelc --strict check --skel-in ./skel` 拒绝仅为兼容而保留的旧写法。严格模式默认关闭，也适用于生成、scan 和 schema 命令。Go 集成设置 `Input.Strict`；LSP 客户端可使用 `skelc --strict lsp` 或初始化、配置中的 `strict` 选项。作用范围和诊断规则见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli#strict-mode)。
 
 ### 为 web 指定稳定的前端挂载路径
 
@@ -182,6 +182,7 @@ TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含
 ### 查询、生成快照、查看差异和格式化
 
 ```bash
+skelc scan imports --skel-in ./skel
 skelc schema list --skel-in ./skel
 skelc schema list data --skel-in ./skel
 skelc schema get data demo.user.User --skel-in ./skel

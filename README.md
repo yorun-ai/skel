@@ -127,7 +127,7 @@ events, resources and permissions, web capabilities, and tasks:
 
 ## Common Workflows
 
-Use `skelc --strict check --skel-in ./skel` to reject declarations accepted only for compatibility. Strict mode is off by default and also applies to generation and schema commands. Go integrations set `Input.Strict`; LSP clients can use `skelc --strict lsp` or the `strict` initialization/configuration setting. See the [CLI reference](https://skel.yorun.ai/docs/cli#strict-mode) for scope and diagnostics.
+Use `skelc --strict check --skel-in ./skel` to reject declarations accepted only for compatibility. Strict mode is off by default and also applies to generation, scan, and schema commands. Go integrations set `Input.Strict`; LSP clients can use `skelc --strict lsp` or the `strict` initialization/configuration setting. See the [CLI reference](https://skel.yorun.ai/docs/cli#strict-mode) for scope and diagnostics.
 
 ### Give a web a stable frontend mount path
 
@@ -185,6 +185,7 @@ After declaring an `import` in `.skel`, generation commands use repeatable `--sk
 ### Inspect, Snapshot, Diff, and Format
 
 ```bash
+skelc scan imports --skel-in ./skel
 skelc schema list --skel-in ./skel
 skelc schema list data --skel-in ./skel
 skelc schema get data demo.user.User --skel-in ./skel

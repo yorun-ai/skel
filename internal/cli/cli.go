@@ -82,6 +82,7 @@ func newCommand() *ucli.Command {
 			newLSPCommand(),
 			newGenCommand(),
 			newSchemaCommand(),
+			newScanCommand(),
 			newCheckCommand(),
 			newFormatCommand(),
 		},

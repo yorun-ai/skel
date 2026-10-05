@@ -59,9 +59,9 @@ type VersionGolangCodeGenResult struct {
 	DefaultVineVersion string `json:"defaultVineVersion"`
 }
 
-// SchemaImport reports one direct import declaration in the queried input.
+// ScanImport reports one direct import declaration in the queried input.
 // Repeated declarations retain their individual source positions.
-type SchemaImport struct {
+type ScanImport struct {
 	Domain string `json:"domain"`
 	Alias  string `json:"alias,omitempty"`
 	File   string `json:"file"`
