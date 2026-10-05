@@ -176,11 +176,11 @@ skelc gen skel \
   --skel-out ./generated/public-skel
 ```
 
-TypeScript generation requires `--api` and rejects `--pub`. API clients include API services and their data dependencies, plus explicitly public data and enums for cross-domain imports.
+TypeScript generation requires `--api` and rejects `--pub`. By default, API clients include API services and their data dependencies, plus explicitly public data and enums for cross-domain imports. Add `--prune` with repeatable `--actor domain.Actor` and/or `--type domain.Type` roots to retain only their type closure. Type-only roots select no services; `--type` requires `--prune`, and pruning requires at least one root. These options apply to Go, Go module and TypeScript API output.
 
 ### Reference Other Domains
 
-After declaring an `import` in `.skel`, generation commands use repeatable `--skel-import domain=PATH` options to provide the complete transitive dependency graph. skelc analyzes every dependency but generates code only for the `--skel-in` target. When generating a Go module or TypeScript, map the target's direct language-package dependencies with `--go-import`, `--go-module-prefix`, or `--ts-import`. Schema commands do not accept dependency mappings; they preserve imported symbols as opaque, fully qualified references. See the [CLI reference](https://skel.yorun.ai/docs/cli) for complete examples.
+After declaring an `import` in `.skel`, generation commands use repeatable `--skel-import domain=PATH` options to provide the complete transitive dependency graph. skelc analyzes every dependency but generates code only for the `--skel-in` target. When generating a Go module or TypeScript, map the target's direct language-package dependencies with `--go-import`, `--go-module-prefix`, or `--ts-import`. `schema dep --api` accepts the same `--prune`, `--actor`, `--type` and `--skel-import` selection options and reports selected local declarations and external type dependencies as JSON. Query and generation share the same selection rules. Other schema commands do not accept dependency mappings; they preserve imported symbols as opaque, fully qualified references. See the [CLI reference](https://skel.yorun.ai/docs/cli) for complete examples.
 
 ### Inspect, Snapshot, Diff, and Format
 

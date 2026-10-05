@@ -7,6 +7,8 @@ type Field string
 
 const (
 	FieldApiActor                 Field = "api.actor"
+	FieldApiPrune                 Field = "api.prune"
+	FieldApiType                  Field = "api.type"
 	FieldSkelInput                Field = "skel.input"
 	FieldSkelImport               Field = "skel.import"
 	FieldGoOutput                 Field = "go.output"
@@ -33,6 +35,7 @@ type Rule string
 
 const (
 	RuleRequiresApi          Rule = "requires-api"
+	RuleRequiresPrune        Rule = "requires-prune"
 	RuleRequired             Rule = "required"
 	RuleRequiresModule       Rule = "requires-module"
 	RuleRequiresPublicOutput Rule = "requires-public-output"

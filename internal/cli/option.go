@@ -17,6 +17,10 @@ type _OptionValidationKey struct {
 }
 
 var optionValidationMessages = map[_OptionValidationKey]string{
+	{optionvalidation.FieldApiPrune, optionvalidation.RuleRequiresApi}:                 "flag prune requires api",
+	{optionvalidation.FieldApiType, optionvalidation.RuleRequiresApi}:                  "flag type requires api",
+	{optionvalidation.FieldApiType, optionvalidation.RuleRequiresPrune}:                "flag type requires prune",
+	{optionvalidation.FieldApiPrune, optionvalidation.RuleRequired}:                    "flag prune requires at least one actor or type",
 	{optionvalidation.FieldApiActor, optionvalidation.RuleRequiresApi}:                 "flag actor requires api",
 	{optionvalidation.FieldSkelInput, optionvalidation.RuleRequired}:                   "missing flag skel-in",
 	{optionvalidation.FieldGoOutput, optionvalidation.RuleRequired}:                    "missing output flag",

@@ -33,8 +33,8 @@ func normalizeInput(input Input) (compiler.Option, error) {
 }
 
 func normalizeGolangOption(option GolangOption) (golang.ResolvedOption, error) {
-	if len(option.ApiFilter.Actors) > 0 && !option.ApiOnly {
-		return golang.ResolvedOption{}, optionvalidation.NewValidationError(optionvalidation.FieldApiActor, optionvalidation.RuleRequiresApi, "actor filter requires api")
+	if err := common.ValidateApiFilterMode(option.ApiFilter, option.ApiOnly); err != nil {
+		return golang.ResolvedOption{}, err
 	}
 	apiFilter, err := common.NormalizeApiFilter(option.ApiFilter)
 	if err != nil {
@@ -169,8 +169,8 @@ func validateGolangImports(domain *model.Domain, option golang.Option) error {
 }
 
 func normalizeTypeScriptOption(option TypeScriptOption) (typescript.Option, error) {
-	if len(option.ApiFilter.Actors) > 0 && !option.ApiOnly {
-		return typescript.Option{}, optionvalidation.NewValidationError(optionvalidation.FieldApiActor, optionvalidation.RuleRequiresApi, "actor filter requires api")
+	if err := common.ValidateApiFilterMode(option.ApiFilter, option.ApiOnly); err != nil {
+		return typescript.Option{}, err
 	}
 	apiFilter, err := common.NormalizeApiFilter(option.ApiFilter)
 	if err != nil {
