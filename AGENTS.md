@@ -57,6 +57,14 @@
 - Write entries only in the release preparation pull request (`chore(release): prepare vX.Y.Z`). That pull request adds the dated `## [X.Y.Z] - YYYY-MM-DD` heading and records every user-visible change merged since the previous release.
 - Derive the entries from the merged commits and pull requests in the release range. Writing them at release time keeps reverted or reworked changes from leaving stale entries in the changelog.
 
+## Release Publication
+
+- Merge the release-preparation PR after required CI passes, sync local `main`, then create and push the version tag from that reviewed commit.
+- Pushing a `v*` tag triggers binary builds; do not manually publish a GitHub Release first. Release events do not trigger builds.
+- The workflow validates main ancestry and the dated CHANGELOG entry, builds four Linux/macOS AMD64/ARM64 archives from the clean tag checkout, creates a Draft Release with changelog notes, and verifies downloaded attachments and SHA-256 before publishing.
+- Retry failed runs or dispatch with the same existing tag. Unpublished Draft attachments may be replaced as a complete build set; published Releases must never be overwritten. Do not move a tag to repair a failed publication.
+- Report publication complete only after the workflow succeeds and the Release and verified attachments are available. See `.github/CI.md` for validation and recovery.
+
 ## Tests
 
 - Keep implementation tests paired with their source files. Shared setup may live in a narrowly scoped test helper file.
