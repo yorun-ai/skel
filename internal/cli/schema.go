@@ -1,11 +1,9 @@
 package cli
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	ucli "github.com/urfave/cli/v3"
@@ -20,7 +18,6 @@ import (
 const (
 	commandSchema         = "schema"
 	commandSchemaList     = "list"
-	commandSchemaImport   = "import"
 	commandSchemaGet      = "get"
 	commandSchemaSnapshot = "snapshot"
 	commandSchemaDiff     = "diff"
@@ -37,7 +34,6 @@ func newSchemaCommand() *ucli.Command {
 		CustomHelpTemplate: groupCommandHelpTemplate,
 		Commands: []*ucli.Command{
 			newSchemaListCommand(),
-			newSchemaImportCommand(),
 			newSchemaDepCommand(),
 			newSchemaGetCommand(),
 			newSchemaSnapshotCommand(),
@@ -63,39 +59,6 @@ func newSchemaListCommand() *ucli.Command {
 			}
 			entries := filterSchemaEntries(schemas.Entries(document), kind)
 			return writeSchemaResult(cmd, entries, "schema declarations")
-		},
-	}
-}
-
-func newSchemaImportCommand() *ucli.Command {
-	return &ucli.Command{
-		Name:  commandSchemaImport,
-		Usage: "list direct domain import declarations",
-		Flags: []ucli.Flag{&ucli.StringFlag{Name: flagSchemaSkelIn, Usage: "skeleton input file or directory"}},
-		Action: func(ctx context.Context, cmd *ucli.Command) error {
-			if cmd.Args().Len() != 0 {
-				return commandFailure(command.ErrorCodeInvalidArgument, fmt.Errorf("unexpected args for schema import"))
-			}
-			option := compiler.Option{SkelIn: cmd.String(flagSchemaSkelIn), Strict: cmd.Bool(flagStrict)}
-			if err := normalizeCompilerOption(&option); err != nil {
-				return commandFailure(command.ErrorCodeInvalidArgument, err)
-			}
-			result, err := compiler.CompileImportContext(ctx, option)
-			if err != nil {
-				return commandFailure(command.ErrorCodeCompilationFailed, err)
-			}
-			writeWarningLogs(cmd, result.Diagnostics)
-			imports := make([]command.SchemaImport, 0, len(result.Imports))
-			for _, imported := range result.Imports {
-				imports = append(imports, command.SchemaImport{
-					Domain: imported.Name, Alias: imported.Alias,
-					File: imported.Pos.File, Line: imported.Pos.Line, Column: imported.Pos.Column,
-				})
-			}
-			slices.SortFunc(imports, func(a, b command.SchemaImport) int {
-				return cmp.Or(cmp.Compare(a.File, b.File), cmp.Compare(a.Line, b.Line), cmp.Compare(a.Column, b.Column))
-			})
-			return writeSchemaResult(cmd, imports, "schema imports")
 		},
 	}
 }
