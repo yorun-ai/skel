@@ -8,6 +8,7 @@ This directory owns repository automation, not public documentation.
 | Event | Workflow | Responsibility |
 | --- | --- | --- |
 | PR targeting any branch | `ci.yml` | Run the checks selected by changed inputs and verify the required gate |
+| Push a `v*` tag / manual tag input | `release.yml` | Build and verify archives, then publish GitHub Release |
 | Push to `main` | `cache.yml` | Populate Go build, module and test caches for later PR runs; no correctness gate |
 
 ## Pull Request Gate
@@ -77,7 +78,9 @@ full job set.
 Validate workflow changes with:
 
 ```bash
-GOWORK=off go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 .github/workflows/ci.yml .github/workflows/cache.yml
+GOWORK=off go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 .github/workflows/*.yml
+shellcheck .github/scripts/release*.sh
+bash .github/scripts/release_test.sh
 git diff --check
 ```
 
@@ -96,3 +99,25 @@ Its isolated temporary workspace installs the exact versions and integrity hashe
 from `.github/typescript/package-lock.json`; it never substitutes sibling runtime
 source. Cross-domain example imports resolve through TypeScript paths. Update the
 fixture lockfile deliberately when changing the tested runtime or TypeScript version.
+
+## Release Publication and Recovery
+
+Merge release preparation through PR CI, sync `main`, and push the version tag
+from the reviewed commit. The workflow checks tag identity, main ancestry, and a
+dated, nonempty CHANGELOG entry. Release publication events do not start builds.
+The Go static job also runs release lifecycle regression tests and workflow lint.
+
+Builds use a clean tag checkout and retain version, revision, and dirty-state
+checks. All four Linux/macOS AMD64/ARM64 archives and `checksums.txt` must be ready
+before a Draft Release is created. Notes come from the matching CHANGELOG entry;
+prerelease tags produce prereleases. The workflow uploads the files, checks the
+exact asset list, downloads them, compares the checksum file and verifies SHA-256,
+then publishes the Release. PR build outputs are not release attachments.
+
+Retry a failed run or dispatch using its existing tag. Builds failing before
+upload do not create a new Release; upload/verification failures leave a Draft.
+A retry rebuilds the full set and replaces only the expected Draft attachments.
+Unexpected attachments fail verification and require inspection. Already
+published Releases are rejected without modifying their attachments. Do not
+manually publish the Draft or move the tag to recover. A real version-tag run is
+required to validate hosted permissions and cross-platform publication end to end.

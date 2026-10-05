@@ -1,20 +1,20 @@
 name: Release
 
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to build
+        description: Existing tag to build and publish
         required: true
         type: string
-  release:
-    types: [published]
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.event.release.tag_name || inputs.tag }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
     name: Release binaries
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
       GOWORK: 'off'
     steps:
       - name: Check out release
@@ -37,38 +37,10 @@ jobs:
           go-version: '1.27.1'
           cache: true
 
-      - name: Validate release tag
-        run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Release tag must use the v<major>.<minor>.<patch> format"
-            exit 1
-          fi
-
-          git tag --points-at HEAD --list "$RELEASE_TAG" | grep -Fx "$RELEASE_TAG"
-          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
-
-          version="${RELEASE_TAG#v}"
-          names="$(printf 'skelc_%s_%s.tar.gz\n' "$version" darwin_amd64 "$version" darwin_arm64 "$version" linux_amd64 "$version" linux_arm64 |
-            jq -Rsc 'split("\n")[:-1] + ["checksums.txt"]')"
-          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets |
-            jq -e --argjson names "$names" '
-              [.assets[].name | select(. as $name | $names | index($name))] |
-              if length == 0 then true
-              else error("Existing binary assets; refusing to overwrite: " + join(", ")) end'
+      - name: Validate release and prepare notes
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Validate changelog release
-        run: |
-          version="${RELEASE_TAG#v}"
-          prefix="## [$version] - "
-          release_heading="$(grep -F "$prefix" CHANGELOG.md || true)"
-          release_date="${release_heading#"$prefix"}"
-          if [[ "$release_heading" != "$prefix$release_date" ||
-                ! "$release_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-            echo "CHANGELOG.md must contain a dated [$version] release heading"
-            exit 1
-          fi
+        run: bash .github/scripts/release.sh prepare
 
       - name: Build archives
         run: |
@@ -127,11 +99,7 @@ jobs:
           cd "$RELEASE_DIST"
           sha256sum skelc_*.tar.gz > checksums.txt
 
-      - name: Upload release assets
+      - name: Publish complete release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload "$RELEASE_TAG" \
-            "$RELEASE_DIST"/skelc_*.tar.gz \
-            "$RELEASE_DIST/checksums.txt" \
-            --repo "$GITHUB_REPOSITORY"
+        run: bash .github/scripts/release.sh publish

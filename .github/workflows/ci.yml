@@ -47,6 +47,12 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: Check release automation
+        run: |
+          shellcheck .github/scripts/release*.sh
+          bash .github/scripts/release_test.sh
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 .github/workflows/*.yml
+
       - name: Run Go static checks
         run: bash .github/scripts/ci.sh static
 

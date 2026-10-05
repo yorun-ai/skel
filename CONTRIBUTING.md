@@ -145,6 +145,13 @@ Before publishing a release, confirm that:
 - release notes describe compatibility impact and any required regeneration
 - the tag points to the reviewed release commit
 
+Pushing the reviewed `v*` tag starts the Release workflow. It builds and validates
+four platform archives before creating a Draft Release from the CHANGELOG entry,
+then uploads and downloads the attachments to verify their checksums before
+publishing. Do not publish a Release manually to start a build. Failed Draft
+uploads can be repaired by rerunning the workflow; published releases are never
+overwritten. See [CI maintenance](.github/CI.md) for details.
+
 ## VS Code Extension
 
 The extension is maintained in the independent
