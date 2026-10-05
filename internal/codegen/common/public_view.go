@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skelc/internal/schema"
 )
 
 // PublicView contains declarations that belong to a domain's public contract.
@@ -17,6 +18,17 @@ type PublicView struct {
 	Resources []*model.Resource
 	Events    []*model.Data
 	Services  []*model.Service
+}
+
+// ProjectSchema projects selected declarations without changing their original
+// public attributes. Imports remain available for canonical reference names.
+func (v *PublicView) ProjectSchema(domain *model.Domain) (*schema.Document, error) {
+	selected := model.NewDomainFromSpec(model.DomainSpec{
+		Name: domain.Name(), Description: domain.Description(), Imports: domain.Imports(),
+		Enums: v.Enums, Data: v.Data, Configs: v.Configs, Actors: v.Actors,
+		Resources: v.Resources, Events: v.Events, Services: v.Services,
+	})
+	return schema.Project(selected, nil)
 }
 
 // BuildPublicView constructs and validates one public-contract projection.

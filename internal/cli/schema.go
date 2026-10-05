@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	ucli "github.com/urfave/cli/v3"
+	"go.yorun.ai/skelc"
+	"go.yorun.ai/skelc/internal/codegen/common"
 	"go.yorun.ai/skelc/internal/command"
 	"go.yorun.ai/skelc/internal/compiler"
 	schemas "go.yorun.ai/skelc/internal/schema"
@@ -55,7 +57,7 @@ func newSchemaListCommand() *ucli.Command {
 			if err != nil {
 				return commandFailure(command.ErrorCodeInvalidArgument, err)
 			}
-			document, err := loadQuerySchema(cmd)
+			document, err := loadSchemaList(cmd)
 			if err != nil {
 				return err
 			}
@@ -188,7 +190,57 @@ func newSchemaDiffCommand() *ucli.Command {
 func newSchemaListFlags() []ucli.Flag {
 	return []ucli.Flag{
 		&ucli.StringFlag{Name: flagSchemaSkelIn, Usage: "skeleton input file or directory"},
+		&ucli.BoolFlag{Name: flagGenPub, Usage: "list backend public contract declarations and their local type dependencies"},
+		&ucli.BoolFlag{Name: flagGenApi, Usage: "list API generation declarations"},
+		&ucli.BoolFlag{Name: flagGenPrune, Usage: "retain only selected API roots and their type dependencies; requires --api"},
+		&ucli.StringSliceFlag{Name: flagGenActor, Usage: "fully qualified API actor name; requires --api, repeat to select multiple actors"},
+		&ucli.StringSliceFlag{Name: flagGenName, Aliases: []string{"type"}, Usage: "fully qualified local data or enum root; requires --api --prune, repeat to select multiple types"},
+		&ucli.StringSliceFlag{Name: flagGenSkelImport, Usage: "skel dependency mapping in domain=path form; requires --pub or --api, repeat for transitive imports"},
 	}
+}
+
+func loadSchemaList(cmd *ucli.Command) (*schemas.Document, error) {
+	api, pub := cmd.Bool(flagGenApi), cmd.Bool(flagGenPub)
+	if api && pub {
+		return nil, commandFailure(command.ErrorCodeInvalidArgument, fmt.Errorf("flags api and pub are mutually exclusive"))
+	}
+	selection := common.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)}
+	if err := common.ValidateApiFilterMode(selection, api); err != nil {
+		return nil, generationCommandFailure(err)
+	}
+	if !api && !pub {
+		if cmd.IsSet(flagGenSkelImport) {
+			return nil, commandFailure(command.ErrorCodeInvalidArgument, fmt.Errorf("flag skel-import requires api or pub"))
+		}
+		return loadQuerySchema(cmd)
+	}
+	normalized, err := common.NormalizeApiFilter(selection)
+	if err != nil {
+		return nil, generationCommandFailure(err)
+	}
+	imports, err := parseMappingFlags(cmd.StringSlice(flagGenSkelImport), flagGenSkelImport)
+	if err != nil {
+		return nil, commandFailure(command.ErrorCodeInvalidArgument, err)
+	}
+	parsed, err := skelc.Parse(skelc.Input{SkelIn: cmd.String(flagSchemaSkelIn), SkelImports: imports, Strict: cmd.Bool(flagStrict)})
+	if err != nil {
+		return nil, generationCommandFailure(err)
+	}
+	writeWarningLogs(cmd, parsed.Diagnostics)
+	var view *common.PublicView
+	if api {
+		view, err = common.BuildApiView(parsed.Domain, normalized)
+	} else {
+		view, err = common.BuildPublicView(parsed.Domain)
+	}
+	if err != nil {
+		return nil, generationCommandFailure(err)
+	}
+	document, err := view.ProjectSchema(parsed.Domain)
+	if err != nil {
+		return nil, commandFailure(command.ErrorCodeCommandFailed, err)
+	}
+	return document, nil
 }
 
 func newSchemaGetFlags() []ucli.Flag {

@@ -176,11 +176,11 @@ skelc gen skel \
   --skel-out ./generated/public-skel
 ```
 
-TypeScript generation requires `--api` and rejects `--pub`. By default, API clients include API services and their data dependencies, plus explicitly public data and enums for cross-domain imports. Add `--prune` with repeatable `--actor domain.Actor` and/or `--type domain.Type` roots to retain only their type closure. Type-only roots select no services; `--type` requires `--prune`, and pruning requires at least one root. These options apply to Go, Go module and TypeScript API output.
+TypeScript generation requires `--api` and rejects `--pub`. By default, API clients include API services and their data dependencies, plus explicitly public data and enums for cross-domain imports. Add `--prune` with repeatable `--actor domain.Actor` and/or `--name domain.Type` roots to retain only their type closure. Type-only roots select no services; `--name` requires `--prune`, and pruning requires at least one root. `--type` remains a compatibility alias for `--name`. These options apply to Go, Go module and TypeScript API output.
 
 ### Reference Other Domains
 
-After declaring an `import` in `.skel`, generation commands use repeatable `--skel-import domain=PATH` options to provide the complete transitive dependency graph. skelc analyzes every dependency but generates code only for the `--skel-in` target. When generating a Go module or TypeScript, map the target's direct language-package dependencies with `--go-import`, `--go-module-prefix`, or `--ts-import`. `schema dep --api` accepts the same `--prune`, `--actor`, `--type` and `--skel-import` selection options and reports selected local declarations and external type dependencies as JSON. Query and generation share the same selection rules. Other schema commands do not accept dependency mappings; they preserve imported symbols as opaque, fully qualified references. See the [CLI reference](https://skel.yorun.ai/docs/cli) for complete examples.
+After declaring an `import` in `.skel`, generation commands use repeatable `--skel-import domain=PATH` options to provide the complete transitive dependency graph. skelc analyzes every dependency but generates code only for the `--skel-in` target. When generating a Go module or TypeScript, map the target's direct language-package dependencies with `--go-import`, `--go-module-prefix`, or `--ts-import`. `schema dep --api` accepts the same `--prune`, `--actor`, `--name` and `--skel-import` selection options and reports selected local declarations and external type dependencies as JSON. Query and generation share the same selection rules. `schema list --pub` and `schema list --api` also accept dependency mappings and list declarations from the corresponding generation view. Default `schema list` and other schema inspection commands do not accept dependency mappings; they preserve imported symbols as opaque, fully qualified references. See the [CLI reference](https://skel.yorun.ai/docs/cli) for complete examples.
 
 ### Inspect, Snapshot, Diff, and Format
 
@@ -199,8 +199,12 @@ All non-LSP commands emit one pretty-printed JSON result on stdout; help remains
 text, and LSP uses JSON-RPC. `schema list` returns a JSON array of declaration
 summaries, while `schema get TYPE SKEL_NAME` returns one complete normalized
 declaration object or JSON `null` when that declaration does not exist; both are
-successful query results. All schema commands operate on the complete domain,
-and every declaration retains its `pub` marker.
+successful query results. Without view flags, `schema list` inspects the complete domain.
+Use `--pub` or `--api` to list a generation view, with API selection via
+`--actor`, `--prune` and `--name` using the same rules as generation. The optional
+positional `TYPE` filters the result after selection. Each entry retains its original
+`pub` marker, including private types pulled into a view by references. Empty lists
+are `[]`; imported declarations are not included.
 
 Snapshot JSON is deterministically ordered and carries a versioned schema-format
 identifier. `schema snapshot` always writes that JSON to stdout, so redirect it
