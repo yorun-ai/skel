@@ -63,7 +63,9 @@ func TestAnalyze(t *testing.T) {
 			},
 			{
 				Service: &grammar.Service{
-					Name:      ident("UserService"),
+					Auth:      &grammar.AuthMarker{Value: "required"},
+					Api:       true,
+					Name:      ident("UserApiService"),
 					Audiences: []*grammar.ServiceAudience{serviceAllow("PortalAdminActor")},
 					Methods: []*grammar.Method{
 						{
@@ -143,7 +145,7 @@ func TestAnalyze(t *testing.T) {
 	if domain.Actors()[0].Auth.Info == nil || domain.Actors()[0].Auth.Info.SkelName != "demo.user.PortalAdminActorInfo" {
 		t.Fatalf("unexpected actor info: %+v", domain.Actors()[0].Auth.Info)
 	}
-	if len(domain.Services()) != 1 || domain.Services()[0].SkelName != "demo.user.UserService" {
+	if len(domain.Services()) != 1 || domain.Services()[0].SkelName != "demo.user.UserApiService" {
 		t.Fatalf("unexpected services: %+v", domain.Services())
 	}
 	authService := domain.Actors()[0].Auth.Service

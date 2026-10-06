@@ -119,7 +119,7 @@ func TestTypesTemplateKeepsModuleSemanticsWhenEmpty(t *testing.T) {
 	}
 }
 
-func TestBuildDataTsPayloadKeepsLegacyServiceDependencies(t *testing.T) {
+func TestBuildDataTsPayloadKeepsApiServiceDependencies(t *testing.T) {
 	userStatus := &schema.Enum{Name: "UserStatus", Items: []*schema.EnumItem{{Name: "ACTIVE"}}}
 	unusedStatus := &schema.Enum{Name: "UnusedStatus", Items: []*schema.EnumItem{{Name: "ACTIVE"}}}
 	userProfile := &schema.Data{Name: "UserProfile"}
@@ -144,8 +144,8 @@ func TestBuildDataTsPayloadKeepsLegacyServiceDependencies(t *testing.T) {
 		},
 		Data: []*schema.Data{user, userProfile, internalOnly},
 		Services: []*schema.Service{
-			{Name: "ClientService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "getUser", ResultType: codegentest.DataType(user)}}},
-			{Name: "AgentService", Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{Name: "getInternal", ResultType: codegentest.DataType(internalOnly)}}},
+			{Name: "ClientApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "getUser", ResultType: codegentest.DataType(user)}}},
+			{Name: "AgentApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{Name: "getInternal", ResultType: codegentest.DataType(internalOnly)}}},
 		},
 	})
 
@@ -232,7 +232,7 @@ func TestBuildDataTsPayloadKeepsGenericTypeArguments(t *testing.T) {
 		}},
 		Data: []*schema.Data{page, user},
 		Services: []*schema.Service{{
-			Name:      "ClientService",
+			Name: "ClientApiService", Api: true, AuthMode: schema.AuthModeRequired,
 			Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}},
 			Methods: []*schema.Method{{
 				Name:       "listUsers",

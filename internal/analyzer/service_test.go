@@ -9,11 +9,13 @@ import (
 
 func TestParseService(t *testing.T) {
 	service := parseServiceTest(t, &grammar.Service{
+		Auth: &grammar.AuthMarker{Value: "required"},
+		Api:  true,
 		Decorators: []*grammar.Decorator{
 			{Name: ident("desc"), Value: decoratorValue(`"Client user service"`)},
 		},
-		Pub:       true,
-		Name:      ident("UserService"),
+
+		Name:      ident("UserApiService"),
 		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor", "client"), serviceAllow("OpenAPIActor")},
 		Methods: []*grammar.Method{
 			{
@@ -50,7 +52,7 @@ func TestParseService(t *testing.T) {
 		},
 	})
 
-	if service.Name != "UserService" {
+	if service.Name != "UserApiService" {
 		t.Fatalf("unexpected service name: %s", service.Name)
 	}
 	if len(service.Audiences) != 2 {
@@ -59,8 +61,8 @@ func TestParseService(t *testing.T) {
 	if service.Description != "Client user service" {
 		t.Fatalf("unexpected service description: %q", service.Description)
 	}
-	if !service.Pub {
-		t.Fatal("expected pub service")
+	if !service.Api {
+		t.Fatal("expected api service")
 	}
 	if service.Audiences[0].Actor != "ClientActor" || service.Audiences[1].Actor != "OpenAPIActor" {
 		t.Fatalf("unexpected service audiences: %+v", service.Audiences)
@@ -92,17 +94,19 @@ func TestParseService(t *testing.T) {
 	if !service.Methods[0].Arguments[0].Sensitive || !service.Methods[0].ArgumentsData.Members[0].Sensitive {
 		t.Fatal("expected sensitive metadata on argument and generated argument data")
 	}
-	if service.Methods[0].ArgumentsData == nil || service.Methods[0].ArgumentsData.Name != "UserServiceGetUserArguments" {
+	if service.Methods[0].ArgumentsData == nil || service.Methods[0].ArgumentsData.Name != "UserApiServiceGetUserArguments" {
 		t.Fatalf("unexpected arguments data: %+v", service.Methods[0].ArgumentsData)
 	}
 }
 
 func TestParseServiceSupportsTripleQuotedDescription(t *testing.T) {
 	service := parseServiceTest(t, &grammar.Service{
+		Auth: &grammar.AuthMarker{Value: "required"},
+		Api:  true,
 		Decorators: []*grammar.Decorator{
 			{Name: ident("desc"), Value: decoratorValue("\"\"\"\n    User service\n    Second line description\n\"\"\"")},
 		},
-		Name:      ident("UserService"),
+		Name:      ident("UserApiService"),
 		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
 		Methods: []*grammar.Method{
 			{
@@ -127,6 +131,7 @@ func TestParseServiceSupportsTripleQuotedDescription(t *testing.T) {
 
 func TestParseServiceAudiencesMissingActors(t *testing.T) {
 	service := parseServiceTest(t, &grammar.Service{
+		Pub:  true,
 		Name: ident("UserService"),
 		Methods: []*grammar.Method{
 			{
@@ -158,7 +163,8 @@ func TestParseServiceAudiencesPub(t *testing.T) {
 
 func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 	service := parseServiceTest(t, &grammar.Service{
-		Name: ident("UserService"),
+		Api:  true,
+		Name: ident("UserApiService"),
 		Sections: []*grammar.ServiceSection{
 			{
 				Method: &grammar.Method{
@@ -166,7 +172,7 @@ func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 				},
 			},
 			{
-				Auth: &grammar.AuthMarker{Value: "noauth"},
+				Auth: &grammar.AuthMarker{Value: "optional"},
 			},
 			{
 				Audience: serviceAllow("ClientActor", "client"),
@@ -174,13 +180,13 @@ func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 			{
 				Method: &grammar.Method{
 					Name: ident("update"),
-					Auth: &grammar.AuthMarker{Value: "auth"},
+					Auth: &grammar.AuthMarker{Value: "required"},
 				},
 			},
 		},
 	})
 
-	if service.AuthMode != schema.AuthModeNoAuth {
+	if service.AuthMode != schema.AuthModeOptional {
 		t.Fatalf("unexpected service auth: %s", service.AuthMode)
 	}
 	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "client" {
@@ -189,13 +195,14 @@ func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 	if service.Methods[0].AuthMode != schema.AuthModeUnset {
 		t.Fatalf("expected list auth to stay unset, got %s", service.Methods[0].AuthMode)
 	}
-	if service.Methods[1].AuthMode != schema.AuthModeAuth {
+	if service.Methods[1].AuthMode != schema.AuthModeRequired {
 		t.Fatalf("expected update to override auth, got %s", service.Methods[1].AuthMode)
 	}
 }
 
 func TestParseServiceDefaultsAuthToUnset(t *testing.T) {
 	service := parseServiceTest(t, &grammar.Service{
+		Pub:  true,
 		Name: ident("UserService"),
 		Methods: []*grammar.Method{
 			{Name: ident("ping")},
@@ -212,10 +219,12 @@ func TestParseServiceDefaultsAuthToUnset(t *testing.T) {
 
 func TestParseServiceRejectsExampleDecorator(t *testing.T) {
 	expectServiceDiagnostic(t, "unexpected decorator @example", &grammar.Service{
+		Auth: &grammar.AuthMarker{Value: "required"},
+		Api:  true,
 		Decorators: []*grammar.Decorator{
 			{Name: ident("example"), Value: decoratorValue(`"demo"`)},
 		},
-		Name:      ident("UserService"),
+		Name:      ident("UserApiService"),
 		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
 		Methods: []*grammar.Method{
 			{
@@ -228,7 +237,9 @@ func TestParseServiceRejectsExampleDecorator(t *testing.T) {
 
 func TestParseServiceRejectsMethodExampleDecorator(t *testing.T) {
 	expectServiceDiagnostic(t, "unexpected decorator @example", &grammar.Service{
-		Name:      ident("UserService"),
+		Auth:      &grammar.AuthMarker{Value: "required"},
+		Api:       true,
+		Name:      ident("UserApiService"),
 		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
 		Methods: []*grammar.Method{
 			{
@@ -244,7 +255,9 @@ func TestParseServiceRejectsMethodExampleDecorator(t *testing.T) {
 
 func TestParseServiceRejectsInputExampleDecorator(t *testing.T) {
 	expectServiceDiagnostic(t, "unexpected decorator @example", &grammar.Service{
-		Name:      ident("UserService"),
+		Auth:      &grammar.AuthMarker{Value: "required"},
+		Api:       true,
+		Name:      ident("UserApiService"),
 		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
 		Methods: []*grammar.Method{
 			{
@@ -264,7 +277,9 @@ func TestParseServiceRejectsInputExampleDecorator(t *testing.T) {
 
 func TestParseServiceReturnsErrorForDuplicatedMethod(t *testing.T) {
 	expectServiceDiagnostic(t, "duplicated method getUser", &grammar.Service{
-		Name:      ident("UserService"),
+		Auth:      &grammar.AuthMarker{Value: "required"},
+		Api:       true,
+		Name:      ident("UserApiService"),
 		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
 		Methods: []*grammar.Method{
 			{Name: ident("getUser")},
@@ -275,7 +290,9 @@ func TestParseServiceReturnsErrorForDuplicatedMethod(t *testing.T) {
 
 func TestParseServiceAudiencesArgumentNameMatchingMethodName(t *testing.T) {
 	service := parseServiceTest(t, &grammar.Service{
-		Name:      ident("UserService"),
+		Auth:      &grammar.AuthMarker{Value: "required"},
+		Api:       true,
+		Name:      ident("UserApiService"),
 		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
 		Methods: []*grammar.Method{
 			{
@@ -295,7 +312,9 @@ func TestParseServiceAudiencesArgumentNameMatchingMethodName(t *testing.T) {
 
 func TestParseServiceReturnsErrorWhenExampleHasNoDescription(t *testing.T) {
 	expectServiceDiagnostic(t, "decorator @example must be used with @desc", &grammar.Service{
-		Name:      ident("UserService"),
+		Auth:      &grammar.AuthMarker{Value: "required"},
+		Api:       true,
+		Name:      ident("UserApiService"),
 		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
 		Methods: []*grammar.Method{
 			{

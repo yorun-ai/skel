@@ -92,7 +92,7 @@ pub resource ItemResource {
     action read
 }
 
-pub service BaseService {
+api service BaseApiService { auth required
     for BaseActor
 
     method getItem {
@@ -455,7 +455,7 @@ func TestCompileModulesSeparateResolutionMappingsFromDependencies(t *testing.T) 
 		name, source               string
 		full, public, regular, api []string
 	}{
-		{"external actor", "pub data Payload { id: uuid }\nweb GatewayWeb { for b.AgentActor }", nil, nil, nil, nil},
+		{"external actor", "pub data Payload { id: uuid }\nweb GatewayWeb { auth required  for b.AgentActor }", nil, nil, nil, nil},
 		{"unused transitive contract", "pub data Payload { token: b.Token }", []string{"b"}, []string{"b"}, nil, []string{"b"}},
 		{"split output boundaries", "pub data Payload { access: c.Access }\ndata PrivatePayload { token: b.Token }", []string{"b", "c"}, []string{"c"}, []string{"b"}, []string{"c"}},
 		{"generic arguments", "pub data Payload { values: map<string, b.Box<c.Access>> }", []string{"b", "c"}, []string{"b", "c"}, nil, []string{"b", "c"}},
@@ -468,7 +468,7 @@ pub resource LocalResource {
     check byToken { input { token: b.Token } }
     action read
 }
-api service ExampleApiService { for LocalActor via client method ping {} }`, []string{"b", "c"}, []string{"b", "c"}, nil, nil},
+api service ExampleApiService { auth required  for LocalActor via client method ping {} }`, []string{"b", "c"}, []string{"b", "c"}, nil, nil},
 		{"config event and task", `pub config ExampleConfig eternal { token: b.Token }
 pub event ExampleEvent { payload { access: c.Access } }
 task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b", "c"}, []string{"b", "c"}, []string{"b", "c"}, nil},

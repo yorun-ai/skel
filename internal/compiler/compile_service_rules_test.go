@@ -2,13 +2,15 @@ package compiler
 
 import (
 	"context"
+	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
 	"go.yorun.ai/skel/diagnostic"
 )
 
-func TestServiceWarningsAndApiModifiers(t *testing.T) {
+func TestServiceEntryPointRules(t *testing.T) {
 	source := Source{Path: "/workspace/api.skel", Content: []byte(`domain demo.order
 service LegacyService { method ping {} }
 pub service DualService { method ping { auth optional } }
@@ -26,8 +28,8 @@ pub service BackendService { method ping {} }
 			t.Fatalf("unexpected diagnostics: %v", diagnostics)
 		}
 		for _, d := range diagnostics {
-			if d.Severity != DiagnosticSeverityWarning || d.Range.Start.Line < 2 {
-				t.Fatalf("invalid warning: %+v", d)
+			if d.Severity != DiagnosticSeverityError || d.Range.Start.Line < 2 {
+				t.Fatalf("invalid diagnostic: %+v", d)
 			}
 		}
 	}
@@ -43,10 +45,13 @@ func TestApiServiceNameSuffix(t *testing.T) {
 		{declaration: "api service OrderAPIService"},
 		{declaration: "api service ApiService"},
 		{declaration: "pub service OrderService", valid: true},
-		{declaration: "service OrderService", valid: true},
 	} {
 		t.Run(test.declaration, func(t *testing.T) {
-			source := Source{Path: "/workspace/api.skel", Content: []byte("domain demo.order\n" + test.declaration + " { for TestActor via client method ping {} }\nactor TestActor { via client {} }\n")}
+			body := " { method ping {} }"
+			if strings.HasPrefix(test.declaration, "api ") {
+				body = " { for TestActor via client auth required method ping {} }"
+			}
+			source := Source{Path: "/workspace/api.skel", Content: []byte("domain demo.order\n" + test.declaration + body + "\nactor TestActor { via client {} }\n")}
 			analyzer := NewWorkspaceAnalyzer()
 			for range 2 {
 				diagnostics, _, err := analyzer.analyze(context.Background(), []Source{source}, true)
@@ -86,7 +91,7 @@ func TestExtServiceIncrementalAnalysis(t *testing.T) {
 
 func TestApiServiceRequiresActorAudience(t *testing.T) {
 	analyzer := NewWorkspaceAnalyzer()
-	for _, auth := range []string{"", "noauth", "auth"} {
+	for _, auth := range []string{"auth required", "auth optional", "auth anonymous"} {
 		source := Source{Path: "/workspace/api.skel", Content: []byte("domain demo.order\napi service OrderApiService { " + auth + " method ping {} }\n")}
 		for range 2 {
 			diagnostics, _, err := analyzer.analyze(context.Background(), []Source{source}, true)
@@ -106,5 +111,51 @@ func TestApiServiceRequiresActorAudience(t *testing.T) {
 		if err != nil || Diagnostics(diagnostics).HasErrors() {
 			t.Fatalf("valid audience rejected: %v, %v", diagnostics, err)
 		}
+	}
+}
+
+func TestEntryPointRulesApplyInAllModes(t *testing.T) {
+	for _, test := range []struct{ name, declaration, code string }{
+		{"modifier", "service EntryService { method ping {} }", diagnostic.CodeServiceModifier},
+		{"backend audience", "pub service EntryService { for ClientActor method ping {} }", diagnostic.CodeServiceClientRules},
+		{"extension audience", "ext service EntryService { for ClientActor method ping {} }", diagnostic.CodeServiceClientRules},
+		{"service auth", "pub service EntryService { auth optional method ping {} }", diagnostic.CodeServiceClientRules},
+		{"method auth", "pub service EntryService { method ping { auth required } }", diagnostic.CodeServiceClientRules},
+		{"service permission", "pub service EntryService { require Record:read method ping {} }", diagnostic.CodeServiceClientRules},
+		{"method permission", "pub service EntryService { method ping { require Record:read } }", diagnostic.CodeServiceClientRules},
+		{"missing api auth", "api service EntryApiService { for ClientActor method ping { auth required } }", diagnostic.CodeApiAuthMissing},
+		{"missing web auth", "web EntryWeb { for ClientActor }", diagnostic.CodeWebAuthMissing},
+		{"backend", "pub service EntryService { method ping {} }", ""},
+		{"extension", "ext service EntryService { method ping {} }", ""},
+		{"api", "api service EntryApiService { for ClientActor auth required method ping {} }", ""},
+		{"web", "web EntryWeb { for ClientActor auth off }", ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "entry.skel")
+			writeFile(t, path, "domain demo\nactor ClientActor { via client {} permission {} }\nresource Record { action read }\n"+test.declaration)
+			var previous Diagnostics
+			for _, strict := range []bool{false, true, false} {
+				checked, err := Check(Option{SkelIn: path, Strict: strict})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if previous != nil && !reflect.DeepEqual(previous, checked.Diagnostics) {
+					t.Fatalf("mode changed diagnostics: %v / %v", previous, checked.Diagnostics)
+				}
+				previous = checked.Diagnostics
+				if test.code == "" {
+					if len(checked.Diagnostics) != 0 {
+						t.Fatal(checked.Diagnostics)
+					}
+				} else if len(checked.Diagnostics) != 1 || checked.Diagnostics[0].Code != test.code || checked.Diagnostics[0].Severity != DiagnosticSeverityError {
+					t.Fatalf("unexpected diagnostics: %v", checked.Diagnostics)
+				}
+				for _, compile := range []func(Option) (Result, error){Compile, CompileImport} {
+					if _, err := compile(Option{SkelIn: path, Strict: strict}); (err != nil) != (test.code != "") {
+						t.Fatalf("unexpected compilation: %v", err)
+					}
+				}
+			}
+		})
 	}
 }

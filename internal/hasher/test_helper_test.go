@@ -31,10 +31,12 @@ func newHashTestDomain(t *testing.T, serviceDescription string) *schema.Domain {
 			},
 			{
 				Service: &grammar.Service{
+					Auth: &grammar.AuthMarker{Value: "required"},
+					Api:  true,
 					Decorators: []*grammar.Decorator{
 						{Name: ident("desc"), Value: &grammar.DecoratorValue{Raw: `"` + serviceDescription + `"`}},
 					},
-					Name:      ident("UserService"),
+					Name:      ident("UserApiService"),
 					Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
 					Methods: []*grammar.Method{
 						{
@@ -93,7 +95,9 @@ func newHashAllowViaTestDomain(t *testing.T, via string) *schema.Domain {
 			},
 			{
 				Service: &grammar.Service{
-					Name:      ident("UserService"),
+					Auth:      &grammar.AuthMarker{Value: "required"},
+					Api:       true,
+					Name:      ident("UserApiService"),
 					Audiences: []*grammar.ServiceAudience{serviceAllowVia("ClientActor", via)},
 					Methods: []*grammar.Method{
 						{Name: ident("ping")},
@@ -102,6 +106,7 @@ func newHashAllowViaTestDomain(t *testing.T, via string) *schema.Domain {
 			},
 			{
 				Web: &grammar.Web{
+					Sections:  []*grammar.WebSection{{Auth: &grammar.AuthMarker{Value: "required"}}},
 					Name:      ident("UserPortalWeb"),
 					Audiences: []*grammar.WebAudience{webAllowVia("ClientActor", via)},
 				},

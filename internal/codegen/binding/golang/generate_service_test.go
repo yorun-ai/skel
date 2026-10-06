@@ -49,8 +49,7 @@ func TestGeneratorRendersNullableMapAndServiceHooks(t *testing.T) {
 							},
 						},
 					}),
-				},
-			},
+				}, Pub: true},
 		},
 	})
 

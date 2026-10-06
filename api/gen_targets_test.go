@@ -33,13 +33,13 @@ api service EntryApiService { for ClientActor auth required method read {} }
 			t.Fatal(err)
 		}
 		for _, service := range parsed.Domain.Services() {
-			clientApi := service.ClientApi()
+			clientApi := service.Api
 			if normalized {
 				for _, method := range service.Methods {
 					method.AuthMode = method.NormalizedAuth()
 				}
 			}
-			if service.ClientApi() != clientApi {
+			if service.Api != clientApi {
 				t.Fatal("normalizing inherited method auth changed service selection")
 			}
 		}
@@ -163,7 +163,7 @@ pub resource User {
     action update
 }
 actor ClientActor { via client {} }
-service UserService {
+api service UserApiService { auth required
     for ClientActor
     method update {
         require User:update:byId(id)
@@ -213,7 +213,7 @@ code1: string } }`
 			input := filepath.Join(root, "domain.skel")
 			contract := "domain demo\npub resource User {\n" + resourceBody + "\ncheck enabled {}\n}\n" + `
 pub actor ClientActor { via client {} }
-pub service UserService {
+api service UserApiService { auth required
  for ClientActor via client
  method read {
   require all(User:read:byCode(code, code1), User:read:enabled())
@@ -256,7 +256,7 @@ pub service UserService {
 			source := `domain consumer
 import demo
 actor ClientActor { via client {} }
-service ConsumerService {
+api service ConsumerApiService { auth required
  for ClientActor via client
  method read {
   require demo.User:read:byCode(code, code1)
@@ -319,7 +319,7 @@ func TestGenerationReusesSemanticSchemaAcrossTargetsAndGoroutines(t *testing.T) 
 	root := t.TempDir()
 	shared, consumer := filepath.Join(root, "shared.skel"), filepath.Join(root, "consumer.skel")
 	writeTestFile(t, shared, "domain shared.user\npub enum State { READY }\npub data Value { state: State }\n")
-	writeTestFile(t, consumer, "domain consumer\nimport shared.user\npub data Box<TItem> { value: TItem }\nactor TestActor { via client {} }\napi service ReadApiService { for TestActor via client method get { output Box<shared.user.Value> } }\n")
+	writeTestFile(t, consumer, "domain consumer\nimport shared.user\npub data Box<TItem> { value: TItem }\nactor TestActor { via client {} }\napi service ReadApiService { auth required  for TestActor via client method get { output Box<shared.user.Value> } }\n")
 	compiled, err := api.Parse(api.Input{SkelIn: consumer, SkelImports: map[string]string{"shared.user": shared}})
 	if err != nil {
 		t.Fatal(err)

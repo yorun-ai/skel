@@ -16,9 +16,6 @@ func TestComputeEffectivePolicyAuthentication(t *testing.T) {
 		{schema.AuthModeAnonymous, schema.AuthModeUnset, schema.AuthModeAnonymous},
 		{schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeOptional},
 		{schema.AuthModeOptional, schema.AuthModeRequired, schema.AuthModeRequired},
-		{schema.AuthModeNoAuth, schema.AuthModeInherit, schema.AuthModeOptional},
-		{schema.AuthModeOptional, schema.AuthModeAuth, schema.AuthModeRequired},
-		{schema.AuthModeRequired, schema.AuthModeNoAuth, schema.AuthModeOptional},
 	} {
 		service, method := new(schema.Service{AuthMode: test.service}), new(schema.Method{AuthMode: test.method})
 		value, err := schema.ComputeEffectivePolicy(service, method)

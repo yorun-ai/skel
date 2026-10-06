@@ -61,7 +61,7 @@ func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*schema.Met
 	valid = metaValid && valid
 	require, requireValid := parseRequire(reporter, gm.Require)
 	valid = requireValid && valid
-	authMode, authModeValid := parseAuthMode(reporter, methodAuthMarker(gm), schema.AuthModeUnset)
+	authMode, authModeValid := parseAuthMode(reporter, methodAuthMarker(gm), schema.AuthModeUnset, false)
 	valid = authModeValid && valid
 	method := &schema.Method{
 		Pos:              position(gm.Name.Pos),

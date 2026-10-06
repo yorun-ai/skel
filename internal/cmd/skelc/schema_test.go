@@ -23,8 +23,8 @@ func TestRunSkelcStrictSchemaCommands(t *testing.T) {
 		{"schema", "diff", "--baseline-skel-in", baseline},
 	} {
 		args = append(args, "--skel-in", entry)
-		if result := Run(args); result.ExitCode != ExitCodeSuccess {
-			t.Fatalf("compatible schema failed: %+v", result)
+		if result := Run(args); result.ExitCode != ExitCodeError {
+			t.Fatalf("invalid schema accepted: %+v", result)
 		}
 		result := Run(append([]string{"--strict"}, args...))
 		failure := decodeCommandError(t, result)
@@ -34,8 +34,8 @@ func TestRunSkelcStrictSchemaCommands(t *testing.T) {
 	}
 	writeCLIFile(t, entry, "domain demo.order\npub service OrderService { method ping {} }\n")
 	result := Run([]string{"--strict", "schema", "diff", "--skel-in", entry, "--baseline-skel-in", baseline})
-	if result.ExitCode != ExitCodeSuccess {
-		t.Fatalf("historical baseline blocked migration comparison: %+v", result)
+	if result.ExitCode != ExitCodeError {
+		t.Fatalf("invalid baseline accepted: %+v", result)
 	}
 }
 
@@ -251,13 +251,15 @@ pub data Order {
     owner: identity.User
 }
 
-pub service OrderService {
+api service OrderApiService { auth required  for ClientActor
     require identity.User:read
 
     method get {
         output Order
     }
 }
+
+actor ClientActor { via client {} }
 `
 	writeCLIFile(t, filepath.Join(source, "schema.skel"), sourceSchema)
 	writeCLIFile(t, filepath.Join(aliasSource, "schema.skel"), strings.ReplaceAll(sourceSchema, "identity", "account"))
@@ -282,7 +284,7 @@ pub service OrderService {
 	if order.Data.Members[0].Type.Kind != "importedReference" || order.Data.Members[0].Type.Name != "demo.user.User" {
 		t.Fatalf("unexpected imported data reference: %+v", order)
 	}
-	service := get("service", "demo.order.OrderService")
+	service := get("service", "demo.order.OrderApiService")
 	if service.Service.Require == nil || service.Service.Require.Mode != "reference" ||
 		service.Service.Require.Check.Resource != "demo.user.User" {
 		t.Fatalf("unexpected imported permission reference: %+v", service)
@@ -591,7 +593,7 @@ func TestSchemaListViewImportsAndErrors(t *testing.T) {
 	writeCLIFile(t, source, "domain demo\nservice LegacyService { method ping {} }\n")
 	for _, mode := range []string{"--pub", "--api"} {
 		result := Run([]string{"schema", "list", mode, "--skel-in", source})
-		if result.ExitCode != ExitCodeSuccess || result.Stdout != "[]\n" || !strings.Contains(result.Stderr, `"severity":"warning"`) {
+		if result.ExitCode != ExitCodeError || !strings.Contains(result.Stdout, "COMPILATION_FAILED") {
 			t.Fatalf("warnings mixed with empty result: %+v", result)
 		}
 		failure := decodeCommandError(t, Run([]string{"--strict", "schema", "list", mode, "--skel-in", source}))
@@ -601,7 +603,7 @@ func TestSchemaListViewImportsAndErrors(t *testing.T) {
 	}
 	writeCLIFile(t, source, "domain demo\nactor UserActor { via client {} }\npub service ReadService { for UserActor method ping {} }\n")
 	failure := decodeCommandError(t, Run([]string{"schema", "list", "--pub", "--skel-in", source}))
-	if failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(failure.Message, "non-pub actor") {
+	if failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(failure.Message, "client admission rules") {
 		t.Fatalf("public view validation skipped: %+v", failure)
 	}
 }

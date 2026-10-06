@@ -14,11 +14,6 @@ const (
 	AuthModeAnonymous AuthMode = "anonymous"
 	// AuthModeOff bypasses portal authentication for web declarations.
 	AuthModeOff AuthMode = "off"
-
-	// AuthModeAuth requires an authenticated actor.
-	AuthModeAuth AuthMode = "auth"
-	// AuthModeNoAuth explicitly allows unauthenticated access.
-	AuthModeNoAuth AuthMode = "noauth"
 )
 
 // Service describes a callable service declaration.
@@ -159,6 +154,3 @@ func (s *Service) HasClientRules() bool {
 	}
 	return false
 }
-
-// ClientApi includes API services and legacy client rules, excluding extension contracts.
-func (s *Service) ClientApi() bool { return !s.Ext && (s.Api || s.HasClientRules()) }

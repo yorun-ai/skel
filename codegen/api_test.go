@@ -128,7 +128,7 @@ func TestPrepareRejectsUnresolvedSchemas(t *testing.T) {
 
 func TestPrepareRefreshesEffectivePoliciesBeforeBorrowing(t *testing.T) {
 	method := new(schema.Method{Name: "read", AuthMode: schema.AuthModeInherit})
-	service := new(schema.Service{Name: "Files", AuthMode: schema.AuthModeOptional, Methods: []*schema.Method{method}})
+	service := new(schema.Service{Name: "FilesApiService", Api: true, Audiences: []*schema.ActorAudience{{Actor: "demo.ClientActor"}}, AuthMode: schema.AuthModeOptional, Methods: []*schema.Method{method}})
 	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Services: []*schema.Service{service}})
 	if _, err := codegen.Prepare(domain, codegen.Selection{}); err != nil {
 		t.Fatal(err)

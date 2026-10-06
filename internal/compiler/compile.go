@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -103,7 +102,7 @@ func compileFrom(ctx context.Context, provider loader.Provider, option Option, u
 	diagnostics = append(diagnostics, analyzed...)
 	slices.SortFunc(diagnostics, compareDiagnostics)
 	if diagnostics.HasErrors() {
-		return Result{}, errors.Join(diagnostics.Errors()...)
+		return Result{}, diagnostics
 	}
 	if option.Strict {
 		ApplyStrictMode(diagnostics)

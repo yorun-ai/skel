@@ -106,17 +106,15 @@ func TestPublicReadAPIsHonorCancellation(t *testing.T) {
 	}
 }
 
-func TestParseStrictMigrationRules(t *testing.T) {
+func TestParseEnforcesLanguageRulesInAllModes(t *testing.T) {
 	entry := filepath.Join(t.TempDir(), "order.skel")
 	writeTestFile(t, entry, "domain demo.order\nservice OrderService { method ping {} }\n")
-	result, err := api.Parse(api.Input{SkelIn: entry})
-	if err != nil || len(result.Diagnostics) != 1 || result.Diagnostics[0].Severity != diagnostic.SeverityWarning {
-		t.Fatalf("unexpected compatible parse: %+v, %v", result, err)
-	}
-	_, err = api.Parse(api.Input{SkelIn: entry, Strict: true})
-	var diagnostics diagnostic.Diagnostics
-	if !errors.As(err, &diagnostics) || len(diagnostics) != 1 || diagnostics[0].Code != diagnostic.CodeServiceModifier || diagnostics[0].Severity != diagnostic.SeverityError {
-		t.Fatalf("unexpected strict diagnostics: %v", err)
+	for _, strict := range []bool{false, true} {
+		_, err := api.Parse(api.Input{SkelIn: entry, Strict: strict})
+		var diagnostics diagnostic.Diagnostics
+		if !errors.As(err, &diagnostics) || len(diagnostics) != 1 || diagnostics[0].Code != diagnostic.CodeServiceModifier || diagnostics[0].Severity != diagnostic.SeverityError {
+			t.Fatalf("unexpected diagnostics: %v", err)
+		}
 	}
 }
 

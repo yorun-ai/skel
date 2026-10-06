@@ -58,7 +58,7 @@ actor UserActor {
     via client {}
 }
 
-service UserService {
+api service UserApiService { auth required
     for UserActor
 
     method getUser {
@@ -98,7 +98,7 @@ resource User {
     action read
 }
 actor UserActor { via client {} }
-service UserService {
+api service UserApiService { auth required
     for UserActor
     method read {
         require User:read:byPermission(permission)

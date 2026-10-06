@@ -23,7 +23,7 @@ actor ClientActor {
     }
 }
 
-service UserService {
+api service UserApiService { auth required
     for ClientActor via client
 
     @desc("Get a user by ID")
@@ -54,7 +54,7 @@ enum UserStatus {
 		t.Fatalf("unexpected service count: %d", len(domain.Services()))
 	}
 	service := domain.Services()[0]
-	if service.Name != "UserService" {
+	if service.Name != "UserApiService" {
 		t.Fatalf("unexpected service name: %s", service.Name)
 	}
 	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "client" {
@@ -93,7 +93,7 @@ data User {
 }
 `,
 		"service.skel": `
-service UserService {
+api service UserApiService { auth required
     for ClientActor
     for OpenAPIActor
 
@@ -119,7 +119,7 @@ service UserService {
 
 	service := domain.Services()[0]
 	method := service.Methods[0]
-	if service.SkelName != "demo.user.UserService" {
+	if service.SkelName != "demo.user.UserApiService" {
 		t.Fatalf("unexpected skel name: %q", service.SkelName)
 	}
 	if len(service.Audiences) != 2 {
@@ -140,7 +140,7 @@ service UserService {
 	if method.ArgumentsData == nil {
 		t.Fatal("arguments data should not be nil")
 	}
-	if method.ArgumentsData.Name != "UserServiceListUsersArguments" {
+	if method.ArgumentsData.Name != "UserApiServiceListUsersArguments" {
 		t.Fatalf("unexpected arguments data name: %q", method.ArgumentsData.Name)
 	}
 
@@ -190,7 +190,7 @@ service UserService {
 func TestCompileDirectoryIncludesAllDeclarationKinds(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "domain.skel"), describedUserDomain)
-	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\nactor PortalAdminActor { via client {} }\nservice AgentService { for PortalAdminActor\nmethod ping {} }\n")
+	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\nactor PortalAdminActor { via client {} }\napi service AgentApiService { auth required  for PortalAdminActor\nmethod ping {} }\n")
 	writeFile(t, filepath.Join(dir, "types.skel"), "domain demo.user\ndata User { id: int }\nenum UserStatus { ACTIVE }\n")
 
 	result, err := Compile(Option{SkelIn: dir})
@@ -202,7 +202,7 @@ func TestCompileDirectoryIncludesAllDeclarationKinds(t *testing.T) {
 	entryKinds := map[string]bool{}
 	for _, service := range domain.Services() {
 		entryKinds["service"] = true
-		if service.Name != "AgentService" {
+		if service.Name != "AgentApiService" {
 			t.Fatalf("unexpected service: %+v", service)
 		}
 	}

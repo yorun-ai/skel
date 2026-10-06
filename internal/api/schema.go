@@ -171,7 +171,7 @@ var ErrSchemaSourceCompilation = sourcediff.ErrSourceCompilation
 type SchemaDiffOption struct {
 	// Baseline may use disk or frozen sources. Nil selects the candidate path at
 	// Git HEAD, which requires a filesystem candidate and a usable repository.
-	// Historical baseline declarations are accepted without strict-mode rejection.
+	// Baselines must satisfy the same language rules as candidate sources.
 	Baseline *Input
 }
 
@@ -200,7 +200,6 @@ func DiffSchemaSourcesContext(ctx context.Context, candidate Input, option Schem
 		return nil, schemaSourceError(err)
 	}
 	baseline := *option.Baseline
-	baseline.Strict = false
 	previous, err := QuerySchemaContext(ctx, baseline, SchemaQueryOption{})
 	if err != nil {
 		return nil, schemaSourceError(err)

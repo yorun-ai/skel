@@ -63,7 +63,7 @@ func validateDomain(domain *schema.Domain, seen map[*schema.Domain]bool) error {
 		}
 	}
 	for _, service := range domain.Services() {
-		if err := validateService(service); err != nil {
+		if err := validateDeclaredService(service); err != nil {
 			return err
 		}
 	}
@@ -75,6 +75,9 @@ func validateDomain(domain *schema.Domain, seen map[*schema.Domain]bool) error {
 	for _, web := range domain.Webs() {
 		if web == nil {
 			return fmt.Errorf("generated schema contains nil web")
+		}
+		if web.AuthMode == "" || web.AuthMode == schema.AuthModeUnset {
+			return fmt.Errorf("web %s must explicitly declare auth", web.Name)
 		}
 		if web.AuthMode != schema.AuthModeOff {
 			if err := validateAuthMode(web.AuthMode); err != nil {

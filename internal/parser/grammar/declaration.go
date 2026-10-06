@@ -79,7 +79,7 @@ type Service struct {
 type ServiceSection struct {
 	Decorators []*Decorator     `parser:"(@@ (Newline)*)*"`
 	Audience   *ServiceAudience `parser:"  (?= \"for\") @@"`
-	Auth       *AuthMarker      `parser:"| (?= (\"auth\" | \"noauth\")) @@"`
+	Auth       *AuthMarker      `parser:"| (?= \"auth\") @@"`
 	Require    *Require         `parser:"| (?= \"require\") @@"`
 	Method     *Method          `parser:"| @@"`
 }
@@ -102,7 +102,7 @@ type Web struct {
 
 type WebSection struct {
 	Audience *WebAudience `parser:"  (?= \"for\") @@"`
-	Auth     *AuthMarker  `parser:"| (?= (\"auth\" | \"noauth\")) @@"`
+	Auth     *AuthMarker  `parser:"| (?= \"auth\") @@"`
 	Mount    *WebMount    `parser:"| @@"`
 }
 

@@ -53,7 +53,7 @@ func TestCompareRecursiveSchemaUsesReferenceIdentity(t *testing.T) {
 	source := `domain demo
  data Node { value: string next: Node? }
  data Box<TItem> { item: TItem }
- service NodesService { method read { output Box<Node> } }
+ pub service NodesService { method read { output Box<Node> } }
  `
 	before := inspectSchema(t, filepath.Join(t.TempDir(), "before.skel"), source)
 	after := inspectSchema(t, filepath.Join(t.TempDir(), "after.skel"), "\n\n"+source)
@@ -81,8 +81,10 @@ func TestCompareUnresolvedSchemaCarriesImportIdentity(t *testing.T) {
 	source := `domain demo
  import foreign.contract as imported
  pub data Envelope { values: list<imported.Box<imported.Value>> }
- pub service ReadsService { require imported.Record:read:owns(id) method read { input { id: string } output Envelope } }
- `
+ api service ReadsApiService { auth required  for ClientActor  require imported.Record:read:owns(id) method read { input { id: string } output Envelope } }
+
+actor ClientActor { via client {} }
+`
 	before := inspectSchema(t, filepath.Join(t.TempDir(), "before.skel"), source)
 	after := inspectSchema(t, filepath.Join(t.TempDir(), "after.skel"), strings.ReplaceAll(source, "imported", "renamed"))
 	if len(before.Imports()) != 1 || before.Imports()[0].Name != "foreign.contract" || before.Imports()[0].Domain != nil {
@@ -132,7 +134,7 @@ func TestCompareTypesAcrossResolutionStates(t *testing.T) {
 				for _, afterResolved := range []bool{false, true} {
 					t.Run(fmt.Sprintf("resolved=%t/%t", beforeResolved, afterResolved), func(t *testing.T) {
 						source := func(kind string) string {
-							return "domain demo\nimport foreign.contract as imported\nservice ReadService { method read { input { value: " + kind + " } } }"
+							return "domain demo\nimport foreign.contract as imported\npub service ReadService { method read { input { value: " + kind + " } } }"
 						}
 						before := inspectImportedSchema(t, source(test.before), beforeResolved)
 						after := inspectImportedSchema(t, strings.ReplaceAll(source(test.after), "imported", "renamed"), afterResolved)
@@ -176,7 +178,7 @@ func TestComparePermissionsAcrossResolutionStates(t *testing.T) {
 						return `domain demo
 import foreign.contract as imported
 actor ClientActor { via client {} permission {} }
-service ReadService {
+api service ReadApiService { auth required
     for ClientActor
     require imported.Record:read
     method read {

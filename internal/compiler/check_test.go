@@ -200,8 +200,8 @@ func TestCompileRejectsFinalDeclarationsAsValueTypes(t *testing.T) {
 				"data Wrapper { value: " + expression + " }",
 				"config AppConfig instant { value: " + expression + " }",
 				"event WrapperEvent { payload { value: " + expression + " } }",
-				"service SampleService { method get { output " + expression + " } }",
-				"service SampleService { method put { input { value: " + expression + " } } }",
+				"pub service SampleService { method get { output " + expression + " } }",
+				"pub service SampleService { method put { input { value: " + expression + " } } }",
 			} {
 				t.Run(declaration.name+"/"+owner, func(t *testing.T) {
 					path := filepath.Join(t.TempDir(), "contract.skel")

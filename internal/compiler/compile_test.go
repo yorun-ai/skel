@@ -16,7 +16,7 @@ domain demo.user
 
 actor ClientActor { via client {} }
 
-service UserService {
+api service UserApiService { auth required
     for ClientActor
 
     method getUser {
@@ -50,7 +50,7 @@ config SiteConfig eternal {
 	if len(result.Domain.Configs()) != 1 || result.Domain.Configs()[0].Name != "SiteConfig" {
 		t.Fatalf("unexpected configs: %#v", result.Domain.Configs())
 	}
-	if len(result.Domain.Services()) != 1 || result.Domain.Services()[0].Name != "UserService" {
+	if len(result.Domain.Services()) != 1 || result.Domain.Services()[0].Name != "UserApiService" {
 		t.Fatalf("unexpected services: %#v", result.Domain.Services())
 	}
 }
@@ -76,7 +76,7 @@ domain user
 
 import app
 
-pub service UserService {
+api service UserApiService { auth required
     for app.UserActor
 
     method getUser {
@@ -357,7 +357,7 @@ resource DemoResource {
 		{
 			name: "service method",
 			declaration: `
-service DemoService {
+pub service DemoService {
     method getValue {
         output TItem
     }
@@ -508,7 +508,7 @@ func TestCompileReturnsSemanticErrorForMissingDefinition(t *testing.T) {
 
 actor ClientActor { via client {} }
 
-service UserService {
+api service UserApiService { auth required
     for ClientActor
 
     method getUser {
@@ -551,8 +551,8 @@ pub resource Document { action read }
 import IMPORT
 import other.sandbox
 pub data Payload { value: REF.Box<REF.State> other: other.sandbox.Item }
-web DeepseekWeb { for REF.SandboxActor }
-pub service ProxyService { for REF.SandboxActor method ping { require REF.Document:read } }
+web DeepseekWeb { auth required  for REF.SandboxActor }
+api service ProxyApiService { auth required  for REF.SandboxActor method ping { require REF.Document:read } }
 `
 			source = strings.ReplaceAll(strings.ReplaceAll(source, "IMPORT", test.declaration), "REF", test.qualifier)
 			writeFile(t, input, source)

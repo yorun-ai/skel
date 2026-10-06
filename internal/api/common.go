@@ -26,7 +26,7 @@ type Input struct {
 	// SkelImports maps the complete transitive import closure to Skel source
 	// files or directories. Only SkelIn is a generation target.
 	SkelImports map[string]string
-	// Strict rejects legacy declarations accepted with migration warnings.
+	// Strict is reserved for future migration checks; currently both modes enforce the same rules.
 	Strict bool
 }
 

@@ -26,8 +26,8 @@ type Option struct {
 	// BaselineSkelIn selects an explicit baseline file or directory. An empty
 	// value reads the domain's source directory from Git HEAD.
 	BaselineSkelIn string
-	// Strict rejects migration warnings in the candidate; historical baselines
-	// retain compatibility with older declarations.
+	// Strict is reserved for future migration checks. Current language rules
+	// apply equally to candidates and baselines.
 	Strict bool
 }
 
@@ -104,13 +104,6 @@ func DiffSource(ctx context.Context, candidateSkelIn string, option Option) (*di
 // DiffWorkspaceDomain compares a domain while reusing its unchanged Git
 // baseline across calls to the same differ.
 func (d *Differ) DiffWorkspaceDomain(ctx context.Context, candidate compiler.WorkspaceDomain, option Option) (*diff.Report, error) {
-	if option.Strict {
-		diagnostics := compiler.MigrationDiagnostics(candidate.Schema)
-		compiler.ApplyStrictMode(diagnostics)
-		if diagnostics.HasErrors() {
-			return nil, fmt.Errorf("%w: %w", ErrSourceCompilation, diagnostics)
-		}
-	}
 	candidateSchema := candidate.Schema
 	var err error
 	baselineSkelIn := strings.TrimSpace(option.BaselineSkelIn)

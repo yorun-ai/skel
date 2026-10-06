@@ -93,8 +93,8 @@ import shared as s
 pub data Unused { state: s.State }
 data Hidden { box: s.Box<string> }
 pub data Output { next: Output? box: s.Box<map<string,list<s.State>>> }
-pub service ReadService { for s.CallerActor require s.Record:read method read { output Output } }
-api service ReadApiService { for s.CallerActor via client auth anonymous method read { output Output } }
+pub service ReadService { method read { output Output } }
+api service ReadApiService { for s.CallerActor via client auth anonymous require s.Record:read method read { output Output } }
 `)
 	base := []string{"schema", "dep", "--skel-in", source, "--skel-import", "shared=" + shared, "--skel-import", "deep=" + deep}
 	for _, mode := range []string{"", "--pub", "--api"} {
@@ -118,7 +118,7 @@ api service ReadApiService { for s.CallerActor via client auth anonymous method 
 			t.Fatalf("%s: %+v", mode, report)
 		}
 		want := []skelapi.SchemaDeclarationDependency{{Domain: "shared", Name: "Box", Kind: "data"}, {Domain: "shared", Name: "State", Kind: "enum"}}
-		if mode != "--api" {
+		if mode == "" {
 			want = []skelapi.SchemaDeclarationDependency{{Domain: "shared", Name: "Box", Kind: "data"}, {Domain: "shared", Name: "CallerActor", Kind: "actor"}, {Domain: "shared", Name: "Record", Kind: "resource"}, {Domain: "shared", Name: "State", Kind: "enum"}}
 		}
 		if !reflect.DeepEqual(report.Dependencies, want) {
@@ -186,7 +186,7 @@ func TestSchemaDepEmptyAndStrict(t *testing.T) {
 			args = append(args, mode)
 		}
 		result := Run(args)
-		if result.ExitCode != 0 || !strings.Contains(result.Stderr, `"severity":"warning"`) {
+		if result.ExitCode != 2 || !strings.Contains(result.Stderr, `"severity":"error"`) {
 			t.Fatalf("warnings lost: %+v", result)
 		}
 		result = Run(append([]string{"--strict"}, args...))

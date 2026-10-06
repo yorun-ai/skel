@@ -208,7 +208,10 @@ func TestFillHashesIncludesWholeSensitiveMetadata(t *testing.T) {
 func TestFillHashesIncludesApiBoundary(t *testing.T) {
 	backend := newHashTestDomain(t, "Order service")
 	api := newHashTestDomain(t, "Order service")
-	backend.Services()[0].Pub = false
+	backend.Services()[0].Pub = true
+	backend.Services()[0].Api = false
+	backend.Services()[0].Audiences = nil
+	backend.Services()[0].AuthMode = schema.AuthModeUnset
 	api.Services()[0].Pub = false
 	api.Services()[0].Api = true
 	fillHashes(t, backend, api)
@@ -223,6 +226,11 @@ func TestFillHashesIncludesApiBoundary(t *testing.T) {
 func TestFillHashesIncludesServiceDirection(t *testing.T) {
 	pubDomain := newHashTestDomain(t, "Storage contract")
 	extDomain := newHashTestDomain(t, "Storage contract")
+	for _, domain := range []*schema.Domain{pubDomain, extDomain} {
+		domain.Services()[0].Api = false
+		domain.Services()[0].Audiences = nil
+		domain.Services()[0].AuthMode = schema.AuthModeUnset
+	}
 	pubDomain.Services()[0].Pub = true
 	extDomain.Services()[0].Pub = false
 	extDomain.Services()[0].Ext = true

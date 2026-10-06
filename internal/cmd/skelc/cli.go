@@ -68,7 +68,7 @@ func newCommand() *ucli.Command {
 		CustomRootCommandHelpTemplate: groupCommandHelpTemplate,
 		Flags: []ucli.Flag{
 			&ucli.StringFlag{Name: flagLogFormat, Usage: "log output format: jsonl/text", Value: logFormatJSONL},
-			&ucli.BoolFlag{Name: flagStrict, Usage: "reject legacy declarations accepted with migration warnings"},
+			&ucli.BoolFlag{Name: flagStrict, Usage: "enable strict checks (currently identical to default validation)"},
 		},
 		Before: func(ctx context.Context, cmd *ucli.Command) (context.Context, error) {
 			return ctx, validateLogFormat(cmd)

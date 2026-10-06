@@ -207,7 +207,7 @@ func TestTypesTemplateRendersExternalImports(t *testing.T) {
 	}
 }
 
-func TestBuildServiceTsPayloadIncludesLegacyAdmissionRules(t *testing.T) {
+func TestBuildServiceTsPayloadIncludesExplicitApiServices(t *testing.T) {
 	user := &schema.Data{
 		Name: "User",
 		Members: []*schema.DataMember{{
@@ -223,11 +223,11 @@ func TestBuildServiceTsPayloadIncludesLegacyAdmissionRules(t *testing.T) {
 		},
 		Data: []*schema.Data{user},
 		Services: []*schema.Service{
-			{Name: "ClientService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
+			{Name: "ClientApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(user),
 			}}},
-			{Name: "AgentService", Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{
+			{Name: "AgentApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(user),
 			}}},
@@ -239,7 +239,7 @@ func TestBuildServiceTsPayloadIncludesLegacyAdmissionRules(t *testing.T) {
 	if len(payload.Services) != 2 {
 		t.Fatalf("unexpected service count: %d", len(payload.Services))
 	}
-	if payload.Services[0].Name != "AgentService" || payload.Services[1].Name != "ClientService" {
+	if payload.Services[0].Name != "AgentApiService" || payload.Services[1].Name != "ClientApiService" {
 		t.Fatalf("unexpected service: %s", payload.Services[0].Name)
 	}
 	if got, want := payload.TypeImports, []string{"User"}; !reflect.DeepEqual(got, want) {
@@ -265,7 +265,7 @@ func TestBuildServiceTsPayloadExcludesBackendServices(t *testing.T) {
 		}},
 		Data: []*schema.Data{user},
 		Services: []*schema.Service{
-			{Name: "PublicClientService", Api: true, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
+			{Name: "PublicClientService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(user),
 			}}},

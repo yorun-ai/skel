@@ -11,14 +11,14 @@ import (
 	codegenoutput "go.yorun.ai/skel/internal/codegen/output"
 )
 
-func TestRunSkelcStrictGenerationPreservesOutputs(t *testing.T) {
+func TestRunSkelcInvalidGenerationPreservesOutputsInAllModes(t *testing.T) {
 	for _, kind := range []string{"go", "go-module", "ts", "skel"} {
 		t.Run(kind, func(t *testing.T) {
 			root := t.TempDir()
 			entry := filepath.Join(root, "order.skel")
 			out := filepath.Join(root, "out")
 			pubOut := filepath.Join(root, "pub")
-			writeCLIFile(t, entry, "domain demo.order\npub service LegacyService { noauth method ping {} }\n")
+			writeCLIFile(t, entry, "domain demo.order\npub service BackendService { method ping {} }\n")
 			args := []string{"gen", kind, "--skel-in", entry}
 			switch kind {
 			case "go":
@@ -33,6 +33,7 @@ func TestRunSkelcStrictGenerationPreservesOutputs(t *testing.T) {
 			if result := Run(args); result.ExitCode != ExitCodeSuccess {
 				t.Fatalf("compatible generation failed: %+v", result)
 			}
+			writeCLIFile(t, entry, "domain demo.order\nservice MissingModifierService { method ping {} }\n")
 			before := map[string]string{}
 			err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 				if err != nil {
@@ -48,15 +49,17 @@ func TestRunSkelcStrictGenerationPreservesOutputs(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			result := Run(append([]string{"--strict"}, args...))
-			failure := decodeCommandError(t, result)
-			if result.ExitCode != ExitCodeError || failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(result.Stderr, `"severity":"error"`) {
-				t.Fatalf("expected strict generation failure: %+v", result)
-			}
-			for path, want := range before {
-				got, err := os.ReadFile(path)
-				if err != nil || string(got) != want {
-					t.Fatalf("strict failure changed %s: %v", path, err)
+			for _, flags := range [][]string{nil, {"--strict"}, {"--strict=false"}} {
+				result := Run(append(flags, args...))
+				failure := decodeCommandError(t, result)
+				if result.ExitCode != ExitCodeError || failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(result.Stderr, `"severity":"error"`) {
+					t.Fatalf("expected strict generation failure: %+v", result)
+				}
+				for path, want := range before {
+					got, err := os.ReadFile(path)
+					if err != nil || string(got) != want {
+						t.Fatalf("strict failure changed %s: %v", path, err)
+					}
 				}
 			}
 		})
@@ -134,7 +137,7 @@ data Users {
     page: Page<User>
 }
 
-service UserService {
+pub service UserService {
     method listUsers {
         output Page<User>
     }

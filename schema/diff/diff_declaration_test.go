@@ -353,8 +353,6 @@ func TestWebOffAuthTransitions(t *testing.T) {
 		{schema.AuthModeRequired, schema.AuthModeOff, ImpactDangerous, "web.auth.changed"},
 		{schema.AuthModeOptional, schema.AuthModeOff, ImpactDangerous, "web.auth.changed"},
 		{schema.AuthModeAnonymous, schema.AuthModeOff, ImpactDangerous, "web.auth.changed"},
-		{schema.AuthModeNoAuth, schema.AuthModeRequired, ImpactBreaking, "web.auth.tightened"},
-		{schema.AuthModeNoAuth, schema.AuthModeOff, ImpactCompatible, "web.auth.changed"},
 	} {
 		t.Run(string(test.before)+" to "+string(test.after), func(t *testing.T) {
 			makeDomain := func(mode schema.AuthMode) *schema.Domain {
@@ -366,12 +364,6 @@ func TestWebOffAuthTransitions(t *testing.T) {
 			report, err := Compare(makeDomain(test.before), makeDomain(test.after))
 			if err != nil {
 				t.Fatal(err)
-			}
-			if test.before == schema.AuthModeNoAuth && test.after == schema.AuthModeOff {
-				if len(report.Changes) != 0 {
-					t.Fatalf("equivalent legacy auth changed: %+v", report)
-				}
-				return
 			}
 			if len(report.Changes) != 1 || report.Compatible != (test.impact != ImpactBreaking) {
 				t.Fatalf("unexpected report: %+v", report)

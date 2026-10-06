@@ -88,7 +88,7 @@ func validateArguments(owner string, arguments []*schema.Argument, data *schema.
 
 func validateAuthMode(mode schema.AuthMode) error {
 	switch mode {
-	case "", schema.AuthModeUnset, schema.AuthModeAuth, schema.AuthModeNoAuth, schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous:
+	case "", schema.AuthModeUnset, schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous:
 		return nil
 	default:
 		return fmt.Errorf("unsupported auth mode %q", mode)
@@ -122,6 +122,24 @@ func validateServiceMethodReference(owner string, service *schema.Service, metho
 	}
 	if canonical != method {
 		return fmt.Errorf("%s must reference the method node in service %s", owner, service.Name)
+	}
+	return nil
+}
+
+// Declared services have entry-point rules; derived actor/resource callbacks
+// are validated separately through validateService.
+func validateDeclaredService(service *schema.Service) error {
+	if err := validateService(service); err != nil {
+		return err
+	}
+	if !service.Pub && !service.Ext && !service.Api {
+		return fmt.Errorf("service %s must declare pub, ext, or api", service.Name)
+	}
+	if !service.Api && service.HasClientRules() {
+		return fmt.Errorf("service %s: client admission rules require api service", service.Name)
+	}
+	if service.Api && (service.AuthMode == "" || service.AuthMode == schema.AuthModeUnset) {
+		return fmt.Errorf("API service %s must explicitly declare auth", service.Name)
 	}
 	return nil
 }

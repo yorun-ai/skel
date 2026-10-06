@@ -59,7 +59,7 @@ api service UserApiService {
 }
 ```
 
-This defines an API service called through portal. `pub service` instead exposes a backend contract across domains; `pub` and `api` cannot be combined. API services declare `auth required`, `auth optional`, or `auth anonymous`. Omission warns and defaults to `required`; `--strict` requires a service-level declaration. Legacy `auth`/`noauth` warn, generate `required`/`optional`, and fail under `--strict`. Every API service must declare at least one `for Actor`, including anonymous APIs.
+This defines an API service called through portal. `pub service` instead exposes a backend contract across domains; `pub` and `api` cannot be combined. API services must explicitly declare a service-level `auth required`, `auth optional`, or `auth anonymous`. Every API service must declare at least one `for Actor`, including anonymous APIs.
 
 Validate and format the contract first:
 
@@ -129,7 +129,7 @@ events, resources and permissions, web capabilities, and tasks:
 
 ## Common Workflows
 
-Use `skelc --strict check --skel-in ./skel` to reject declarations accepted only for compatibility. Strict mode is off by default and also applies to generation, scan, and schema commands. Go integrations set `Input.Strict`; LSP clients can use `skelc --strict lsp` or the `strict` initialization/configuration setting. See the [CLI reference](https://skel.yorun.ai/docs/cli#strict-mode) for scope and diagnostics.
+All language rules apply by default, including explicit service modifiers and API/web authentication modes. `--strict`, Go `Input.Strict`, and LSP strict settings remain available for future migration checks; they currently produce the same validation results as the default mode. See the [CLI reference](https://skel.yorun.ai/docs/cli#strict-mode).
 
 ### Give a web a stable frontend mount path
 
@@ -139,6 +139,7 @@ must remain stable across builds and deployments:
 ```skel
 web ConsoleWeb {
     for ClientActor via client
+    auth required
     mount /console
 }
 ```
@@ -358,7 +359,7 @@ inspection rejects dependency mappings. Use `domain.Declarations()` and
 them directly. Comparison uses named reference identities and ignores positions
 and derived hashes when determining equality. `DiffSchemaSources` accepts an
 explicit `Baseline` input or, when omitted, compares a filesystem candidate
-against Git HEAD. Historical baselines do not inherit candidate strict mode.
+against Git HEAD. Baselines and candidates must satisfy the same language rules.
 Frozen candidates require an explicit baseline.
 
 Parsed methods retain declared `AuthMode` and `Require` alongside `EffectiveAuthMode` and

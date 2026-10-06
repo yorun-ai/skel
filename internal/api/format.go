@@ -73,17 +73,15 @@ func FormatFilesContext(ctx context.Context, option FormatOption) (FormatResult,
 	if err != nil {
 		return FormatResult{}, formatCompilationError(err)
 	}
-	result := FormatResult{Files: []FormattedFile{}, Diagnostics: internalcompiler.LoaderWarningDiagnostics(loaded.Warnings)}
-	if option.Strict {
-		checked, err := internalcompiler.CheckLoaded(ctx, loaded, normalized)
-		if err != nil {
-			return FormatResult{}, formatCompilationError(err)
-		}
-		if checked.Diagnostics.HasErrors() {
-			return FormatResult{}, formatCompilationError(checked.Diagnostics)
-		}
-		result.Diagnostics = checked.Diagnostics
+	checked, err := internalcompiler.CheckLoaded(ctx, loaded, normalized)
+	if err != nil {
+		return FormatResult{}, formatCompilationError(err)
 	}
+	if checked.Diagnostics.HasErrors() {
+		return FormatResult{}, formatCompilationError(checked.Diagnostics)
+	}
+	result := FormatResult{Files: []FormattedFile{}, Diagnostics: checked.Diagnostics}
+
 	for _, file := range loaded.Files {
 		if err := ctx.Err(); err != nil {
 			return FormatResult{}, err

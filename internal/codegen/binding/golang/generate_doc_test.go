@@ -85,7 +85,6 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 			{
 				Name:        "UserService",
 				Description: "User service",
-				Audiences:   []*schema.ActorAudience{{Actor: "ClientActor"}},
 				Methods: []*schema.Method{
 					methodForTest("UserService", &schema.Method{
 						Name:               "getUser",
@@ -106,8 +105,7 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 							},
 						},
 					}),
-				},
-			},
+				}, Pub: true},
 		},
 		Tasks: []*schema.Task{
 			{

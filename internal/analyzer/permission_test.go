@@ -48,7 +48,7 @@ actor UserActor {
     }
 }
 
-service UserService {
+api service UserApiService { auth required
     for UserActor
 
     method updateProfile {
@@ -194,7 +194,7 @@ resource User {
     }
 }
 
-service UserService {
+api service UserApiService { auth required  for ClientActor
     method update {
         require User:update:byIds(users[*].id)
         input {
@@ -202,6 +202,8 @@ service UserService {
         }
     }
 }
+
+actor ClientActor { via client {} }
 `)
 	domain := mustAnalyze(t, content).Schema()
 	require := domain.Services()[0].Methods[0].Require
@@ -236,7 +238,7 @@ resource Order {
     }
 }
 
-service OrderService {
+api service OrderApiService { auth required  for ClientActor
     method update {
         require Order:update:byItemIds(orders[*].items[*].id)
         input {
@@ -244,6 +246,8 @@ service OrderService {
         }
     }
 }
+
+actor ClientActor { via client {} }
 `)
 	expectAnalyzeDiagnosticsContains(t, "supports at most one [*]", content)
 }
@@ -266,7 +270,7 @@ resource User {
     }
 }
 
-service UserService {
+api service UserApiService { auth required  for ClientActor
     method update {
         require User:update:byUsers(users[*])
         input {
@@ -274,6 +278,8 @@ service UserService {
         }
     }
 }
+
+actor ClientActor { via client {} }
 `)
 	expectAnalyzeDiagnosticsContains(t, "cannot end with [*]", content)
 }

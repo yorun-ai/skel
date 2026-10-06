@@ -63,7 +63,7 @@ func BuildApiView(domain *schema.Domain, selection ApiFilter) (*PublicView, erro
 		Data:  filter(domain.Data(), func(d *schema.Data) bool { return (!selection.Prune && d.Pub) || types[domain.Name()+"."+d.Name] }),
 		Enums: filter(domain.Enums(), func(e *schema.Enum) bool { return (!selection.Prune && e.Pub) || types[domain.Name()+"."+e.Name] }),
 		Services: filter(domain.Services(), func(s *schema.Service) bool {
-			return s.ClientApi() && ((!selection.Prune && len(selected) == 0) || matchesApiActors(domain, s, selected))
+			return s.Api && ((!selection.Prune && len(selected) == 0) || matchesApiActors(domain, s, selected))
 		}),
 	}
 	collectViewData(domain, result)

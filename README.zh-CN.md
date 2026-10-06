@@ -59,7 +59,7 @@ api service UserApiService {
 }
 ```
 
-这里定义了经 portal 调用的 API 服务。`pub service` 则是跨领域后端契约，`pub` 与 `api` 不能同时使用。API 服务声明 `auth required`、`auth optional` 或 `auth anonymous`。省略时警告并默认 `required`；`--strict` 要求服务级声明。旧 `auth/noauth` 警告并生成 `required`/`optional`，在严格模式下报错。 每个 API 服务必须至少声明一条 `for Actor`，匿名 API 也不例外。
+这里定义了经 portal 调用的 API 服务。`pub service` 则是跨领域后端契约，`pub` 与 `api` 不能同时使用。API 服务必须显式声明服务级 `auth required`、`auth optional` 或 `auth anonymous`。 每个 API 服务必须至少声明一条 `for Actor`，匿名 API 也不例外。
 
 先检查并格式化契约：
 
@@ -127,7 +127,7 @@ permission、web 和 task：
 
 ## 常用工作流
 
-使用 `skelc --strict check --skel-in ./skel` 拒绝仅为兼容而保留的旧写法。严格模式默认关闭，也适用于生成、scan 和 schema 命令。Go 集成设置 `Input.Strict`；LSP 客户端可使用 `skelc --strict lsp` 或初始化、配置中的 `strict` 选项。作用范围和诊断规则见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli#strict-mode)。
+默认执行全部语言规则，包括显式 service 修饰符和 API/web 认证模式。`--strict`、Go 的 `Input.Strict` 和 LSP strict 设置保留用于未来的迁移检查，目前与默认模式的校验结果相同。详见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli#strict-mode)。
 
 ### 为 web 指定稳定的前端挂载路径
 
@@ -137,6 +137,7 @@ permission、web 和 task：
 ```skel
 web ConsoleWeb {
     for ClientActor via client
+    auth required
     mount /console
 }
 ```
@@ -325,7 +326,7 @@ Go 集成使用 `encoding/json`，将 schema list/get 输出解码为
 `go.yorun.ai/skel/schema/diff` 的 `diff.Compare(baseline, candidate)` 直接比较。
 比较按名称识别引用，不将位置和派生哈希的变化视为契约变化。
 `DiffSchemaSources` 接受显式 `Baseline` 输入；未设置时，将磁盘候选输入与
-Git HEAD 比较。历史基线不继承候选输入的严格模式，内存候选输入必须显式指定基线。
+Git HEAD 比较。基线与候选输入必须满足相同的语言规则，内存候选输入必须显式指定基线。
 
 解析后的方法保留声明的 `AuthMode` 和 `Require`，并提供 `EffectiveAuthMode` 和
 `EffectiveRequire`。生效认证策略处理 service 继承；生效权限要求将 service 与 method

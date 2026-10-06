@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
+	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/schema"
 )
@@ -11,6 +12,7 @@ import (
 func parseService(reporter *_DiagnosticReporter, gs *grammar.Service) (*schema.Service, bool) {
 	valid := reporter.checkNot(gs.Api && gs.Pub, "%s api and pub are mutually exclusive", gs.Name.Pos)
 	valid = reporter.checkNot(gs.Ext && (gs.Api || gs.Pub), "%s ext, api and pub are mutually exclusive", gs.Name.Pos) && valid
+	valid = reporter.checkCode(diagnostic.CodeServiceModifier, gs.Api || gs.Pub || gs.Ext, "%s service must declare pub, ext, or api", gs.Name.Pos) && valid
 	suffix := "Service"
 	if gs.Api {
 		suffix = "ApiService"
@@ -27,14 +29,21 @@ func parseService(reporter *_DiagnosticReporter, gs *grammar.Service) (*schema.S
 	valid = reporter.checkNot(gs.Api && audiencesValid && len(audiences) == 0, "%s API service must declare at least one for Actor", gs.Name.Pos) && valid
 	authMarker, authValid := serviceAuthMarker(reporter, gs)
 	valid = authValid && valid
-	authMode, authModeValid := parseAuthMode(reporter, authMarker, schema.AuthModeUnset)
+	valid = reporter.checkCode(diagnostic.CodeApiAuthMissing, !gs.Api || authMarker != nil, "%s API service must explicitly declare auth required, auth optional, or auth anonymous", gs.Name.Pos) && valid
+	authMode, authModeValid := parseAuthMode(reporter, authMarker, schema.AuthModeUnset, false)
 	valid = authModeValid && valid
 	requireGrammar, requireSectionValid := serviceRequire(reporter, gs)
 	valid = requireSectionValid && valid
 	require, requireValid := parseRequire(reporter, requireGrammar)
 	valid = requireValid && valid
-	methods, methodsValid := parseMethods(reporter, gs.Name, serviceMethods(gs))
+	grammarMethods := serviceMethods(gs)
+	methods, methodsValid := parseMethods(reporter, gs.Name, grammarMethods)
 	valid = methodsValid && valid
+	hasClientRules := len(audiences) > 0 || authMarker != nil || requireGrammar != nil
+	for _, method := range grammarMethods {
+		hasClientRules = hasClientRules || method.Auth != nil || method.Require != nil
+	}
+	valid = reporter.checkCode(diagnostic.CodeServiceClientRules, gs.Api || !hasClientRules, "%s client admission rules require api service", gs.Name.Pos) && valid
 	return &schema.Service{
 		Pos:              position(gs.Name.Pos),
 		Name:             gs.Name.Value,
@@ -131,7 +140,7 @@ func serviceRequire(reporter *_DiagnosticReporter, gs *grammar.Service) (*gramma
 	return require, valid
 }
 
-func parseAuthMode(reporter *_DiagnosticReporter, marker *grammar.AuthMarker, defaultMode schema.AuthMode) (schema.AuthMode, bool) {
+func parseAuthMode(reporter *_DiagnosticReporter, marker *grammar.AuthMarker, defaultMode schema.AuthMode, web bool) (schema.AuthMode, bool) {
 	if marker == nil {
 		return defaultMode, true
 	}
@@ -139,12 +148,11 @@ func parseAuthMode(reporter *_DiagnosticReporter, marker *grammar.AuthMarker, de
 	case "required", "optional", "anonymous":
 		return schema.AuthMode(marker.Value), true
 	case "off":
+		if web {
+			return schema.AuthModeOff, true
+		}
 		reporter.reportf("%s auth off is only supported on web declarations", marker.Pos)
 		return defaultMode, false
-	case string(schema.AuthModeAuth):
-		return schema.AuthModeAuth, true
-	case string(schema.AuthModeNoAuth):
-		return schema.AuthModeNoAuth, true
 	}
 	reporter.reportf("%s unexpected auth marker %s", marker.Pos, marker.Value)
 	return defaultMode, false

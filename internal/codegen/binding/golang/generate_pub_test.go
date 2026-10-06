@@ -87,20 +87,17 @@ func TestGeneratorRendersPubGoView(t *testing.T) {
 		},
 		Services: []*schema.Service{
 			{
-				Pub:       true,
-				Name:      "UserService",
-				Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}},
+				Pub:  true,
+				Name: "UserService",
 				Methods: []*schema.Method{
 					methodForTest("UserService", &schema.Method{Name: "getUser", ResultType: codegentest.DataType(user)}),
-				},
-			},
+				}},
 			{
 				Name:      "PartnerService",
 				Audiences: []*schema.ActorAudience{{Actor: "PartnerActor"}},
 				Methods: []*schema.Method{
 					methodForTest("PartnerService", &schema.Method{Name: "ping", ResultType: codegentest.StringType()}),
-				},
-			},
+				}, Api: true, AuthMode: schema.AuthModeRequired},
 		},
 		Events: []*schema.Data{
 			{
@@ -118,7 +115,7 @@ func TestGeneratorRendersPubGoView(t *testing.T) {
 			},
 		},
 		Webs: []*schema.Web{
-			{Name: "UserPortalWeb", Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}}},
+			{Name: "UserPortalWeb", AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}}},
 		},
 		Tasks: []*schema.Task{
 			{
@@ -284,13 +281,11 @@ func TestGeneratorIncludesImplicitPubDependencies(t *testing.T) {
 		Data: []*schema.Data{user},
 		Services: []*schema.Service{
 			{
-				Pub:       true,
-				Name:      "UserService",
-				Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}},
+				Pub:  true,
+				Name: "UserService",
 				Methods: []*schema.Method{
 					methodForTest("UserService", &schema.Method{Name: "getUser", ResultType: codegentest.DataType(user)}),
-				},
-			},
+				}},
 		},
 	})
 

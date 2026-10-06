@@ -264,7 +264,6 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 			if w.options.IncludeWarnings {
 				diagnostics = appendAnalysisWarnings(diagnostics, domain.analysis.Warnings())
 			}
-			diagnostics = append(diagnostics, MigrationDiagnostics(domain.analysis.Schema())...)
 		}
 	}
 	contentByPath := make(map[string]*textsource.Document, len(ordered))

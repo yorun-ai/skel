@@ -29,7 +29,7 @@ func TestValidateDomainRejectsMalformedNestedSchemas(t *testing.T) {
 		{name: "nil resource check", spec: schema.DomainSpec{Resources: []*schema.Resource{{Name: "Document", Checks: []*schema.ResourceCheck{nil}}}}, expected: "nil check"},
 		{name: "resource check without method", spec: schema.DomainSpec{Resources: []*schema.Resource{{Name: "Document", Checks: []*schema.ResourceCheck{{Name: "owner"}}}}}, expected: "check owner is nil"},
 		{name: "nil web", spec: schema.DomainSpec{Webs: []*schema.Web{nil}}, expected: "nil web"},
-		{name: "nil web audience", spec: schema.DomainSpec{Webs: []*schema.Web{{Name: "Portal", Audiences: []*schema.ActorAudience{nil}}}}, expected: "nil audience"},
+		{name: "nil web audience", spec: schema.DomainSpec{Webs: []*schema.Web{{Name: "Portal", AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{nil}}}}, expected: "nil audience"},
 		{name: "nil service audience", spec: schema.DomainSpec{Services: []*schema.Service{{Name: "Documents", Audiences: []*schema.ActorAudience{nil}}}}, expected: "nil audience"},
 	}
 	for _, test := range tests {
@@ -116,7 +116,7 @@ func TestPrepareValidatesMethodAuthByOwner(t *testing.T) {
 				spec := schema.DomainSpec{Name: "demo"}
 				switch owner {
 				case "method":
-					spec.Services = []*schema.Service{{Name: "ReadService", Methods: []*schema.Method{{Name: "read", AuthMode: mode}}}}
+					spec.Services = []*schema.Service{{Name: "ReadService", Pub: true, Methods: []*schema.Method{{Name: "read", AuthMode: mode}}}}
 				case "service":
 					spec.Services = []*schema.Service{{Name: "ReadService", AuthMode: mode}}
 				case "web":
@@ -189,5 +189,32 @@ func TestPrepareRequiresCanonicalCallbackMethods(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestPrepareRejectsInvalidDeclaredPolicies(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		service *schema.Service
+	}{
+		{"missing modifier", &schema.Service{Name: "ReadService"}},
+		{"backend audience", &schema.Service{Name: "ReadService", Pub: true, Audiences: []*schema.ActorAudience{{Actor: "demo.ClientActor"}}}},
+		{"backend auth", &schema.Service{Name: "ReadService", Pub: true, AuthMode: schema.AuthModeRequired}},
+		{"method auth", &schema.Service{Name: "ReadService", Pub: true, Methods: []*schema.Method{{Name: "read", AuthMode: schema.AuthModeOptional}}}},
+		{"missing api auth", &schema.Service{Name: "ReadApiService", Api: true, Audiences: []*schema.ActorAudience{{Actor: "demo.ClientActor"}}}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Services: []*schema.Service{test.service}})
+			if _, err := Prepare(domain, Selection{}); err == nil {
+				t.Fatal("accepted invalid declared policy")
+			}
+		})
+	}
+	// Derived callbacks do not declare a service modifier or portal audience.
+	method := new(schema.Method{Name: "check"})
+	callback := new(schema.Service{Name: "ClientActorPermissionService", Methods: []*schema.Method{method}})
+	actor := new(schema.Actor{Name: "ClientActor", Permission: new(schema.ActorPermission{Service: callback, Method: method})})
+	if _, err := Prepare(schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Actors: []*schema.Actor{actor}}), Selection{}); err != nil {
+		t.Fatal(err)
 	}
 }

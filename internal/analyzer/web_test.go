@@ -8,6 +8,7 @@ import (
 
 func TestParseWeb(t *testing.T) {
 	web := parseWebTest(t, &grammar.Web{
+		Sections: []*grammar.WebSection{{Auth: &grammar.AuthMarker{Value: "required"}}},
 		Decorators: []*grammar.Decorator{
 			{Name: ident("desc"), Value: decoratorValue(`"User portal entry point"`)},
 		},
@@ -31,6 +32,7 @@ func TestParseWeb(t *testing.T) {
 
 func TestParseWebRejectsPub(t *testing.T) {
 	expectWebDiagnostic(t, "does not support pub", &grammar.Web{
+		Sections:  []*grammar.WebSection{{Auth: &grammar.AuthMarker{Value: "required"}}},
 		Name:      ident("UserPortalWeb"),
 		Audiences: []*grammar.WebAudience{webAllow("ClientActor")},
 	}, true)
@@ -38,6 +40,7 @@ func TestParseWebRejectsPub(t *testing.T) {
 
 func TestParseWebRejectsMissingActors(t *testing.T) {
 	expectWebDiagnostic(t, "must declare at least one actor", &grammar.Web{
-		Name: ident("UserPortalWeb"),
+		Sections: []*grammar.WebSection{{Auth: &grammar.AuthMarker{Value: "required"}}},
+		Name:     ident("UserPortalWeb"),
 	}, false)
 }

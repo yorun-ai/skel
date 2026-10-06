@@ -49,7 +49,7 @@ func buildDescriptorDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.
 			method := &schema.Method{
 				Name:       "auth",
 				SkelName:   "auth",
-				AuthMode:   schema.AuthModeNoAuth,
+				AuthMode:   schema.AuthModeOptional,
 				ResultType: codegentest.DataType(actor.Auth.Info),
 				Arguments: []*schema.Argument{
 					{Name: "credential", Type: codegentest.DataType(actor.Auth.Credential)},
@@ -59,7 +59,7 @@ func buildDescriptorDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.
 			actor.Auth.Service = &schema.Service{
 				Name:     actor.Name + "AuthService",
 				SkelName: spec.Name + "." + actor.Name + "AuthService",
-				AuthMode: schema.AuthModeNoAuth,
+				AuthMode: schema.AuthModeOptional,
 				Methods:  []*schema.Method{method},
 			}
 		}
@@ -101,7 +101,8 @@ actor TokenActor {
         info { @identifier id: string }
     }
 }
-service DocumentService {
+api service DocumentApiService {
+ auth required
     for ClientActor
     require Document:read
     method get {

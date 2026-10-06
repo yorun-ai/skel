@@ -103,7 +103,7 @@ pub actor ClientActor {
 }
 
 pub service UserService {
-    for ClientActor via client
+
 
     @desc("Health check")
     method ping {
@@ -187,12 +187,7 @@ pub data User {
 
 	serviceContent := readGeneratedFileForTest(t, filepath.Join(outputDir, "service.skel"))
 	assertNoExtraTopLevelBlankLines(t, serviceContent)
-	if !strings.Contains(serviceContent, "    for ClientActor via client\n") {
-		t.Fatalf("expected service for via to render, got:\n%s", serviceContent)
-	}
-	if !strings.Contains(serviceContent, "    for ClientActor via client\n\n    @desc(\"Health check\")\n    method ping {}\n") {
-		t.Fatalf("expected blank line after service for block, got:\n%s", serviceContent)
-	}
+
 	if !strings.Contains(serviceContent, `    @desc("""
     Query a user
     Multiline method description
@@ -294,30 +289,6 @@ pub resource User {
 	}
 }
 
-func TestGenDoesNotRenderBlankLineAfterServiceAudienceWithoutFollowingContent(t *testing.T) {
-	domain := schema.NewDomainFromSpec(schema.DomainSpec{
-		Name: "demo",
-		Actors: []*schema.Actor{
-			{Name: "ClientActor", Pub: true},
-		},
-		Services: []*schema.Service{
-			{
-				Name:      "EmptyService",
-				Pub:       true,
-				Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}},
-			},
-		},
-	})
-	outputDir := t.TempDir()
-
-	mustGenerateForTest(t, domain, Option{Out: outputDir, PubOnly: true})
-
-	serviceContent := readGeneratedFileForTest(t, filepath.Join(outputDir, "service.skel"))
-	if !strings.Contains(serviceContent, "pub service EmptyService {\n    for ClientActor\n}") {
-		t.Fatalf("did not expect blank line after for without following content, got:\n%s", serviceContent)
-	}
-}
-
 func parseDomainForTest(t *testing.T, domainPath string, domainContent string, inputPath string, inputContent string, imports map[string]string) (*schema.Domain, string) {
 	t.Helper()
 	dir := t.TempDir()
@@ -384,7 +355,7 @@ pub actor ClientActor {
 
 @deprecated("Use ProfileService instead")
 pub service UserService {
-    for ClientActor via client
+
 
     @deprecated("Use getProfile instead")
     method getUser {
@@ -499,7 +470,7 @@ pub data Value { id: string }
 			if strings.Contains(declaration, " as ") {
 				qualifier = "sandbox"
 			}
-			domain, _ := parseDomainForTest(t, "app/domain.skel", "domain demo.proxy\n", "app/service.skel", "domain demo.proxy\nimport "+declaration+"\npub data Payload { value: "+qualifier+".Value }\npub service ProxyService { for "+qualifier+".SandboxActor method get { output Payload } }\n", map[string]string{"ws.sandbox": shared})
+			domain, _ := parseDomainForTest(t, "app/domain.skel", "domain demo.proxy\n", "app/service.skel", "domain demo.proxy\nimport "+declaration+"\npub data Payload { value: "+qualifier+".Value }\npub service ProxyService { method get { output Payload } }\n", map[string]string{"ws.sandbox": shared})
 			out := t.TempDir()
 			mustGenerateForTest(t, domain, Option{Out: out, PubOnly: true})
 			_, err := compiler.Compile(compiler.Option{SkelIn: out, SkelImports: map[string]string{"ws.sandbox": shared}})
@@ -519,8 +490,6 @@ func TestGenImportAliasesDoNotSelectUnrelatedDomains(t *testing.T) {
 	for _, test := range []struct{ name, declaration, usedDomain, expectedImport, filename string }{
 		{"data domain suffix matches alias", "pub data Payload { value: legacy.Value }", "identity.user", "import identity.user as legacy", "types.skel"},
 		{"data alias matches domain suffix", "pub data Payload { value: user.Value }", "other", "import other as user", "types.skel"},
-		{"actor domain suffix matches alias", "pub service ProxyService { for legacy.ClientActor method ping {} }", "identity.user", "import identity.user as legacy", "service.skel"},
-		{"actor alias matches domain suffix", "pub service ProxyService { for user.ClientActor method ping {} }", "other", "import other as user", "service.skel"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			domain, _ := parseDomainForTest(t, "app/domain.skel", "domain demo.app\n", "app/content.skel", "domain demo.app\nimport identity.user as legacy\nimport other as user\n"+test.declaration+"\n", imports)
@@ -558,23 +527,5 @@ func TestPublicConfigStructuredTypesRoundTrip(t *testing.T) {
 	}
 	if !parsed.Domain.Configs()[0].Members[0].Type.ContainsBinaryType() {
 		t.Fatal("public config lost nested binary type")
-	}
-}
-
-func TestGenPreservesAuthSyntax(t *testing.T) {
-	for _, marker := range []string{"auth required", "auth optional", "auth anonymous", "auth", "noauth"} {
-		t.Run(marker, func(t *testing.T) {
-			domain, _ := parseDomainForTest(t, "demo/domain.skel", "domain demo\n", "demo/service.skel", "domain demo\npub service UserService { "+marker+" method ping { "+marker+" } }\n", nil)
-			out := t.TempDir()
-			mustGenerateForTest(t, domain, Option{Out: out, PubOnly: true})
-			generated, err := compiler.Compile(compiler.Option{SkelIn: out})
-			if err != nil {
-				t.Fatal(err)
-			}
-			before, after := domain.Services()[0], generated.Domain.Services()[0]
-			if after.AuthMode != before.AuthMode || after.Methods[0].AuthMode != before.Methods[0].AuthMode {
-				t.Fatalf("auth changed during roundtrip: %q", marker)
-			}
-		})
 	}
 }

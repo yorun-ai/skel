@@ -75,7 +75,7 @@ func TestScanImportsStrictAndCommandRemoval(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "source.skel")
 	writeCLIFile(t, source, "domain demo\nservice LegacyService { method ping {} }\n")
 	result := Run([]string{"scan", "imports", "--skel-in", source})
-	if result.ExitCode != ExitCodeSuccess || result.Stdout != "[]\n" || !strings.Contains(result.Stderr, `"severity":"warning"`) {
+	if result.ExitCode != ExitCodeError || !strings.Contains(result.Stdout, "COMPILATION_FAILED") {
 		t.Fatalf("unexpected scan result: %+v", result)
 	}
 	result = Run([]string{"--strict", "scan", "imports", "--skel-in", source})

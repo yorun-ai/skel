@@ -91,7 +91,7 @@ func TestNewGenDerivesExternalTypeImportsFromTypeScriptModuleScope(t *testing.T)
 			ExplicitAlias: true,
 		}},
 		Data:     []*schema.Data{order},
-		Services: []*schema.Service{{Name: "OrderService", Api: true, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "get", ResultType: codegentest.DataType(order)}}}},
+		Services: []*schema.Service{{Name: "OrderService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "get", ResultType: codegentest.DataType(order)}}}},
 	})
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"), Option{
@@ -206,7 +206,7 @@ func TestRenderTsTrimsTrailingWhitespace(t *testing.T) {
 	}
 }
 
-func TestApiViewIncludesLegacyAdmissionRulesAcrossTransports(t *testing.T) {
+func TestApiViewIncludesExplicitServicesAcrossTransports(t *testing.T) {
 	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
 		Actors: []*schema.Actor{
@@ -215,20 +215,20 @@ func TestApiViewIncludesLegacyAdmissionRulesAcrossTransports(t *testing.T) {
 			{Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaOpenAPI)}},
 		},
 		Services: []*schema.Service{
-			{Name: "ClientOnlyService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "HybridService", Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}, {Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "AgentOnlyService", Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "OpenAPIOnlyService", Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "ClientActorOpenAPIOnlyService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaOpenAPI)}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "ClientActorClientViaService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "InternalService", Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "ClientOnlyApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "HybridApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}, {Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "AgentOnlyApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "OpenAPIOnlyApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "ClientActorOpenAPIOnlyApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaOpenAPI)}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "ClientActorClientViaApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "InternalService", Pub: true, Methods: []*schema.Method{{Name: "ping"}}},
 		},
 	})
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"))
 	services := gen.apiView.Services
 	got := sliceutil.Map(services, func(service *schema.Service) string { return service.Name })
-	if want := []string{"AgentOnlyService", "ClientActorClientViaService", "ClientActorOpenAPIOnlyService", "ClientOnlyService", "HybridService", "OpenAPIOnlyService"}; !reflect.DeepEqual(got, want) {
+	if want := []string{"AgentOnlyApiService", "ClientActorClientViaApiService", "ClientActorOpenAPIOnlyApiService", "ClientOnlyApiService", "HybridApiService", "OpenAPIOnlyApiService"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected client services: got=%v want=%v", got, want)
 	}
 }
@@ -246,14 +246,14 @@ func TestClientServicesIncludesImportedClientActors(t *testing.T) {
 			Alias:  "app",
 		}},
 		Services: []*schema.Service{{
-			Name: "ImportedActorService", Audiences: []*schema.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*schema.Method{{Name: "ping"}},
+			Name: "ImportedActorApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*schema.Method{{Name: "ping"}},
 		}},
 	})
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"))
 	services := gen.apiView.Services
 	got := sliceutil.Map(services, func(service *schema.Service) string { return service.Name })
-	if want := []string{"ImportedActorService"}; !reflect.DeepEqual(got, want) {
+	if want := []string{"ImportedActorApiService"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected client services: got=%v want=%v", got, want)
 	}
 }

@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/internal/util/webpath"
 	"go.yorun.ai/skel/schema"
@@ -30,14 +31,11 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*schema
 			continue
 		}
 		authMarker = section.Auth
-		if authMarker.Value == "off" {
-			authMode = schema.AuthModeOff
-		} else {
-			parsed, ok := parseAuthMode(reporter, authMarker, schema.AuthModeUnset)
-			authMode = parsed
-			valid = ok && valid
-		}
+		parsed, ok := parseAuthMode(reporter, authMarker, schema.AuthModeUnset, true)
+		authMode = parsed
+		valid = ok && valid
 	}
+	valid = reporter.checkCode(diagnostic.CodeWebAuthMissing, authMarker != nil, "%s web must explicitly declare auth required, auth optional, auth anonymous, or auth off", gw.Name.Pos) && valid
 	mountPath := ""
 	for index, mount := range gw.Mounts {
 		if reporter.cancelled() {

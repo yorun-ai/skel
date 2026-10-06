@@ -14,7 +14,7 @@ type ScanOption struct {
 	SkelIn string
 	// Sources optionally supplies a complete in-memory snapshot; see Input.Sources.
 	Sources map[string][]byte
-	// Strict rejects legacy declarations accepted with migration warnings.
+	// Strict is reserved for future migration checks; currently both modes enforce the same rules.
 	Strict bool
 }
 

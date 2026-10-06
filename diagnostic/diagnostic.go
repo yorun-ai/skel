@@ -4,11 +4,10 @@ package diagnostic
 import "go.yorun.ai/skel/internal/location"
 
 const (
-	CodeAuthLegacy         = "auth.legacy-marker"
 	CodeApiAuthMissing     = "service.missing-auth"
 	CodeWebAuthMissing     = "web.missing-auth"
-	CodeServiceModifier    = "service.legacy-modifier"
-	CodeServiceClientRules = "service.legacy-client-rules"
+	CodeServiceModifier    = "service.missing-modifier"
+	CodeServiceClientRules = "service.invalid-client-rules"
 	CodeSyntaxUnexpected   = "syntax.unexpected-token"
 	CodeSyntaxEOF          = "syntax.unexpected-eof"
 	CodeSyntaxFinalize     = "syntax.invalid-declaration"

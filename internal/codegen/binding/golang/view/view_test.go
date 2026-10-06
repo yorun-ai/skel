@@ -93,7 +93,7 @@ func TestViewTypeRootsRespectArgumentSource(t *testing.T) {
 	injected := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}
 	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: "demo",
-		Services: []*schema.Service{{Name: "ExampleApiService", Api: true, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
+		Services: []*schema.Service{{Name: "ExampleApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
 			Arguments: []*schema.Argument{
 				{Name: "input", Type: declared, Source: schema.ArgumentSourceDeclared},
 				{Name: "code", Type: injected, Source: schema.ArgumentSourcePermissionCode},

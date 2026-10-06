@@ -53,7 +53,7 @@ func TestBuildSpecTsPayloadUsesFinalClientServiceSet(t *testing.T) {
 		}},
 		Actors: []*schema.Actor{{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}}},
 		Services: []*schema.Service{
-			{Name: "ExternalClientService", Audiences: []*schema.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "ExternalClientApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
 			{Name: "BackendService", Pub: true, Methods: []*schema.Method{{Name: "ping"}}},
 		},
 	})
@@ -63,7 +63,7 @@ func TestBuildSpecTsPayloadUsesFinalClientServiceSet(t *testing.T) {
 	if len(payload.Services) != 1 {
 		t.Fatalf("unexpected service count: %d", len(payload.Services))
 	}
-	if got, want := payload.Services[0].SpecName, "ExternalClientServiceSpec"; got != want {
+	if got, want := payload.Services[0].SpecName, "ExternalClientApiServiceSpec"; got != want {
 		t.Fatalf("unexpected service spec: got=%s want=%s", got, want)
 	}
 }
@@ -97,7 +97,7 @@ func TestBuildSpecTsPayloadRendersSparseWireForBinaryMethods(t *testing.T) {
 		Name: "demo.file",
 		Data: []*schema.Data{chunk, fileResult},
 		Services: []*schema.Service{{
-			Name:      "FileService",
+			Name: "FileApiService", Api: true, AuthMode: schema.AuthModeRequired,
 			Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}},
 			Methods: []*schema.Method{
 				{Name: "ping"},

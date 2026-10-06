@@ -5,7 +5,7 @@ import "go.yorun.ai/skel/internal/policy"
 // AuthModeInherit represents a method that uses its enclosing service's policy.
 const AuthModeInherit AuthMode = "inherit"
 
-// NormalizedAuth returns the effective service default, including legacy syntax.
+// NormalizedAuth returns the effective service default.
 func (s *Service) NormalizedAuth() AuthMode {
 	return AuthMode(policy.NormalizeAuth(string(s.AuthMode), "service"))
 }
@@ -15,7 +15,7 @@ func (m *Method) NormalizedAuth() AuthMode {
 	return AuthMode(policy.NormalizeAuth(string(m.AuthMode), "method"))
 }
 
-// NormalizedAuth returns the web policy, where legacy noauth means off.
+// NormalizedAuth returns the web policy.
 func (w *Web) NormalizedAuth() AuthMode {
 	return AuthMode(policy.NormalizeAuth(string(w.AuthMode), "web"))
 }

@@ -5,7 +5,7 @@ package policy
 
 import "fmt"
 
-// NormalizeAuth interprets defaults and legacy spellings for one declaration.
+// NormalizeAuth interprets inheritance defaults for one declaration.
 func NormalizeAuth(mode, owner string) string {
 	switch mode {
 	case "", "unset":
@@ -18,13 +18,6 @@ func NormalizeAuth(mode, owner string) string {
 			return "required"
 		}
 		return mode
-	case "auth":
-		return "required"
-	case "noauth":
-		if owner == "web" {
-			return "off"
-		}
-		return "optional"
 	default:
 		return mode
 	}

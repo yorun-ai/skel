@@ -35,20 +35,15 @@ func TestScanImportsPreservesSourceDeclarations(t *testing.T) {
 	}
 }
 
-func TestScanImportsWarningsAndStrictMode(t *testing.T) {
+func TestScanImportsRejectsInvalidDeclarationsInAllModes(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "source.skel")
 	writeTestFile(t, path, "domain demo\nservice LegacyService { method ping {} }\n")
-	result, err := api.ScanImports(api.ScanOption{SkelIn: path})
-	if err != nil || result.Imports == nil || len(result.Imports) != 0 || len(result.Diagnostics) == 0 {
-		t.Fatalf("result=%+v, err=%v", result, err)
-	}
-	for _, entry := range result.Diagnostics {
-		if entry.Severity != diagnostic.SeverityWarning || entry.Position.File != path {
-			t.Fatalf("unexpected diagnostic: %+v", entry)
+	for _, strict := range []bool{false, true} {
+		_, err := api.ScanImports(api.ScanOption{SkelIn: path, Strict: strict})
+		var diagnostics diagnostic.Diagnostics
+		if !errors.As(err, &diagnostics) || len(diagnostics) != 1 || diagnostics[0].Severity != diagnostic.SeverityError || diagnostics[0].Position.File != path {
+			t.Fatalf("unexpected diagnostics: %v", err)
 		}
-	}
-	if _, err := api.ScanImports(api.ScanOption{SkelIn: path, Strict: true}); err == nil {
-		t.Fatal("strict mode accepted legacy syntax")
 	}
 }
 

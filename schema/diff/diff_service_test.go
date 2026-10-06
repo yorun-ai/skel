@@ -61,8 +61,8 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 		changes := diffChanges(func(diff *_Diff) {
 			for _, prefix := range []string{"service", "method"} {
 				diff.compareAuth("owner", prefix, schema.AuthModeRequired, schema.AuthModeAnonymous, schema.Position{}, schema.Position{})
-				diff.compareAuth("owner", prefix, schema.AuthModeOptional, schema.AuthModeAuth, schema.Position{}, schema.Position{})
-				diff.compareAuth("owner", prefix, schema.AuthModeAuth, schema.AuthModeOptional, schema.Position{}, schema.Position{})
+				diff.compareAuth("owner", prefix, schema.AuthModeOptional, schema.AuthModeRequired, schema.Position{}, schema.Position{})
+				diff.compareAuth("owner", prefix, schema.AuthModeRequired, schema.AuthModeOptional, schema.Position{}, schema.Position{})
 			}
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
@@ -150,8 +150,6 @@ func TestAuthModeTransitionClassification(t *testing.T) {
 			{schema.AuthModeAnonymous, schema.AuthModeOptional, "relaxed", ImpactDangerous},
 			{schema.AuthModeUnset, schema.AuthModeRequired, "changed", ImpactDangerous},
 			{schema.AuthModeRequired, schema.AuthModeUnset, "changed", ImpactDangerous},
-			{schema.AuthModeAuth, schema.AuthModeRequired, "changed", ImpactCompatible},
-			{schema.AuthModeRequired, schema.AuthModeAuth, "changed", ImpactCompatible},
 		} {
 			changes := diffChanges(func(diff *_Diff) {
 				diff.compareAuth("owner", prefix, test.before, test.after, schema.Position{}, schema.Position{})
@@ -163,16 +161,6 @@ func TestAuthModeTransitionClassification(t *testing.T) {
 			if len(changes) != 1 || changes[0].Code != prefix+".auth."+test.change || changes[0].Impact != impact {
 				t.Fatalf("%s %s -> %s: %+v", prefix, test.before, test.after, changes)
 			}
-		}
-		equivalent := schema.AuthModeOptional
-		if prefix == "web" {
-			equivalent = schema.AuthModeOff
-		}
-		changes := diffChanges(func(diff *_Diff) {
-			diff.compareAuth("owner", prefix, schema.AuthModeNoAuth, equivalent, schema.Position{}, schema.Position{})
-		})
-		if len(changes) != 1 || changes[0].Impact != ImpactCompatible {
-			t.Fatalf("%s legacy noauth: %+v", prefix, changes)
 		}
 	}
 }

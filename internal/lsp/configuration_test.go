@@ -54,10 +54,7 @@ func TestStrictConfigurationRepublishesDiagnostics(t *testing.T) {
 		settings, err := json.Marshal(map[string]bool{"strict": strict})
 		require.NoError(t, err)
 		require.NoError(t, server.DidChangeConfiguration(t.Context(), &protocol.DidChangeConfigurationParams{Settings: settings}))
-		severity := protocol.DiagnosticSeverityWarning
-		if strict {
-			severity = protocol.DiagnosticSeverityError
-		}
+		severity := protocol.DiagnosticSeverityError
 		waitForDiagnostics(t, client.diagnostics, func(params *protocol.PublishDiagnosticsParams) bool {
 			return params.URI == documentURI && len(params.Diagnostics) == 1 && params.Diagnostics[0].Severity == severity
 		})

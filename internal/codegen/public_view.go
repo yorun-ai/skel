@@ -2,7 +2,6 @@ package codegen
 
 import (
 	"fmt"
-	"strings"
 
 	"go.yorun.ai/skel/schema"
 )
@@ -40,7 +39,7 @@ func BuildPublicView(domain *schema.Domain) (*PublicView, error) {
 		Services:  filter(domain.Services(), func(value *schema.Service) bool { return value.Pub || value.Ext }),
 	}
 	collectViewData(domain, view)
-	if err := validatePublicView(domain, view); err != nil {
+	if err := validatePublicView(view); err != nil {
 		return nil, err
 	}
 	return view, nil
@@ -56,11 +55,7 @@ func filter[T any](values []*T, keep func(*T) bool) []*T {
 	return filtered
 }
 
-func validatePublicView(domain *schema.Domain, view *PublicView) error {
-	publicResources := make(map[string]bool, len(view.Resources))
-	for _, resource := range view.Resources {
-		publicResources[resource.SkelName] = true
-	}
+func validatePublicView(view *PublicView) error {
 	for _, data := range view.Data {
 		if err := validateMembers("pub data "+data.Name, data.Members, map[*schema.Data]bool{}); err != nil {
 			return err
@@ -86,19 +81,8 @@ func validatePublicView(domain *schema.Domain, view *PublicView) error {
 		}
 	}
 	for _, service := range view.Services {
-		for _, audience := range service.Audiences {
-			if actor := findActor(domain.Actors(), audience.Actor); actor != nil && !actor.Pub {
-				return fmt.Errorf("pub service %s references non-pub actor %s", service.Name, actor.Name)
-			}
-		}
-		if err := validateRequire(domain.Name(), "pub service "+service.Name, service.Require, publicResources); err != nil {
-			return err
-		}
 		for _, method := range service.Methods {
 			context := fmt.Sprintf("pub service %s.%s", service.Name, method.Name)
-			if err := validateRequire(domain.Name(), context, method.Require, publicResources); err != nil {
-				return err
-			}
 			for _, argument := range method.Arguments {
 				if err := validateType(context, argument.Type, map[*schema.Data]bool{}); err != nil {
 					return err
@@ -165,44 +149,6 @@ func validateType(context string, valueType *schema.Type, visited map[*schema.Da
 			return err
 		}
 		return validateType(context, valueType.Map.Value, visited)
-	}
-	return nil
-}
-
-func validateRequire(domainName, context string, require *schema.PermissionRequire, publicResources map[string]bool) error {
-	if require == nil {
-		return nil
-	}
-	return validateRequireExpr(domainName, context, require.Expression, publicResources)
-}
-
-func validateRequireExpr(domainName, context string, expr *schema.PermissionExpression, publicResources map[string]bool) error {
-	if expr == nil {
-		return nil
-	}
-	if expr.Code != "" {
-		index := strings.LastIndex(expr.Code, ":")
-		if index <= 0 {
-			return fmt.Errorf("invalid permission code %s", expr.Code)
-		}
-		resourceName := expr.Code[:index]
-		if strings.HasPrefix(resourceName, domainName+".") && !publicResources[resourceName] {
-			return fmt.Errorf("%s references non-pub resource %s", context, resourceName)
-		}
-	}
-	for _, child := range expr.Children {
-		if err := validateRequireExpr(domainName, context, child, publicResources); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func findActor(actors []*schema.Actor, name string) *schema.Actor {
-	for _, actor := range actors {
-		if actor.Name == name {
-			return actor
-		}
 	}
 	return nil
 }

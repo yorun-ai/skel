@@ -132,13 +132,12 @@ func TestDescriptorAdaptsSemanticSchema(t *testing.T) {
 	domain := buildDescriptorDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user", Description: "User domain.", Data: []*schema.Data{profile},
 		Services: []*schema.Service{new(schema.Service{
-			Name: "Profiles", Pub: true, AuthMode: schema.AuthModeAuth,
+			Name: "Profiles", AuthMode: schema.AuthModeRequired,
 			Audiences: []*schema.ActorAudience{new(schema.ActorAudience{Actor: "Client", Via: string(schema.ActorViaClient)})},
 			Methods: []*schema.Method{new(schema.Method{
-				Name: "get", Description: "Gets a profile.", AuthMode: schema.AuthModeNoAuth,
+				Name: "get", Description: "Gets a profile.", AuthMode: schema.AuthModeOptional,
 				ResultType: codegentest.DataType(profile),
-			})},
-		})},
+			})}, Api: true})},
 	})
 	gen := newGen(Option{Domain: domain, View: mustView(t, view.ModeFull, domain), Mode: view.ModeFull})
 	runtime := gen.buildDomainDescriptor()
@@ -173,13 +172,12 @@ func TestBuildDomainDescriptorCopiesHashes(t *testing.T) {
 			Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 		}},
 		Services: []*schema.Service{{
-			Name:      "UserService",
-			Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}},
+			Name: "UserService",
+			Api:  true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: "client"}},
 			Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(userProfile),
-			}},
-		}},
+			}}}},
 	})
 	fillSchemaHashesForTest(pkg)
 
@@ -253,8 +251,7 @@ func TestBuildDomainDescriptorIncludesSensitiveMetadata(t *testing.T) {
 					Type:      codegentest.StringType(),
 				}},
 				ResultType: codegentest.DataType(sensitiveData),
-			}},
-		}},
+			}}, Pub: true}},
 		Tasks: []*schema.Task{{
 			Name: "RotateCredentialTask",
 			Triggers: []*schema.TaskTrigger{{
@@ -314,14 +311,12 @@ func TestBuildDomainDescriptorSplitFullFlagAndContent(t *testing.T) {
 				Name: "PubService",
 				Methods: []*schema.Method{
 					{Name: "getPub", ResultType: codegentest.DataType(pubData)},
-				},
-			},
+				}},
 			{
 				Name: "RegularService",
 				Methods: []*schema.Method{
 					{Name: "getRegular", ResultType: codegentest.DataType(regularData)},
-				},
-			},
+				}, Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "demo.ClientActor"}}},
 		},
 	})
 

@@ -20,7 +20,7 @@ data Local { value: string }
 config LocalConfig eternal { value: string }
 actor LocalActor { via client {} }
 resource LocalResource { action read }
-service LocalService { method ping {} }
+api service LocalApiService { for LocalActor auth required method ping {} }
 event LocalEvent { payload { value: string } }
 `
 	const exportedSource = `

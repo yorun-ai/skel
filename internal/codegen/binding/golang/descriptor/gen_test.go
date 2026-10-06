@@ -246,7 +246,7 @@ func TestGenDescriptorGoRendersDeprecatedFields(t *testing.T) {
 }
 
 func TestGenDescriptorGoRendersWebAuthModes(t *testing.T) {
-	for _, mode := range []schema.AuthMode{schema.AuthModeUnset, schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous, schema.AuthModeOff, schema.AuthModeAuth, schema.AuthModeNoAuth} {
+	for _, mode := range []schema.AuthMode{schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous, schema.AuthModeOff} {
 		t.Run(string(mode), func(t *testing.T) {
 			pkg := buildDescriptorDomainForTest(t, schema.DomainSpec{Name: "demo.user", Webs: []*schema.Web{{Name: "ConsoleWeb", AuthMode: mode}}})
 			out := filepath.Join(t.TempDir(), "skeled")
@@ -256,12 +256,6 @@ func TestGenDescriptorGoRendersWebAuthModes(t *testing.T) {
 				t.Fatal(err)
 			}
 			expected := mode
-			switch mode {
-			case schema.AuthModeUnset, schema.AuthModeAuth:
-				expected = schema.AuthModeRequired
-			case schema.AuthModeNoAuth:
-				expected = schema.AuthModeOff
-			}
 			literal, err := renderAuthModeLiteral(descriptor.AuthMode(expected))
 			if err != nil {
 				t.Fatal(err)

@@ -16,7 +16,7 @@ func TestSchemaOutputIncludesEffectivePolicies(t *testing.T) {
 	result, err := api.QuerySchema(api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(`domain demo
 import shared as dep
 actor ClientActor { via client {} permission {} }
-service DocumentService {
+api service DocumentApiService {
     for ClientActor
     auth optional
     require dep.Document:read
@@ -27,7 +27,7 @@ web PortalWeb { for ClientActor via client auth off }
 	if err != nil {
 		t.Fatal(err)
 	}
-	wire := DescribeSchemaDeclaration(result.Domain, result.Domain.Find(schema.DeclarationTypeService, "demo.DocumentService"))
+	wire := DescribeSchemaDeclaration(result.Domain, result.Domain.Find(schema.DeclarationTypeService, "demo.DocumentApiService"))
 	method := wire.Service.Methods[0]
 	if method.AuthMode != "inherit" || method.EffectiveAuthMode != "optional" || method.Require == nil ||
 		method.EffectiveRequire.Children[0].Code != "shared.Document:read" {
@@ -82,8 +82,6 @@ func TestSchemaOutputMapsSchemaEnums(t *testing.T) {
 			wire     string
 		}{
 			{semantic: schema.AuthModeUnset, wire: "inherit"},
-			{semantic: schema.AuthModeAuth, wire: "required"},
-			{semantic: schema.AuthModeNoAuth, wire: "optional"},
 		}
 		for _, test := range tests {
 			if got := string((&schema.Method{AuthMode: test.semantic}).NormalizedAuth()); got != test.wire {

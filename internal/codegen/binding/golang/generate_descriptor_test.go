@@ -81,13 +81,11 @@ func TestGeneratorGoRendersDescriptorFile(t *testing.T) {
 		},
 		Services: []*schema.Service{
 			{
-				Pub:       true,
-				Name:      "AppService",
-				Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}},
+				Pub:  true,
+				Name: "AppService",
 				Methods: []*schema.Method{
 					methodForTest("AppService", &schema.Method{Name: "getContext", ResultType: codegentest.DataType(appContext)}),
-				},
-			},
+				}},
 		},
 	})
 
@@ -114,7 +112,7 @@ func TestGeneratorGoRendersDescriptorFile(t *testing.T) {
 		t.Fatalf("expected pub schema config declaration, got:\n%s", string(goSchemaContent))
 	}
 	codegentest.AssertGoSourceContains(t, string(goSchemaContent), "Pub: true")
-	if !strings.Contains(string(goSchemaContent), `Via: descriptor.ActorViaClient`) {
+	if !strings.Contains(string(goSchemaContent), `descriptor.ActorViaClient`) {
 		t.Fatalf("expected pub schema actor via, got:\n%s", string(goSchemaContent))
 	}
 }
@@ -159,13 +157,11 @@ func TestGeneratorGoDescriptorHasNoBlankLineInsideDeclarations(t *testing.T) {
 		},
 		Services: []*schema.Service{
 			{
-				Pub:       true,
-				Name:      "UserService",
-				Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}},
+				Pub:  true,
+				Name: "UserService",
 				Methods: []*schema.Method{
 					methodForTest("UserService", &schema.Method{Name: "getUser", ResultType: codegentest.DataType(userData)}),
-				},
-			},
+				}},
 		},
 		Tasks: []*schema.Task{
 			{
@@ -228,7 +224,7 @@ func TestGeneratorGoRendersWebMountInSpecAndDescriptor(t *testing.T) {
 		pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 			Name:   "demo.web",
 			Actors: []*schema.Actor{{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}}},
-			Webs:   []*schema.Web{{Name: "PortalWeb", MountPath: path, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}}},
+			Webs:   []*schema.Web{{Name: "PortalWeb", AuthMode: schema.AuthModeRequired, MountPath: path, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}}},
 		})
 		out := filepath.Join(t.TempDir(), "skeled")
 		if err := generateFixture(pkg, golang.Option{Out: out}); err != nil {
@@ -299,7 +295,7 @@ func TestApiBackendDescriptorAndClientBoundary(t *testing.T) {
 	entry := filepath.Join(root, "order.skel")
 	writeFileForTest(t, entry, `domain demo.order
 actor TestActor { via client {} }
-api service OrderApiService { for TestActor via client method ping {} }
+api service OrderApiService { auth required  for TestActor via client method ping {} }
 pub service BackendService { method ping {} }
 `)
 	input := api.Input{SkelIn: entry}

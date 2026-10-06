@@ -18,7 +18,7 @@ func TestQuerySchemaEffectivePolicyWithOpaqueAndResolvedImports(t *testing.T) {
 	input := api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(`domain demo
 import shared as dep
 actor ClientActor { via client {} permission {} }
-service DocumentService {
+api service DocumentApiService {
     for ClientActor
     auth optional
     require dep.Document:read
@@ -106,8 +106,8 @@ api service ReadApiService { for UserActor via client auth optional method read 
 
 func TestDiffSchemaFrozenSources(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "source.skel")
-	baseline := api.Input{SkelIn: path, Strict: true, Sources: map[string][]byte{path: []byte("domain demo\nservice LegacyService { method ping {} }\npub data Value { value: string }\n")}}
-	candidate := api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte("domain demo\nservice LegacyService { method ping {} }\npub data Value { value: int }\n")}}
+	baseline := api.Input{SkelIn: path, Strict: true, Sources: map[string][]byte{path: []byte("domain demo\npub service LegacyService { method ping {} }\npub data Value { value: string }\n")}}
+	candidate := api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte("domain demo\npub service LegacyService { method ping {} }\npub data Value { value: int }\n")}}
 	report, err := api.DiffSchemaSources(candidate, api.SchemaDiffOption{Baseline: &baseline})
 	if err != nil || report.Compatible || report.Summary.Breaking == 0 {
 		t.Fatalf("report=%+v, err=%v", report, err)

@@ -14,7 +14,7 @@ import (
 	"go.yorun.ai/skel/internal/lsp/workspace"
 )
 
-func TestSemanticStrictModePreservesCachedWarningSeverity(t *testing.T) {
+func TestSemanticStrictModePreservesCachedErrors(t *testing.T) {
 	documentURI := uri.File("/workspace/order.skel")
 	document := workspace.BuildDocument(documentURI, documentURI.FsPath(), "domain demo.order\nservice OrderService { method ping {} }\n", 1)
 	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
@@ -22,12 +22,9 @@ func TestSemanticStrictModePreservesCachedWarningSeverity(t *testing.T) {
 	for _, strict := range []bool{false, true, false} {
 		diagnostics, domains, err := SemanticWorkspace(t.Context(), analyzer, sources, paths, strict)
 		require.NoError(t, err)
-		require.Len(t, domains, 1)
+		require.Empty(t, domains)
 		require.Len(t, diagnostics[documentURI], 1)
-		severity := protocol.DiagnosticSeverityWarning
-		if strict {
-			severity = protocol.DiagnosticSeverityError
-		}
+		severity := protocol.DiagnosticSeverityError
 		assert.Equal(t, severity, diagnostics[documentURI][0].Severity)
 	}
 }

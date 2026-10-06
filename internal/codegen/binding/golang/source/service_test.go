@@ -116,8 +116,7 @@ func TestGeneratedGoParsesWithMultilineDeprecatedReasons(t *testing.T) {
 				Name:             "getUser",
 				Deprecated:       true,
 				DeprecatedReason: "Use getProfile instead\nThe old response will be removed",
-			}},
-		}},
+			}}, Pub: true}},
 		Tasks: []*schema.Task{{
 			Name:             "RefreshTask",
 			Deprecated:       true,

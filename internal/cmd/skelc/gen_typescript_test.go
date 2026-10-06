@@ -98,6 +98,7 @@ data InternalUser {
 	writeCLIFile(t, dir+"/service.skel", `domain demo.user
 
 api service UserApiService {
+    auth required
     for ClientActor
 
     method getUser {

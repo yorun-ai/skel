@@ -58,9 +58,6 @@ func emptyMethod(method *schema.Method, service *schema.Service) bool {
 }
 
 func authMarker(mode schema.AuthMode) string {
-	if mode == schema.AuthModeAuth || mode == schema.AuthModeNoAuth {
-		return string(mode)
-	}
 	if mode == schema.AuthModeRequired || mode == schema.AuthModeOptional || mode == schema.AuthModeAnonymous || mode == schema.AuthModeOff {
 		return "auth " + string(mode)
 	}
