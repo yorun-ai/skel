@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"go.yorun.ai/skelc/model"
+	"go.yorun.ai/skel/model"
 )
 
 func ExampleNewDomainFromSpec() {

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestApiGoClientCrossDomainAndInvocation(t *testing.T) {
@@ -48,10 +48,10 @@ api service HealthApiService { for ClientActor via client method ping {} }
 pub service BackendService { method ping {} }
 `)
 	sharedOut, out := filepath.Join(root, "sharedapi"), filepath.Join(root, "orderapi")
-	if _, err := skelc.CompileGolang(skelc.Input{SkelIn: shared}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Out: sharedOut, ModulePrefix: "example.com/gen"}); err != nil {
+	if _, err := skel.CompileGolang(skel.Input{SkelIn: shared}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Out: sharedOut, ModulePrefix: "example.com/gen"}); err != nil {
 		t.Fatal(err)
 	}
-	parsed, err := skelc.Parse(skelc.Input{SkelIn: order, SkelImports: map[string]string{"common.shared": shared}})
+	parsed, err := skel.Parse(skel.Input{SkelIn: order, SkelImports: map[string]string{"common.shared": shared}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,11 +72,11 @@ pub service BackendService { method ping {} }
 			method.OutputExample = "result example"
 		}
 	}
-	if err := skelc.GenerateGolang(parsed.Domain, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Out: out, ModulePrefix: "example.com/gen"}); err != nil {
+	if err := skel.GenerateGolang(parsed.Domain, skel.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Out: out, ModulePrefix: "example.com/gen"}); err != nil {
 		t.Fatal(err)
 	}
 	tsOut := filepath.Join(root, "typescript")
-	if _, err := skelc.CompileTypeScript(skelc.Input{SkelIn: order, SkelImports: map[string]string{"common.shared": shared}}, skelc.TypeScriptOption{ApiOnly: true, Out: tsOut, Imports: map[string]string{"common.shared": "@demo/sharedapi"}}); err != nil {
+	if _, err := skel.CompileTypeScript(skel.Input{SkelIn: order, SkelImports: map[string]string{"common.shared": shared}}, skel.TypeScriptOption{ApiOnly: true, Out: tsOut, Imports: map[string]string{"common.shared": "@demo/sharedapi"}}); err != nil {
 		t.Fatal(err)
 	}
 	spec, err := os.ReadFile(filepath.Join(tsOut, "spec.ts"))
@@ -225,12 +225,12 @@ service LegacyService { method get { noauth output Item } }
 pub service BackendService { method get { output backend.Internal } }
 service HiddenService { method ping {} }
 `)
-	input := skelc.Input{SkelIn: entry, SkelImports: map[string]string{"demo.backend": backend}}
+	input := skel.Input{SkelIn: entry, SkelImports: map[string]string{"demo.backend": backend}}
 	goOut, tsOut := filepath.Join(root, "orderapi"), filepath.Join(root, "ts")
-	if _, err := skelc.CompileGolang(input, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Module: "example.com/orderapi", Out: goOut}); err != nil {
+	if _, err := skel.CompileGolang(input, skel.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Module: "example.com/orderapi", Out: goOut}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
+	if _, err := skel.CompileTypeScript(input, skel.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
 		t.Fatal(err)
 	}
 	for _, path := range []string{filepath.Join(goOut, "service.go"), filepath.Join(tsOut, "service.ts")} {
@@ -252,10 +252,10 @@ service HiddenService { method ping {} }
 			t.Fatalf("wrong data selection in %s: %s", path, contents)
 		}
 	}
-	if _, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{Out: tsOut}); err == nil {
+	if _, err := skel.CompileTypeScript(input, skel.TypeScriptOption{Out: tsOut}); err == nil {
 		t.Fatal("accepted TypeScript generation without api")
 	}
-	if _, err := skelc.CompileGolang(input, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, PubOnly: true, Out: goOut}); err == nil {
+	if _, err := skel.CompileGolang(input, skel.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, PubOnly: true, Out: goOut}); err == nil {
 		t.Fatal("accepted both Go modes")
 	}
 }
@@ -268,10 +268,10 @@ actor TestActor { via client {} }
 api service OrderApiService { for TestActor via client method ping {} }
 pub service BackendService { method ping {} }
 `)
-	input := skelc.Input{SkelIn: entry}
+	input := skel.Input{SkelIn: entry}
 	out := filepath.Join(root, "server")
-	option := skelc.GolangOption{CompilerVersion: "v0.0.0-dev", AsModule: true, Module: "example.com/orderserver", Out: out}
-	if _, err := skelc.CompileGolang(input, option); err != nil {
+	option := skel.GolangOption{CompilerVersion: "v0.0.0-dev", AsModule: true, Module: "example.com/orderserver", Out: out}
+	if _, err := skel.CompileGolang(input, option); err != nil {
 		t.Fatal(err)
 	}
 	schema, err := os.ReadFile(filepath.Join(out, "schema.go"))
@@ -292,11 +292,11 @@ pub service BackendService { method ping {} }
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(mod), "go.yorun.ai/vine "+skelc.DefaultGolangVineVersion) {
+	if !strings.Contains(string(mod), "go.yorun.ai/vine "+skel.DefaultGolangVineVersion) {
 		t.Fatalf("unsupported Vine requirement: %s", mod)
 	}
 	option.VineVersion = "v0.15.6"
-	if _, err := skelc.CompileGolang(input, option); err == nil {
+	if _, err := skel.CompileGolang(input, option); err == nil {
 		t.Fatal("accepted runtime below the minimum Vine version")
 	}
 }
@@ -316,7 +316,7 @@ func TestCrossDomainImportAliasCollisions(t *testing.T) {
 		goImports[domain] = "example.com/" + prefix + "/userapi"
 		tsImports[domain] = "./" + prefix
 		outputs[domain] = filepath.Join(root, prefix)
-		if _, err := skelc.CompileGolang(skelc.Input{SkelIn: input}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Module: goImports[domain], Out: outputs[domain]}); err != nil {
+		if _, err := skel.CompileGolang(skel.Input{SkelIn: input}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Module: goImports[domain], Out: outputs[domain]}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -329,7 +329,7 @@ func TestCrossDomainImportAliasCollisions(t *testing.T) {
 		input := filepath.Join(t.TempDir(), "app.skel")
 		writeFileForTest(t, input, "domain demo.app\n"+declarations+"data Pair { first: first.user.Value second: second.user.Value }\nactor TestActor { via client {} }\napi service AppApiService { for TestActor via client method get { output Pair } }\n")
 		out := filepath.Join(t.TempDir(), "appapi")
-		if _, err := skelc.CompileGolang(skelc.Input{SkelIn: input, SkelImports: imports}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Module: "example.com/appapi", Out: out, Imports: goImports}); err != nil {
+		if _, err := skel.CompileGolang(skel.Input{SkelIn: input, SkelImports: imports}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Module: "example.com/appapi", Out: out, Imports: goImports}); err != nil {
 			t.Fatal(err)
 		}
 		content, err := os.ReadFile(filepath.Join(out, "data.go"))
@@ -350,7 +350,7 @@ func TestCrossDomainImportAliasCollisions(t *testing.T) {
 		}
 		testutil.Go(t, out, "test", "-mod=mod", "./...")
 		tsOut := t.TempDir()
-		if _, err := skelc.CompileTypeScript(skelc.Input{SkelIn: input, SkelImports: imports}, skelc.TypeScriptOption{ApiOnly: true, Out: tsOut, Imports: tsImports}); err != nil {
+		if _, err := skel.CompileTypeScript(skel.Input{SkelIn: input, SkelImports: imports}, skel.TypeScriptOption{ApiOnly: true, Out: tsOut, Imports: tsImports}); err != nil {
 			t.Fatal(err)
 		}
 		ts, err := os.ReadFile(filepath.Join(tsOut, "data.ts"))

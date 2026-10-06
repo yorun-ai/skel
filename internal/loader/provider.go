@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"go.yorun.ai/skelc/internal/source"
+	"go.yorun.ai/skel/internal/source"
 )
 
 // Entry is the portion of filesystem metadata needed to discover compiler inputs.

@@ -8,12 +8,12 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/lsp/analysis"
-	"go.yorun.ai/skelc/internal/lsp/features"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
-	"go.yorun.ai/skelc/internal/schema"
-	"go.yorun.ai/skelc/internal/schema/sourcediff"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/lsp/analysis"
+	"go.yorun.ai/skel/internal/lsp/features"
+	"go.yorun.ai/skel/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/internal/schema/sourcediff"
 )
 
 const (

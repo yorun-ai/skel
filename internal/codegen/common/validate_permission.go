@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func validatePermissionExpr(require *model.PermissionRequire) error {

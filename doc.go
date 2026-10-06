@@ -1,4 +1,4 @@
-// Package skelc provides the supported programmatic API for inspecting Skel
+// Package skel provides the supported programmatic API for inspecting Skel
 // sources, querying schemas, comparing contracts, and generating Go,
 // TypeScript, and public Skel output.
 //
@@ -9,4 +9,4 @@
 //
 // Generated files carry an ownership marker. Existing files without that
 // marker are preserved.
-package skelc
+package skel

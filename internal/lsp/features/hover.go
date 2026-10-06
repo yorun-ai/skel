@@ -5,8 +5,8 @@ import (
 	"slices"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/binding"
+	"go.yorun.ai/skel/internal/lsp/workspace"
 )
 
 func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {

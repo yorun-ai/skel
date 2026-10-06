@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func buildEnumItemHashValues(items []*model.EnumItem) []*_EnumItemHashValue {

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 type _DecoratorView struct {

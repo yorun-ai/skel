@@ -3,7 +3,7 @@ package hasher
 import (
 	"testing"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestFillHashesPropagatesDataChangesToService(t *testing.T) {

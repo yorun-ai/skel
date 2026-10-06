@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/source"
+	"go.yorun.ai/skel/internal/source"
 )
 
 // Git reads blobs from a pinned commit. It never extracts files or follows

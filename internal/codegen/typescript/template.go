@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
+	"go.yorun.ai/skel/internal/codegen/common"
 )
 
 func (g *_Gen) renderTs(file string, tpl string, data any) {

@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 
 	"go.lsp.dev/protocol"
-	lsource "go.yorun.ai/skelc/internal/lsp/source"
+	lsource "go.yorun.ai/skel/internal/lsp/source"
 )
 
 func qualifierBeforePositionBuffer(buffer lsource.Buffer, position protocol.Position) string {

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/parser"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/parser"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 var benchmarkSource = []byte(`domain benchmark.demo

@@ -3,7 +3,7 @@ package source
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/util/nameutil"
 )
 
 func er(name string) string {

@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/compiler"
-	lspdiagnostic "go.yorun.ai/skelc/internal/lsp/diagnostic"
-	lsource "go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/compiler"
+	lspdiagnostic "go.yorun.ai/skel/internal/lsp/diagnostic"
+	lsource "go.yorun.ai/skel/internal/lsp/source"
 )
 
 func TestAuthMigrationQuickFix(t *testing.T) {

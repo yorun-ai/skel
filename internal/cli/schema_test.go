@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/command"
-	schemas "go.yorun.ai/skelc/internal/schema"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel/internal/command"
+	schemas "go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestRunSkelcStrictSchemaCommands(t *testing.T) {

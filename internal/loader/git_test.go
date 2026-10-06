@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestGitProviderPinsRevisionAndPreservesFileNames(t *testing.T) {

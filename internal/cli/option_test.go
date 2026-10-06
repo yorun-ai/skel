@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/optionvalidation"
 )
 
 func TestNormalizeCheckOption(t *testing.T) {

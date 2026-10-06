@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"go.yorun.ai/skelc/diagnostic"
+	"go.yorun.ai/skel/diagnostic"
 )
 
 func TestErrorReportsMessageAndStableJSON(t *testing.T) {

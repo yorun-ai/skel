@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/diagnostic"
+	"go.yorun.ai/skel/diagnostic"
 )
 
 func TestServiceWarningsAndApiModifiers(t *testing.T) {

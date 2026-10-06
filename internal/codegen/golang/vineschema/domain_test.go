@@ -1,10 +1,10 @@
 package vineschema
 
 import (
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
-	"go.yorun.ai/skelc/internal/model"
-	contractschema "go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/codegen/golang/view"
+	"go.yorun.ai/skel/internal/model"
+	contractschema "go.yorun.ai/skel/internal/schema"
 	"path/filepath"
 	"testing"
 )

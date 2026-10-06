@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestPermissionGenerationUsesStrings(t *testing.T) {
@@ -36,7 +36,7 @@ service UserService {
 		t.Fatal(err)
 	}
 	out := filepath.Join(root, "generated")
-	if _, err := skelc.CompileGolang(skelc.Input{SkelIn: input}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, AsModule: true, Module: "example.com/permissions"}); err != nil {
+	if _, err := skel.CompileGolang(skel.Input{SkelIn: input}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, AsModule: true, Module: "example.com/permissions"}); err != nil {
 		t.Fatal(err)
 	}
 	resource := strings.Join(strings.Fields(readFileForTest(t, filepath.Join(out, "resource.go"))), " ")
@@ -44,7 +44,7 @@ service UserService {
 		t.Fatalf("expected string constant and check parameter: %s", resource)
 	}
 	tsOut := filepath.Join(root, "ts")
-	if _, err := skelc.CompileTypeScript(skelc.Input{SkelIn: input}, skelc.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
+	if _, err := skel.CompileTypeScript(skel.Input{SkelIn: input}, skel.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
 		t.Fatal(err)
 	}
 	ts := strings.Join(strings.Fields(readFileForTest(t, filepath.Join(tsOut, "data.ts"))), " ")
@@ -52,10 +52,10 @@ service UserService {
 		t.Fatalf("expected string TypeScript fields: %s", ts)
 	}
 	public := filepath.Join(root, "public")
-	if _, err := skelc.CompileSkeleton(skelc.Input{SkelIn: input}, skelc.SkeletonOption{Out: public, PubOnly: true}); err != nil {
+	if _, err := skel.CompileSkeleton(skel.Input{SkelIn: input}, skel.SkeletonOption{Out: public, PubOnly: true}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := skelc.CompileGolang(skelc.Input{SkelIn: public}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(root, "roundtrip")}); err != nil {
+	if _, err := skel.CompileGolang(skel.Input{SkelIn: public}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(root, "roundtrip")}); err != nil {
 		t.Fatal(err)
 	}
 	testutil.Go(t, out, "test", "-mod=mod", "./...")
@@ -86,7 +86,7 @@ pub service UserService {
 				t.Fatal(err)
 			}
 			out := filepath.Join(root, "generated")
-			if _, err := skelc.CompileGolang(skelc.Input{SkelIn: input}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out}); err != nil {
+			if _, err := skel.CompileGolang(skel.Input{SkelIn: input}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out}); err != nil {
 				t.Fatal(err)
 			}
 			generatedSchema := strings.Join(strings.Fields(readFileForTest(t, filepath.Join(out, "schema.go"))), " ")
@@ -102,11 +102,11 @@ pub service UserService {
 				}
 			}
 			public := filepath.Join(root, "public")
-			if _, err := skelc.CompileSkeleton(skelc.Input{SkelIn: input}, skelc.SkeletonOption{Out: public, PubOnly: true}); err != nil {
+			if _, err := skel.CompileSkeleton(skel.Input{SkelIn: input}, skel.SkeletonOption{Out: public, PubOnly: true}); err != nil {
 				t.Fatal(err)
 			}
 			out2 := filepath.Join(root, "roundtrip")
-			if _, err := skelc.CompileGolang(skelc.Input{SkelIn: public}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out2}); err != nil {
+			if _, err := skel.CompileGolang(skel.Input{SkelIn: public}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out2}); err != nil {
 				t.Fatal(err)
 			}
 			if got := readFileForTest(t, filepath.Join(out2, "resource.go")); !strings.Contains(got, `json:"code2" skel:"index(0)"`) {
@@ -129,7 +129,7 @@ service ConsumerService {
 				t.Fatal(err)
 			}
 			consumerOut := filepath.Join(root, "consumer")
-			if _, err := skelc.CompileGolang(skelc.Input{SkelIn: consumer, SkelImports: map[string]string{"demo": public}}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: consumerOut, Imports: map[string]string{"demo": "example.com/demo"}}); err != nil {
+			if _, err := skel.CompileGolang(skel.Input{SkelIn: consumer, SkelImports: map[string]string{"demo": public}}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: consumerOut, Imports: map[string]string{"demo": "example.com/demo"}}); err != nil {
 				t.Fatal(err)
 			}
 			if got := strings.Join(strings.Fields(readFileForTest(t, filepath.Join(consumerOut, "schema.go"))), " "); !strings.Contains(got, `CodeArgumentName: "code2"`) {

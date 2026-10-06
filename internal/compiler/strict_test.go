@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skelc/diagnostic"
+	"go.yorun.ai/skel/diagnostic"
 )
 
 func TestStrictCompilationChecksImportedMigrationRules(t *testing.T) {

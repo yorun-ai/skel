@@ -6,10 +6,10 @@ import (
 	"errors"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/analyzer"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/analyzer"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 // ParseSourceRecovering returns the declarations that can be recovered from a

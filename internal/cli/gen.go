@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	ucli "github.com/urfave/cli/v3"
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/command"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/command"
 )
 
 const (
@@ -69,7 +69,7 @@ func newGenGoCommand() *ucli.Command {
 			if err != nil {
 				return commandFailure(command.ErrorCodeCommandFailed, err)
 			}
-			result, err := skelc.CompileGolang(input, option)
+			result, err := skel.CompileGolang(input, option)
 			if err != nil {
 				return generationCommandFailure(err)
 			}
@@ -92,7 +92,7 @@ func newGenGoModuleCommand() *ucli.Command {
 			if err != nil {
 				return commandFailure(command.ErrorCodeCommandFailed, err)
 			}
-			result, err := skelc.CompileGolang(input, option)
+			result, err := skel.CompileGolang(input, option)
 			if err != nil {
 				return generationCommandFailure(err)
 			}
@@ -111,7 +111,7 @@ func newGenTSCommand() *ucli.Command {
 			if err != nil {
 				return commandFailure(command.ErrorCodeInvalidArgument, err)
 			}
-			result, err := skelc.CompileTypeScript(input, option)
+			result, err := skel.CompileTypeScript(input, option)
 			if err != nil {
 				return generationCommandFailure(err)
 			}
@@ -130,7 +130,7 @@ func newGenSkelCommand() *ucli.Command {
 			if err != nil {
 				return commandFailure(command.ErrorCodeInvalidArgument, err)
 			}
-			result, err := skelc.CompileSkeleton(input, option)
+			result, err := skel.CompileSkeleton(input, option)
 			if err != nil {
 				return generationCommandFailure(err)
 			}
@@ -139,7 +139,7 @@ func newGenSkelCommand() *ucli.Command {
 	}
 }
 
-func writeGenerationResult(cmd *ucli.Command, result skelc.CompileResult) error {
+func writeGenerationResult(cmd *ucli.Command, result skel.CompileResult) error {
 	writeWarningLogs(cmd, result.Diagnostics)
 	if err := writeJSONResult(cmd, command.GenerationResult{Generated: true}, "generation result"); err != nil {
 		return commandFailure(command.ErrorCodeCommandFailed, err)
@@ -168,27 +168,27 @@ func newGenGoFlags() []ucli.Flag {
 	}
 }
 
-func parseGenGoCommand(cmd *ucli.Command) (skelc.Input, skelc.GolangOption, error) {
+func parseGenGoCommand(cmd *ucli.Command) (skel.Input, skel.GolangOption, error) {
 	if cmd.Args().Len() != 0 {
-		return skelc.Input{}, skelc.GolangOption{}, fmt.Errorf("unexpected args for %s %s", commandGen, commandGenGo)
+		return skel.Input{}, skel.GolangOption{}, fmt.Errorf("unexpected args for %s %s", commandGen, commandGenGo)
 	}
 
 	skelImports, err := parseMappingFlags(cmd.StringSlice(flagGenSkelImport), flagGenSkelImport)
 	if err != nil {
-		return skelc.Input{}, skelc.GolangOption{}, err
+		return skel.Input{}, skel.GolangOption{}, err
 	}
 	goImports, err := parseMappingFlags(cmd.StringSlice(flagGenGoImport), flagGenGoImport)
 	if err != nil {
-		return skelc.Input{}, skelc.GolangOption{}, err
+		return skel.Input{}, skel.GolangOption{}, err
 	}
-	input := skelc.Input{
+	input := skel.Input{
 		SkelIn:      cmd.String(flagGenSkelIn),
 		SkelImports: skelImports,
 		Strict:      cmd.Bool(flagStrict),
 	}
 
-	option := skelc.GolangOption{
-		ApiFilter:   skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)},
+	option := skel.GolangOption{
+		ApiFilter:   skel.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)},
 		Imports:     goImports,
 		PubOnly:     cmd.Bool(flagGenPub),
 		ApiOnly:     cmd.Bool(flagGenApi),
@@ -219,28 +219,28 @@ func newGenGoModuleFlags() []ucli.Flag {
 	}
 }
 
-func parseGenGoModuleCommand(cmd *ucli.Command) (skelc.Input, skelc.GolangOption, error) {
+func parseGenGoModuleCommand(cmd *ucli.Command) (skel.Input, skel.GolangOption, error) {
 	if cmd.Args().Len() != 0 {
-		return skelc.Input{}, skelc.GolangOption{}, fmt.Errorf("unexpected args for %s %s", commandGen, commandGenGoModule)
+		return skel.Input{}, skel.GolangOption{}, fmt.Errorf("unexpected args for %s %s", commandGen, commandGenGoModule)
 	}
 
 	skelImports, err := parseMappingFlags(cmd.StringSlice(flagGenSkelImport), flagGenSkelImport)
 	if err != nil {
-		return skelc.Input{}, skelc.GolangOption{}, err
+		return skel.Input{}, skel.GolangOption{}, err
 	}
 	goImports, err := parseMappingFlags(cmd.StringSlice(flagGenGoImport), flagGenGoImport)
 	if err != nil {
-		return skelc.Input{}, skelc.GolangOption{}, err
+		return skel.Input{}, skel.GolangOption{}, err
 	}
 
-	input := skelc.Input{
+	input := skel.Input{
 		SkelIn:      cmd.String(flagGenSkelIn),
 		SkelImports: skelImports,
 		Strict:      cmd.Bool(flagStrict),
 	}
 
-	option := skelc.GolangOption{
-		ApiFilter:    skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)},
+	option := skel.GolangOption{
+		ApiFilter:    skel.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)},
 		PubOnly:      cmd.Bool(flagGenPub),
 		ApiOnly:      cmd.Bool(flagGenApi),
 		VrpcVersion:  cmd.String(flagGenGoVrpcVersion),
@@ -265,21 +265,21 @@ func newGenSkelFlags() []ucli.Flag {
 	}
 }
 
-func parseGenSkelCommand(cmd *ucli.Command) (skelc.Input, skelc.SkeletonOption, error) {
+func parseGenSkelCommand(cmd *ucli.Command) (skel.Input, skel.SkeletonOption, error) {
 	if cmd.Args().Len() != 0 {
-		return skelc.Input{}, skelc.SkeletonOption{}, fmt.Errorf("unexpected args for %s %s", commandGen, commandGenSkel)
+		return skel.Input{}, skel.SkeletonOption{}, fmt.Errorf("unexpected args for %s %s", commandGen, commandGenSkel)
 	}
 
 	skelImports, err := parseMappingFlags(cmd.StringSlice(flagGenSkelImport), flagGenSkelImport)
 	if err != nil {
-		return skelc.Input{}, skelc.SkeletonOption{}, err
+		return skel.Input{}, skel.SkeletonOption{}, err
 	}
-	input := skelc.Input{
+	input := skel.Input{
 		SkelIn:      cmd.String(flagGenSkelIn),
 		SkelImports: skelImports,
 		Strict:      cmd.Bool(flagStrict),
 	}
-	option := skelc.SkeletonOption{
+	option := skel.SkeletonOption{
 		PubOnly: cmd.Bool(flagGenPub),
 		Out:     cmd.String(flagGenSkelOut),
 	}
@@ -302,26 +302,26 @@ func newGenTSFlags() []ucli.Flag {
 	}
 }
 
-func parseGenTSCommand(cmd *ucli.Command) (skelc.Input, skelc.TypeScriptOption, error) {
+func parseGenTSCommand(cmd *ucli.Command) (skel.Input, skel.TypeScriptOption, error) {
 	if cmd.Args().Len() != 0 {
-		return skelc.Input{}, skelc.TypeScriptOption{}, fmt.Errorf("unexpected args for %s %s", commandGen, commandGenTS)
+		return skel.Input{}, skel.TypeScriptOption{}, fmt.Errorf("unexpected args for %s %s", commandGen, commandGenTS)
 	}
 
 	skelImports, err := parseMappingFlags(cmd.StringSlice(flagGenSkelImport), flagGenSkelImport)
 	if err != nil {
-		return skelc.Input{}, skelc.TypeScriptOption{}, err
+		return skel.Input{}, skel.TypeScriptOption{}, err
 	}
 	tsImports, err := parseMappingFlags(cmd.StringSlice(flagGenTSImport), flagGenTSImport)
 	if err != nil {
-		return skelc.Input{}, skelc.TypeScriptOption{}, err
+		return skel.Input{}, skel.TypeScriptOption{}, err
 	}
-	input := skelc.Input{
+	input := skel.Input{
 		SkelIn:      cmd.String(flagGenSkelIn),
 		SkelImports: skelImports,
 		Strict:      cmd.Bool(flagStrict),
 	}
-	option := skelc.TypeScriptOption{
-		ApiFilter:   skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)},
+	option := skel.TypeScriptOption{
+		ApiFilter:   skel.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)},
 		ApiOnly:     cmd.Bool(flagGenApi),
 		Out:         cmd.String(flagGenTSOut),
 		AsModule:    cmd.Bool(flagGenTSAsModule),

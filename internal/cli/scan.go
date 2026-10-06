@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	ucli "github.com/urfave/cli/v3"
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/command"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/command"
 )
 
 const (
@@ -34,7 +34,7 @@ func newScanImportsCommand() *ucli.Command {
 			if cmd.Args().Len() != 0 {
 				return commandFailure(command.ErrorCodeInvalidArgument, fmt.Errorf("unexpected args for scan imports"))
 			}
-			result, err := skelc.ScanImportsContext(ctx, skelc.ScanOption{SkelIn: cmd.String(flagScanSkelIn), Strict: cmd.Bool(flagStrict)})
+			result, err := skel.ScanImportsContext(ctx, skel.ScanOption{SkelIn: cmd.String(flagScanSkelIn), Strict: cmd.Bool(flagStrict)})
 			if err != nil {
 				return generationCommandFailure(err)
 			}

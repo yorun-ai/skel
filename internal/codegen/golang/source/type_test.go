@@ -3,8 +3,8 @@ package source
 import (
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestCastTypeUsesDefaultExternalPubPackageNameWithoutImportAlias(t *testing.T) {

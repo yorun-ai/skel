@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/codegen/golang/view"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestCastData(t *testing.T) {

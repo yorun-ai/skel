@@ -3,7 +3,7 @@
 // import this package and it never ships in a build.
 package codegentest
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 // ScalarType builds a type that refers to the given scalar.
 func ScalarType(scalar model.Scalar) *model.Type {

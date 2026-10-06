@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/codegen/golang/view"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestNewGenDerivesModuleAndPackageName(t *testing.T) {

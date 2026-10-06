@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"go.yorun.ai/skelc/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestFacadeSnapshotCodecRoundTrip(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 func expectAnalyzeDiagnosticsContains(t *testing.T, expected string, content *grammar.SkelContent) {

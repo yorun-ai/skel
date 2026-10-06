@@ -8,11 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser"
-	"go.yorun.ai/skelc/internal/parser/grammar"
-	textsource "go.yorun.ai/skelc/internal/source"
+	"go.yorun.ai/skel/internal/binding"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser"
+	"go.yorun.ai/skel/internal/parser/grammar"
+	textsource "go.yorun.ai/skel/internal/source"
 )
 
 // Source is an in-memory Skel document used by workspace analysis. Domain is a

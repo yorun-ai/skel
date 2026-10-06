@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 
 	ucli "github.com/urfave/cli/v3"
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/command"
-	"go.yorun.ai/skelc/internal/util/fileutil"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/command"
+	"go.yorun.ai/skel/internal/util/fileutil"
 )
 
 const (
@@ -45,7 +45,7 @@ func newFormatCommand() *ucli.Command {
 			result, err := formatFiles(option)
 			if err != nil {
 				code := command.ErrorCodeCommandFailed
-				if errors.Is(err, skelc.ErrFormatCompilation) {
+				if errors.Is(err, skel.ErrFormatCompilation) {
 					code = command.ErrorCodeCompilationFailed
 				}
 				return commandFailure(code, err)
@@ -77,7 +77,7 @@ func parseFormatCommand(cmd *ucli.Command) (_FormatOption, error) {
 }
 
 func formatFiles(option _FormatOption) (_FormatResult, error) {
-	planned, err := skelc.FormatFiles(skelc.FormatOption{SkelIn: option.skelIn, Strict: option.strict})
+	planned, err := skel.FormatFiles(skel.FormatOption{SkelIn: option.skelIn, Strict: option.strict})
 	if err != nil {
 		return _FormatResult{}, err
 	}

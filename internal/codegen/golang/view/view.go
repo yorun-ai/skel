@@ -3,8 +3,8 @@ package view
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/model"
 )
 
 type Mode string

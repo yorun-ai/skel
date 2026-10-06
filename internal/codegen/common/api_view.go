@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/optionvalidation"
-	"go.yorun.ai/skelc/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/util/nameutil"
 )
 
 // ApiFilter selects API service/type roots and optionally prunes public types.

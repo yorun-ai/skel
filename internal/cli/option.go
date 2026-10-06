@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"go.yorun.ai/skelc/internal/codegen/output"
-	"go.yorun.ai/skelc/internal/command"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/codegen/output"
+	"go.yorun.ai/skel/internal/command"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/optionvalidation"
 )
 
 type _OptionValidationKey struct {

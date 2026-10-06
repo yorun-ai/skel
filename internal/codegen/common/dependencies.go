@@ -3,7 +3,7 @@ package common
 import (
 	"slices"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 // ExternalDomains returns the sorted, unique domains directly referenced by

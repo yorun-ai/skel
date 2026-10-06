@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"slices"
 
-	"go.yorun.ai/skelc/internal/loader"
+	"go.yorun.ai/skel/internal/loader"
 )
 
 // CheckResult contains the diagnostics produced by a check operation.

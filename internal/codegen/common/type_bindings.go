@@ -1,6 +1,6 @@
 package common
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 // ImportBinding belongs to one generation target, never to the semantic model.
 type ImportBinding struct {

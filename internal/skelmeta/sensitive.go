@@ -2,7 +2,7 @@
 // and code generation.
 package skelmeta
 
-import "go.yorun.ai/skelc/internal/util/nameutil"
+import "go.yorun.ai/skel/internal/util/nameutil"
 
 const SensitiveMarkerMethodName = "SkelSensitive"
 

@@ -1,6 +1,6 @@
 package schema
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 type EnumSchema struct {
 	Items []*EnumItem `json:"items"`

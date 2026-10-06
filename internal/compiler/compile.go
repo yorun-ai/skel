@@ -7,9 +7,9 @@ import (
 	"slices"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser"
+	"go.yorun.ai/skel/internal/loader"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser"
 )
 
 type Option struct {

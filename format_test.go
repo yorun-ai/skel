@@ -1,4 +1,4 @@
-package skelc_test
+package skel_test
 
 import (
 	"bytes"
@@ -9,22 +9,22 @@ import (
 	"testing"
 	"time"
 
-	"go.yorun.ai/skelc"
+	"go.yorun.ai/skel"
 )
 
 func TestFormatSourceAndPlanDoNotWrite(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "source.skel")
 	original := []byte("domain demo\npub data Value{value:string}\n")
 	writeTestFile(t, path, string(original))
-	formatted, err := skelc.FormatSource(original)
+	formatted, err := skel.FormatSource(original)
 	if err != nil || bytes.Equal(original, formatted) {
 		t.Fatalf("format failed: %s, %v", formatted, err)
 	}
-	again, err := skelc.FormatSource(formatted)
+	again, err := skel.FormatSource(formatted)
 	if err != nil || !bytes.Equal(formatted, again) {
 		t.Fatalf("format not idempotent: %v", err)
 	}
-	planned, err := skelc.FormatFiles(skelc.FormatOption{SkelIn: path})
+	planned, err := skel.FormatFiles(skel.FormatOption{SkelIn: path})
 	if err != nil || !planned.Changed || len(planned.Files) != 1 {
 		t.Fatalf("plan=%+v, err=%v", planned, err)
 	}
@@ -35,11 +35,11 @@ func TestFormatSourceAndPlanDoNotWrite(t *testing.T) {
 	if err != nil || !bytes.Equal(disk, original) {
 		t.Fatal("format plan modified disk")
 	}
-	planned, err = skelc.FormatFilesContext(t.Context(), skelc.FormatOption{SkelIn: path, Sources: map[string][]byte{path: formatted}})
+	planned, err = skel.FormatFilesContext(t.Context(), skel.FormatOption{SkelIn: path, Sources: map[string][]byte{path: formatted}})
 	if err != nil || planned.Changed || planned.Files == nil {
 		t.Fatalf("clean frozen plan: %+v, %v", planned, err)
 	}
-	if _, err := skelc.FormatSource([]byte("domain demo\npub data Broken {")); err == nil {
+	if _, err := skel.FormatSource([]byte("domain demo\npub data Broken {")); err == nil {
 		t.Fatal("invalid source accepted")
 	}
 }
@@ -51,12 +51,12 @@ func TestFormatPlanValidatesEveryInput(t *testing.T) {
 		filepath.Join(dir, "a.skel"):      []byte("domain demo\npub data Value{value:string}\n"),
 		filepath.Join(dir, "b.skel"):      []byte("domain demo\npub data Broken {"),
 	}
-	result, err := skelc.FormatFiles(skelc.FormatOption{SkelIn: dir, Sources: files})
-	if !errors.Is(err, skelc.ErrFormatCompilation) || len(result.Files) != 0 {
+	result, err := skel.FormatFiles(skel.FormatOption{SkelIn: dir, Sources: files})
+	if !errors.Is(err, skel.ErrFormatCompilation) || len(result.Files) != 0 {
 		t.Fatalf("partial plan returned: %+v, %v", result, err)
 	}
 	files[filepath.Join(dir, "b.skel")] = []byte("domain demo\nservice LegacyService { method ping {} }\n")
-	if _, err := skelc.FormatFiles(skelc.FormatOption{SkelIn: dir, Sources: files, Strict: true}); !errors.Is(err, skelc.ErrFormatCompilation) {
+	if _, err := skel.FormatFiles(skel.FormatOption{SkelIn: dir, Sources: files, Strict: true}); !errors.Is(err, skel.ErrFormatCompilation) {
 		t.Fatalf("strict format error lost: %v", err)
 	}
 }
@@ -68,7 +68,7 @@ func TestFormatPlanPreservesDiscoveryWarnings(t *testing.T) {
 		filepath.Join(dir, ".hidden.skel"): []byte("ignored"),
 	}
 	for _, strict := range []bool{false, true} {
-		result, err := skelc.FormatFiles(skelc.FormatOption{SkelIn: dir, Sources: files, Strict: strict})
+		result, err := skel.FormatFiles(skel.FormatOption{SkelIn: dir, Sources: files, Strict: strict})
 		if err != nil || len(result.Diagnostics) != 1 {
 			t.Fatalf("strict=%v: diagnostics=%+v, err=%v", strict, result.Diagnostics, err)
 		}
@@ -89,8 +89,8 @@ func TestFormatCancellationIsNotCompilationFailure(t *testing.T) {
 				ctx, cancel = context.WithDeadline(t.Context(), time.Now().Add(-time.Second))
 				defer cancel()
 			}
-			result, err := skelc.FormatFilesContext(ctx, skelc.FormatOption{SkelIn: path, Sources: files, Strict: strict})
-			if !errors.Is(err, ctx.Err()) || errors.Is(err, skelc.ErrFormatCompilation) {
+			result, err := skel.FormatFilesContext(ctx, skel.FormatOption{SkelIn: path, Sources: files, Strict: strict})
+			if !errors.Is(err, ctx.Err()) || errors.Is(err, skel.ErrFormatCompilation) {
 				t.Fatalf("strict=%v deadline=%v: unexpected error classification: %v", strict, deadline, err)
 			}
 			if result.Changed || len(result.Files) != 0 {

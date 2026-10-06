@@ -5,7 +5,7 @@ import (
 	"maps"
 	"slices"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func (p *Analysis) skelName(name string) string {

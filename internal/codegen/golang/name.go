@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/util/nameutil"
 )
 
 func buildModuleName(modulePrefix string, domainParts []string, usePubPackage bool) string {

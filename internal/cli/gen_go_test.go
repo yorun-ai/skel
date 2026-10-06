@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/command"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/command"
 )
 
 func TestRunSkelcStrictGenerationPreservesOutputs(t *testing.T) {

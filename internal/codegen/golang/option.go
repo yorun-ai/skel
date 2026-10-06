@@ -1,9 +1,9 @@
 package golang
 
 import (
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/codegen/golang/view"
+	"go.yorun.ai/skel/internal/model"
 )
 
 type Option struct {

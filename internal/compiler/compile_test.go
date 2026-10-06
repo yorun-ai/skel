@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestCompileDirectory(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"go.yorun.ai/skelc/internal/model"
-	textsource "go.yorun.ai/skelc/internal/source"
+	"go.yorun.ai/skel/internal/model"
+	textsource "go.yorun.ai/skel/internal/source"
 )
 
 func sourceLineOffsets(source []byte, line int) (int, int, bool) {

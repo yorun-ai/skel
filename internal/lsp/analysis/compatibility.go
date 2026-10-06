@@ -8,11 +8,11 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/lsp/source"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/schema"
-	"go.yorun.ai/skelc/internal/schema/sourcediff"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/lsp/source"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/internal/schema/sourcediff"
 )
 
 type _CompatibilityDiagnosticData struct {

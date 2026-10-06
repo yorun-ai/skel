@@ -3,8 +3,8 @@ package analysis
 import (
 	"path/filepath"
 
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/lsp/source"
 )
 
 // Build line indexes only for files that have diagnostic locations. A clean

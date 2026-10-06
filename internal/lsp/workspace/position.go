@@ -3,7 +3,7 @@ package workspace
 import (
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skel/internal/lsp/source"
 )
 
 func identifierRange(content source.Buffer, position lexer.Position, name string) protocol.Range {

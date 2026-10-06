@@ -1,8 +1,8 @@
 package vineschema
 
 import (
-	"go.yorun.ai/skelc/internal/model"
-	contractschema "go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skel/internal/model"
+	contractschema "go.yorun.ai/skel/internal/schema"
 )
 
 func (g *_Gen) buildResourceSchema(value *model.Resource, projected *contractschema.Declaration) *_ResourceSchema {

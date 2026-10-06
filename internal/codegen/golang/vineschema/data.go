@@ -3,8 +3,8 @@ package vineschema
 import (
 	"strings"
 
-	"go.yorun.ai/skelc/internal/model"
-	contractschema "go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skel/internal/model"
+	contractschema "go.yorun.ai/skel/internal/schema"
 )
 
 func (g *_Gen) buildEnumSchema(value *model.Enum, projected *contractschema.Declaration) *_EnumSchema {

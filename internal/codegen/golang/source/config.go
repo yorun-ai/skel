@@ -1,7 +1,7 @@
 package source
 
 import (
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 const configGoFilename = "config.go"

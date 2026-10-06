@@ -1,10 +1,10 @@
 package schema
 
 import (
-	"go.yorun.ai/skelc/model"
+	"go.yorun.ai/skel/model"
 	"io"
 
-	internalschema "go.yorun.ai/skelc/internal/schema"
+	internalschema "go.yorun.ai/skel/internal/schema"
 )
 
 const (

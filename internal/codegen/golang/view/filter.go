@@ -1,6 +1,6 @@
 package view
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 func filterNonPubData(dataList []*model.Data) []*model.Data {
 	filtered := make([]*model.Data, 0, len(dataList))

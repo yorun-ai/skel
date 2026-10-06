@@ -1,6 +1,6 @@
 package hasher
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 type _HashState struct {
 	domain      *model.Domain

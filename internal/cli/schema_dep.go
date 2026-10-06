@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	ucli "github.com/urfave/cli/v3"
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/command"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/command"
 )
 
 func newSchemaDepCommand() *ucli.Command {
@@ -26,7 +26,7 @@ func newSchemaDepCommand() *ucli.Command {
 		if err != nil {
 			return commandFailure(command.ErrorCodeInvalidArgument, err)
 		}
-		result, err := skelc.QuerySchemaDependencies(skelc.Input{SkelIn: cmd.String(flagGenSkelIn), SkelImports: imports, Strict: cmd.Bool(flagStrict)}, skelc.SchemaDependencyOption{Pub: cmd.Bool(flagGenPub), Api: cmd.Bool(flagGenApi), ApiFilter: skelc.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)}})
+		result, err := skel.QuerySchemaDependencies(skel.Input{SkelIn: cmd.String(flagGenSkelIn), SkelImports: imports, Strict: cmd.Bool(flagStrict)}, skel.SchemaDependencyOption{Pub: cmd.Bool(flagGenPub), Api: cmd.Bool(flagGenApi), ApiFilter: skel.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)}})
 		if err != nil {
 			return generationCommandFailure(err)
 		}

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"go.yorun.ai/skelc/internal/analyzer"
-	"go.yorun.ai/skelc/internal/hasher"
-	"go.yorun.ai/skelc/internal/parser"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/analyzer"
+	"go.yorun.ai/skel/internal/hasher"
+	"go.yorun.ai/skel/internal/parser"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 type _WorkspaceDomain struct {

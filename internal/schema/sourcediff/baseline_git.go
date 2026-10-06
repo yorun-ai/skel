@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/loader"
+	"go.yorun.ai/skel/internal/schema"
 )
 
 // ErrGitHistoryUnavailable identifies a domain for which no usable Git HEAD

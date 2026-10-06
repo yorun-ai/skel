@@ -6,8 +6,8 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	skeldiagnostic "go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/lsp/source"
+	skeldiagnostic "go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/lsp/source"
 )
 
 // RelatedSource resolves a related diagnostic path to its document and content.

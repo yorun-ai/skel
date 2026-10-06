@@ -1,4 +1,4 @@
-package skelc
+package skel
 
 import (
 	"bytes"
@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/formatter"
-	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/parser"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/formatter"
+	"go.yorun.ai/skel/internal/loader"
+	"go.yorun.ai/skel/internal/parser"
 )
 
 // ErrFormatCompilation identifies source loading or validation failures,

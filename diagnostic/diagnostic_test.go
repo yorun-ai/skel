@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.yorun.ai/skelc/model"
+	"go.yorun.ai/skel/model"
 )
 
 func TestPublicDiagnosticCodesRemainStable(t *testing.T) {

@@ -1,6 +1,6 @@
 package compiler
 
-import "go.yorun.ai/skelc/diagnostic"
+import "go.yorun.ai/skel/diagnostic"
 
 // ApplyStrictMode promotes migration warnings to errors in place.
 func ApplyStrictMode(diagnostics Diagnostics) {

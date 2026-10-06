@@ -1,6 +1,6 @@
 package typescript
 
-import "go.yorun.ai/skelc/internal/codegen/common"
+import "go.yorun.ai/skel/internal/codegen/common"
 
 type Option struct {
 	ApiFilter   common.ApiFilter

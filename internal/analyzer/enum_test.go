@@ -3,7 +3,7 @@ package analyzer
 import (
 	"testing"
 
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 func TestParseEnum(t *testing.T) {

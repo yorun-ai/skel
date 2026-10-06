@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc"
+	"go.yorun.ai/skel"
 )
 
 func TestApiActorFilterAcrossTargets(t *testing.T) {
@@ -40,17 +40,17 @@ api service AdminApiService {
  method get { output backend.Secret }
 }
 `)
-	input := skelc.Input{SkelIn: entry, SkelImports: map[string]string{"identity.user": actors, "private.backend": backend}}
+	input := skel.Input{SkelIn: entry, SkelImports: map[string]string{"identity.user": actors, "private.backend": backend}}
 	for _, target := range []string{"go", "ts"} {
 		t.Run(target, func(t *testing.T) {
 			out := filepath.Join(t.TempDir(), "api")
 			generate := func(names []string) error {
-				selection := skelc.ApiFilter{Actors: names}
+				selection := skel.ApiFilter{Actors: names}
 				if target == "go" {
-					_, err := skelc.CompileGolang(input, skelc.GolangOption{ApiOnly: true, ApiFilter: selection, Out: out, Imports: map[string]string{"private.backend": "example.com/backendapi"}})
+					_, err := skel.CompileGolang(input, skel.GolangOption{ApiOnly: true, ApiFilter: selection, Out: out, Imports: map[string]string{"private.backend": "example.com/backendapi"}})
 					return err
 				}
-				_, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{ApiOnly: true, ApiFilter: selection, Out: out, Imports: map[string]string{"private.backend": "@demo/backendapi"}})
+				_, err := skel.CompileTypeScript(input, skel.TypeScriptOption{ApiOnly: true, ApiFilter: selection, Out: out, Imports: map[string]string{"private.backend": "@demo/backendapi"}})
 				return err
 			}
 			ext := "." + target
@@ -110,12 +110,12 @@ api service AdminApiService {
 			}
 			// The unselected admin service must not require an API import mapping.
 			if target == "go" {
-				_, err := skelc.CompileGolang(input, skelc.GolangOption{ApiOnly: true, ApiFilter: skelc.ApiFilter{Actors: []string{"identity.user.UserActor"}}, Out: out})
+				_, err := skel.CompileGolang(input, skel.GolangOption{ApiOnly: true, ApiFilter: skel.ApiFilter{Actors: []string{"identity.user.UserActor"}}, Out: out})
 				if err != nil {
 					t.Fatal(err)
 				}
 			} else {
-				_, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{ApiOnly: true, ApiFilter: skelc.ApiFilter{Actors: []string{"identity.user.UserActor"}}, Out: out})
+				_, err := skel.CompileTypeScript(input, skel.TypeScriptOption{ApiOnly: true, ApiFilter: skel.ApiFilter{Actors: []string{"identity.user.UserActor"}}, Out: out})
 				if err != nil {
 					t.Fatal(err)
 				}

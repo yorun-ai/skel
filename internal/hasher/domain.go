@@ -1,6 +1,6 @@
 package hasher
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 func FillHashes(domain *model.Domain) error {
 	state := newHashState(domain)

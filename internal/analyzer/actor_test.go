@@ -1,10 +1,10 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skelc/internal/parser"
+	"go.yorun.ai/skel/internal/parser"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 func TestParseActor(t *testing.T) {

@@ -3,7 +3,7 @@ package schema
 import (
 	"testing"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestEventDirectionChangesAreBreaking(t *testing.T) {

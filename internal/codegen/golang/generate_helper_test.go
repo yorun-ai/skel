@@ -1,8 +1,8 @@
 package golang_test
 
 import (
-	"go.yorun.ai/skelc/internal/codegen/golang"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/golang"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func generateFixture(domain *model.Domain, option golang.Option) error {

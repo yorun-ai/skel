@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/util/nameutil"
 )
 
 func writeFileForTest(t *testing.T, path string, content string) {

@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 type _DecoratorAllowance uint8

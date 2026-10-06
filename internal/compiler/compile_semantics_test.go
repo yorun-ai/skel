@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestCompileServiceAndData(t *testing.T) {

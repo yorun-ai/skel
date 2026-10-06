@@ -1,6 +1,6 @@
 package model
 
-import internalmodel "go.yorun.ai/skelc/internal/model"
+import internalmodel "go.yorun.ai/skel/internal/model"
 
 const (
 	// ActorViaClient represents a client application transport.

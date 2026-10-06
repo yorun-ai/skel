@@ -1,6 +1,6 @@
 package schema
 
-import "go.yorun.ai/skelc/internal/util/nameutil"
+import "go.yorun.ai/skel/internal/util/nameutil"
 
 func normalizeReferenceNames(document *Document, domainName string, importAliases map[string]string) {
 	for _, declaration := range document.Declarations {

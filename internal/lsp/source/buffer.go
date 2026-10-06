@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"go.lsp.dev/protocol"
-	textsource "go.yorun.ai/skelc/internal/source"
+	textsource "go.yorun.ai/skel/internal/source"
 )
 
 // Buffer is an immutable view of source text.

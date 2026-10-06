@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skel/internal/lsp/source"
 )
 
 func TestGenericBindingsHaveIndependentScopesAndRename(t *testing.T) {

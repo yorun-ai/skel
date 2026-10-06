@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
-	"go.yorun.ai/skelc/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/optionvalidation"
 )
 
 // ResolveOption validates compiler metadata and resolves only the selected runtime.

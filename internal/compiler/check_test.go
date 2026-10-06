@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.yorun.ai/skelc/internal/loader"
+	"go.yorun.ai/skel/internal/loader"
 )
 
 func TestCheckReusesSingleSyntaxSnapshotPerSource(t *testing.T) {

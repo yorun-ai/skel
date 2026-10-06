@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestRuntimeClientLocalNameCollisions(t *testing.T) {
@@ -37,7 +37,7 @@ pub service NameService {
 		t.Fatal(err)
 	}
 	output := filepath.Join(root, "generated")
-	if _, err := skelc.CompileGolang(skelc.Input{SkelIn: input}, skelc.GolangOption{
+	if _, err := skel.CompileGolang(skel.Input{SkelIn: input}, skel.GolangOption{
 		CompilerVersion: "v0.0.0-dev",
 		PubOnly:         true,
 		AsModule:        true,

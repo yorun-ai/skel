@@ -1,7 +1,7 @@
 // Package command defines the stable JSON results emitted by skelc commands.
 package command
 
-import "go.yorun.ai/skelc/diagnostic"
+import "go.yorun.ai/skel/diagnostic"
 
 const (
 	ExitCodeSuccess     = 0

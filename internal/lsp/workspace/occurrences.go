@@ -4,8 +4,8 @@ import (
 	"slices"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skel/internal/binding"
+	"go.yorun.ai/skel/internal/lsp/source"
 )
 
 func indexOccurrences(document *Document) []Occurrence {

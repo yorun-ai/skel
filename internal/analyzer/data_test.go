@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 func TestParseData(t *testing.T) {

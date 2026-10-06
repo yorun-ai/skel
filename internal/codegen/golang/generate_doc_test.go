@@ -1,8 +1,8 @@
 package golang_test
 
 import (
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/codegen/golang"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/codegen/golang"
 	"os"
 	"path/filepath"
 	"strings"

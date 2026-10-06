@@ -1,8 +1,8 @@
 package view
 
 import (
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/model"
 )
 
 // TypeRoots returns the types emitted by this view. API views exclude

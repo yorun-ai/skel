@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 	"path/filepath"
 	"strings"
 	"testing"

@@ -1,9 +1,9 @@
 package skeleton
 
 import (
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/util/nameutil"
 )
 
 func collectTypeImports(domain *model.Domain, view *common.PublicView) []*model.Import {
