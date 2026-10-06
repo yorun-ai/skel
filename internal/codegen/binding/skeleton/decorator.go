@@ -68,7 +68,7 @@ func authMarker(mode schema.AuthMode) string {
 }
 
 func methodAuthMarker(method *schema.Method) string {
-	return authMarker(method.Auth)
+	return authMarker(method.AuthMode)
 }
 
 func importAlias(import_ *schema.Import) string {

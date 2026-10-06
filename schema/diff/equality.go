@@ -42,7 +42,7 @@ func typeKey(domain *schema.Domain, value *schema.Type) string {
 	case schema.TypeKindScalar:
 		body = "scalar:" + strings.ToLower(value.Scalar.Name())
 	case schema.TypeKindList:
-		body = "list<" + typeKey(domain, value.List.Value) + ">"
+		body = "list<" + typeKey(domain, value.List.Element) + ">"
 	case schema.TypeKindMap:
 		body = "map<" + typeKey(domain, value.Map.Key) + "," + typeKey(domain, value.Map.Value) + ">"
 	case schema.TypeKindTypeParameter:
@@ -75,7 +75,7 @@ func typeDisplay(domain *schema.Domain, value *schema.Type) string {
 	case schema.TypeKindScalar:
 		result = strings.ToLower(value.Scalar.Name())
 	case schema.TypeKindList:
-		result = "list<" + typeDisplay(domain, value.List.Value) + ">"
+		result = "list<" + typeDisplay(domain, value.List.Element) + ">"
 	case schema.TypeKindMap:
 		result = "map<" + typeDisplay(domain, value.Map.Key) + ", " + typeDisplay(domain, value.Map.Value) + ">"
 	case schema.TypeKindTypeParameter:
@@ -106,7 +106,7 @@ func expressionKey(domain *schema.Domain, value *schema.PermissionExpression) st
 	if value == nil {
 		return ""
 	}
-	value = comparisonExpression(value)
+	value = schema.ExpandPermissionExpression(value)
 	code := value.Code
 	if resource, action, ok := strings.Cut(code, ":"); ok {
 		code = referenceName(domain, resource) + ":" + action
@@ -127,32 +127,20 @@ func expressionKey(domain *schema.Domain, value *schema.PermissionExpression) st
 	return result
 }
 
-// Unresolved require terms implicitly combine an action code and an optional
-// check. Expand that syntax for comparison without modifying either schema.
-func comparisonExpression(value *schema.PermissionExpression) *schema.PermissionExpression {
-	if value.Mode != "" || value.Check == nil {
-		return value
-	}
-	check := value.Check
-	code := new(schema.PermissionExpression{
-		Mode: schema.PermissionRequireModeCode,
-		Code: check.ResourceSkelName + ":" + check.ActionName,
-	})
-	if check.CheckName == "" {
-		return code
-	}
-	return new(schema.PermissionExpression{
-		Mode: schema.PermissionRequireModeAll,
-		Children: []*schema.PermissionExpression{code, {
-			Mode: schema.PermissionRequireModeCheck, Check: check,
-		}},
-	})
-}
-
 // Service and method policies form a conjunction. Disjunctions remain opaque.
 func (c *_Diff) requirementImpact(beforeService, beforeMethod, afterService, afterMethod *schema.PermissionRequire) ImpactLevel {
-	before := requirementConjuncts(c.baseline, beforeService, beforeMethod)
-	after := requirementConjuncts(c.candidate, afterService, afterMethod)
+	beforePolicy, err := schema.ComposeRequirements(beforeService, beforeMethod)
+	if err != nil {
+		c.err = fmt.Errorf("baseline effective requirement: %w", err)
+		return ImpactDangerous
+	}
+	afterPolicy, err := schema.ComposeRequirements(afterService, afterMethod)
+	if err != nil {
+		c.err = fmt.Errorf("candidate effective requirement: %w", err)
+		return ImpactDangerous
+	}
+	before := requirementConjuncts(c.baseline, beforePolicy)
+	after := requirementConjuncts(c.candidate, afterPolicy)
 	containsBefore := true
 	for _, term := range before {
 		if !slices.Contains(after, term) {
@@ -179,7 +167,7 @@ func requirementConjuncts(domain *schema.Domain, policies ...*schema.PermissionR
 		if value == nil {
 			return
 		}
-		value = comparisonExpression(value)
+		value = schema.ExpandPermissionExpression(value)
 		if value.Mode == schema.PermissionRequireModeAll {
 			for _, child := range value.Children {
 				add(child)

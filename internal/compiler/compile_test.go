@@ -221,7 +221,7 @@ data AppItem {
 	if got := members["boxedType"].TypeArguments[0].Kind; got != schema.TypeKindEnum {
 		t.Fatalf("generic type argument kind = %d, want %d", got, schema.TypeKindEnum)
 	}
-	if got := members["types"].List.Value.Kind; got != schema.TypeKindEnum {
+	if got := members["types"].List.Element.Kind; got != schema.TypeKindEnum {
 		t.Fatalf("list element kind = %d, want %d", got, schema.TypeKindEnum)
 	}
 	if got := members["detailsByType"].Map.Key.Kind; got != schema.TypeKindEnum {
@@ -230,7 +230,7 @@ data AppItem {
 	if got := members["detailsByType"].Map.Value.Kind; got != schema.TypeKindData {
 		t.Fatalf("map value kind = %d, want %d", got, schema.TypeKindData)
 	}
-	if got := members["boxedDetails"].TypeArguments[0].List.Value.Kind; got != schema.TypeKindData {
+	if got := members["boxedDetails"].TypeArguments[0].List.Element.Kind; got != schema.TypeKindData {
 		t.Fatalf("nested generic list element kind = %d, want %d", got, schema.TypeKindData)
 	}
 	authInfo := baseDomain.Actors()[0].Auth.Info

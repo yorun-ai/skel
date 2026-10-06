@@ -73,6 +73,9 @@ func Compare(baseline, candidate *schema.Domain) (*Report, error) {
 			fmt.Sprintf("%s %s was added", declaration.Kind, declaration.SkelName), schema.Position{}, declaration.Pos)
 	}
 	diff.finish()
+	if diff.err != nil {
+		return nil, diff.err
+	}
 	return diff.report, nil
 }
 
@@ -80,6 +83,7 @@ type _Diff struct {
 	baseline, candidate *schema.Domain
 	usage               map[string]_Usage
 	report              *Report
+	err                 error
 }
 
 func (c *_Diff) add(impact ImpactLevel, code, symbol, message string, baseline, candidate schema.Position) {

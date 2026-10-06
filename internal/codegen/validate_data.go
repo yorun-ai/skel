@@ -69,7 +69,7 @@ func validateSchemaTypeGraph(type_ *schema.Type, seenData map[*schema.Data]bool)
 				return fmt.Errorf("unsupported scalar %s", current.Scalar.Name())
 			}
 		case schema.TypeKindList:
-			if current.List == nil || current.List.Value == nil {
+			if current.List == nil || current.List.Element == nil {
 				return fmt.Errorf("list metadata is nil")
 			}
 		case schema.TypeKindMap:
@@ -110,7 +110,7 @@ func validateSchemaTypeGraph(type_ *schema.Type, seenData map[*schema.Data]bool)
 		children := current.TypeArguments
 		switch current.Kind {
 		case schema.TypeKindList:
-			children = []*schema.Type{current.List.Value}
+			children = []*schema.Type{current.List.Element}
 		case schema.TypeKindMap:
 			children = []*schema.Type{current.Map.Key, current.Map.Value}
 		}

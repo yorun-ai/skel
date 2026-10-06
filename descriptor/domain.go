@@ -2,7 +2,7 @@ package descriptor
 
 // Domain describes the runtime contract of a Skel domain.
 type Domain struct {
-	Domain      string         `json:"domain"`
+	Name        string         `json:"name"`
 	Description string         `json:"description,omitempty"`
 	Hash        string         `json:"hash"`
 	Full        bool           `json:"full"`

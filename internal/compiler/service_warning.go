@@ -14,18 +14,18 @@ func MigrationDiagnostics(domain *schema.Domain) Diagnostics {
 		end := service.Pos
 		end.Column += len(service.Name)
 		span := diagnostic.SourceRange{Start: service.Pos, End: end}
-		result = append(result, authMigrationDiagnostic(service.Auth, service.AuthPos, service.Name, false)...)
+		result = append(result, authMigrationDiagnostic(service.AuthMode, service.AuthPos, service.Name, false)...)
 		for _, method := range service.Methods {
-			result = append(result, authMigrationDiagnostic(method.Auth, method.AuthPos, service.Name+"/"+method.Name, false)...)
+			result = append(result, authMigrationDiagnostic(method.AuthMode, method.AuthPos, service.Name+"/"+method.Name, false)...)
 		}
-		if service.Api && (service.Auth == "" || service.Auth == schema.AuthModeUnset) {
+		if service.Api && (service.AuthMode == "" || service.AuthMode == schema.AuthModeUnset) {
 			result = append(result, Diagnostic{Code: diagnostic.CodeApiAuthMissing, Severity: DiagnosticSeverityWarning, Position: service.Pos, Range: span,
 				Message: fmt.Sprintf("API service %s must explicitly declare auth required, auth optional, or auth anonymous; defaults to required", service.Name)})
 		}
 		if service.Api {
 			continue
 		}
-		if !service.Public() {
+		if !service.Pub && !service.Ext {
 			result = append(result, Diagnostic{
 				Code: diagnostic.CodeServiceModifier, Severity: DiagnosticSeverityWarning,
 				Position: service.Pos, Range: span,
@@ -41,8 +41,8 @@ func MigrationDiagnostics(domain *schema.Domain) Diagnostics {
 		}
 	}
 	for _, web := range domain.Webs() {
-		result = append(result, authMigrationDiagnostic(web.Auth, web.AuthPos, web.Name, true)...)
-		if web.Auth == "" || web.Auth == schema.AuthModeUnset {
+		result = append(result, authMigrationDiagnostic(web.AuthMode, web.AuthPos, web.Name, true)...)
+		if web.AuthMode == "" || web.AuthMode == schema.AuthModeUnset {
 			end := web.Pos
 			end.Column += len(web.Name)
 			result = append(result, Diagnostic{Code: diagnostic.CodeWebAuthMissing, Severity: DiagnosticSeverityWarning, Position: web.Pos,

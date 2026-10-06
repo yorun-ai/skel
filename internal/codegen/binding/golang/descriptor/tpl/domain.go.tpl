@@ -1,6 +1,6 @@
 {{- define "domainDescriptor" -}}
 var _DomainDescriptor = &descriptor.Domain{
-	Domain: {{ quote .Descriptor.Domain }},
+	Name: {{ quote .Descriptor.Name }},
 	{{- if .Descriptor.Description }}
 	Description: {{ quote .Descriptor.Description }},
 	{{- end }}

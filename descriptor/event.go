@@ -8,7 +8,8 @@ type Event struct {
 	Deprecated       bool   `json:"deprecated,omitzero"`
 	DeprecatedReason string `json:"deprecatedReason,omitempty"`
 	Hash             string `json:"hash"`
-	Pub              bool   `json:"pub"`
+	// Pub reports whether the event uses the pub modifier.
+	Pub bool `json:"pub"`
 	// Ext exports the emitter contract for use by other domains.
 	Ext       bool      `json:"ext,omitzero"`
 	Sensitive bool      `json:"sensitive,omitzero"`

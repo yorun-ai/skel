@@ -73,7 +73,7 @@ func (s *_HashState) dataHash(data *schema.Data) string {
 
 func (s *_HashState) webHash(web *schema.Web) string {
 	return s.memoHash("web", web.SkelName, func() string {
-		auth := web.Auth
+		auth := web.AuthMode
 		if auth == schema.AuthModeUnset {
 			auth = ""
 		}

@@ -251,7 +251,7 @@ func buildActorAuthService(actor *schema.Actor) *schema.Service {
 		Name:       "auth",
 		SkelName:   "auth",
 		Pos:        actor.Pos,
-		Auth:       schema.AuthModeRequired,
+		AuthMode:   schema.AuthModeRequired,
 		Arguments:  []*schema.Argument{credentialArgument},
 		ResultType: infoType,
 	}
@@ -282,14 +282,14 @@ func buildActorPermissionService(actor *schema.Actor) *schema.Service {
 		Pos:  actor.Pos,
 		Type: &schema.Type{
 			Kind: schema.TypeKindList,
-			List: &schema.ListType{Value: &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}},
+			List: &schema.ListType{Element: &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}},
 		},
 	}
 	method := &schema.Method{
 		Name:      "checkCodes",
 		SkelName:  "checkCodes",
 		Pos:       actor.Pos,
-		Auth:      schema.AuthModeRequired,
+		AuthMode:  schema.AuthModeRequired,
 		Arguments: []*schema.Argument{codesArgument},
 		ResultType: &schema.Type{
 			Kind: schema.TypeKindMap,

@@ -8,7 +8,8 @@ type Service struct {
 	Deprecated       bool   `json:"deprecated,omitzero"`
 	DeprecatedReason string `json:"deprecatedReason,omitempty"`
 	Hash             string `json:"hash"`
-	Pub              bool   `json:"pub"`
+	// Pub reports whether the service uses the pub modifier.
+	Pub bool `json:"pub"`
 	// Api restricts calls to the portal client path.
 	Api bool `json:"api,omitzero"`
 	// Ext exports the server contract for implementation by other domains.
@@ -44,6 +45,8 @@ type Method struct {
 	Example            string             `json:"example,omitempty"`
 	AuthMode           AuthMode           `json:"authMode"`
 	Require            *PermissionRequire `json:"require,omitempty"`
+	EffectiveAuthMode  AuthMode           `json:"effectiveAuthMode"`
+	EffectiveRequire   *PermissionRequire `json:"effectiveRequire,omitempty"`
 	InputDescription   string             `json:"inputDescription,omitempty"`
 	ArgumentsSensitive bool               `json:"argumentsSensitive,omitzero"`
 	OutputDescription  string             `json:"outputDescription,omitempty"`

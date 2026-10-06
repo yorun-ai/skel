@@ -19,7 +19,7 @@ func validateService(service *schema.Service) error {
 	if service.Api && len(service.Audiences) == 0 {
 		return fmt.Errorf("API service %s must declare at least one for Actor", service.Name)
 	}
-	if err := validateAuthMode(service.Auth); err != nil {
+	if err := validateAuthMode(service.AuthMode); err != nil {
 		return fmt.Errorf("service %s: %w", service.Name, err)
 	}
 	if err := validatePermissionExpression(service.Require); err != nil {
@@ -43,8 +43,8 @@ func validateMethod(owner string, method *schema.Method) error {
 	if method == nil {
 		return fmt.Errorf("%s is nil", owner)
 	}
-	if method.Auth != schema.AuthModeInherit {
-		if err := validateAuthMode(method.Auth); err != nil {
+	if method.AuthMode != schema.AuthModeInherit {
+		if err := validateAuthMode(method.AuthMode); err != nil {
 			return fmt.Errorf("%s: %w", owner, err)
 		}
 	}

@@ -96,7 +96,7 @@ func (s *_HashState) buildTypeHashValue(typeMeta *schema.Type) *_TypeHashValue {
 		}
 	}
 	if typeMeta.List != nil {
-		value.Element = s.buildTypeHashValue(typeMeta.List.Value)
+		value.Element = s.buildTypeHashValue(typeMeta.List.Element)
 	}
 	if typeMeta.Map != nil {
 		value.Key = s.buildTypeHashValue(typeMeta.Map.Key)

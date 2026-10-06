@@ -189,7 +189,7 @@ func referencesInvalidData(type_ *schema.Type, invalid map[*schema.Data]bool) bo
 			}
 		}
 	case schema.TypeKindList:
-		return referencesInvalidData(type_.List.Value, invalid)
+		return referencesInvalidData(type_.List.Element, invalid)
 	case schema.TypeKindMap:
 		return referencesInvalidData(type_.Map.Key, invalid) || referencesInvalidData(type_.Map.Value, invalid)
 	}

@@ -93,6 +93,9 @@ func analyzeContext(ctx context.Context, content *grammar.SkelContent, importedD
 	}
 	if ctx.Err() == nil && len(domain.reporter.errors) == 0 {
 		domain.finalize()
+		if err := schema.PopulateEffectivePolicies(domain.Schema()); err != nil {
+			domain.reporter.reportf("%s %v", content.Domain.Name.Pos, err)
+		}
 	}
 	if ctx.Err() != nil {
 		return nil, nil, ctx.Err()

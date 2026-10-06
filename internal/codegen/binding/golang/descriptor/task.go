@@ -10,10 +10,10 @@ func (g *_Gen) buildTaskDescriptor(value *schema.Task) *descriptor.Task {
 		Name: value.Name, SkelName: value.SkelName, Hash: value.Hash,
 		Description: value.Description, Deprecated: value.Deprecated,
 		DeprecatedReason: value.DeprecatedReason,
-		Triggers:         make([]*descriptor.Trigger, 0, len(value.Triggers)),
+		Triggers:         make([]*descriptor.TaskTrigger, 0, len(value.Triggers)),
 	}
 	for _, trigger := range value.Triggers {
-		result.Triggers = append(result.Triggers, &descriptor.Trigger{
+		result.Triggers = append(result.Triggers, &descriptor.TaskTrigger{
 			Name: trigger.Name, SkelName: trigger.SkelName, Hash: trigger.Hash,
 			Description: trigger.Description, Deprecated: trigger.Deprecated,
 			DeprecatedReason: trigger.DeprecatedReason, InputDescription: trigger.InputDescription,

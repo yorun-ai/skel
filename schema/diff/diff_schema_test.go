@@ -88,7 +88,7 @@ func TestCompareUnresolvedSchemaCarriesImportIdentity(t *testing.T) {
 	if len(before.Imports()) != 1 || before.Imports()[0].Name != "foreign.contract" || before.Imports()[0].Domain != nil {
 		t.Fatalf("lost unresolved import: %+v", before.Imports())
 	}
-	ref := before.Data()[0].Members[0].Type.List.Value
+	ref := before.Data()[0].Members[0].Type.List.Element
 	if before.TypeReferenceName(ref) != "foreign.contract.Box" || before.TypeReferenceName(ref.TypeArguments[0]) != "foreign.contract.Value" {
 		t.Fatalf("lost external identity: %+v", ref)
 	}

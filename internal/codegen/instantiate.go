@@ -41,7 +41,7 @@ func InstantiateMembers(kind *schema.Type) ([]*schema.DataMember, error) {
 			}
 		}
 		if t.List != nil {
-			copy.List = new(schema.ListType{Value: substitute(t.List.Value)})
+			copy.List = new(schema.ListType{Element: substitute(t.List.Element)})
 		}
 		if t.Map != nil {
 			copy.Map = new(schema.MapType{Key: substitute(t.Map.Key), Value: substitute(t.Map.Value)})
@@ -73,7 +73,7 @@ func copyTypeExpression(kind *schema.Type, seen map[*schema.Type]*schema.Type) *
 	copy := new(*kind)
 	seen[kind] = copy
 	if kind.List != nil {
-		copy.List = new(schema.ListType{Value: copyTypeExpression(kind.List.Value, seen)})
+		copy.List = new(schema.ListType{Element: copyTypeExpression(kind.List.Element, seen)})
 	}
 	if kind.Map != nil {
 		copy.Map = new(schema.MapType{Key: copyTypeExpression(kind.Map.Key, seen), Value: copyTypeExpression(kind.Map.Value, seen)})

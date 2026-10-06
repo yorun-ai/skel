@@ -96,7 +96,7 @@ func TestGenericInstantiationAndRecursiveTraversal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if members[0].Type.Scalar != schema.ScalarString || !members[0].Type.Nullable || members[1].Type.List.Value.Scalar != schema.ScalarString {
+	if members[0].Type.Scalar != schema.ScalarString || !members[0].Type.Nullable || members[1].Type.List.Element.Scalar != schema.ScalarString {
 		t.Fatalf("substitution failed: %+v", members)
 	}
 	if page.Data.Members[0].Type.Kind != schema.TypeKindTypeParameter || page.TypeArguments[0].Nullable {
@@ -123,6 +123,35 @@ func TestPrepareRejectsUnresolvedSchemas(t *testing.T) {
 		return nil, nil
 	})); err == nil {
 		t.Fatal("zero input accepted")
+	}
+}
+
+func TestPrepareRefreshesEffectivePoliciesBeforeBorrowing(t *testing.T) {
+	method := new(schema.Method{Name: "read", AuthMode: schema.AuthModeInherit})
+	service := new(schema.Service{Name: "Files", AuthMode: schema.AuthModeOptional, Methods: []*schema.Method{method}})
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Services: []*schema.Service{service}})
+	if _, err := codegen.Prepare(domain, codegen.Selection{}); err != nil {
+		t.Fatal(err)
+	}
+	if method.EffectiveAuthMode != schema.AuthModeOptional {
+		t.Fatal("missing effective policy for programmatic schema")
+	}
+	// No Input is retained while editing source declarations.
+	service.AuthMode = schema.AuthModeRequired
+	input, err := codegen.Prepare(domain, codegen.Selection{})
+	if err != nil || method.EffectiveAuthMode != schema.AuthModeRequired {
+		t.Fatalf("stale effective policy was not refreshed: %v", err)
+	}
+	for range 4 {
+		t.Run("shared graph", func(t *testing.T) {
+			t.Parallel()
+			if _, err := codegen.Prepare(input.Schema(), codegen.Selection{}); err != nil {
+				t.Fatal(err)
+			}
+			if err := schema.ValidateEffectivePolicy(input.Schema()); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 

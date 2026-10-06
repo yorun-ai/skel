@@ -44,7 +44,7 @@ actor ClientActor {
 			t.Fatalf("source alias collides with descriptor import: %s", content)
 		}
 	}
-	for _, fragment := range []string{`"go.yorun.ai/skel/descriptor"`, "Vias() []descriptor.ActorVia", "descriptor.ActorViaClient"} {
+	for _, fragment := range []string{`"go.yorun.ai/skel/descriptor"`, "Vias() []descriptor.ActorViaKind", "descriptor.ActorViaClient"} {
 		if !strings.Contains(content, fragment) {
 			t.Fatalf("missing %s in generated actor: %s", fragment, content)
 		}

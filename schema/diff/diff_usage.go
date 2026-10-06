@@ -25,7 +25,7 @@ func collectDiffUsage(documents ...*schema.Domain) map[string]_Usage {
 				return
 			}
 			if kind.List != nil {
-				walk(kind.List.Value, direction)
+				walk(kind.List.Element, direction)
 			}
 			if kind.Map != nil {
 				walk(kind.Map.Key, direction)
@@ -40,7 +40,7 @@ func collectDiffUsage(documents ...*schema.Domain) map[string]_Usage {
 			if declaration == nil || declaration.Data == nil {
 				return
 			}
-			if declaration.Pub || len(declaration.Data.TypeParameters) != 0 {
+			if declarationExported(declaration) || len(declaration.Data.TypeParameters) != 0 {
 				direction = usageBoth
 			}
 			usage[document.TypeReferenceName(kind)] |= direction
@@ -61,7 +61,7 @@ func collectDiffUsage(documents ...*schema.Domain) map[string]_Usage {
 					walk(method.ResultType, usageOutput)
 				}
 			}
-			if data := declaration.Data; data != nil && (declaration.Pub || declaration.Kind != schema.DeclarationTypeData) {
+			if data := declaration.Data; data != nil && (declarationExported(declaration) || declaration.Kind != schema.DeclarationTypeData) {
 				walk(&schema.Type{Kind: schema.TypeKindData, SkelName: declaration.SkelName, Data: declaration.Data}, usageBoth)
 			}
 			if actor := declaration.Actor; actor != nil && actor.Auth != nil {

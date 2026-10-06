@@ -27,6 +27,10 @@ type Domain struct {
 	Events    []*schema.Data
 	Services  []*schema.Service
 	Tasks     []*schema.Task
+
+	// Reexports retains the selected public contract for regular-package facades.
+	// It is populated only in ModeRegular.
+	Reexports codegen.Declarations
 }
 
 func Full(domain *schema.Domain) *Domain {
@@ -93,13 +97,14 @@ func FromInput(mode Mode, input codegen.Input, selection codegen.ApiFilter) (*Do
 		mode:      mode,
 		Enums:     without(domain.Enums(), public.Enums),
 		Data:      without(domain.Data(), public.Data),
-		Configs:   filterNonPubData(domain.Configs()),
-		Actors:    filterNonPubActors(domain.Actors()),
-		Resources: filterNonPubResources(domain.Resources()),
+		Configs:   without(domain.Configs(), public.Configs),
+		Actors:    without(domain.Actors(), public.Actors),
+		Resources: without(domain.Resources(), public.Resources),
 		Webs:      domain.Webs(),
 		Events:    domain.Events(),
 		Services:  domain.Services(),
 		Tasks:     domain.Tasks(),
+		Reexports: public,
 	}, nil
 }
 

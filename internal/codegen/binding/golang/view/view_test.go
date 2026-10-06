@@ -32,6 +32,9 @@ func TestViewSeparatesPubResources(t *testing.T) {
 	if len(regularView.Resources) != 1 || regularView.Resources[0].Name != "LocalUser" {
 		t.Fatalf("unexpected regular resources: %+v", regularView.Resources)
 	}
+	if !slices.Equal(regularView.Reexports.Resources, pubView.Resources) {
+		t.Fatalf("regular facade lost public resources: %+v", regularView.Reexports.Resources)
+	}
 }
 
 func TestPubViewRejectsServiceRequiringNonPubResource(t *testing.T) {

@@ -45,7 +45,7 @@ func TestValidateDomainRejectsMalformedNestedSchemas(t *testing.T) {
 
 func TestValidateDomainRejectsCyclicStructuralTypes(t *testing.T) {
 	kind := new(schema.Type{Kind: schema.TypeKindList})
-	kind.List = new(schema.ListType{Value: kind})
+	kind.List = new(schema.ListType{Element: kind})
 	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Data: []*schema.Data{{Name: "Node", Kind: schema.DataKindData, Members: []*schema.DataMember{{Name: "value", Type: kind}}}}})
 	if err := ValidateDomain(domain); err == nil || !strings.Contains(err.Error(), "cyclic type") {
 		t.Fatalf("expected cyclic type error, got %v", err)
@@ -116,11 +116,11 @@ func TestPrepareValidatesMethodAuthByOwner(t *testing.T) {
 				spec := schema.DomainSpec{Name: "demo"}
 				switch owner {
 				case "method":
-					spec.Services = []*schema.Service{{Name: "ReadService", Methods: []*schema.Method{{Name: "read", Auth: mode}}}}
+					spec.Services = []*schema.Service{{Name: "ReadService", Methods: []*schema.Method{{Name: "read", AuthMode: mode}}}}
 				case "service":
-					spec.Services = []*schema.Service{{Name: "ReadService", Auth: mode}}
+					spec.Services = []*schema.Service{{Name: "ReadService", AuthMode: mode}}
 				case "web":
-					spec.Webs = []*schema.Web{{Name: "PortalWeb", Auth: mode}}
+					spec.Webs = []*schema.Web{{Name: "PortalWeb", AuthMode: mode}}
 				}
 				_, err := Prepare(schema.NewDomainFromSpec(spec), Selection{})
 				valid := owner == "method" && mode == schema.AuthModeInherit || owner == "web" && mode == schema.AuthModeOff

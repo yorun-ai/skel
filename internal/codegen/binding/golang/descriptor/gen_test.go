@@ -28,7 +28,9 @@ func TestGeneratedDescriptorCompilesAgainstPublicTypes(t *testing.T) {
 	source := portableDescriptorSource + `
 pub enum Status { READY }
 pub data Page<TItem> { items: list<TItem> }
+pub data ScalarValues { id: uuid payload: json }
 pub config AppConfig eternal { pageSize: int }
+pub config DynamicConfig instant { enabled: bool }
 pub event ChangedEvent { payload { node: Node } }
 web PortalWeb {
     for ClientActor via client
@@ -48,6 +50,13 @@ task RefreshTask { trigger manually { input { page: Page<Node> } } }
 	gen := newGen(Option{Domain: parsed.Domain, View: mustView(t, view.ModeFull, parsed.Domain), Mode: view.ModeFull, PackageName: "generated", Out: out})
 	if err := gen.gen(); err != nil {
 		t.Fatal(err)
+	}
+	generated, err := os.ReadFile(filepath.Join(out, descriptorGoFilename))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, literal := range []string{"descriptor.ConfigLifecycleEternal", "descriptor.ConfigLifecycleInstant"} {
+		codegentest.AssertGoSourceContains(t, string(generated), "Lifecycle: "+literal)
 	}
 	fileset := token.NewFileSet()
 	file, err := parser.ParseFile(fileset, filepath.Join(out, descriptorGoFilename), nil, 0)
@@ -95,7 +104,21 @@ task RefreshTask { trigger manually { input { page: Page<Node> } } }
 	}
 	testutil.UseLocalSkel(t, out)
 	if err := os.WriteFile(filepath.Join(out, "descriptor_test.go"), []byte(`package generated
-import "testing"
+import (
+    "testing"
+    "encoding/json"
+    "strings"
+    "go.yorun.ai/skel/descriptor"
+)
+func TestEffectivePolicies(t *testing.T) {
+    if err := descriptor.ValidateEffectivePolicy(_DomainDescriptor); err != nil { t.Fatal(err) }
+    encoded, err := json.Marshal(_DomainDescriptor)
+    if err != nil { t.Fatal(err) }
+    var decoded descriptor.Domain
+    if err := json.Unmarshal(encoded, &decoded); err != nil { t.Fatal(err) }
+    if decoded.Name != "demo" { t.Fatalf("domain name: %q", decoded.Name) }
+    if err := descriptor.ValidateEffectivePolicy(&decoded); err != nil { t.Fatal(err) }
+}
 func TestResourceCheckReferences(t *testing.T) {
     resource := _DomainDescriptor.Resources[0]
     if resource.CheckMethod(resource.Checks[0]) != resource.CheckService.Methods[0] { t.Fatal("resource method reference") }
@@ -104,6 +127,26 @@ func TestResourceCheckReferences(t *testing.T) {
         if method == nil || method != resource.CheckService.Methods[index+1] { t.Fatal("action method reference") }
         if len(method.Arguments) != 2 || method.Arguments[0].Name != "code" || method.Arguments[1].Name != []string{"ownerId", "editorId"}[index] { t.Fatal("action arguments") }
     }
+}
+func TestConfigLifecycles(t *testing.T) {
+    want := map[string]descriptor.ConfigLifecycle{
+        "AppConfig": descriptor.ConfigLifecycleEternal,
+        "DynamicConfig": descriptor.ConfigLifecycleInstant,
+    }
+    if len(_DomainDescriptor.Configs) != len(want) { t.Fatalf("configs: %d", len(_DomainDescriptor.Configs)) }
+    encoded, err := json.Marshal(_DomainDescriptor)
+    if err != nil { t.Fatal(err) }
+    for _, lifecycle := range []string{"eternal", "instant"} {
+        if !strings.Contains(string(encoded), "\"lifecycle\":\""+lifecycle+"\"") { t.Fatalf("missing lowercase lifecycle %q: %s", lifecycle, encoded) }
+    }
+    var decoded descriptor.Domain
+    if err := json.Unmarshal(encoded, &decoded); err != nil { t.Fatal(err) }
+    for _, config := range decoded.Configs {
+        expected, ok := want[config.Name]
+        if !ok || config.Lifecycle != expected { t.Fatalf("config %s lifecycle: %q", config.Name, config.Lifecycle) }
+        delete(want, config.Name)
+    }
+    if len(want) != 0 { t.Fatalf("missing configs: %v", want) }
 }
 `), 0o600); err != nil {
 		t.Fatal(err)
@@ -158,7 +201,7 @@ func TestGenDescriptorGoRendersActorCapabilities(t *testing.T) {
 	codegentest.AssertGoSourceContains(t, string(content), `IdentifierField: "userId"`)
 	codegentest.AssertGoSourceContains(t, string(content), "Auth: &descriptor.ActorAuth{")
 	codegentest.AssertGoSourceContains(t, string(content), `MethodName: "auth"`)
-	codegentest.AssertGoSourceContains(t, string(content), `{Name: "AnonymousActor", SkelName: "", Hash: "", Vias: []descriptor.ActorVia{descriptor.ActorViaClient}}`)
+	codegentest.AssertGoSourceContains(t, string(content), `{Name: "AnonymousActor", SkelName: "", Hash: "", Vias: []descriptor.ActorViaKind{descriptor.ActorViaClient}}`)
 	for _, old := range []string{"AuthEnabled:", "PermissionEnabled:", "AuthCredential:", "AuthService:"} {
 		if strings.Contains(string(content), old) {
 			t.Fatalf("generated descriptor retains flattened actor field %s", old)
@@ -205,7 +248,7 @@ func TestGenDescriptorGoRendersDeprecatedFields(t *testing.T) {
 func TestGenDescriptorGoRendersWebAuthModes(t *testing.T) {
 	for _, mode := range []schema.AuthMode{schema.AuthModeUnset, schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous, schema.AuthModeOff, schema.AuthModeAuth, schema.AuthModeNoAuth} {
 		t.Run(string(mode), func(t *testing.T) {
-			pkg := buildDescriptorDomainForTest(t, schema.DomainSpec{Name: "demo.user", Webs: []*schema.Web{{Name: "ConsoleWeb", Auth: mode}}})
+			pkg := buildDescriptorDomainForTest(t, schema.DomainSpec{Name: "demo.user", Webs: []*schema.Web{{Name: "ConsoleWeb", AuthMode: mode}}})
 			out := filepath.Join(t.TempDir(), "skeled")
 			newGen(Option{Domain: pkg, View: mustView(t, view.ModeFull, pkg), Mode: view.ModeFull, PackageName: "skeled", Out: out}).gen()
 			content, err := os.ReadFile(filepath.Join(out, descriptorGoFilename))

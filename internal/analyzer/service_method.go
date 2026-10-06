@@ -70,7 +70,7 @@ func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*schema.Met
 		Description:      meta.Description,
 		Deprecated:       meta.Deprecated,
 		DeprecatedReason: meta.DeprecatedReason,
-		Auth:             authMode,
+		AuthMode:         authMode,
 		AuthPos:          authMarkerPosition(methodAuthMarker(gm)),
 		Require:          require,
 		Arguments:        []*schema.Argument{},

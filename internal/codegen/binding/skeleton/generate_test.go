@@ -572,7 +572,7 @@ func TestGenPreservesAuthSyntax(t *testing.T) {
 				t.Fatal(err)
 			}
 			before, after := domain.Services()[0], generated.Domain.Services()[0]
-			if after.Auth != before.Auth || after.Methods[0].Auth != before.Methods[0].Auth {
+			if after.AuthMode != before.AuthMode || after.Methods[0].AuthMode != before.Methods[0].AuthMode {
 				t.Fatalf("auth changed during roundtrip: %q", marker)
 			}
 		})

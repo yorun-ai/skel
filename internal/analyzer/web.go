@@ -57,7 +57,7 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*schema
 		Deprecated:       meta.Deprecated,
 		DeprecatedReason: meta.DeprecatedReason,
 		Audiences:        audiences,
-		Auth:             authMode,
+		AuthMode:         authMode,
 		AuthPos:          authMarkerPosition(authMarker),
 		MountPath:        mountPath,
 	}, valid

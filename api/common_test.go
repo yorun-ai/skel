@@ -238,13 +238,21 @@ func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 			directory:   "schema",
 			packageOnly: true,
 			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, "go.yorun.ai/skel/") && path != internalPrefix+"location" && !strings.HasPrefix(path, internalPrefix+"util/")
+				return strings.HasPrefix(path, "go.yorun.ai/skel/") && path != internalPrefix+"location" && path != internalPrefix+"policy" && !strings.HasPrefix(path, internalPrefix+"util/")
 			},
 		},
 		{
 			directory: "descriptor",
 			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, "go.yorun.ai/")
+				return strings.HasPrefix(path, "go.yorun.ai/") && path != internalPrefix+"policy"
+			},
+		},
+		{
+			// Shared policy rules must stay independent of both representations,
+			// the compiler, and runtime frameworks.
+			directory: "internal/policy",
+			forbidden: func(path string) bool {
+				return strings.Contains(strings.Split(path, "/")[0], ".")
 			},
 		},
 		{

@@ -1,8 +1,6 @@
 package descriptor
 
 import (
-	"strings"
-
 	"go.yorun.ai/skel/descriptor"
 	"go.yorun.ai/skel/schema"
 )
@@ -36,8 +34,8 @@ func (g *_Gen) buildConfigDescriptor(value *schema.Data) *descriptor.Config {
 	return &descriptor.Config{
 		Name: value.Name, SkelName: value.SkelName, Hash: value.Hash,
 		Description: value.Description, Deprecated: value.Deprecated,
-		DeprecatedReason: value.DeprecatedReason, Pub: value.Public(),
-		Sensitive: value.Sensitive, Lifecycle: strings.ToUpper(string(value.Lifecycle)),
+		DeprecatedReason: value.DeprecatedReason, Pub: value.Pub,
+		Sensitive: value.Sensitive, Lifecycle: descriptor.ConfigLifecycle(value.Lifecycle),
 		Members: g.buildMemberDescriptors(value.Members),
 	}
 }
@@ -47,7 +45,7 @@ func (g *_Gen) buildEventDescriptor(value *schema.Data) *descriptor.Event {
 		Ext:  value.Ext,
 		Name: value.Name, SkelName: value.SkelName, Hash: value.Hash,
 		Description: value.Description, Deprecated: value.Deprecated,
-		DeprecatedReason: value.DeprecatedReason, Pub: value.Public(),
+		DeprecatedReason: value.DeprecatedReason, Pub: value.Pub,
 		Sensitive: value.Sensitive, Members: g.buildMemberDescriptors(value.Members),
 	}
 }

@@ -132,7 +132,7 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *schema.Type, refCtx *_RefConte
 		return true
 
 	case schema.TypeKindList:
-		return fixTypeRef(reporter, t.List.Value, refCtx)
+		return fixTypeRef(reporter, t.List.Element, refCtx)
 
 	case schema.TypeKindMap:
 		keyValid := fixTypeRef(reporter, t.Map.Key, refCtx)

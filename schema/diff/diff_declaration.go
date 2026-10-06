@@ -13,11 +13,12 @@ func (c *_Diff) compareDeclaration(baseline, candidate *schema.Declaration) {
 			fmt.Sprintf("declaration type changed from %s to %s", baseline.Kind, candidate.Kind), baseline.Pos, candidate.Pos)
 		return
 	}
-	if baseline.Pub != candidate.Pub {
+	baselineExported, candidateExported := declarationExported(baseline), declarationExported(candidate)
+	if baselineExported != candidateExported {
 		impact := ImpactCompatible
 		code := "declaration.visibility.increased"
 		message := "declaration became public"
-		if baseline.Pub {
+		if baselineExported {
 			impact = ImpactBreaking
 			code = "declaration.visibility.reduced"
 			message = "public declaration became non-public"
@@ -46,6 +47,17 @@ func (c *_Diff) compareDeclaration(baseline, candidate *schema.Declaration) {
 	case schema.DeclarationTypeTask:
 		c.compareTask(candidate.SkelName, baseline.Task, candidate.Task)
 	}
+}
+
+// Visibility includes ext contracts, independently of the declared pub modifier.
+func declarationExported(value *schema.Declaration) bool {
+	if value.Service != nil {
+		return value.Service.Pub || value.Service.Ext
+	}
+	if value.Data != nil {
+		return value.Data.Pub || value.Data.Ext
+	}
+	return value.Pub
 }
 
 func (c *_Diff) compareEnum(owner string, baseline, candidate *schema.Enum) {

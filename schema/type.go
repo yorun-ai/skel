@@ -59,7 +59,7 @@ func (t *Type) Name() string {
 	case TypeKindScalar:
 		return t.Scalar.Name()
 	case TypeKindList:
-		return fmt.Sprintf("ListOf%s", t.List.Value.Name())
+		return fmt.Sprintf("ListOf%s", t.List.Element.Name())
 	case TypeKindMap:
 		return fmt.Sprintf("MapOf%sAnd%s", t.Map.Key.Name(), t.Map.Value.Name())
 	case TypeKindEnum:
@@ -99,7 +99,7 @@ func (t *Type) containsBinaryType(parameters map[*TypeParameter]bool, visited ma
 	case TypeKindTypeParameter:
 		return parameters[t.TypeParameter]
 	case TypeKindList:
-		return t.List.Value.containsBinaryType(parameters, visited)
+		return t.List.Element.containsBinaryType(parameters, visited)
 	case TypeKindMap:
 		return t.Map.Key.containsBinaryType(parameters, visited) || t.Map.Value.containsBinaryType(parameters, visited)
 	case TypeKindData:
@@ -196,8 +196,8 @@ func (s Scalar) Name() string {
 
 // ListType describes the element type of a list.
 type ListType struct {
-	// Value is the list element type.
-	Value *Type
+	// Element is the list element type.
+	Element *Type
 }
 
 // MapType describes the key and value types of a map.

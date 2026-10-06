@@ -76,8 +76,8 @@ func validateDomain(domain *schema.Domain, seen map[*schema.Domain]bool) error {
 		if web == nil {
 			return fmt.Errorf("generated schema contains nil web")
 		}
-		if web.Auth != schema.AuthModeOff {
-			if err := validateAuthMode(web.Auth); err != nil {
+		if web.AuthMode != schema.AuthModeOff {
+			if err := validateAuthMode(web.AuthMode); err != nil {
 				return fmt.Errorf("web %s: %w", web.Name, err)
 			}
 		}

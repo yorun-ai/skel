@@ -318,7 +318,8 @@ For programmatic inspection, `go.yorun.ai/skel/api` returns semantic schemas
 directly; no JSON conversion is needed.
 
 Custom bindings written in Go use `go.yorun.ai/skel/codegen`. Call `api.Parse`,
-then `codegen.Prepare(domain, selection)` to validate and select a generation view.
+then `codegen.Prepare(domain, selection)` to validate, refresh effective policies,
+and select a generation view.
 `schema` is the shared semantic graph; `codegen.Input` provides selected declarations,
 fully qualified lookups, type roots and external dependencies without a second set
 of declaration types. Keep the schema read-only after preparation and keep target
@@ -359,6 +360,18 @@ and derived hashes when determining equality. `DiffSchemaSources` accepts an
 explicit `Baseline` input or, when omitted, compares a filesystem candidate
 against Git HEAD. Historical baselines do not inherit candidate strict mode.
 Frozen candidates require an explicit baseline.
+
+Parsed methods retain declared `AuthMode` and `Require` alongside `EffectiveAuthMode` and
+`EffectiveRequire`. Effective authentication applies service inheritance; effective
+requirements conjoin service and method policies, preserving check order and
+argument bindings. This also works with unresolved imports without resolving their
+check targets. For programmatically edited schemas, call
+`schema.PopulateEffectivePolicies(domain)` before sharing the graph read-only.
+`schema.ComputeEffectivePolicy(service, method)` computes without mutation.
+`schema.ValidateEffectivePolicy(domain)` and
+`descriptor.ValidateEffectivePolicy(domain)` only check stored derived values
+against declarations; they do not repair them or authorize requests. Runtime
+descriptors use `EffectiveAuthMode` and `EffectiveRequire` for these values.
 
 Set `Input.Sources` (or the inspection option's `Sources`) to a complete
 `map[string][]byte` snapshot for in-memory inputs. Paths are logical file paths;

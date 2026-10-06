@@ -146,7 +146,7 @@ func TestBuildServiceTypeImports(t *testing.T) {
 			}},
 			ResultType: &schema.Type{
 				Kind: schema.TypeKindList,
-				List: &schema.ListType{Value: &schema.Type{
+				List: &schema.ListType{Element: &schema.Type{
 					Kind: schema.TypeKindData,
 					Data: &schema.Data{
 						Name: "User",

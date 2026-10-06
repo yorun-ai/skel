@@ -1,15 +1,15 @@
 package descriptor
 
-// ActorVia identifies an actor transport.
-type ActorVia string
+// ActorViaKind identifies an actor transport.
+type ActorViaKind string
 
 const (
 	// ActorViaClient identifies the client transport.
-	ActorViaClient ActorVia = "client"
+	ActorViaClient ActorViaKind = "client"
 	// ActorViaAgent identifies the agent transport.
-	ActorViaAgent ActorVia = "agent"
+	ActorViaAgent ActorViaKind = "agent"
 	// ActorViaOpenAPI identifies the openapi transport.
-	ActorViaOpenAPI ActorVia = "openapi"
+	ActorViaOpenAPI ActorViaKind = "openapi"
 )
 
 // Actor describes an identity and its generated authentication and permission contracts.
@@ -20,7 +20,7 @@ type Actor struct {
 	Deprecated       bool             `json:"deprecated,omitzero"`
 	DeprecatedReason string           `json:"deprecatedReason,omitempty"`
 	Hash             string           `json:"hash"`
-	Vias             []ActorVia       `json:"vias"`
+	Vias             []ActorViaKind   `json:"vias"`
 	Auth             *ActorAuth       `json:"auth,omitzero"`
 	Permission       *ActorPermission `json:"permission,omitzero"`
 }
@@ -62,7 +62,7 @@ func (permission *ActorPermission) Method() *Method {
 
 // ActorAudience identifies an actor and an optional transport allowed to access an entry point.
 type ActorAudience struct {
-	Name     string   `json:"name"`
-	SkelName string   `json:"skelName"`
-	Via      ActorVia `json:"via,omitempty"`
+	Name     string       `json:"name"`
+	SkelName string       `json:"skelName"`
+	Via      ActorViaKind `json:"via,omitempty"`
 }

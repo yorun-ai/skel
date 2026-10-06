@@ -26,6 +26,9 @@ func TestBuildDomainDescriptorProducesPortableDescriptor(t *testing.T) {
 	}
 	gen := newGen(Option{Domain: parsed.Domain, View: mustView(t, view.ModeFull, parsed.Domain), Mode: view.ModeFull})
 	domain := gen.buildDomainDescriptor()
+	if err := descriptor.ValidateEffectivePolicy(domain); err != nil {
+		t.Fatal(err)
+	}
 	encoded, err := json.Marshal(domain)
 	if err != nil {
 		t.Fatalf("encode descriptor of recursive schema: %v", err)
@@ -35,6 +38,19 @@ func TestBuildDomainDescriptorProducesPortableDescriptor(t *testing.T) {
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&decoded); err != nil {
 		t.Fatal(err)
+	}
+	if decoded.Name != parsed.Domain.Name() || bytes.Contains(encoded, []byte(`"domain":`)) ||
+		!bytes.Contains(encoded, []byte(`"name":"demo"`)) {
+		t.Fatalf("descriptor lost its canonical name field: %s", encoded)
+	}
+	if err := descriptor.ValidateEffectivePolicy(&decoded); err != nil {
+		t.Fatalf("effective policy after JSON round trip: %v", err)
+	}
+	method := decoded.Services[0].Methods[0]
+	if method.AuthMode != descriptor.AuthModeInherit || method.EffectiveAuthMode != descriptor.AuthModeRequired ||
+		method.EffectiveRequire == nil || method.EffectiveRequire.Expression.Mode != descriptor.PermissionRequireModeAll ||
+		len(method.EffectiveRequire.Expression.Children) != 2 {
+		t.Fatalf("descriptor lost effective policy: %+v", method)
 	}
 	roundTrip, err := json.Marshal(&decoded)
 	if err != nil {
@@ -116,10 +132,10 @@ func TestDescriptorAdaptsSemanticSchema(t *testing.T) {
 	domain := buildDescriptorDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user", Description: "User domain.", Data: []*schema.Data{profile},
 		Services: []*schema.Service{new(schema.Service{
-			Name: "Profiles", Pub: true, Auth: schema.AuthModeAuth,
+			Name: "Profiles", Pub: true, AuthMode: schema.AuthModeAuth,
 			Audiences: []*schema.ActorAudience{new(schema.ActorAudience{Actor: "Client", Via: string(schema.ActorViaClient)})},
 			Methods: []*schema.Method{new(schema.Method{
-				Name: "get", Description: "Gets a profile.", Auth: schema.AuthModeNoAuth,
+				Name: "get", Description: "Gets a profile.", AuthMode: schema.AuthModeNoAuth,
 				ResultType: codegentest.DataType(profile),
 			})},
 		})},
@@ -346,36 +362,46 @@ func TestBuildDomainDescriptorSplitFullFlagAndContent(t *testing.T) {
 	}
 }
 
-func TestBuildDomainDescriptorConfigLifecycleUsesConfValue(t *testing.T) {
-	pkg := buildDescriptorDomainForTest(t, schema.DomainSpec{
-		Name: "demo.user",
-		Configs: []*schema.Data{{
-			Pub:       true,
-			Name:      "UserConfig",
-			Lifecycle: schema.ConfigLifecycleEternal,
-			Members: []*schema.DataMember{
-				{Name: "pageSize", Type: codegentest.IntType()},
-			},
-		}},
-	})
+func TestBuildDomainDescriptorConfigLifecycle(t *testing.T) {
+	for _, test := range []struct {
+		lifecycle schema.ConfigLifecycle
+		want      descriptor.ConfigLifecycle
+	}{
+		{schema.ConfigLifecycleEternal, descriptor.ConfigLifecycleEternal},
+		{schema.ConfigLifecycleInstant, descriptor.ConfigLifecycleInstant},
+	} {
+		t.Run(string(test.lifecycle), func(t *testing.T) {
+			pkg := buildDescriptorDomainForTest(t, schema.DomainSpec{
+				Name: "demo.user",
+				Configs: []*schema.Data{{
+					Pub:       true,
+					Name:      "UserConfig",
+					Lifecycle: test.lifecycle,
+					Members: []*schema.DataMember{
+						{Name: "pageSize", Type: codegentest.IntType()},
+					},
+				}},
+			})
 
-	gen := newGen(Option{
-		Domain:      pkg,
-		View:        mustView(t, view.ModeFull, pkg),
-		Mode:        view.ModeFull,
-		PackageName: "skeled",
-		Out:         filepath.Join(t.TempDir(), "skeled"),
-	})
-	meta := gen.buildDomainDescriptor()
+			gen := newGen(Option{
+				Domain:      pkg,
+				View:        mustView(t, view.ModeFull, pkg),
+				Mode:        view.ModeFull,
+				PackageName: "skeled",
+				Out:         filepath.Join(t.TempDir(), "skeled"),
+			})
+			meta := gen.buildDomainDescriptor()
 
-	if len(meta.Configs) != 1 {
-		t.Fatalf("expected one config, got %d", len(meta.Configs))
-	}
-	if meta.Configs[0].Lifecycle != "ETERNAL" {
-		t.Fatalf("unexpected config lifecycle: %s", meta.Configs[0].Lifecycle)
-	}
-	if !meta.Configs[0].Pub {
-		t.Fatal("expected config pub flag")
+			if len(meta.Configs) != 1 {
+				t.Fatalf("expected one config, got %d", len(meta.Configs))
+			}
+			if meta.Configs[0].Lifecycle != test.want {
+				t.Fatalf("unexpected config lifecycle: %s", meta.Configs[0].Lifecycle)
+			}
+			if !meta.Configs[0].Pub {
+				t.Fatal("expected config pub flag")
+			}
+		})
 	}
 }
 

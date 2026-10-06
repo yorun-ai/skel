@@ -58,7 +58,7 @@ func (e *_SchemaEncoder) projectEnum(value *schema.Enum) *SchemaDeclaration {
 func (e *_SchemaEncoder) projectData(value *schema.Data) *SchemaDeclaration {
 	return &SchemaDeclaration{
 		SchemaMetadata: metadata(value.Description, value.Deprecated, value.DeprecatedReason),
-		Pub:            value.Public(), Name: value.Name, Kind: schema.DeclarationType(value.Kind), SkelName: value.SkelName,
+		Pub:            value.Pub, Name: value.Name, Kind: schema.DeclarationType(value.Kind), SkelName: value.SkelName,
 		Data: e.projectDataSchema(value),
 	}
 }
@@ -142,12 +142,12 @@ func (e *_SchemaEncoder) projectService(value *schema.Service) *SchemaDeclaratio
 	}
 	return &SchemaDeclaration{
 		SchemaMetadata: metadata(value.Description, value.Deprecated, value.DeprecatedReason),
-		Pub:            value.Public(), Name: value.Name, Kind: schema.DeclarationTypeService, SkelName: value.SkelName,
+		Pub:            value.Pub, Name: value.Name, Kind: schema.DeclarationTypeService, SkelName: value.SkelName,
 		Service: &SchemaService{
 			Audiences: e.projectAudiences(value.Audiences),
 			Api:       value.Api,
 			Ext:       value.Ext,
-			Auth:      string(value.NormalizedAuth()),
+			AuthMode:  string(value.NormalizedAuth()),
 			Require:   e.projectRequirement(value.Require), Methods: methods,
 		},
 	}
@@ -156,8 +156,9 @@ func (e *_SchemaEncoder) projectService(value *schema.Service) *SchemaDeclaratio
 func (e *_SchemaEncoder) projectMethod(value *schema.Method) *SchemaMethod {
 	return &SchemaMethod{
 		SchemaMetadata: metadata(value.Description, value.Deprecated, value.DeprecatedReason),
-		Name:           value.Name, SkelName: value.SkelName, Example: value.Example, Auth: string(value.NormalizedAuth()),
+		Name:           value.Name, SkelName: value.SkelName, Example: value.Example, AuthMode: string(value.NormalizedAuth()),
 		Require: e.projectRequirement(value.Require), InputDescription: value.InputDescription,
+		EffectiveAuthMode: string(value.EffectiveAuthMode), EffectiveRequire: e.projectRequirement(value.EffectiveRequire),
 		ArgumentsSensitive: value.ArgumentsSensitive, OutputDescription: value.OutputDescription,
 		OutputExample: value.OutputExample, ResultSensitive: value.ResultSensitive,
 		Arguments: e.projectArguments(value.Arguments), Result: e.projectType(value.ResultType),
@@ -179,7 +180,7 @@ func (e *_SchemaEncoder) projectWeb(value *schema.Web) *SchemaDeclaration {
 	return &SchemaDeclaration{
 		SchemaMetadata: metadata(value.Description, value.Deprecated, value.DeprecatedReason),
 		Name:           value.Name, Kind: schema.DeclarationTypeWeb, SkelName: value.SkelName,
-		Web: &SchemaWeb{Auth: string(value.NormalizedAuth()), Audiences: e.projectAudiences(value.Audiences), MountPath: value.MountPath},
+		Web: &SchemaWeb{AuthMode: string(value.NormalizedAuth()), Audiences: e.projectAudiences(value.Audiences), MountPath: value.MountPath},
 	}
 }
 
@@ -223,6 +224,9 @@ func (e *_SchemaEncoder) projectRequirementExpr(value *schema.PermissionExpressi
 		mode = "reference"
 	}
 	result := &SchemaRequirement{Mode: mode, Code: value.Code}
+	if resource, action, ok := strings.Cut(result.Code, ":"); ok && e.domain != nil {
+		result.Code = e.domain.ReferenceName(resource) + ":" + action
+	}
 	if value.Check != nil {
 		arguments := make([]*SchemaRequirementCheckArgument, 0, len(value.Check.Arguments))
 		for _, argument := range value.Check.Arguments {
@@ -253,7 +257,7 @@ func (e *_SchemaEncoder) projectType(value *schema.Type) *SchemaType {
 		result.Name = strings.ToLower(value.Scalar.Name())
 	case schema.TypeKindList:
 		result.Kind = "list"
-		result.Element = e.projectType(value.List.Value)
+		result.Element = e.projectType(value.List.Element)
 	case schema.TypeKindMap:
 		result.Kind = "map"
 		result.Key = e.projectType(value.Map.Key)

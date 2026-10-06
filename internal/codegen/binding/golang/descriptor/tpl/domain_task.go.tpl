@@ -13,7 +13,7 @@
 {{- end }}
 
 {{- define "triggerDescriptorList" -}}
-{{- if . }}, Triggers: []*descriptor.Trigger{
+{{- if . }}, Triggers: []*descriptor.TaskTrigger{
 {{- range $trigger := . }}
 {{ template "triggerDescriptorValue" $trigger }},
 {{- end }}

@@ -25,7 +25,7 @@ func (c *_Diff) compareService(owner string, baseline, candidate *schema.Service
 		impact := ImpactCompatible
 		for _, method := range baseline.Methods {
 			if other := candidateByName[method.Name]; other != nil {
-				_, current := authImpact(effectiveMethodAuth(method.NormalizedAuth(), baseline.NormalizedAuth()), effectiveMethodAuth(other.NormalizedAuth(), candidate.NormalizedAuth()))
+				_, current := authImpact(c.effectivePolicy(baseline, method).AuthMode, c.effectivePolicy(candidate, other).AuthMode)
 				if impactOrder(current) < impactOrder(impact) {
 					impact = current
 				}
@@ -67,8 +67,8 @@ func (c *_Diff) compareService(owner string, baseline, candidate *schema.Service
 func (c *_Diff) compareMethod(owner string, baseline, candidate *schema.Method, services ...*schema.Service) {
 	before, after := baseline.NormalizedAuth(), candidate.NormalizedAuth()
 	if len(services) == 2 {
-		before = effectiveMethodAuth(before, services[0].NormalizedAuth())
-		after = effectiveMethodAuth(after, services[1].NormalizedAuth())
+		before = c.effectivePolicy(services[0], baseline).AuthMode
+		after = c.effectivePolicy(services[1], candidate).AuthMode
 	}
 	if baseline.NormalizedAuth() != candidate.NormalizedAuth() || before != after {
 		code, impact := authImpact(authComparisonMode(before, "method"), authComparisonMode(after, "method"))
@@ -152,12 +152,12 @@ func (c *_Diff) compareAuth(owner, prefix string, baseline, candidate schema.Aut
 	c.add(impact, prefix+".auth."+code, owner, fmt.Sprintf("authentication changed from %s to %s", baseline, candidate), baselinePos, candidatePos)
 }
 
-func effectiveMethodAuth(mode, service schema.AuthMode) schema.AuthMode {
-	mode = authComparisonMode(mode, "method")
-	if mode == schema.AuthModeInherit {
-		return authComparisonMode(service, "service")
+func (c *_Diff) effectivePolicy(service *schema.Service, method *schema.Method) schema.EffectivePolicy {
+	value, err := schema.ComputeEffectivePolicy(service, method)
+	if err != nil {
+		c.err = fmt.Errorf("service %s method %s effective policy: %w", service.Name, method.Name, err)
 	}
-	return mode
+	return value
 }
 
 func authImpact(before, after schema.AuthMode) (string, ImpactLevel) {
@@ -195,26 +195,16 @@ func (c *_Diff) compareRequirement(owner, prefix string, baseline, candidate *sc
 
 // Legacy spellings are compared by their runtime meaning without changing schema values.
 func authComparisonMode(mode schema.AuthMode, declaration string) schema.AuthMode {
-	switch mode {
-	case schema.AuthModeAuth:
-		return schema.AuthModeRequired
-	case schema.AuthModeNoAuth:
-		if declaration == "web" {
-			return schema.AuthModeOff
-		}
-		return schema.AuthModeOptional
-	case "", schema.AuthModeUnset:
-		switch declaration {
-		case "service":
-			return schema.AuthModeRequired
-		case "method":
-			return schema.AuthModeInherit
-		default:
-			// Legacy web defaults depended on actor configuration, so no explicit
-			// mode is unconditionally equivalent.
+	switch declaration {
+	case "service":
+		return (&schema.Service{AuthMode: mode}).NormalizedAuth()
+	case "method":
+		return (&schema.Method{AuthMode: mode}).NormalizedAuth()
+	default:
+		if mode == "" || mode == schema.AuthModeUnset {
+			// A raw legacy web declaration has no unconditional mode until analyzed.
 			return schema.AuthModeUnset
 		}
-	default:
-		return mode
+		return (&schema.Web{AuthMode: mode}).NormalizedAuth()
 	}
 }

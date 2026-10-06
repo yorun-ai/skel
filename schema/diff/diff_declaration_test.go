@@ -36,6 +36,45 @@ func TestEventDirectionChangesAreBreaking(t *testing.T) {
 	}
 }
 
+func TestExtensionVisibilityUsesPublicContract(t *testing.T) {
+	for _, kind := range []schema.DeclarationType{schema.DeclarationTypeService, schema.DeclarationTypeEvent} {
+		makeDomain := func(modifier string) *schema.Domain {
+			declaration := new(schema.Declaration{Kind: kind, Name: "Example", SkelName: "demo.user.Example", Pub: modifier == "pub"})
+			if kind == schema.DeclarationTypeService {
+				declaration.Service = new(schema.Service{Ext: modifier == "ext"})
+			} else {
+				declaration.Data = new(schema.Data{Ext: modifier == "ext"})
+			}
+			return newTestDomain(declaration)
+		}
+		for _, test := range []struct {
+			before, after, visibility string
+		}{
+			{"pub", "ext", ""},
+			{"ext", "pub", ""},
+			{"", "ext", "declaration.visibility.increased"},
+			{"ext", "", "declaration.visibility.reduced"},
+		} {
+			t.Run(string(kind)+"/"+test.before+"-to-"+test.after, func(t *testing.T) {
+				report, err := Compare(makeDomain(test.before), makeDomain(test.after))
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := map[string]ImpactLevel{string(kind) + ".ext.changed": ImpactBreaking}
+				if test.visibility != "" {
+					impact := ImpactCompatible
+					if test.before == "ext" {
+						impact = ImpactBreaking
+					}
+					want[test.visibility] = impact
+				}
+				coverage := &_RuleCoverage{covered: map[string]ImpactLevel{}}
+				coverage.assert(t, report.Changes, want)
+			})
+		}
+	}
+}
+
 func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 	t.Helper()
 	t.Run("document and declaration", func(t *testing.T) {
@@ -273,8 +312,8 @@ func TestWebAuthCompare(t *testing.T) {
 		{schema.AuthModeOptional, schema.AuthModeAnonymous, "web.auth.tightened"},
 		{schema.AuthModeAnonymous, schema.AuthModeOff, "web.auth.changed"},
 	} {
-		baseline := &schema.Declaration{Kind: schema.DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &schema.Web{Auth: test.before}}
-		candidate := &schema.Declaration{Kind: schema.DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &schema.Web{Auth: test.after}}
+		baseline := &schema.Declaration{Kind: schema.DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &schema.Web{AuthMode: test.before}}
+		candidate := &schema.Declaration{Kind: schema.DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &schema.Web{AuthMode: test.after}}
 		changes := diffChanges(func(diff *_Diff) { diff.compareDeclaration(baseline, candidate) })
 		impact := ImpactDangerous
 		if test.before == schema.AuthModeOptional && test.after != schema.AuthModeOptional {
@@ -321,7 +360,7 @@ func TestWebOffAuthTransitions(t *testing.T) {
 			makeDomain := func(mode schema.AuthMode) *schema.Domain {
 				return newTestDomain(&schema.Declaration{
 					Kind: schema.DeclarationTypeWeb, Name: "ExampleWeb", SkelName: "demo.user.ExampleWeb",
-					Web: &schema.Web{Auth: mode, Audiences: []*schema.ActorAudience{{Actor: "demo.user.UserActor", Via: "client"}}},
+					Web: &schema.Web{AuthMode: mode, Audiences: []*schema.ActorAudience{{Actor: "demo.user.UserActor", Via: "client"}}},
 				})
 			}
 			report, err := Compare(makeDomain(test.before), makeDomain(test.after))

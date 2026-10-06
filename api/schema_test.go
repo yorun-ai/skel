@@ -12,6 +12,54 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
+func TestQuerySchemaEffectivePolicyWithOpaqueAndResolvedImports(t *testing.T) {
+	root := t.TempDir()
+	path, dependency := filepath.Join(root, "source.skel"), filepath.Join(root, "shared.skel")
+	input := api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(`domain demo
+import shared as dep
+actor ClientActor { via client {} permission {} }
+service DocumentService {
+    for ClientActor
+    auth optional
+    require dep.Document:read
+    method get {
+        require dep.Document:read:byId(id)
+        input { id: string }
+    }
+}
+`), dependency: []byte(`domain shared
+pub resource Document {
+    check byId { input { id: string } }
+    action read {}
+}
+`)}}
+	for _, resolved := range []bool{false, true} {
+		if resolved {
+			input.SkelImports = map[string]string{"shared": dependency}
+		}
+		result, err := api.QuerySchema(input, api.SchemaQueryOption{ResolveImports: resolved})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := schema.ValidateEffectivePolicy(result.Domain); err != nil {
+			t.Fatal(err)
+		}
+		method := result.Domain.Services()[0].Methods[0]
+		if method.NormalizedAuth() != schema.AuthModeInherit || method.EffectiveAuthMode != schema.AuthModeOptional {
+			t.Fatalf("lost inherited policy: %+v", method)
+		}
+		expression := method.EffectiveRequire.Expression
+		if expression.Mode != schema.PermissionRequireModeAll || len(expression.Children) != 2 {
+			t.Fatalf("expected conjunction of service and method requirements: %+v", expression)
+		}
+		check := expression.Children[1].Children[1].Check
+		if check == nil || len(check.Arguments) != 1 || check.Arguments[0].JsonPath != "id" ||
+			(check.ServiceSkelName != "") != resolved || (check.Arguments[0].Type != nil) != resolved {
+			t.Fatalf("unexpected check resolution (resolved=%v): %+v", resolved, check)
+		}
+	}
+}
+
 func TestQuerySchemaViews(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "source.skel")
 	input := api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(`domain demo

@@ -263,7 +263,7 @@ pub data User {
 		t.Fatalf("unexpected exit code: %d, stderr=%q", result.ExitCode, result.Stderr)
 	}
 	assertFileGoSourceContains(t, filepath.Join(goOut, "descriptor.go"),
-		`Domain: "demo.user"`,
+		`Name: "demo.user"`,
 		`CompilerVersion: "v9.9.9"`)
 }
 

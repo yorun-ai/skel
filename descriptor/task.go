@@ -2,17 +2,17 @@ package descriptor
 
 // Task describes a background task.
 type Task struct {
-	Name             string     `json:"name"`
-	SkelName         string     `json:"skelName"`
-	Description      string     `json:"description,omitempty"`
-	Deprecated       bool       `json:"deprecated,omitzero"`
-	DeprecatedReason string     `json:"deprecatedReason,omitempty"`
-	Hash             string     `json:"hash"`
-	Triggers         []*Trigger `json:"triggers"`
+	Name             string         `json:"name"`
+	SkelName         string         `json:"skelName"`
+	Description      string         `json:"description,omitempty"`
+	Deprecated       bool           `json:"deprecated,omitzero"`
+	DeprecatedReason string         `json:"deprecatedReason,omitempty"`
+	Hash             string         `json:"hash"`
+	Triggers         []*TaskTrigger `json:"triggers"`
 }
 
-// Trigger describes one task trigger.
-type Trigger struct {
+// TaskTrigger describes one task trigger.
+type TaskTrigger struct {
 	Name               string    `json:"name"`
 	SkelName           string    `json:"skelName"`
 	Description        string    `json:"description,omitempty"`

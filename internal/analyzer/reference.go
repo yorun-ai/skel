@@ -56,7 +56,7 @@ func referencedData(t *schema.Type) _Refs {
 			refs.override(rk, referencedData(arg))
 		}
 	case schema.TypeKindList:
-		refs.override(refKindList, referencedData(t.List.Value))
+		refs.override(refKindList, referencedData(t.List.Element))
 	case schema.TypeKindMap:
 		refs.override(refKindMap, referencedData(t.Map.Value))
 	}
@@ -138,7 +138,7 @@ func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*schema.Type, bo
 		valid = valueValid && valid
 		t.Kind = schema.TypeKindList
 		t.List = &schema.ListType{
-			Value: valueType,
+			Element: valueType,
 		}
 
 	case s.Map != nil:

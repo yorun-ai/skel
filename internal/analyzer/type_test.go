@@ -21,7 +21,7 @@ func TestTypeContainsBinaryType(t *testing.T) {
 	wrapper := &schema.Type{
 		Kind: schema.TypeKindList,
 		List: &schema.ListType{
-			Value: &schema.Type{
+			Element: &schema.Type{
 				Kind: schema.TypeKindMap,
 				Map: &schema.MapType{
 					Key: &schema.Type{

@@ -43,7 +43,7 @@ func NullableType(value *schema.Type) *schema.Type {
 
 // ListType builds a list of value.
 func ListType(value *schema.Type) *schema.Type {
-	return new(schema.Type{Kind: schema.TypeKindList, List: new(schema.ListType{Value: value})})
+	return new(schema.Type{Kind: schema.TypeKindList, List: new(schema.ListType{Element: value})})
 }
 
 // MapType builds a map from key to value.

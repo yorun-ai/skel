@@ -26,7 +26,7 @@ type PermissionExpression struct {
 	// An empty Mode with Check retains an unresolved resource action term; CheckName
 	// may be empty. Resolution expands it into a code and, if present, a check.
 	Mode PermissionRequireMode
-	// Code is the fully qualified resource action code for code expressions.
+	// Code is the resource action code, fully qualified after import resolution.
 	Code string
 	// Check describes the invocation for check expressions.
 	Check *PermissionCheckInvocation

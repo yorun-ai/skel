@@ -28,22 +28,18 @@ type Scalar string
 const (
 	// ScalarString identifies the string scalar.
 	ScalarString Scalar = "string"
-	// ScalarBool identifies the bool scalar.
-	ScalarBool Scalar = "bool"
+	// ScalarBoolean identifies the boolean scalar.
+	ScalarBoolean Scalar = "bool"
 	// ScalarInt identifies the int scalar.
 	ScalarInt Scalar = "int"
-	// ScalarLong identifies the long scalar.
-	ScalarLong Scalar = "long"
 	// ScalarFloat identifies the float scalar.
 	ScalarFloat Scalar = "float"
-	// ScalarDouble identifies the double scalar.
-	ScalarDouble Scalar = "double"
 	// ScalarDecimal identifies the decimal scalar.
 	ScalarDecimal Scalar = "decimal"
-	// ScalarJson identifies the json scalar.
-	ScalarJson Scalar = "json"
-	// ScalarUuid identifies the uuid scalar.
-	ScalarUuid Scalar = "uuid"
+	// ScalarJSON identifies the json scalar.
+	ScalarJSON Scalar = "json"
+	// ScalarUUID identifies the uuid scalar.
+	ScalarUUID Scalar = "uuid"
 	// ScalarTimestamp identifies the timestamp scalar.
 	ScalarTimestamp Scalar = "timestamp"
 	// ScalarDuration identifies the duration scalar.

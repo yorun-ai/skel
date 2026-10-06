@@ -14,7 +14,7 @@ func TestInstantiateMembersCopiesArgumentsAndPreservesRecursiveIdentity(t *testi
 		{Name: "value", Type: parameterRef},
 		{Name: "next", Type: new(schema.Type{Kind: schema.TypeKindData, Data: data, Nullable: true, TypeArguments: []*schema.Type{parameterRef}})},
 	}
-	arg := new(schema.Type{Kind: schema.TypeKindList, List: new(schema.ListType{Value: new(schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString})})})
+	arg := new(schema.Type{Kind: schema.TypeKindList, List: new(schema.ListType{Element: new(schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString})})})
 	input := new(schema.Type{Kind: schema.TypeKindData, Data: data, TypeArguments: []*schema.Type{arg}})
 	members, err := InstantiateMembers(input)
 	if err != nil {
@@ -23,8 +23,8 @@ func TestInstantiateMembersCopiesArgumentsAndPreservesRecursiveIdentity(t *testi
 	if members[1].Type.Data != data || members[1].Type.TypeArguments[0].Kind != schema.TypeKindList || !members[1].Type.Nullable {
 		t.Fatal("recursive instantiation lost semantic identity")
 	}
-	members[0].Type.List.Value.Scalar = schema.ScalarInt
-	if arg.List.Value.Scalar != schema.ScalarString || data.Members[0].Type.Kind != schema.TypeKindTypeParameter {
+	members[0].Type.List.Element.Scalar = schema.ScalarInt
+	if arg.List.Element.Scalar != schema.ScalarString || data.Members[0].Type.Kind != schema.TypeKindTypeParameter {
 		t.Fatal("returned expressions alias input")
 	}
 	// Open recursive Node<TItem> must preserve TItem from the caller's scope.

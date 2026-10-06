@@ -125,7 +125,7 @@ pub service LegacyService { noauth method ping { auth } }
 		t.Fatal(err)
 	}
 	service := result.Domain.Services()[0]
-	if !service.ClientApi() || service.Auth != schema.AuthModeNoAuth || service.Methods[0].Auth != schema.AuthModeAuth {
+	if !service.ClientApi() || service.AuthMode != schema.AuthModeNoAuth || service.Methods[0].AuthMode != schema.AuthModeAuth {
 		t.Fatalf("lost legacy rules: %+v", service)
 	}
 	if len(result.Diagnostics) != 3 {

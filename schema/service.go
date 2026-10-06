@@ -45,8 +45,8 @@ type Service struct {
 	Ext bool
 	// Audiences lists actors allowed to call the service.
 	Audiences []*ActorAudience
-	// Auth is the service-level authentication mode.
-	Auth AuthMode
+	// AuthMode is the service-level authentication mode.
+	AuthMode AuthMode
 	// AuthPos is the auth marker source position, or zero when omitted.
 	AuthPos Position
 	// Require is the service-level permission requirement.
@@ -84,12 +84,19 @@ type Method struct {
 	DeprecatedReason string
 	// Example is the method's example text.
 	Example string
-	// Auth is the method-level authentication mode.
-	Auth AuthMode
+	// AuthMode is the method-level authentication mode.
+	AuthMode AuthMode
 	// AuthPos is the auth marker source position, or zero when omitted.
 	AuthPos Position
 	// Require is the method-level permission requirement.
 	Require *PermissionRequire
+	// EffectiveAuthMode is the derived authentication mode after service inheritance.
+	// Empty means no effective policy has been computed.
+	EffectiveAuthMode AuthMode
+	// EffectiveRequire combines service and method requirements. Nil means no
+	// requirement when EffectiveAuthMode is populated. External references can remain
+	// unresolved; policy composition does not load dependencies.
+	EffectiveRequire *PermissionRequire
 	// Arguments lists input arguments in source order.
 	Arguments []*Argument
 	// ArgumentsData is the language-defined data schema representing method arguments.
@@ -142,7 +149,7 @@ type Argument struct {
 
 // HasClientRules reports whether a service declares portal admission rules.
 func (s *Service) HasClientRules() bool {
-	if len(s.Audiences) > 0 || (s.Auth != "" && s.Auth != AuthModeUnset) || s.Require != nil {
+	if len(s.Audiences) > 0 || (s.AuthMode != "" && s.AuthMode != AuthModeUnset) || s.Require != nil {
 		return true
 	}
 	for _, method := range s.Methods {
@@ -155,8 +162,3 @@ func (s *Service) HasClientRules() bool {
 
 // ClientApi includes API services and legacy client rules, excluding extension contracts.
 func (s *Service) ClientApi() bool { return !s.Ext && (s.Api || s.HasClientRules()) }
-
-// Public reports whether the service is exported by pub or ext.
-func (s *Service) Public() bool {
-	return s.Pub || s.Ext
-}

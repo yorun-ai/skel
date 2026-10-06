@@ -68,6 +68,9 @@ func newGen(option Option) *_Gen {
 
 func (g *_Gen) gen() error {
 	payload := g.buildDescriptorGoPayload()
+	if err := descriptor.ValidateEffectivePolicy(payload.Descriptor); err != nil {
+		return fmt.Errorf("generated descriptor policy: %w", err)
+	}
 	content, err := binding.RenderTemplateWithFuncs(descriptorGoTemplate, payload, g.descriptorGoTemplateFuncs())
 	if err != nil {
 		return fmt.Errorf("render generated %s: %w", descriptorGoFilename, err)
@@ -121,6 +124,7 @@ func (g *_Gen) buildDescriptorGoPayload() *DescriptorGoPayload {
 func (g *_Gen) descriptorGoTemplateFuncs() template.FuncMap {
 	return template.FuncMap{
 		"authLiteral":              renderAuthModeLiteral,
+		"configLifecycleLiteral":   renderConfigLifecycleLiteral,
 		"permissionRequireLiteral": renderPermissionRequireModeLiteral,
 		"quote":                    quote,
 		"scalarLiteral":            renderScalarLiteral,

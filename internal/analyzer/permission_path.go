@@ -87,11 +87,11 @@ func resolveJsonPathPartType(reporter *_DiagnosticReporter, type_ *schema.Type, 
 		"require check argument path %s can only use [*] on list, got %s", fullPath, typeName(type_)) {
 		return nil, false
 	}
-	valueType, valid := resolveJsonPathType(reporter, type_.List.Value, remainingParts, fullPath)
+	valueType, valid := resolveJsonPathType(reporter, type_.List.Element, remainingParts, fullPath)
 	if !valid {
 		return nil, false
 	}
-	return &schema.Type{Kind: schema.TypeKindList, List: &schema.ListType{Value: valueType}}, true
+	return &schema.Type{Kind: schema.TypeKindList, List: &schema.ListType{Element: valueType}}, true
 }
 
 func typeName(type_ *schema.Type) string {
@@ -107,7 +107,7 @@ func typeEqual(a *schema.Type, b *schema.Type) bool {
 	}
 	switch a.Kind {
 	case schema.TypeKindList:
-		return typeEqual(a.List.Value, b.List.Value)
+		return typeEqual(a.List.Element, b.List.Element)
 	case schema.TypeKindMap:
 		return typeEqual(a.Map.Key, b.Map.Key) && typeEqual(a.Map.Value, b.Map.Value)
 	default:

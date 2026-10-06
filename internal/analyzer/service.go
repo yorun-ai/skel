@@ -42,7 +42,7 @@ func parseService(reporter *_DiagnosticReporter, gs *grammar.Service) (*schema.S
 		Api:              gs.Api,
 		Ext:              gs.Ext,
 		Audiences:        audiences,
-		Auth:             authMode,
+		AuthMode:         authMode,
 		AuthPos:          authMarkerPosition(authMarker),
 		Require:          require,
 		Description:      meta.Description,

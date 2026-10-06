@@ -108,8 +108,8 @@ func TestAnalyzeAllowsConfigListValueEnum(t *testing.T) {
 			},
 		},
 	}).Schema()
-	if domain.Configs()[0].Members[0].Type.List.Value.Kind != schema.TypeKindEnum {
-		t.Fatalf("unexpected list value type: %v", domain.Configs()[0].Members[0].Type.List.Value.Kind)
+	if domain.Configs()[0].Members[0].Type.List.Element.Kind != schema.TypeKindEnum {
+		t.Fatalf("unexpected list value type: %v", domain.Configs()[0].Members[0].Type.List.Element.Kind)
 	}
 }
 

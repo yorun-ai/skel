@@ -168,11 +168,11 @@ service UserService {
 	if pageData.Members[0].Type.Kind != schema.TypeKindList {
 		t.Fatalf("unexpected items member kind: %v", pageData.Members[0].Type.Kind)
 	}
-	if pageData.Members[0].Type.List.Value.Kind != schema.TypeKindTypeParameter {
-		t.Fatalf("unexpected list value kind: %v", pageData.Members[0].Type.List.Value.Kind)
+	if pageData.Members[0].Type.List.Element.Kind != schema.TypeKindTypeParameter {
+		t.Fatalf("unexpected list value kind: %v", pageData.Members[0].Type.List.Element.Kind)
 	}
-	if pageData.Members[0].Type.List.Value.TypeParameter.Name != "TItem" {
-		t.Fatalf("unexpected type parameter name: %q", pageData.Members[0].Type.List.Value.TypeParameter.Name)
+	if pageData.Members[0].Type.List.Element.TypeParameter.Name != "TItem" {
+		t.Fatalf("unexpected type parameter name: %q", pageData.Members[0].Type.List.Element.TypeParameter.Name)
 	}
 	if !pageData.Members[1].Type.Nullable {
 		t.Fatal("nextToken should be nullable")

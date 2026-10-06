@@ -46,11 +46,36 @@ type Input struct {
 	declarations Declarations
 }
 
+// Prepare validates the graph and refreshes effective policies before borrowing
+// it read-only. Already valid derived fields are left untouched.
 func Prepare(domain *schema.Domain, selection Selection) (Input, error) {
 	if err := ValidateDomain(domain); err != nil {
 		return Input{}, err
 	}
+	if err := prepareEffectivePolicies(domain, map[*schema.Domain]bool{}); err != nil {
+		return Input{}, err
+	}
 	return (Input{domain: domain}).Select(selection)
+}
+
+func prepareEffectivePolicies(domain *schema.Domain, seen map[*schema.Domain]bool) error {
+	if seen[domain] {
+		return nil
+	}
+	seen[domain] = true
+	// Already prepared graphs can be shared by generators. Do not rewrite their
+	// derived fields unless source declarations were edited before preparation.
+	if err := schema.ValidateEffectivePolicy(domain); err != nil {
+		if err := schema.PopulateEffectivePolicies(domain); err != nil {
+			return err
+		}
+	}
+	for _, imported := range domain.Imports() {
+		if err := prepareEffectivePolicies(imported.Domain, seen); err != nil {
+			return fmt.Errorf("import %s: %w", imported.Name, err)
+		}
+	}
+	return nil
 }
 
 // Schema returns the complete, borrowed semantic domain, including imports.

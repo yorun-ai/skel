@@ -271,7 +271,7 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 	if !strings.Contains(string(goActorContent), `return "demo.user.ClientActor"`) {
 		t.Fatalf("expected go actor skel name, got:\n%s", string(goActorContent))
 	}
-	if !strings.Contains(string(goActorContent), "return []descriptor.ActorVia{\n\t\tdescriptor.ActorViaClient,") {
+	if !strings.Contains(string(goActorContent), "return []descriptor.ActorViaKind{\n\t\tdescriptor.ActorViaClient,") {
 		t.Fatalf("expected go actor vias, got:\n%s", string(goActorContent))
 	}
 

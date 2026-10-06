@@ -36,7 +36,7 @@ api service EntryApiService { for ClientActor auth required method read {} }
 			clientApi := service.ClientApi()
 			if normalized {
 				for _, method := range service.Methods {
-					method.Auth = method.NormalizedAuth()
+					method.AuthMode = method.NormalizedAuth()
 				}
 			}
 			if service.ClientApi() != clientApi {

@@ -295,7 +295,7 @@ Go 集成使用 `encoding/json`，将 schema list/get 输出解码为
 `go.yorun.ai/skel/api` 返回的语义 schema，无需经过 JSON 转换。
 
 使用 Go 编写的自定义 binding 通过 `go.yorun.ai/skel/codegen` 接入。调用
-`api.Parse` 后，使用 `codegen.Prepare(domain, selection)` 校验并选择生成视图。
+`api.Parse` 后，使用 `codegen.Prepare(domain, selection)` 校验、刷新生效策略并选择生成视图。
 `schema` 是共享语义图；`codegen.Input` 提供选中的声明、完整名称查询、类型根和外部依赖，
 不另建一套声明类型。准备完成后应只读使用模型，目标语言名称和导入信息由 binding 自己保存。
 `WalkTypeGraphs` 可安全遍历递归声明，`InstantiateMembers` 替换泛型参数但不展开命名类型。
@@ -326,6 +326,16 @@ Go 集成使用 `encoding/json`，将 schema list/get 输出解码为
 比较按名称识别引用，不将位置和派生哈希的变化视为契约变化。
 `DiffSchemaSources` 接受显式 `Baseline` 输入；未设置时，将磁盘候选输入与
 Git HEAD 比较。历史基线不继承候选输入的严格模式，内存候选输入必须显式指定基线。
+
+解析后的方法保留声明的 `AuthMode` 和 `Require`，并提供 `EffectiveAuthMode` 和
+`EffectiveRequire`。生效认证策略处理 service 继承；生效权限要求将 service 与 method
+的策略按 AND 组合，保留 check 顺序和参数绑定。未解析 import 时也会计算这些值，
+但不会解析外部 check 目标。程序化修改 schema 后，在只读共享前调用
+`schema.PopulateEffectivePolicies(domain)`；需要纯计算时使用
+`schema.ComputeEffectivePolicy(service, method)`。
+`schema.ValidateEffectivePolicy(domain)` 和 `descriptor.ValidateEffectivePolicy(domain)`
+只检查已有派生值是否与声明一致，不修复字段，也不执行请求鉴权。运行时 descriptor
+使用 `EffectiveAuthMode` 和 `EffectiveRequire` 表示这些值。
 
 设置 `Input.Sources`（或检查选项的 `Sources`）可提供完整的 `map[string][]byte`
 内存快照。键为逻辑文件路径，相对路径基于当前工作目录解析，目录遵循与磁盘相同的

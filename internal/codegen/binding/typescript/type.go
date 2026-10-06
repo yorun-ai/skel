@@ -101,7 +101,7 @@ func castScalarType(p *schema.Type) *_Type {
 }
 
 func (r _Types) castListType(p *schema.Type) *_Type {
-	valueType := r.castType(p.List.Value)
+	valueType := r.castType(p.List.Element)
 	arrayType := fmt.Sprintf("Array<%s>", valueType.Plain)
 	return &_Type{
 		Plain: binding.ChooseString(p.Nullable, fmt.Sprintf("%s | null", arrayType), arrayType),

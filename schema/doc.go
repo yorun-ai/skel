@@ -6,6 +6,11 @@
 // api.Parse resolves dependencies, and codegen.Prepare requires a complete graph.
 // Build custom schemas with DomainSpec before preparation; constructors do not
 // validate. After preparation, treat the graph and all reachable values as read-only.
+// Analysis and codegen.Prepare populate method EffectiveAuthMode/EffectiveRequire.
+// ComputeEffectivePolicy computes a policy without mutation; PopulateEffectivePolicies
+// refreshes a domain's derived values, and ValidateEffectivePolicy detects stale values.
+// Effective policies include inheritance and composition, independently of whether
+// imported check bindings have been resolved. Type links in policies remain borrowed.
 //
 // Names and source qualifiers describe Skel, never target-language packages.
 // Actor authentication/permission services, resource check services and argument

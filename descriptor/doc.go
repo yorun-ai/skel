@@ -4,6 +4,9 @@
 // without source locations, analysis state, registration, or runtime handlers.
 // Language schemas are defined by go.yorun.ai/skel/schema. Descriptor producers
 // project those schemas; consumers own registration and version policies.
+// Methods retain declared policies alongside EffectiveAuthMode/EffectiveRequire.
+// ValidateEffectivePolicy verifies only these derived values against declarations,
+// using the same inheritance and composition rules as semantic schemas.
 //
 // Permission metadata uses full names such as PermissionRequire,
 // PermissionExpression and PermissionCheckInvocation. The package does not depend

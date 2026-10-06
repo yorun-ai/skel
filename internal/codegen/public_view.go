@@ -36,8 +36,8 @@ func BuildPublicView(domain *schema.Domain) (*PublicView, error) {
 		Configs:   filter(domain.Configs(), func(value *schema.Data) bool { return value.Pub }),
 		Actors:    filter(domain.Actors(), func(value *schema.Actor) bool { return value.Pub }),
 		Resources: filter(domain.Resources(), func(value *schema.Resource) bool { return value.Pub }),
-		Events:    filter(domain.Events(), func(value *schema.Data) bool { return value.Public() }),
-		Services:  filter(domain.Services(), func(value *schema.Service) bool { return value.Public() }),
+		Events:    filter(domain.Events(), func(value *schema.Data) bool { return value.Pub || value.Ext }),
+		Services:  filter(domain.Services(), func(value *schema.Service) bool { return value.Pub || value.Ext }),
 	}
 	collectViewData(domain, view)
 	if err := validatePublicView(domain, view); err != nil {
@@ -156,7 +156,7 @@ func validateType(context string, valueType *schema.Type, visited map[*schema.Da
 		if valueType.List == nil {
 			return fmt.Errorf("%s contains an invalid list type", context)
 		}
-		return validateType(context, valueType.List.Value, visited)
+		return validateType(context, valueType.List.Element, visited)
 	case schema.TypeKindMap:
 		if valueType.Map == nil {
 			return fmt.Errorf("%s contains an invalid map type", context)

@@ -11,7 +11,7 @@ func (g *_Gen) buildDomainDescriptor() *descriptor.Domain {
 		domainView = view.Full(g.Domain)
 	}
 	result := &descriptor.Domain{
-		Domain: g.Domain.Name(), Description: g.Domain.Description(), Hash: g.Domain.Hash(), Full: !g.isSplitPub(),
+		Name: g.Domain.Name(), Description: g.Domain.Description(), Hash: g.Domain.Hash(), Full: !g.isSplitPub(),
 		Enums: make([]*descriptor.Enum, 0, len(domainView.Enums)), Data: make([]*descriptor.Data, 0, len(domainView.Data)),
 		Configs: make([]*descriptor.Config, 0, len(domainView.Configs)), Webs: make([]*descriptor.Web, 0, len(domainView.Webs)),
 		Events: make([]*descriptor.Event, 0, len(domainView.Events)), Actors: make([]*descriptor.Actor, 0, len(domainView.Actors)),

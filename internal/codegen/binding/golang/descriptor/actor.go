@@ -9,7 +9,7 @@ func (g *_Gen) buildActorDescriptor(value *schema.Actor) *descriptor.Actor {
 	result := new(descriptor.Actor{
 		Name: value.Name, SkelName: value.SkelName, Hash: value.Hash,
 		Description: value.Description, Deprecated: value.Deprecated,
-		DeprecatedReason: value.DeprecatedReason, Vias: make([]descriptor.ActorVia, 0, len(value.Vias)),
+		DeprecatedReason: value.DeprecatedReason, Vias: make([]descriptor.ActorViaKind, 0, len(value.Vias)),
 	})
 	for _, via := range value.Vias {
 		result.Vias = append(result.Vias, actorVia(via.Name))

@@ -33,7 +33,7 @@ func TestDependenciesCoverAllDeclarationReferences(t *testing.T) {
 		Data: []*Data{{SkelName: "demo.Value", Members: []*DataMember{
 			{Type: new(Type{Kind: TypeKindData, SkelName: "demo.Value", Data: new(Data{Kind: DataKindData})})},
 			{Type: event}, {Type: config},
-			{Type: new(Type{Kind: TypeKindMap, Map: new(MapType{Key: new(Type{Kind: TypeKindEnum, SkelName: "foreign.MapKey"}), Value: new(Type{Kind: TypeKindList, List: new(ListType{Value: container})})})})},
+			{Type: new(Type{Kind: TypeKindMap, Map: new(MapType{Key: new(Type{Kind: TypeKindEnum, SkelName: "foreign.MapKey"}), Value: new(Type{Kind: TypeKindList, List: new(ListType{Element: container})})})})},
 			{Type: value("Container")},
 		}}},
 		Enums: []*Enum{{SkelName: "demo.Status"}},

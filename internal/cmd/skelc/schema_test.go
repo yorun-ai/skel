@@ -498,6 +498,7 @@ pub data Unused { value: string }
 pub config SettingsConfig eternal { enabled: bool }
 pub resource Record { action view }
 pub event ChangedEvent { payload { value: string } }
+ext event StoredEvent { payload { value: string } }
 pub service BackendService { method read { output Value } }
 ext service StorageService { method read { output Value } }
 api service ReadApiService { for UserActor via client auth anonymous method read { output Value } }
@@ -508,7 +509,7 @@ api service WriteApiService { for WriterActor via client auth anonymous method w
 		flags []string
 		want  []string
 	}{
-		{"public", []string{"--pub"}, []string{"actor:UserActor", "config:SettingsConfig", "data:Unused", "data:Value", "enum:Status", "event:ChangedEvent", "resource:Record", "service:BackendService", "service:StorageService"}},
+		{"public", []string{"--pub"}, []string{"actor:UserActor", "config:SettingsConfig", "data:Unused", "data:Value", "enum:Status", "event:ChangedEvent", "event:StoredEvent", "resource:Record", "service:BackendService", "service:StorageService"}},
 		{"api", []string{"--api"}, []string{"data:Unused", "data:Value", "enum:Status", "service:ReadApiService", "service:WriteApiService"}},
 		{"actor without pruning", []string{"--api", "--actor", "demo.UserActor"}, []string{"data:Unused", "data:Value", "enum:Status", "service:ReadApiService"}},
 		{"pruned actor", []string{"--api", "--prune", "--actor", "demo.UserActor"}, []string{"data:Value", "enum:Status", "service:ReadApiService"}},
@@ -531,8 +532,20 @@ api service WriteApiService { for WriterActor via client auth anonymous method w
 				if entry.SkelName != "demo."+entry.Name {
 					t.Fatalf("noncanonical entry: %+v", entry)
 				}
-				if (entry.Name == "Value" || entry.Name == "Status" || strings.HasSuffix(entry.Name, "ApiService")) && entry.Pub {
+				wantPub := slices.Contains([]string{"UserActor", "Unused", "SettingsConfig", "Record", "ChangedEvent", "BackendService"}, entry.Name)
+				if entry.Pub != wantPub {
 					t.Fatalf("selection changed public attribute: %+v", entry)
+				}
+				if test.name == "public" {
+					result := Run([]string{"schema", "get", string(entry.Kind), entry.SkelName, "--skel-in", source})
+					var declaration output.SchemaDeclaration
+					if result.ExitCode != ExitCodeSuccess || json.Unmarshal([]byte(result.Stdout), &declaration) != nil || declaration.Pub != wantPub {
+						t.Fatalf("get changed declaration pub: %+v", result)
+					}
+					if entry.Name == "StorageService" && (declaration.Service == nil || !declaration.Service.Ext) ||
+						entry.Name == "StoredEvent" && (declaration.Data == nil || !declaration.Data.Ext) {
+						t.Fatalf("get lost extension flag: %+v", result)
+					}
 				}
 			}
 			slices.Sort(got)

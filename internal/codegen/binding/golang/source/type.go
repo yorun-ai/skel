@@ -46,7 +46,7 @@ func (r _Types) castType(p *schema.Type) *Type {
 }
 
 func (r _Types) castListType(p *schema.Type) *Type {
-	valueType := r.castType(p.List.Value)
+	valueType := r.castType(p.List.Element)
 	plain := fmt.Sprintf("[]%s", valueType.Plain)
 	return &Type{
 		Plain:        binding.ChooseString(p.Nullable, "*"+plain, plain),

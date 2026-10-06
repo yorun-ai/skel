@@ -52,7 +52,7 @@ func typeView(type_ *schema.Type) *_TypeView {
 		view.Name = type_.TypeParameter.Name
 	case schema.TypeKindList:
 		view.Kind = "list"
-		view.Value = typeView(type_.List.Value)
+		view.Value = typeView(type_.List.Element)
 	case schema.TypeKindMap:
 		view.Kind = "map"
 		view.Key = typeView(type_.Map.Key)

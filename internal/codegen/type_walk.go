@@ -76,7 +76,7 @@ func walkType(type_ *schema.Type, visit TypeVisitor, followData bool, seenTypes 
 	switch type_.Kind {
 	case schema.TypeKindList:
 		if type_.List != nil {
-			return walkType(type_.List.Value, visit, followData, seenTypes, seenData)
+			return walkType(type_.List.Element, visit, followData, seenTypes, seenData)
 		}
 	case schema.TypeKindMap:
 		if type_.Map != nil {

@@ -12,7 +12,7 @@ func TestWalkTypeVisitsStructuralChildrenInOrder(t *testing.T) {
 	key := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}
 	value := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarInt}
 	root := &schema.Type{Kind: schema.TypeKindMap, Map: &schema.MapType{Key: key, Value: &schema.Type{
-		Kind: schema.TypeKindList, List: &schema.ListType{Value: value},
+		Kind: schema.TypeKindList, List: &schema.ListType{Element: value},
 	}}}
 	kinds := []schema.TypeKind{}
 	if err := WalkType(root, func(type_ *schema.Type) error {
@@ -54,7 +54,7 @@ func TestWalkTypePropagatesVisitorError(t *testing.T) {
 func TestVisitTypesSharesTraversalStateAcrossRoots(t *testing.T) {
 	shared := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}
 	roots := []*schema.Type{
-		{Kind: schema.TypeKindList, List: &schema.ListType{Value: shared}},
+		{Kind: schema.TypeKindList, List: &schema.ListType{Element: shared}},
 		{Kind: schema.TypeKindMap, Map: &schema.MapType{Key: shared, Value: shared}},
 	}
 	visits := map[*schema.Type]int{}

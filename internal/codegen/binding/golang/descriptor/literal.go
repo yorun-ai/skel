@@ -12,22 +12,18 @@ func renderScalarLiteral(scalar descriptor.Scalar) string {
 	switch scalar {
 	case descriptor.ScalarString:
 		return "descriptor.ScalarString"
-	case descriptor.ScalarBool:
-		return "descriptor.ScalarBool"
+	case descriptor.ScalarBoolean:
+		return "descriptor.ScalarBoolean"
 	case descriptor.ScalarInt:
 		return "descriptor.ScalarInt"
-	case descriptor.ScalarLong:
-		return "descriptor.ScalarLong"
 	case descriptor.ScalarFloat:
 		return "descriptor.ScalarFloat"
-	case descriptor.ScalarDouble:
-		return "descriptor.ScalarDouble"
 	case descriptor.ScalarDecimal:
 		return "descriptor.ScalarDecimal"
-	case descriptor.ScalarJson:
-		return "descriptor.ScalarJson"
-	case descriptor.ScalarUuid:
-		return "descriptor.ScalarUuid"
+	case descriptor.ScalarJSON:
+		return "descriptor.ScalarJSON"
+	case descriptor.ScalarUUID:
+		return "descriptor.ScalarUUID"
 	case descriptor.ScalarTimestamp:
 		return "descriptor.ScalarTimestamp"
 	case descriptor.ScalarDuration:
@@ -45,7 +41,7 @@ func renderScalarLiteral(scalar descriptor.Scalar) string {
 	}
 }
 
-func actorVia(name string) descriptor.ActorVia {
+func actorVia(name string) descriptor.ActorViaKind {
 	switch schema.ActorViaKind(name) {
 	case schema.ActorViaClient:
 		return descriptor.ActorViaClient
@@ -58,7 +54,7 @@ func actorVia(name string) descriptor.ActorVia {
 	}
 }
 
-func renderActorViaLiteral(method descriptor.ActorVia) (string, error) {
+func renderActorViaLiteral(method descriptor.ActorViaKind) (string, error) {
 	switch method {
 	case descriptor.ActorViaClient:
 		return "descriptor.ActorViaClient", nil
@@ -100,6 +96,17 @@ func renderPermissionRequireModeLiteral(mode descriptor.PermissionRequireMode) (
 		return "descriptor.PermissionRequireModeAny", nil
 	default:
 		return "", fmt.Errorf("unsupported permission require mode %q", mode)
+	}
+}
+
+func renderConfigLifecycleLiteral(lifecycle descriptor.ConfigLifecycle) (string, error) {
+	switch lifecycle {
+	case descriptor.ConfigLifecycleEternal:
+		return "descriptor.ConfigLifecycleEternal", nil
+	case descriptor.ConfigLifecycleInstant:
+		return "descriptor.ConfigLifecycleInstant", nil
+	default:
+		return "", fmt.Errorf("unsupported config lifecycle %q", lifecycle)
 	}
 }
 

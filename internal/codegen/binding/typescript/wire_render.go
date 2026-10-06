@@ -97,7 +97,7 @@ func (b *_WireSchemaBuilder) renderType(type_ *schema.Type, depth int) string {
 	case schema.TypeKindList:
 		rendered = b.renderContainerSchema(
 			"list",
-			[]string{"value: " + b.renderType(type_.List.Value, depth+1)},
+			[]string{"value: " + b.renderType(type_.List.Element, depth+1)},
 			type_.Nullable,
 			depth,
 		)

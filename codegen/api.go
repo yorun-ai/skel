@@ -27,8 +27,9 @@ const (
 	GeneratedFileMarker = internal.GeneratedFileMarker
 )
 
-// Prepare validates renderer invariants and selects declarations from a resolved
-// semantic domain. The schema is borrowed read-only; declaration types are not copied.
+// Prepare validates renderer invariants, refreshes effective policies and selects
+// declarations from a resolved semantic domain. The returned Input borrows the
+// schema read-only; declaration types are not copied. Finish editing before Prepare.
 func Prepare(domain *schema.Domain, selection Selection) (Input, error) {
 	return internal.Prepare(domain, selection)
 }

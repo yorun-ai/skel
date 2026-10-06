@@ -42,7 +42,7 @@ func (g *_Gen) buildTypeDescriptor(value *schema.Type) *descriptor.Type {
 		result.Scalar = descriptor.Scalar(strings.ToLower(value.Scalar.Name()))
 	case schema.TypeKindList:
 		result.Kind = descriptor.TypeKindList
-		result.Element = g.buildTypeDescriptor(value.List.Value)
+		result.Element = g.buildTypeDescriptor(value.List.Element)
 	case schema.TypeKindMap:
 		result.Kind = descriptor.TypeKindMap
 		result.Key = g.buildTypeDescriptor(value.Map.Key)

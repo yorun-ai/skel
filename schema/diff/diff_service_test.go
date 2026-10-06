@@ -97,12 +97,12 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 
 	t.Run("service methods", func(t *testing.T) {
 		method := func(name string) *schema.Method {
-			return &schema.Method{Name: name, SkelName: name, Auth: schema.AuthModeUnset, Arguments: []*schema.Argument{}}
+			return &schema.Method{Name: name, SkelName: name, AuthMode: schema.AuthModeUnset, Arguments: []*schema.Argument{}}
 		}
 		changes := diffChanges(func(diff *_Diff) {
 			diff.compareService("Users",
-				&schema.Service{Audiences: []*schema.ActorAudience{}, Auth: schema.AuthModeUnset, Methods: []*schema.Method{method("old")}},
-				&schema.Service{Audiences: []*schema.ActorAudience{}, Auth: schema.AuthModeUnset, Methods: []*schema.Method{method("new")}})
+				&schema.Service{Audiences: []*schema.ActorAudience{}, AuthMode: schema.AuthModeUnset, Methods: []*schema.Method{method("old")}},
+				&schema.Service{Audiences: []*schema.ActorAudience{}, AuthMode: schema.AuthModeUnset, Methods: []*schema.Method{method("new")}})
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
 			"service.method.removed": ImpactBreaking,
@@ -113,8 +113,8 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 	t.Run("method body", func(t *testing.T) {
 		changes := diffChanges(func(diff *_Diff) {
 			diff.compareMethod("Users.get",
-				&schema.Method{Auth: schema.AuthModeUnset, Arguments: []*schema.Argument{}, ResultType: scalarType("string")},
-				&schema.Method{Auth: schema.AuthModeUnset, Arguments: []*schema.Argument{}, ResultType: scalarType("int"), ArgumentsSensitive: true, Example: "new"})
+				&schema.Method{AuthMode: schema.AuthModeUnset, Arguments: []*schema.Argument{}, ResultType: scalarType("string")},
+				&schema.Method{AuthMode: schema.AuthModeUnset, Arguments: []*schema.Argument{}, ResultType: scalarType("int"), ArgumentsSensitive: true, Example: "new"})
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
 			"method.result.changed":        ImpactBreaking,
@@ -216,8 +216,8 @@ func TestDiffEffectiveAuthentication(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			makeDomain := func(serviceAuth, methodAuth schema.AuthMode) *schema.Domain {
 				service := serviceDeclaration("Service", "read")
-				service.Service.Auth = serviceAuth
-				service.Service.Methods[0].Auth = methodAuth
+				service.Service.AuthMode = serviceAuth
+				service.Service.Methods[0].AuthMode = methodAuth
 				return newTestDomain(service)
 			}
 			report, err := Compare(makeDomain(test.beforeService, test.beforeMethod), makeDomain(test.afterService, test.afterMethod))
@@ -256,6 +256,23 @@ func TestDiffDuplicatePermissionRequirement(t *testing.T) {
 	}
 	if len(report.Changes) != 1 || report.Changes[0].Impact != ImpactCompatible {
 		t.Fatalf("unexpected report: %+v", report)
+	}
+}
+
+func TestDiffIgnoresCachedEffectivePolicies(t *testing.T) {
+	before, after := serviceDeclaration("Service", "read"), serviceDeclaration("Service", "read")
+	baseline, candidate := newTestDomain(before), newTestDomain(after)
+	after.Service.Methods[0].EffectiveAuthMode = schema.AuthModeAnonymous
+	after.Service.Methods[0].EffectiveRequire = new(schema.PermissionRequire{Expression: new(schema.PermissionExpression{Mode: schema.PermissionRequireModeCode, Code: "extra"})})
+	report, err := Compare(baseline, candidate)
+	if err != nil || len(report.Changes) != 0 {
+		t.Fatalf("derived values affected diff: %+v, %v", report, err)
+	}
+	before.Service.AuthMode = schema.AuthModeOptional
+	after.Service.AuthMode = schema.AuthModeRequired
+	report, err = Compare(baseline, candidate)
+	if err != nil || report.Compatible {
+		t.Fatalf("stale derived values hid declared tightening: %+v, %v", report, err)
 	}
 }
 

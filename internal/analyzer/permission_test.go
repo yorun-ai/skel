@@ -209,7 +209,7 @@ service UserService {
 	if checkArgument.JsonPath != "users[*].id" {
 		t.Fatalf("unexpected json path: %s", checkArgument.JsonPath)
 	}
-	if checkArgument.Type.Kind != schema.TypeKindList || checkArgument.Type.List.Value.Scalar != schema.ScalarInt {
+	if checkArgument.Type.Kind != schema.TypeKindList || checkArgument.Type.List.Element.Scalar != schema.ScalarInt {
 		t.Fatalf("unexpected check argument type: %+v", checkArgument.Type)
 	}
 }

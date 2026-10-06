@@ -59,7 +59,7 @@ func TestWebAuthChangesHashes(t *testing.T) {
 	domains := map[string]bool{}
 	for _, auth := range []schema.AuthMode{schema.AuthModeUnset, schema.AuthModeAuth, schema.AuthModeNoAuth, schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous, schema.AuthModeOff} {
 		domain := newHashAllowViaTestDomain(t, "client")
-		domain.Webs()[0].Auth = auth
+		domain.Webs()[0].AuthMode = auth
 		fillHashes(t, domain)
 		hash := domain.Webs()[0].Hash
 		if hashes[hash] || domains[domain.Hash()] {

@@ -33,9 +33,10 @@ const (
 // Exactly one payload is set; it points to the original declaration in Domain.
 // The common fields describe that declaration at the time the view is created.
 type Declaration struct {
-	Kind             DeclarationType
-	Name             string
-	SkelName         string
+	Kind     DeclarationType
+	Name     string
+	SkelName string
+	// Pub reports whether the declaration uses the pub modifier.
 	Pub              bool
 	Description      string
 	Deprecated       bool
@@ -63,21 +64,21 @@ func (d *Domain) Declarations() []*Declaration {
 	}
 	for _, value := range d.Data() {
 		result = append(result, new(Declaration{
-			Kind: DeclarationTypeData, Name: value.Name, SkelName: value.SkelName, Pub: value.Public(),
+			Kind: DeclarationTypeData, Name: value.Name, SkelName: value.SkelName, Pub: value.Pub,
 			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
 			Data: value,
 		}))
 	}
 	for _, value := range d.Configs() {
 		result = append(result, new(Declaration{
-			Kind: DeclarationTypeConfig, Name: value.Name, SkelName: value.SkelName, Pub: value.Public(),
+			Kind: DeclarationTypeConfig, Name: value.Name, SkelName: value.SkelName, Pub: value.Pub,
 			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
 			Data: value,
 		}))
 	}
 	for _, value := range d.Events() {
 		result = append(result, new(Declaration{
-			Kind: DeclarationTypeEvent, Name: value.Name, SkelName: value.SkelName, Pub: value.Public(),
+			Kind: DeclarationTypeEvent, Name: value.Name, SkelName: value.SkelName, Pub: value.Pub,
 			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
 			Data: value,
 		}))
@@ -98,7 +99,7 @@ func (d *Domain) Declarations() []*Declaration {
 	}
 	for _, value := range d.Services() {
 		result = append(result, new(Declaration{
-			Kind: DeclarationTypeService, Name: value.Name, SkelName: value.SkelName, Pub: value.Public(),
+			Kind: DeclarationTypeService, Name: value.Name, SkelName: value.SkelName, Pub: value.Pub,
 			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
 			Service: value,
 		}))

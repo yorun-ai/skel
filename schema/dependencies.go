@@ -69,7 +69,7 @@ func Dependencies(domain *Domain) *DependencyReport {
 			visitType(arg)
 		}
 		if value.List != nil {
-			visitType(value.List.Value)
+			visitType(value.List.Element)
 		}
 		if value.Map != nil {
 			visitType(value.Map.Key)

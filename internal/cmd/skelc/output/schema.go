@@ -12,6 +12,7 @@ type SchemaMetadata struct {
 // SchemaDeclaration is one complete serialized declaration emitted by schema get.
 type SchemaDeclaration struct {
 	SchemaMetadata
+	// Pub reports whether the source declaration uses the pub modifier.
 	Pub      bool                   `json:"pub"`
 	Name     string                 `json:"name"`
 	Kind     schema.DeclarationType `json:"type"`
@@ -27,6 +28,7 @@ type SchemaDeclaration struct {
 
 // SchemaEntry is one declaration summary emitted by schema list.
 type SchemaEntry struct {
+	// Pub reports whether the source declaration uses the pub modifier.
 	Pub      bool                   `json:"pub"`
 	Name     string                 `json:"name"`
 	Kind     schema.DeclarationType `json:"type"`
@@ -121,7 +123,7 @@ type SchemaService struct {
 	Audiences []*SchemaAudience  `json:"audiences"`
 	Api       bool               `json:"api,omitempty"`
 	Ext       bool               `json:"ext,omitempty"`
-	Auth      string             `json:"auth"`
+	AuthMode  string             `json:"authMode"`
 	Require   *SchemaRequirement `json:"require,omitempty"`
 	Methods   []*SchemaMethod    `json:"methods"`
 }
@@ -138,8 +140,10 @@ type SchemaMethod struct {
 	Name               string             `json:"name"`
 	SkelName           string             `json:"skelName"`
 	Example            string             `json:"example,omitempty"`
-	Auth               string             `json:"auth"`
+	AuthMode           string             `json:"authMode"`
 	Require            *SchemaRequirement `json:"require,omitempty"`
+	EffectiveAuthMode  string             `json:"effectiveAuthMode"`
+	EffectiveRequire   *SchemaRequirement `json:"effectiveRequire,omitempty"`
 	InputDescription   string             `json:"inputDescription,omitempty"`
 	ArgumentsSensitive bool               `json:"argumentsSensitive,omitempty"`
 	OutputDescription  string             `json:"outputDescription,omitempty"`
@@ -184,7 +188,7 @@ type SchemaRequirementCheckArgument struct {
 // SchemaWeb is the serialized body of a web declaration.
 type SchemaWeb struct {
 	Audiences []*SchemaAudience `json:"audiences"`
-	Auth      string            `json:"auth,omitempty"`
+	AuthMode  string            `json:"authMode,omitempty"`
 	MountPath string            `json:"mountPath,omitempty"`
 }
 

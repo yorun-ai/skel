@@ -132,11 +132,11 @@ func enumDeclaration(name string, items ...string) *schema.Declaration {
 func serviceDeclaration(name string, methods ...string) *schema.Declaration {
 	values := make([]*schema.Method, 0, len(methods))
 	for _, method := range methods {
-		values = append(values, &schema.Method{Name: method, SkelName: method, Auth: schema.AuthModeUnset, Arguments: []*schema.Argument{}})
+		values = append(values, &schema.Method{Name: method, SkelName: method, AuthMode: schema.AuthModeUnset, Arguments: []*schema.Argument{}})
 	}
 	return &schema.Declaration{
 		Pub: true, Name: name, Kind: schema.DeclarationTypeService, SkelName: "demo.user." + name,
-		Service: &schema.Service{Auth: schema.AuthModeUnset, Audiences: []*schema.ActorAudience{}, Methods: values},
+		Service: &schema.Service{AuthMode: schema.AuthModeUnset, Audiences: []*schema.ActorAudience{}, Methods: values},
 	}
 }
 
@@ -166,7 +166,7 @@ func resourceDomain(permissionCode string) *schema.Domain {
 
 func servicePolicyDomain(auth schema.AuthMode, require *schema.PermissionRequire) *schema.Domain {
 	declaration := serviceDeclaration("UserService")
-	declaration.Service.Auth = auth
+	declaration.Service.AuthMode = auth
 	declaration.Service.Require = require
 	return newTestDomain(declaration)
 }

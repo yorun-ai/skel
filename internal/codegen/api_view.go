@@ -164,7 +164,7 @@ func collectViewData(domain *schema.Domain, view *PublicView) {
 			enums[t.Enum] = true
 		case schema.TypeKindList:
 			if t.List != nil {
-				visitType(t.List.Value)
+				visitType(t.List.Element)
 			}
 		case schema.TypeKindMap:
 			if t.Map != nil {

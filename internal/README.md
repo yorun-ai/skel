@@ -8,6 +8,7 @@ capabilities; using a capability does not make that capability part of a tool.
 | `parser`, `symbol`, `analyzer` | Syntax, symbols and semantic analysis |
 | `loader`, `source`, `location` | Input providers, immutable source revisions and shared positions |
 | `hasher` | Compatibility hashes |
+| `policy` | Pure authentication inheritance and permission composition shared by schema and descriptor |
 | `formatter` | Pure source formatting |
 | `codegen` | Go generator SDK inputs, selection, traversal and execution |
 | `codegen/binding` | Shared rendering, import mappings and binding option helpers |
