@@ -6,6 +6,45 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-10-06
+
+### Added
+
+- Expose Go APIs for checking sources, scanning imports, read-only formatting
+  plans, schema queries and source diffs, plus schema projection, lookup and
+  comparison helpers. Source APIs support context cancellation.
+- Accept complete in-memory source snapshots for parsing, generation and source
+  tooling without falling back to disk.
+
+### Changed
+
+- Classify schema compatibility by existing interactions. Resolve inherited
+  authentication and combined service/method permission requirements, recognize
+  restrictive policy changes, and account for input/output data roles when
+  comparing added fields and nullable types.
+- Keep added extension methods and resource checks compatible. Treat field
+  reordering as compatible while retaining conservative checks for positional
+  arguments, independently public types and generic uses.
+- Rename the public CLI result/error package from `command` to `cli`, and expose
+  diagnostic types and codes only through the dedicated `diagnostic` package.
+
+### Fixed
+
+- Reject conflicting file/directory paths in source snapshots instead of silently
+  dropping declarations.
+- Use the same loaded source revisions for strict validation and formatting,
+  preserve source discovery warnings, and avoid returning partial format plans.
+- Keep cancellation and deadlines separate from compilation failures in format
+  and source diff APIs, and preserve source diff option-error classification.
+
+### Upgrade Notes
+
+- Replace imports of `go.yorun.ai/skelc/command` with `go.yorun.ai/skelc/cli`.
+  Use `go.yorun.ai/skelc/diagnostic` for former root diagnostic aliases and codes.
+- Schema diff can now report breaking changes for authentication or permission
+  tightening previously classified as dangerous. Review CI policies consuming
+  its compatibility results; completed diff commands still exit successfully.
+
 ## [0.29.0] - 2026-10-06
 
 ### Added
@@ -859,7 +898,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.29.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.30.0...HEAD
+[0.30.0]: https://github.com/yorun-ai/skelc/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/yorun-ai/skelc/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/yorun-ai/skelc/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/yorun-ai/skelc/compare/v0.26.0...v0.27.0
