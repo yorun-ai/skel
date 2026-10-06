@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestProjectMapsDeclarationKinds(t *testing.T) {

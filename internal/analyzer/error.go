@@ -3,7 +3,7 @@ package analyzer
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 type MissingImportError struct {

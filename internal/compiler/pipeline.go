@@ -5,7 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 
-	"go.yorun.ai/skelc/internal/loader"
+	"go.yorun.ai/skel/internal/loader"
 )
 
 // AnalysisOptions makes entry-point differences explicit. Recovery happens in

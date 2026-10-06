@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestGeneratedAuthModesWithPublishedVine(t *testing.T) {
@@ -27,7 +27,7 @@ web AnonymousWeb { for ClientActor via client auth anonymous }
 web OffWeb { for ClientActor via client auth off }
 `)
 	out := filepath.Join(root, "auth")
-	if _, err := skelc.CompileGolang(skelc.Input{SkelIn: input, Strict: true}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auth", AsModule: true}); err != nil {
+	if _, err := skel.CompileGolang(skel.Input{SkelIn: input, Strict: true}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auth", AsModule: true}); err != nil {
 		t.Fatal(err)
 	}
 	writeFileForTest(t, filepath.Join(out, "auth_test.go"), `package auth

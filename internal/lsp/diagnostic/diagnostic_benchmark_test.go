@@ -1,9 +1,9 @@
 package diagnostic
 
 import (
-	skeldiagnostic "go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/lsp/source"
-	"go.yorun.ai/skelc/internal/model"
+	skeldiagnostic "go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/lsp/source"
+	"go.yorun.ai/skel/internal/model"
 	"strings"
 	"testing"
 )

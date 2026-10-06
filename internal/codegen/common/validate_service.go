@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func validateService(service *model.Service) error {

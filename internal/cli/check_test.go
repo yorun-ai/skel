@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/command"
-	"go.yorun.ai/skelc/internal/compiler"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/command"
+	"go.yorun.ai/skel/internal/compiler"
 )
 
 func TestRunSkelcCheckStrictMigrationDiagnostics(t *testing.T) {

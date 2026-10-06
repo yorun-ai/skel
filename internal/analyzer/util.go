@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/parser/grammar"
-	"go.yorun.ai/skelc/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/util/nameutil"
 )
 
 type _CaseType string

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"go.yorun.ai/skelc/cli"
-	"go.yorun.ai/skelc/diagnostic"
+	"go.yorun.ai/skel/cli"
+	"go.yorun.ai/skel/diagnostic"
 )
 
 func TestFacadeWireContract(t *testing.T) {

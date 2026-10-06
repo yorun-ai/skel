@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/source"
+	"go.yorun.ai/skel/internal/loader"
+	"go.yorun.ai/skel/internal/source"
 )
 
 func TestPipelineMatchesDiskAndMemoryProviders(t *testing.T) {

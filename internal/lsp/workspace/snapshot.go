@@ -6,8 +6,8 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skel/internal/binding"
+	"go.yorun.ai/skel/internal/lsp/source"
 )
 
 // Snapshot is an immutable workspace view used by one request or analysis.

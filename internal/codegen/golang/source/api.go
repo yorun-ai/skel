@@ -3,9 +3,9 @@ package source
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
-	"go.yorun.ai/skelc/internal/util/nameutil"
-	"go.yorun.ai/skelc/internal/util/sliceutil"
+	"go.yorun.ai/skel/internal/codegen/golang/view"
+	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/util/sliceutil"
 )
 
 const apiSkelImport = "go.yorun.ai/vrpc/skel"

@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser/grammar"
-	"go.yorun.ai/skelc/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/util/nameutil"
 )
 
 func buildResourceCheckService(domainName string, resource *model.Resource) *model.Service {

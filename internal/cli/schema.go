@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	ucli "github.com/urfave/cli/v3"
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/command"
-	"go.yorun.ai/skelc/internal/compiler"
-	schemas "go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/command"
+	"go.yorun.ai/skel/internal/compiler"
+	schemas "go.yorun.ai/skel/internal/schema"
 )
 
 const (
@@ -132,17 +132,17 @@ func newSchemaDiffCommand() *ucli.Command {
 				}
 				baselineSkelIn = baselineOption.SkelIn
 			}
-			option := skelc.SchemaDiffOption{}
+			option := skel.SchemaDiffOption{}
 			if baselineSkelIn != "" {
-				option.Baseline = &skelc.Input{SkelIn: baselineSkelIn}
+				option.Baseline = &skel.Input{SkelIn: baselineSkelIn}
 			}
-			report, err := skelc.DiffSchemaSourcesContext(ctx, skelc.Input{SkelIn: candidateOption.SkelIn, Strict: cmd.Bool(flagStrict)}, option)
+			report, err := skel.DiffSchemaSourcesContext(ctx, skel.Input{SkelIn: candidateOption.SkelIn, Strict: cmd.Bool(flagStrict)}, option)
 			if err != nil {
 				switch {
-				case errors.Is(err, skelc.ErrGitHistoryUnavailable):
+				case errors.Is(err, skel.ErrGitHistoryUnavailable):
 					return commandFailure(command.ErrorCodeGitHistoryNotFound,
 						fmt.Errorf("%w; pass an explicit --%s", err, flagSchemaBaselineSkelIn))
-				case errors.Is(err, skelc.ErrSchemaSourceCompilation):
+				case errors.Is(err, skel.ErrSchemaSourceCompilation):
 					return commandFailure(command.ErrorCodeCompilationFailed, err)
 				default:
 					return commandFailure(command.ErrorCodeCommandFailed, err)
@@ -184,7 +184,7 @@ func loadSchemaList(cmd *ucli.Command) (*schemas.Document, error) {
 	if err != nil {
 		return nil, commandFailure(command.ErrorCodeInvalidArgument, err)
 	}
-	result, err := skelc.QuerySchema(skelc.Input{SkelIn: cmd.String(flagSchemaSkelIn), SkelImports: imports, Strict: cmd.Bool(flagStrict)}, skelc.SchemaQueryOption{Api: api, Pub: pub, ApiFilter: selection})
+	result, err := skel.QuerySchema(skel.Input{SkelIn: cmd.String(flagSchemaSkelIn), SkelImports: imports, Strict: cmd.Bool(flagStrict)}, skel.SchemaQueryOption{Api: api, Pub: pub, ApiFilter: selection})
 	if err != nil {
 		return nil, generationCommandFailure(err)
 	}
@@ -244,7 +244,7 @@ func filterSchemaEntries(entries []*schemas.Entry, kind string) []*schemas.Entry
 }
 
 func loadQuerySchema(cmd *ucli.Command) (*schemas.Document, error) {
-	result, err := skelc.QuerySchema(skelc.Input{SkelIn: cmd.String(flagSchemaSkelIn), Strict: cmd.Bool(flagStrict)}, skelc.SchemaQueryOption{})
+	result, err := skel.QuerySchema(skel.Input{SkelIn: cmd.String(flagSchemaSkelIn), Strict: cmd.Bool(flagStrict)}, skel.SchemaQueryOption{})
 	if err != nil {
 		return nil, generationCommandFailure(err)
 	}
@@ -256,7 +256,7 @@ func loadSourceSchema(cmd *ucli.Command, flagName, skelIn string) (*schemas.Docu
 	if strings.TrimSpace(skelIn) == "" {
 		return nil, commandFailure(command.ErrorCodeInvalidArgument, fmt.Errorf("missing flag %s", flagName))
 	}
-	result, err := skelc.QuerySchema(skelc.Input{SkelIn: skelIn, Strict: cmd.Bool(flagStrict)}, skelc.SchemaQueryOption{})
+	result, err := skel.QuerySchema(skel.Input{SkelIn: skelIn, Strict: cmd.Bool(flagStrict)}, skel.SchemaQueryOption{})
 	if err != nil {
 		return nil, generationCommandFailure(err)
 	}

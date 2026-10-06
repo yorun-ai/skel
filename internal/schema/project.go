@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func Project(domain *model.Domain, importAliases map[string]string) (*Document, error) {

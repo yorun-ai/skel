@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestExtensionEventSplitContracts(t *testing.T) {
@@ -21,12 +21,12 @@ pub event AuditStoredEvent { payload {} }
 event PrivateEvent { payload {} }
 `)
 	skelOut := filepath.Join(root, "skel")
-	if _, err := skelc.CompileSkeleton(skelc.Input{SkelIn: input, Strict: true}, skelc.SkeletonOption{Out: skelOut, PubOnly: true}); err != nil {
+	if _, err := skel.CompileSkeleton(skel.Input{SkelIn: input, Strict: true}, skel.SkeletonOption{Out: skelOut, PubOnly: true}); err != nil {
 		t.Fatal(err)
 	}
 	pub := filepath.Join(root, "auditpub")
 	regular := filepath.Join(root, "audit")
-	if _, err := skelc.CompileGolang(skelc.Input{SkelIn: input, Strict: true}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: regular, Module: "example.com/audit", PubOut: pub, PubModule: "example.com/auditpub", AsModule: true}); err != nil {
+	if _, err := skel.CompileGolang(skel.Input{SkelIn: input, Strict: true}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: regular, Module: "example.com/audit", PubOut: pub, PubModule: "example.com/auditpub", AsModule: true}); err != nil {
 		t.Fatal(err)
 	}
 	read := func(directory string, name string) string {
@@ -94,7 +94,7 @@ func TestExtensionContract(t *testing.T) {
 	testutil.Go(t, regular, "test", "-mod=mod", "./...")
 	for _, pubOnly := range []bool{false, true} {
 		out := filepath.Join(t.TempDir(), "standalone")
-		if _, err := skelc.CompileGolang(skelc.Input{SkelIn: skelOut, Strict: true}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auditpub", AsModule: true, PubOnly: pubOnly}); err != nil {
+		if _, err := skel.CompileGolang(skel.Input{SkelIn: skelOut, Strict: true}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auditpub", AsModule: true, PubOnly: pubOnly}); err != nil {
 			t.Fatal(err)
 		}
 		code := read(out, "event.go")

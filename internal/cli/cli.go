@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	ucli "github.com/urfave/cli/v3"
-	commandresult "go.yorun.ai/skelc/internal/command"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/util/logutil"
+	commandresult "go.yorun.ai/skel/internal/command"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/util/logutil"
 )
 
 type Result struct {

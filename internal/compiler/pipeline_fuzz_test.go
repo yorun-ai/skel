@@ -2,9 +2,9 @@ package compiler_test
 
 import (
 	"fmt"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/formatter"
-	"go.yorun.ai/skelc/internal/parser"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/formatter"
+	"go.yorun.ai/skel/internal/parser"
 	"strings"
 	"testing"
 )

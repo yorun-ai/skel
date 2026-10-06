@@ -1,16 +1,16 @@
-package skelc
+package skel
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/optionvalidation"
-	internalschema "go.yorun.ai/skelc/internal/schema"
-	"go.yorun.ai/skelc/internal/schema/sourcediff"
-	"go.yorun.ai/skelc/schema"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/optionvalidation"
+	internalschema "go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/internal/schema/sourcediff"
+	"go.yorun.ai/skel/schema"
 )
 
 // ApiTypeDependency identifies an external data or enum required by an API view.

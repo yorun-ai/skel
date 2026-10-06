@@ -3,8 +3,8 @@ package common
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/util/webpath"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/util/webpath"
 )
 
 // ValidateDomain rejects malformed programmatically constructed models before

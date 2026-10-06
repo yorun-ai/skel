@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/lsp/source"
+	"go.yorun.ai/skel/internal/lsp/source"
 )
 
 func indexIncompleteDocument(document *Document, tokens []source.Token) {

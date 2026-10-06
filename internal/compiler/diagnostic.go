@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/analyzer"
-	"go.yorun.ai/skelc/internal/model"
-	textsource "go.yorun.ai/skelc/internal/source"
-	"go.yorun.ai/skelc/internal/util/checkutil"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/analyzer"
+	"go.yorun.ai/skel/internal/model"
+	textsource "go.yorun.ai/skel/internal/source"
+	"go.yorun.ai/skel/internal/util/checkutil"
 )
 
 const (

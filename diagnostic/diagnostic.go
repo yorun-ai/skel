@@ -1,7 +1,7 @@
 // Package diagnostic defines skelc's public structured diagnostic contract.
 package diagnostic
 
-import "go.yorun.ai/skelc/model"
+import "go.yorun.ai/skel/model"
 
 const (
 	CodeAuthLegacy         = "auth.legacy-marker"

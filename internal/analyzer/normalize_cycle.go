@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/util/graphutil"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/util/graphutil"
 )
 
 func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {

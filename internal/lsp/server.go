@@ -9,8 +9,8 @@ import (
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/lsp/analysis"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/lsp/analysis"
+	"go.yorun.ai/skel/internal/lsp/workspace"
 )
 
 type _Server struct {

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/lsp/analysis"
+	"go.yorun.ai/skel/internal/lsp/analysis"
 )
 
 type _SchemaCompatibilitySettings struct {

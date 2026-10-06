@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/optionvalidation"
 )
 
 func TestBuildPackageJSONPayload(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/lsp/analysis"
+	"go.yorun.ai/skel/internal/lsp/analysis"
 )
 
 const semanticAnalysisDelay = 200 * time.Millisecond

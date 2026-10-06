@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/lsp/features"
+	"go.yorun.ai/skel/internal/lsp/features"
 )
 
 func (s *_Server) featureService() features.Service {

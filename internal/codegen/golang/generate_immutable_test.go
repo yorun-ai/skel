@@ -8,11 +8,11 @@ import (
 	"sync"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/codegen/golang"
-	"go.yorun.ai/skelc/internal/codegen/typescript"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/codegen/golang"
+	"go.yorun.ai/skel/internal/codegen/typescript"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestGenerationReusesSemanticModelAcrossTargetsAndGoroutines(t *testing.T) {

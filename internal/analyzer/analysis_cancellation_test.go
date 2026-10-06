@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/parser"
+	"go.yorun.ai/skel/internal/parser"
 )
 
 type cancellationContext struct {

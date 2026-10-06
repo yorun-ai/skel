@@ -4,8 +4,8 @@ import (
 	"cmp"
 	"slices"
 
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/schema"
 )
 
 // ApiTypeDependency identifies a foreign declaration, not a generic instantiation.

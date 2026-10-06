@@ -5,8 +5,8 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	lspdiagnostic "go.yorun.ai/skelc/internal/lsp/diagnostic"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
+	lspdiagnostic "go.yorun.ai/skel/internal/lsp/diagnostic"
+	"go.yorun.ai/skel/internal/lsp/workspace"
 )
 
 func (s *_Server) publishDiagnostics(ctx context.Context, documentURI uri.URI) {

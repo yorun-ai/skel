@@ -1,8 +1,8 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/util/sliceutil"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/util/sliceutil"
 	"maps"
 	"slices"
 	"sort"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
+	"go.yorun.ai/skel/internal/codegen/common"
 )
 
 func goDocLines(name string, description string) []string {

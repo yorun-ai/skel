@@ -1,4 +1,4 @@
-module go.yorun.ai/skelc
+module go.yorun.ai/skel
 
 go 1.27.0
 

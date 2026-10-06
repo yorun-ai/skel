@@ -11,5 +11,5 @@
 //
 // Model values retain the resolved references and compiler state needed by
 // custom generators. For a normalized, versioned compatibility representation
-// derived from this model, use go.yorun.ai/skelc/schema.
+// derived from this model, use go.yorun.ai/skel/schema.
 package model

@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/lsp/features"
-	"go.yorun.ai/skelc/internal/schema"
-	"go.yorun.ai/skelc/internal/testutil"
+	"go.yorun.ai/skel/internal/lsp/features"
+	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestSchemaCompatibilityCodeLensAndCommandUseInMemoryDocument(t *testing.T) {

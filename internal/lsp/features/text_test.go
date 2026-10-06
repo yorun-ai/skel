@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	lsource "go.yorun.ai/skelc/internal/lsp/source"
+	lsource "go.yorun.ai/skel/internal/lsp/source"
 )
 
 func TestAuthModeCompletions(t *testing.T) {

@@ -3,8 +3,8 @@ package vineschema
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
-	contractschema "go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skel/internal/codegen/golang/view"
+	contractschema "go.yorun.ai/skel/internal/schema"
 )
 
 func (g *_Gen) buildDomainSchema() (*_DomainSchema, error) {

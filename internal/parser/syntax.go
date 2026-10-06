@@ -8,8 +8,8 @@ import (
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 var sourceParser = participle.MustBuild[grammar.SkelContent](grammar.Options...)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func projectRequirement(value *model.PermissionRequire) *Requirement {

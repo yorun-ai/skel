@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/binding"
+	"go.yorun.ai/skel/internal/lsp/workspace"
 )
 
 var completionKeywords = []string{

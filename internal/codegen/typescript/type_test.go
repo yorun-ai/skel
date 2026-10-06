@@ -3,8 +3,8 @@ package typescript
 import (
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestCastTypeMapsBinaryToUint8Array(t *testing.T) {

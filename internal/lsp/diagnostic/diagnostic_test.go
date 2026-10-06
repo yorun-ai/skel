@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	skeldiagnostic "go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/lsp/source"
-	"go.yorun.ai/skelc/internal/model"
+	skeldiagnostic "go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/lsp/source"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestToProtocolConvertsUTF16RangeAndRelatedInformation(t *testing.T) {

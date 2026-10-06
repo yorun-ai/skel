@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/lsp/analysis"
+	"go.yorun.ai/skel/internal/lsp/analysis"
 )
 
 type slowDiagnosticClient struct {

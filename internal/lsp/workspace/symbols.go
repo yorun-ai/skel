@@ -5,9 +5,9 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/lsp/source"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/binding"
+	"go.yorun.ai/skel/internal/lsp/source"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 func entryDefinition(entry *grammar.SkelEntry) (string, lexer.Position, protocol.SymbolKind, string) {

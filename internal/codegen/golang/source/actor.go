@@ -1,6 +1,6 @@
 package source
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 const actorGoFilename = "actor.go"
 

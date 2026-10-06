@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/golang"
-	"go.yorun.ai/skelc/internal/compiler"
+	"go.yorun.ai/skel/internal/codegen/golang"
+	"go.yorun.ai/skel/internal/compiler"
 )
 
 func TestGenerateSensitiveTaskInputEndToEnd(t *testing.T) {

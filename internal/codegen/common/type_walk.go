@@ -1,6 +1,6 @@
 package common
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 // TypeVisitor observes one type during a pre-order walk. Returning an error
 // stops the walk immediately.

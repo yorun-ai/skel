@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/schema"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/schema"
 )
 
 func TestCompileAuthModes(t *testing.T) {

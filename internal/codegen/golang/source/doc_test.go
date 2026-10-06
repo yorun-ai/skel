@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/codegen/golang/view"
 )
 
 func TestBuildDocGoPayloadUsesDomainDescription(t *testing.T) {

@@ -1,10 +1,10 @@
-package skelc
+package skel
 
 import (
 	"context"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/compiler"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/compiler"
 )
 
 // CheckOption selects filesystem or frozen sources; imports stay unresolved.

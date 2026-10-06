@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/command"
+	"go.yorun.ai/skel/internal/command"
 )
 
 func TestRunSkelcStrictFormatPreservesLegacySource(t *testing.T) {

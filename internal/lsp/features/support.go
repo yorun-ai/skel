@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/lsp/source"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/lsp/source"
+	"go.yorun.ai/skel/internal/lsp/workspace"
 )
 
 func utf16Length(value string) int {

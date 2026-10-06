@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/alecthomas/participle/v2"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 func TestPermissionRequireSupportsNestedExpressions(t *testing.T) {

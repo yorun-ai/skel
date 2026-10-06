@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"go.yorun.ai/skelc/internal/formatter"
+	"go.yorun.ai/skel/internal/formatter"
 )
 
 //go:embed tpl/*.skel.tpl

@@ -6,7 +6,7 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/compiler"
+	"go.yorun.ai/skel/internal/compiler"
 )
 
 // CommandShowSchemaCompatibility is the client command used by schema

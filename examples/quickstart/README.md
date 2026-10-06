@@ -14,4 +14,4 @@ Generated files are written to `examples/quickstart/generated` by default and ar
 ./examples/quickstart/generate.sh /tmp/skelc-quickstart
 ```
 
-The generated Go module targets `skelc.DefaultGolangVineVersion`. Compiling it requires that version of `go.yorun.ai/vine` to be published. The generated TypeScript package likewise expects the declared `@yorun-ai/vrpc` dependency to be available from the configured npm registry.
+The generated Go module targets `skel.DefaultGolangVineVersion`. Compiling it requires that version of `go.yorun.ai/vine` to be published. The generated TypeScript package likewise expects the declared `@yorun-ai/vrpc` dependency to be available from the configured npm registry.

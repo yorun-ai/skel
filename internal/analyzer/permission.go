@@ -1,9 +1,9 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser/grammar"
-	"go.yorun.ai/skelc/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/util/nameutil"
 )
 
 func parseRequire(reporter *_DiagnosticReporter, gr *grammar.Require) (*model.PermissionRequire, bool) {

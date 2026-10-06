@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
-	"go.yorun.ai/skelc/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/optionvalidation"
 	gomodule "golang.org/x/mod/module"
 )
 

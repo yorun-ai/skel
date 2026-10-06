@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"text/template"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/model"
 )
 
 type _Gen struct {

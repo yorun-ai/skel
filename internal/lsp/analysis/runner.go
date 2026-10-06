@@ -7,9 +7,9 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
-	"go.yorun.ai/skelc/internal/schema/sourcediff"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/schema/sourcediff"
 )
 
 // Result is the semantic diagnostics produced for one workspace revision.

@@ -2,7 +2,7 @@ package features
 
 import (
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skelc/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/lsp/workspace"
 )
 
 type testFixture struct {

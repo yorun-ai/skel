@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/parser/grammar"
-	"go.yorun.ai/skelc/internal/source"
+	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/source"
 )
 
 // Build indexes only recovered declarations and grammar references. Source

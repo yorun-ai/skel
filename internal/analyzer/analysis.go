@@ -2,8 +2,8 @@ package analyzer
 
 import (
 	"context"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 type Analysis struct {

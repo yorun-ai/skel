@@ -6,7 +6,7 @@ package binding
 import (
 	"strings"
 
-	"go.yorun.ai/skelc/internal/source"
+	"go.yorun.ai/skel/internal/source"
 )
 
 type Kind uint8

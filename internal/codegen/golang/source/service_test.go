@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/golang/view"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/codegen/golang/view"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestBuildServiceNames(t *testing.T) {

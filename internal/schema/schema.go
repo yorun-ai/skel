@@ -2,7 +2,7 @@
 // validation, and compatibility diffing without compiling or loading inputs.
 package schema
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 const (
 	// Format identifies schema snapshot JSON produced by skelc.

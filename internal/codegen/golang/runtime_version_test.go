@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/optionvalidation"
 )
 
 func TestResolveOptionSelectsRuntime(t *testing.T) {

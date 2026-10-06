@@ -3,7 +3,7 @@ package formatter
 import (
 	"strings"
 
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 type _TopLineKind uint8

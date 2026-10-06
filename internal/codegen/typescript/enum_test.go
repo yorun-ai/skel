@@ -3,7 +3,7 @@ package typescript
 import (
 	"testing"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestCastEnum(t *testing.T) {

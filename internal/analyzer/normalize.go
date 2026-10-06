@@ -5,9 +5,9 @@ import (
 	"maps"
 	"slices"
 
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/util/nameutil"
-	"go.yorun.ai/skelc/internal/util/sliceutil"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/internal/util/sliceutil"
 )
 
 func (p *Analysis) normalizeWithMissingImports(allowMissingImports bool) {

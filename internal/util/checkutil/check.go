@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 const CodeValidation = "validation"

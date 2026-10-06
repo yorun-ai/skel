@@ -3,8 +3,8 @@ package compiler
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/model"
 )
 
 // MigrationDiagnostics reports declarations accepted only for compatibility.

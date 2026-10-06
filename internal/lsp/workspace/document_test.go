@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	lspsource "go.yorun.ai/skelc/internal/lsp/source"
-	"go.yorun.ai/skelc/internal/schema"
+	lspsource "go.yorun.ai/skel/internal/lsp/source"
+	"go.yorun.ai/skel/internal/schema"
 )
 
 func TestIndexDocumentDefinitionsAndReferences(t *testing.T) {

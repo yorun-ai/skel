@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/parser/grammar"
-	"go.yorun.ai/skelc/internal/util/checkutil"
+	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/util/checkutil"
 )
 
 func TestDiagnosticReporterDoesNotUsePanicControlFlow(t *testing.T) {

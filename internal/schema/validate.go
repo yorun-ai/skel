@@ -3,7 +3,7 @@ package schema
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/util/webpath"
+	"go.yorun.ai/skel/internal/util/webpath"
 )
 
 // Validate checks a schema snapshot's format version and normalized structure.

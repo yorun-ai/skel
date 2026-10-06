@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/parser"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/loader"
+	"go.yorun.ai/skel/internal/parser"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 func parseContentContext(ctx context.Context, sourceFile *loader.SourceFile) (*grammar.SkelContent, error) {

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
+	"go.yorun.ai/skel/internal/codegen/common"
 )
 
 type countingReader struct {

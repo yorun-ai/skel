@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc"
+	"go.yorun.ai/skel"
 )
 
 func TestSchemaDepAndPruneFlags(t *testing.T) {
@@ -24,7 +24,7 @@ api service ReadApiService { for UserActor via client auth anonymous method read
 	base := []string{"schema", "dep", "--api", "--skel-in", source}
 	// Repeated names select a union without selecting any services.
 	result := Run(append(append([]string{}, base...), "--prune", "--name", "demo.Status", "--name", "demo.Unused"))
-	var report skelc.ApiDependencyReport
+	var report skel.ApiDependencyReport
 	if result.ExitCode != 0 || json.Unmarshal([]byte(result.Stdout), &report) != nil {
 		t.Fatalf("%+v", result)
 	}
@@ -35,7 +35,7 @@ api service ReadApiService { for UserActor via client auth anonymous method read
 	assertCommandErrorMessage(t, Run(append(append([]string{}, base...), "--prune", "--type", "demo.Status")), "flag provided but not defined: -type")
 	for _, extra := range [][]string{nil, {"--prune", "--actor", "demo.UserActor"}, {"--prune", "--name", "demo.Status"}, {"--prune", "--actor", "demo.UserActor", "--name", "demo.Unused"}} {
 		result := Run(append(append([]string{}, base...), extra...))
-		var report skelc.ApiDependencyReport
+		var report skel.ApiDependencyReport
 		if result.ExitCode != 0 || json.Unmarshal([]byte(result.Stdout), &report) != nil {
 			t.Fatalf("%+v", result)
 		}
@@ -103,7 +103,7 @@ api service ReadApiService { for s.CallerActor via client auth anonymous method 
 			args = append(args, mode)
 		}
 		result := Run(args)
-		var report skelc.SchemaDependencyReport
+		var report skel.SchemaDependencyReport
 		if result.ExitCode != 0 || json.Unmarshal([]byte(result.Stdout), &report) != nil {
 			t.Fatalf("%s: %+v", mode, result)
 		}
@@ -117,9 +117,9 @@ api service ReadApiService { for s.CallerActor via client auth anonymous method 
 		if !slices.Equal(report.Data, wantData) {
 			t.Fatalf("%s: %+v", mode, report)
 		}
-		want := []skelc.SchemaDeclarationDependency{{Domain: "shared", Name: "Box", Kind: "data"}, {Domain: "shared", Name: "State", Kind: "enum"}}
+		want := []skel.SchemaDeclarationDependency{{Domain: "shared", Name: "Box", Kind: "data"}, {Domain: "shared", Name: "State", Kind: "enum"}}
 		if mode != "--api" {
-			want = []skelc.SchemaDeclarationDependency{{Domain: "shared", Name: "Box", Kind: "data"}, {Domain: "shared", Name: "CallerActor", Kind: "actor"}, {Domain: "shared", Name: "Record", Kind: "resource"}, {Domain: "shared", Name: "State", Kind: "enum"}}
+			want = []skel.SchemaDeclarationDependency{{Domain: "shared", Name: "Box", Kind: "data"}, {Domain: "shared", Name: "CallerActor", Kind: "actor"}, {Domain: "shared", Name: "Record", Kind: "resource"}, {Domain: "shared", Name: "State", Kind: "enum"}}
 		}
 		if !reflect.DeepEqual(report.Dependencies, want) {
 			t.Fatalf("%s: deps=%+v", mode, report.Dependencies)
@@ -163,7 +163,7 @@ func TestSchemaDepEmptyAndStrict(t *testing.T) {
 			args = append(args, mode)
 		}
 		result := Run(args)
-		var report skelc.SchemaDependencyReport
+		var report skel.SchemaDependencyReport
 		if result.ExitCode != 0 || json.Unmarshal([]byte(result.Stdout), &report) != nil || report.Domain != "empty" || strings.Contains(result.Stdout, "null") {
 			t.Fatalf("%s: %+v", mode, result)
 		}
@@ -209,17 +209,17 @@ api service ReadApiService { for UserActor via client auth anonymous method read
 	cases := []struct {
 		name      string
 		flags     []string
-		selection skelc.ApiFilter
+		selection skel.ApiFilter
 	}{
 		{name: "complete API"},
-		{name: "filtered API", flags: []string{"--actor", "demo.UserActor"}, selection: skelc.ApiFilter{Actors: []string{"demo.UserActor"}}},
-		{name: "pruned service", flags: []string{"--prune", "--actor", "demo.UserActor"}, selection: skelc.ApiFilter{Prune: true, Actors: []string{"demo.UserActor"}}},
-		{name: "type only", flags: []string{"--prune", "--name", "demo.Unused"}, selection: skelc.ApiFilter{Prune: true, Types: []string{"demo.Unused"}}},
-		{name: "empty", flags: []string{"--prune", "--actor", "demo.IdleActor"}, selection: skelc.ApiFilter{Prune: true, Actors: []string{"demo.IdleActor"}}},
+		{name: "filtered API", flags: []string{"--actor", "demo.UserActor"}, selection: skel.ApiFilter{Actors: []string{"demo.UserActor"}}},
+		{name: "pruned service", flags: []string{"--prune", "--actor", "demo.UserActor"}, selection: skel.ApiFilter{Prune: true, Actors: []string{"demo.UserActor"}}},
+		{name: "type only", flags: []string{"--prune", "--name", "demo.Unused"}, selection: skel.ApiFilter{Prune: true, Types: []string{"demo.Unused"}}},
+		{name: "empty", flags: []string{"--prune", "--actor", "demo.IdleActor"}, selection: skel.ApiFilter{Prune: true, Actors: []string{"demo.IdleActor"}}},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			legacy, err := skelc.QueryApiDependencies(skelc.Input{SkelIn: source}, test.selection)
+			legacy, err := skel.QueryApiDependencies(skel.Input{SkelIn: source}, test.selection)
 			if err != nil {
 				t.Fatal(err)
 			}

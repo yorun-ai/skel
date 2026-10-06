@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skelc/internal/formatter"
+	"go.yorun.ai/skel/internal/formatter"
 )
 
 func (s *Service) Formatting(_ context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {

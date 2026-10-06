@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func renderScalarLiteral(scalar _Scalar) string {

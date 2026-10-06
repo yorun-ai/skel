@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	textsource "go.yorun.ai/skelc/internal/source"
+	textsource "go.yorun.ai/skel/internal/source"
 )
 
 func TestWorkspaceCachesFailuresAndInvalidatesReverseDependencies(t *testing.T) {

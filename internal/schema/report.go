@@ -1,6 +1,6 @@
 package schema
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 // ImpactLevel classifies a schema change's compatibility impact.
 type ImpactLevel string

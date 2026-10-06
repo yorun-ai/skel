@@ -3,8 +3,8 @@ package golang
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/optionvalidation"
 	"golang.org/x/mod/modfile"
 	gomodule "golang.org/x/mod/module"
 )

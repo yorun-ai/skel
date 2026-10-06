@@ -3,7 +3,7 @@ package workspace
 import (
 	"fmt"
 
-	"go.yorun.ai/skelc/internal/binding"
+	"go.yorun.ai/skel/internal/binding"
 )
 
 // ValidateRename resolves the affected workspace against a hypothetical symbol

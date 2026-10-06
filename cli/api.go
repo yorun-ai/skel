@@ -1,6 +1,6 @@
 package cli
 
-import internalcommand "go.yorun.ai/skelc/internal/command"
+import internalcommand "go.yorun.ai/skel/internal/command"
 
 const (
 	// ExitCodeSuccess identifies a completed result that satisfies the command.

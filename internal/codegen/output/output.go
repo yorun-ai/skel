@@ -12,8 +12,8 @@ import (
 	"slices"
 	"strings"
 
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/util/fileutil"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/util/fileutil"
 )
 
 const (

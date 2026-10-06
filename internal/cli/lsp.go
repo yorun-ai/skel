@@ -5,7 +5,7 @@ import (
 	"io"
 
 	ucli "github.com/urfave/cli/v3"
-	"go.yorun.ai/skelc/internal/lsp"
+	"go.yorun.ai/skel/internal/lsp"
 )
 
 var serveLSP = lsp.Serve

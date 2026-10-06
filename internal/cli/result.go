@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	ucli "github.com/urfave/cli/v3"
-	"go.yorun.ai/skelc/internal/command"
-	"go.yorun.ai/skelc/internal/compiler"
+	"go.yorun.ai/skel/internal/command"
+	"go.yorun.ai/skel/internal/compiler"
 )
 
 func writeJSONResult(cmd *ucli.Command, value any, context string) error {

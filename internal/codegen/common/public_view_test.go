@@ -3,7 +3,7 @@ package common
 import (
 	"testing"
 
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/model"
 )
 
 func TestBuildFiltersAndValidatesOneSharedPublicProjection(t *testing.T) {

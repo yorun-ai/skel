@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/analyzer"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/analyzer"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 func newHashTestDomain(t *testing.T, serviceDescription string) *model.Domain {

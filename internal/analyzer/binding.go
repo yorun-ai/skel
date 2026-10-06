@@ -1,8 +1,8 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skelc/internal/binding"
-	"go.yorun.ai/skelc/internal/model"
+	"go.yorun.ai/skel/internal/binding"
+	"go.yorun.ai/skel/internal/model"
 )
 
 // The analyzer supplies its declaration tables to the same resolver used by

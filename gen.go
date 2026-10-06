@@ -1,4 +1,4 @@
-package skelc
+package skel
 
 import (
 	"context"
@@ -7,15 +7,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/codegen/golang"
-	"go.yorun.ai/skelc/internal/codegen/output"
-	"go.yorun.ai/skelc/internal/codegen/skeleton"
-	"go.yorun.ai/skelc/internal/codegen/typescript"
-	"go.yorun.ai/skelc/internal/optionvalidation"
-	"go.yorun.ai/skelc/internal/util/nameutil"
-	"go.yorun.ai/skelc/model"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/codegen/golang"
+	"go.yorun.ai/skel/internal/codegen/output"
+	"go.yorun.ai/skel/internal/codegen/skeleton"
+	"go.yorun.ai/skel/internal/codegen/typescript"
+	"go.yorun.ai/skel/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/model"
 )
 
 // MinimumGolangVineVersion is the minimum Vine module version supported by

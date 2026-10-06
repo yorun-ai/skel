@@ -1,6 +1,6 @@
 package analyzer
 
-import "go.yorun.ai/skelc/internal/parser/grammar"
+import "go.yorun.ai/skel/internal/parser/grammar"
 
 func (p *Analysis) load() bool {
 	if !p.reporter.checkNot(p.content == nil || p.content.Domain == nil || p.content.Domain.Name == nil || p.content.Domain.Name.String() == "",

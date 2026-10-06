@@ -1,12 +1,12 @@
-package skelc
+package skel
 
 import (
 	"cmp"
 	"context"
 	"slices"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/command"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/command"
 )
 
 // ScanOption configures source inspection without resolving imported domains.

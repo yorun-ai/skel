@@ -50,7 +50,7 @@ jobs:
           echo "RELEASE_DIST=$RELEASE_DIST" >> "$GITHUB_ENV"
           version="${RELEASE_TAG#v}"
           revision="$(git rev-parse HEAD)"
-          ldflags="-s -w -X go.yorun.ai/skelc/internal/cli.ldModuleVersion=$RELEASE_TAG"
+          ldflags="-s -w -X go.yorun.ai/skel/internal/cli.ldModuleVersion=$RELEASE_TAG"
           mkdir -p "$RELEASE_DIST"
 
           for target in \
@@ -75,7 +75,7 @@ jobs:
                 -o "$stage/skelc" ./cmd/skelc
             go version -m "$stage/skelc" | tee "$RUNNER_TEMP/skelc-build-info.txt"
             awk -v version="$RELEASE_TAG" -v revision="$revision" '
-              $1 == "mod" && $2 == "go.yorun.ai/skelc" && $3 == version { module_ok = 1 }
+              $1 == "mod" && $2 == "go.yorun.ai/skel" && $3 == version { module_ok = 1 }
               $1 == "build" && $2 == "vcs.revision=" revision { revision_ok = 1 }
               $1 == "build" && $2 == "vcs.modified=false" { clean = 1 }
               END { exit !(module_ok && revision_ok && clean) }

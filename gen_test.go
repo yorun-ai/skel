@@ -1,4 +1,4 @@
-package skelc_test
+package skel_test
 
 import (
 	"encoding/json"
@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/internal/testutil"
-	"go.yorun.ai/skelc/model"
+	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/internal/testutil"
+	"go.yorun.ai/skel/model"
 	"golang.org/x/mod/modfile"
 )
 
@@ -23,9 +23,9 @@ func TestGenerateGolang(t *testing.T) {
 	goOut := filepath.Join(t.TempDir(), "generated")
 	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
 
-	result, err := skelc.CompileGolang(
-		skelc.Input{SkelIn: skelDir},
-		skelc.GolangOption{Out: goOut, CompilerVersion: "v1.2.3"},
+	result, err := skel.CompileGolang(
+		skel.Input{SkelIn: skelDir},
+		skel.GolangOption{Out: goOut, CompilerVersion: "v1.2.3"},
 	)
 	if err != nil {
 		t.Fatalf("generate Go: %v", err)
@@ -117,7 +117,7 @@ pub data AppItem {
 }
 `)
 
-	input := skelc.Input{SkelIn: appDir, SkelImports: map[string]string{"base": baseDir}}
+	input := skel.Input{SkelIn: appDir, SkelImports: map[string]string{"base": baseDir}}
 	tests := []struct {
 		name     string
 		file     string
@@ -128,7 +128,7 @@ pub data AppItem {
 			name: "Go",
 			file: "data.go",
 			compile: func(out string) error {
-				_, err := skelc.CompileGolang(input, skelc.GolangOption{
+				_, err := skel.CompileGolang(input, skel.GolangOption{
 					CompilerVersion: "v0.0.0-dev",
 					Out:             out,
 					Imports:         map[string]string{"base": "example.com/basepub"},
@@ -141,7 +141,7 @@ pub data AppItem {
 			name: "TypeScript",
 			file: "data.ts",
 			compile: func(out string) error {
-				_, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{ApiOnly: true,
+				_, err := skel.CompileTypeScript(input, skel.TypeScriptOption{ApiOnly: true,
 					Out:     out,
 					Imports: map[string]string{"base": "@example/base"},
 				})
@@ -153,7 +153,7 @@ pub data AppItem {
 			name: "Skel",
 			file: "types.skel",
 			compile: func(out string) error {
-				_, err := skelc.CompileSkeleton(input, skelc.SkeletonOption{
+				_, err := skel.CompileSkeleton(input, skel.SkeletonOption{
 					Out:     out,
 					PubOnly: true,
 				})
@@ -217,15 +217,15 @@ data AppUser {
 `)
 
 	goOut := filepath.Join(t.TempDir(), "generated")
-	_, err := skelc.CompileGolang(
-		skelc.Input{
+	_, err := skel.CompileGolang(
+		skel.Input{
 			SkelIn: appDir,
 			SkelImports: map[string]string{
 				"base": baseDir,
 				"user": userDir,
 			},
 		},
-		skelc.GolangOption{
+		skel.GolangOption{
 			CompilerVersion: "v0.0.0-dev",
 			Out:             goOut,
 			Imports:         map[string]string{"user": "example.com/userpub"},
@@ -252,16 +252,16 @@ func TestGenerateTargetsShareParsedDomain(t *testing.T) {
 	skelDir := t.TempDir()
 	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
 
-	parsed, err := skelc.Parse(skelc.Input{SkelIn: skelDir})
+	parsed, err := skel.Parse(skel.Input{SkelIn: skelDir})
 	if err != nil {
 		t.Fatalf("parse Skel: %v", err)
 	}
 	goOut := filepath.Join(t.TempDir(), "golang")
-	if err := skelc.GenerateGolang(parsed.Domain, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: goOut}); err != nil {
+	if err := skel.GenerateGolang(parsed.Domain, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: goOut}); err != nil {
 		t.Fatalf("generate Go: %v", err)
 	}
 	tsOut := filepath.Join(t.TempDir(), "typescript")
-	if err := skelc.GenerateTypeScript(parsed.Domain, skelc.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
+	if err := skel.GenerateTypeScript(parsed.Domain, skel.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
 		t.Fatalf("generate TypeScript: %v", err)
 	}
 	assertTestFileExists(t, filepath.Join(goOut, "schema.go"))
@@ -274,9 +274,9 @@ func TestGenerateTypeScript(t *testing.T) {
 	tsOut := filepath.Join(t.TempDir(), "generated")
 	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
 
-	_, err := skelc.CompileTypeScript(
-		skelc.Input{SkelIn: skelDir},
-		skelc.TypeScriptOption{ApiOnly: true, Out: tsOut},
+	_, err := skel.CompileTypeScript(
+		skel.Input{SkelIn: skelDir},
+		skel.TypeScriptOption{ApiOnly: true, Out: tsOut},
 	)
 	if err != nil {
 		t.Fatalf("generate TypeScript: %v", err)
@@ -289,16 +289,16 @@ func TestGenerateSkeleton(t *testing.T) {
 	skelOut := filepath.Join(t.TempDir(), "generated")
 	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
 
-	_, err := skelc.CompileSkeleton(
-		skelc.Input{SkelIn: skelDir},
-		skelc.SkeletonOption{Out: skelOut, PubOnly: true},
+	_, err := skel.CompileSkeleton(
+		skel.Input{SkelIn: skelDir},
+		skel.SkeletonOption{Out: skelOut, PubOnly: true},
 	)
 	if err != nil {
 		t.Fatalf("generate Skel: %v", err)
 	}
 	assertTestFileExists(t, filepath.Join(skelOut, "domain.skel"))
 	assertTestFileStartsWithGeneratedMarker(t, filepath.Join(skelOut, "domain.skel"))
-	if _, err := skelc.Parse(skelc.Input{SkelIn: skelOut}); err != nil {
+	if _, err := skel.Parse(skel.Input{SkelIn: skelOut}); err != nil {
 		t.Fatalf("parse generated Skel with ownership marker: %v", err)
 	}
 }
@@ -310,9 +310,9 @@ func TestGenerateGolangReturnsErrorBeforeCleaningOutput(t *testing.T) {
 	oldFile := filepath.Join(goOut, "old.go")
 	writeTestFile(t, oldFile, "old")
 
-	_, err := skelc.CompileGolang(
-		skelc.Input{SkelIn: skelDir},
-		skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: goOut},
+	_, err := skel.CompileGolang(
+		skel.Input{SkelIn: skelDir},
+		skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: goOut},
 	)
 	if err == nil {
 		t.Fatal("expected generation error")
@@ -339,19 +339,19 @@ func TestGeneratorsReturnErrorsForMalformedProgrammaticModels(t *testing.T) {
 		{
 			name: "Go",
 			generate: func() error {
-				return skelc.GenerateGolang(domain, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(t.TempDir(), "generated")})
+				return skel.GenerateGolang(domain, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(t.TempDir(), "generated")})
 			},
 		},
 		{
 			name: "TypeScript",
 			generate: func() error {
-				return skelc.GenerateTypeScript(domain, skelc.TypeScriptOption{ApiOnly: true, Out: t.TempDir()})
+				return skel.GenerateTypeScript(domain, skel.TypeScriptOption{ApiOnly: true, Out: t.TempDir()})
 			},
 		},
 		{
 			name: "Skel",
 			generate: func() error {
-				return skelc.GenerateSkeleton(domain, skelc.SkeletonOption{Out: t.TempDir(), PubOnly: true})
+				return skel.GenerateSkeleton(domain, skel.SkeletonOption{Out: t.TempDir(), PubOnly: true})
 			},
 		},
 	}
@@ -393,13 +393,13 @@ func TestGeneratorsReturnErrorsForMalformedNestedModels(t *testing.T) {
 				generate func() error
 			}{
 				{name: "Go", generate: func() error {
-					return skelc.GenerateGolang(malformed.domain, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(t.TempDir(), "generated")})
+					return skel.GenerateGolang(malformed.domain, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(t.TempDir(), "generated")})
 				}},
 				{name: "TypeScript", generate: func() error {
-					return skelc.GenerateTypeScript(malformed.domain, skelc.TypeScriptOption{ApiOnly: true, Out: t.TempDir()})
+					return skel.GenerateTypeScript(malformed.domain, skel.TypeScriptOption{ApiOnly: true, Out: t.TempDir()})
 				}},
 				{name: "Skel", generate: func() error {
-					return skelc.GenerateSkeleton(malformed.domain, skelc.SkeletonOption{Out: t.TempDir(), PubOnly: true})
+					return skel.GenerateSkeleton(malformed.domain, skel.SkeletonOption{Out: t.TempDir(), PubOnly: true})
 				}},
 			}
 			for _, generator := range generators {
@@ -425,11 +425,11 @@ func TestGeneratorsRejectNilTypeParameter(t *testing.T) {
 			var err error
 			switch target {
 			case "Go":
-				err = skelc.GenerateGolang(domain, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out})
+				err = skel.GenerateGolang(domain, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out})
 			case "TypeScript":
-				err = skelc.GenerateTypeScript(domain, skelc.TypeScriptOption{ApiOnly: true, Out: out})
+				err = skel.GenerateTypeScript(domain, skel.TypeScriptOption{ApiOnly: true, Out: out})
 			case "Skel":
-				err = skelc.GenerateSkeleton(domain, skelc.SkeletonOption{PubOnly: true, Out: out})
+				err = skel.GenerateSkeleton(domain, skel.SkeletonOption{PubOnly: true, Out: out})
 			}
 			if err == nil || !strings.Contains(err.Error(), "nil type parameter") {
 				t.Fatalf("expected invalid model error, got %v", err)
@@ -476,7 +476,7 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 			writeTestFile(t, a, "domain a\n"+imports+tc.source+"\n")
 			writeTestFile(t, b, "domain b\nimport c\npub data Token { id: uuid access: c.Access }\npub data Box<TItem> { items: list<TItem> }\npub actor AgentActor { via client {} }\npub service AccessService { method get { output c.Access } }\n")
 			writeTestFile(t, c, "domain c\npub data Access { id: uuid }\n")
-			input := skelc.Input{SkelIn: a, SkelImports: map[string]string{"b": b, "c": c}}
+			input := skel.Input{SkelIn: a, SkelImports: map[string]string{"b": b, "c": c}}
 			mappings := map[string]string{"b": "example.com/bpub@v1.2.3", "c": "example.com/cpub@v1.3.0", "unused": "example.com/unused@v1.4.0"}
 			dependencyOutputs := map[bool]map[string]string{}
 			for _, api := range []bool{false, true} {
@@ -487,7 +487,7 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 					if name == "b" {
 						dependencyImports["c"] = c
 					}
-					if _, err := skelc.CompileGolang(skelc.Input{SkelIn: entry, SkelImports: dependencyImports}, skelc.GolangOption{
+					if _, err := skel.CompileGolang(skel.Input{SkelIn: entry, SkelImports: dependencyImports}, skel.GolangOption{
 						CompilerVersion: "v0.0.0-dev", PubOnly: !api, ApiOnly: api, AsModule: true, Module: "example.com/" + name + "pub", Out: out, Imports: mappings,
 					}); err != nil {
 						t.Fatal(err)
@@ -498,7 +498,7 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 			for _, mode := range []string{"full", "pub", "api", "split"} {
 				t.Run(mode, func(t *testing.T) {
 					out := filepath.Join(root, mode)
-					opts := skelc.GolangOption{CompilerVersion: "v0.0.0-dev", AsModule: true, Module: "example.com/a", Out: out, Imports: mappings}
+					opts := skel.GolangOption{CompilerVersion: "v0.0.0-dev", AsModule: true, Module: "example.com/a", Out: out, Imports: mappings}
 					want := tc.full
 					switch mode {
 					case "pub":
@@ -512,7 +512,7 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 						opts.PubModule = "example.com/apub"
 						want = tc.regular
 					}
-					if _, err := skelc.CompileGolang(input, opts); err != nil {
+					if _, err := skel.CompileGolang(input, opts); err != nil {
 						t.Fatal(err)
 					}
 					assertGeneratedDomainRequires(t, out, want)
@@ -548,7 +548,7 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 				})
 			}
 			tsOut := filepath.Join(root, "ts")
-			if _, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{ApiOnly: true, AsModule: true, Module: "@example/a", Out: tsOut, Imports: map[string]string{"b": "@example/b@1.2.3", "c": "@example/c@1.3.0", "unused": "@example/unused@1.4.0"}}); err != nil {
+			if _, err := skel.CompileTypeScript(input, skel.TypeScriptOption{ApiOnly: true, AsModule: true, Module: "@example/a", Out: tsOut, Imports: map[string]string{"b": "@example/b@1.2.3", "c": "@example/c@1.3.0", "unused": "@example/unused@1.4.0"}}); err != nil {
 				t.Fatal(err)
 			}
 			manifest, err := os.ReadFile(filepath.Join(tsOut, "package.json"))
@@ -632,7 +632,7 @@ func TestCompileGolangIncludesUsedPrefixDerivedDependencies(t *testing.T) {
 			writeTestFile(t, a, "domain a\nimport b\npub data Payload { token: b.Token }\n")
 			writeTestFile(t, b, "domain b\npub data Token { id: string }\n")
 			out := filepath.Join(root, "out")
-			if _, err := skelc.CompileGolang(skelc.Input{SkelIn: a, SkelImports: map[string]string{"b": b}}, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: api, AsModule: true, ModulePrefix: "example.com/gen", Out: out}); err != nil {
+			if _, err := skel.CompileGolang(skel.Input{SkelIn: a, SkelImports: map[string]string{"b": b}}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: api, AsModule: true, ModulePrefix: "example.com/gen", Out: out}); err != nil {
 				t.Fatal(err)
 			}
 			content, err := os.ReadFile(filepath.Join(out, "go.mod"))
@@ -668,7 +668,7 @@ func TestCompileGolangDependencyConflictCompatibility(t *testing.T) {
 				sentinel := filepath.Join(out, "sentinel.go")
 				original := "// Code generated by skelc. DO NOT EDIT.\npackage sentinel\n"
 				writeTestFile(t, sentinel, original)
-				_, err := skelc.CompileGolang(skelc.Input{SkelIn: a, SkelImports: map[string]string{"first": first, "second": second}}, skelc.GolangOption{
+				_, err := skel.CompileGolang(skel.Input{SkelIn: a, SkelImports: map[string]string{"first": first, "second": second}}, skel.GolangOption{
 					CompilerVersion: "v0.0.0-dev", ApiOnly: api, AsModule: true, Module: "example.com/a", Out: out,
 					Imports: map[string]string{"first": "example.com/shared@v1.0.0", "second": "example.com/shared@v1.1.0"},
 				})
@@ -698,17 +698,17 @@ func TestCompileGolangDependencyConflictCompatibility(t *testing.T) {
 }
 
 func TestPublicOptionsRejectEmptyImportMappings(t *testing.T) {
-	if _, err := skelc.Parse(skelc.Input{SkelIn: "input.skel", SkelImports: map[string]string{"demo.user": ""}}); err == nil {
+	if _, err := skel.Parse(skel.Input{SkelIn: "input.skel", SkelImports: map[string]string{"demo.user": ""}}); err == nil {
 		t.Fatal("expected empty Skel import path error")
 	}
 	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo.test"})
-	if err := skelc.GenerateGolang(domain, skelc.GolangOption{
+	if err := skel.GenerateGolang(domain, skel.GolangOption{
 		CompilerVersion: "v0.0.0-dev",
 		Out:             filepath.Join(t.TempDir(), "golang"), Imports: map[string]string{"demo.user": ""},
 	}); err == nil {
 		t.Fatal("expected empty Go import path error")
 	}
-	if err := skelc.GenerateTypeScript(domain, skelc.TypeScriptOption{ApiOnly: true,
+	if err := skel.GenerateTypeScript(domain, skel.TypeScriptOption{ApiOnly: true,
 		Out: filepath.Join(t.TempDir(), "typescript"), Imports: map[string]string{"demo.user": ""},
 	}); err == nil {
 		t.Fatal("expected empty TypeScript import path error")
@@ -716,7 +716,7 @@ func TestPublicOptionsRejectEmptyImportMappings(t *testing.T) {
 }
 
 func TestCompileNormalizesGenerationOptionsBeforeReadingInput(t *testing.T) {
-	missingInput := skelc.Input{SkelIn: filepath.Join(t.TempDir(), "missing")}
+	missingInput := skel.Input{SkelIn: filepath.Join(t.TempDir(), "missing")}
 	tests := []struct {
 		name     string
 		compile  func() error
@@ -725,7 +725,7 @@ func TestCompileNormalizesGenerationOptionsBeforeReadingInput(t *testing.T) {
 		{
 			name: "Go",
 			compile: func() error {
-				_, err := skelc.CompileGolang(missingInput, skelc.GolangOption{CompilerVersion: "v0.0.0-dev"})
+				_, err := skel.CompileGolang(missingInput, skel.GolangOption{CompilerVersion: "v0.0.0-dev"})
 				return err
 			},
 			expected: "Go output is required",
@@ -733,7 +733,7 @@ func TestCompileNormalizesGenerationOptionsBeforeReadingInput(t *testing.T) {
 		{
 			name: "TypeScript",
 			compile: func() error {
-				_, err := skelc.CompileTypeScript(missingInput, skelc.TypeScriptOption{ApiOnly: true})
+				_, err := skel.CompileTypeScript(missingInput, skel.TypeScriptOption{ApiOnly: true})
 				return err
 			},
 			expected: "TypeScript output is required",
@@ -741,7 +741,7 @@ func TestCompileNormalizesGenerationOptionsBeforeReadingInput(t *testing.T) {
 		{
 			name: "Skel",
 			compile: func() error {
-				_, err := skelc.CompileSkeleton(missingInput, skelc.SkeletonOption{})
+				_, err := skel.CompileSkeleton(missingInput, skel.SkeletonOption{})
 				return err
 			},
 			expected: "Skel output is required",
@@ -764,7 +764,7 @@ func TestGeneratorsReturnErrorsForMissingExternalImportMappings(t *testing.T) {
 	writeTestFile(t, filepath.Join(orderDir, "domain.skel"), "domain demo.order")
 	writeTestFile(t, filepath.Join(orderDir, "order.skel"), "domain demo.order\nimport demo.user as user\npub data Order { user: user.User }")
 
-	parsed, err := skelc.Parse(skelc.Input{
+	parsed, err := skel.Parse(skel.Input{
 		SkelIn:      orderDir,
 		SkelImports: map[string]string{"demo.user": userDir},
 	})
@@ -772,11 +772,11 @@ func TestGeneratorsReturnErrorsForMissingExternalImportMappings(t *testing.T) {
 		t.Fatalf("parse imported domain: %v", err)
 	}
 
-	goErr := skelc.GenerateGolang(parsed.Domain, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(t.TempDir(), "golang")})
+	goErr := skel.GenerateGolang(parsed.Domain, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(t.TempDir(), "golang")})
 	if goErr == nil || !strings.Contains(goErr.Error(), "missing Go import for domain demo.user") {
 		t.Fatalf("expected missing Go import error, got %v", goErr)
 	}
-	tsErr := skelc.GenerateTypeScript(parsed.Domain, skelc.TypeScriptOption{ApiOnly: true, Out: filepath.Join(t.TempDir(), "typescript")})
+	tsErr := skel.GenerateTypeScript(parsed.Domain, skel.TypeScriptOption{ApiOnly: true, Out: filepath.Join(t.TempDir(), "typescript")})
 	if tsErr == nil || !strings.Contains(tsErr.Error(), "missing TypeScript import for domain demo.user") {
 		t.Fatalf("expected missing TypeScript import error, got %v", tsErr)
 	}
@@ -799,16 +799,16 @@ func TestBackendGenerationRejectsInvalidCompilerVersionBeforeWriting(t *testing.
 			if err := os.WriteFile(sentinel, []byte(original), 0600); err != nil {
 				t.Fatal(err)
 			}
-			input := skelc.Input{SkelIn: source}
-			option := skelc.GolangOption{Out: out, CompilerVersion: version}
-			if _, err := skelc.CompileGolang(input, option); err == nil {
+			input := skel.Input{SkelIn: source}
+			option := skel.GolangOption{Out: out, CompilerVersion: version}
+			if _, err := skel.CompileGolang(input, option); err == nil {
 				t.Fatal("accepted invalid compiler version")
 			}
-			domain, err := skelc.Parse(input)
+			domain, err := skel.Parse(input)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := skelc.GenerateGolang(domain.Domain, option); err == nil {
+			if err := skel.GenerateGolang(domain.Domain, option); err == nil {
 				t.Fatal("GenerateGolang accepted invalid compiler version")
 			}
 			data, err := os.ReadFile(sentinel)
@@ -824,8 +824,8 @@ func TestImportValidationOrderIsDeterministic(t *testing.T) {
 	imports := map[string]string{"z": "example.com/z@", "a": "example.com/a@"}
 	out := filepath.Join(t.TempDir(), "generated")
 	for range 30 {
-		goErr := skelc.GenerateGolang(domain, skelc.GolangOption{Out: out, CompilerVersion: "v0.0.0-dev", Imports: imports})
-		tsErr := skelc.GenerateTypeScript(domain, skelc.TypeScriptOption{Out: out, ApiOnly: true, Imports: imports})
+		goErr := skel.GenerateGolang(domain, skel.GolangOption{Out: out, CompilerVersion: "v0.0.0-dev", Imports: imports})
+		tsErr := skel.GenerateTypeScript(domain, skel.TypeScriptOption{Out: out, ApiOnly: true, Imports: imports})
 		for _, err := range []error{goErr, tsErr} {
 			if err == nil || !strings.Contains(err.Error(), "example.com/a@") {
 				t.Fatalf("unstable first error: %v", err)
@@ -867,28 +867,28 @@ api service AdminApiService {
  method read { output Unused }
 }
 `)
-	input := skelc.Input{SkelIn: entry, SkelImports: map[string]string{"foreign": foreign, "unused": unused, "deep": deep}}
+	input := skel.Input{SkelIn: entry, SkelImports: map[string]string{"foreign": foreign, "unused": unused, "deep": deep}}
 	actor := []string{"shop.order.UserActor"}
-	selection := skelc.ApiFilter{Prune: true, Actors: actor}
-	result, err := skelc.QueryApiDependencies(input, selection)
+	selection := skel.ApiFilter{Prune: true, Actors: actor}
+	result, err := skel.QueryApiDependencies(input, selection)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := &skelc.ApiDependencyReport{Domain: "shop.order", Services: []string{"shop.order.UserApiService"}, Data: []string{"shop.order.Node", "shop.order.Peer"}, Enums: []string{}, Dependencies: []skelc.ApiTypeDependency{{Domain: "foreign", Name: "Box", Kind: "data"}, {Domain: "foreign", Name: "Currency", Kind: "enum"}, {Domain: "foreign", Name: "Money", Kind: "data"}}}
+	want := &skel.ApiDependencyReport{Domain: "shop.order", Services: []string{"shop.order.UserApiService"}, Data: []string{"shop.order.Node", "shop.order.Peer"}, Enums: []string{}, Dependencies: []skel.ApiTypeDependency{{Domain: "foreign", Name: "Box", Kind: "data"}, {Domain: "foreign", Name: "Currency", Kind: "enum"}, {Domain: "foreign", Name: "Money", Kind: "data"}}}
 	if !reflect.DeepEqual(result.Report, want) {
 		t.Fatalf("report=%+v, want %+v", result.Report, want)
 	}
 	// Foreign members belong to a separate query; aliases never appear in reports.
-	next, err := skelc.QueryApiDependencies(skelc.Input{SkelIn: foreign, SkelImports: map[string]string{"deep": deep}}, skelc.ApiFilter{Prune: true, Types: []string{"foreign.Money"}})
+	next, err := skel.QueryApiDependencies(skel.Input{SkelIn: foreign, SkelImports: map[string]string{"deep": deep}}, skel.ApiFilter{Prune: true, Types: []string{"foreign.Money"}})
 	if err != nil || len(next.Report.Dependencies) != 1 || next.Report.Dependencies[0].Domain != "deep" {
 		t.Fatalf("foreign closure: %+v, %v", next, err)
 	}
-	union := skelc.ApiFilter{Prune: true, Actors: actor, Types: []string{"shop.order.Extra", "shop.order.UnusedEnum", "shop.order.Extra"}}
-	combined, err := skelc.QueryApiDependencies(input, union)
+	union := skel.ApiFilter{Prune: true, Actors: actor, Types: []string{"shop.order.Extra", "shop.order.UnusedEnum", "shop.order.Extra"}}
+	combined, err := skel.QueryApiDependencies(input, union)
 	if err != nil || len(combined.Report.Data) != 3 || len(combined.Report.Enums) != 1 {
 		t.Fatalf("union: %+v, %v", combined, err)
 	}
-	empty, err := skelc.QueryApiDependencies(input, skelc.ApiFilter{Prune: true, Actors: []string{"shop.order.IdleActor"}})
+	empty, err := skel.QueryApiDependencies(input, skel.ApiFilter{Prune: true, Actors: []string{"shop.order.IdleActor"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -897,13 +897,13 @@ api service AdminApiService {
 		t.Fatalf("empty selection: %s", encoded)
 	}
 	// Root order and repeated roots must not affect either the report or output.
-	ordered := skelc.ApiFilter{Prune: true, Actors: []string{"shop.order.UserActor", "shop.order.AdminActor"}, Types: []string{"shop.order.Extra", "shop.order.UnusedEnum"}}
-	reordered := skelc.ApiFilter{Prune: true, Actors: []string{"shop.order.AdminActor", "shop.order.UserActor", "shop.order.AdminActor"}, Types: []string{"shop.order.UnusedEnum", "shop.order.Extra", "shop.order.UnusedEnum"}}
-	first, err := skelc.QueryApiDependencies(input, ordered)
+	ordered := skel.ApiFilter{Prune: true, Actors: []string{"shop.order.UserActor", "shop.order.AdminActor"}, Types: []string{"shop.order.Extra", "shop.order.UnusedEnum"}}
+	reordered := skel.ApiFilter{Prune: true, Actors: []string{"shop.order.AdminActor", "shop.order.UserActor", "shop.order.AdminActor"}, Types: []string{"shop.order.UnusedEnum", "shop.order.Extra", "shop.order.UnusedEnum"}}
+	first, err := skel.QueryApiDependencies(input, ordered)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := skelc.QueryApiDependencies(input, reordered)
+	second, err := skel.QueryApiDependencies(input, reordered)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -913,12 +913,12 @@ api service AdminApiService {
 	for _, target := range []string{"go", "go-module", "ts", "ts-module"} {
 		t.Run(target, func(t *testing.T) {
 			out := filepath.Join(t.TempDir(), "api")
-			generate := func(filter skelc.ApiFilter) error {
+			generate := func(filter skel.ApiFilter) error {
 				if strings.HasPrefix(target, "go") {
-					_, err := skelc.CompileGolang(input, skelc.GolangOption{ApiOnly: true, ApiFilter: filter, Out: out, AsModule: target == "go-module", Module: moduleForTarget(target, "example.com/orderapi"), Imports: map[string]string{"foreign": "example.com/foreignapi", "unused": "example.com/unusedapi"}})
+					_, err := skel.CompileGolang(input, skel.GolangOption{ApiOnly: true, ApiFilter: filter, Out: out, AsModule: target == "go-module", Module: moduleForTarget(target, "example.com/orderapi"), Imports: map[string]string{"foreign": "example.com/foreignapi", "unused": "example.com/unusedapi"}})
 					return err
 				}
-				_, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{ApiOnly: true, ApiFilter: filter, Out: out, AsModule: target == "ts-module", Module: moduleForTarget(target, "@demo/orderapi"), Imports: map[string]string{"foreign": "@demo/foreignapi", "unused": "@demo/unusedapi"}})
+				_, err := skel.CompileTypeScript(input, skel.TypeScriptOption{ApiOnly: true, ApiFilter: filter, Out: out, AsModule: target == "ts-module", Module: moduleForTarget(target, "@demo/orderapi"), Imports: map[string]string{"foreign": "@demo/foreignapi", "unused": "@demo/unusedapi"}})
 				return err
 			}
 			read := func() string {
@@ -941,7 +941,7 @@ api service AdminApiService {
 				}
 				return strings.Join(contents, "\n")
 			}
-			if err := generate(skelc.ApiFilter{Actors: actor}); err != nil {
+			if err := generate(skel.ApiFilter{Actors: actor}); err != nil {
 				t.Fatal(err)
 			}
 			if !strings.Contains(read(), "Unused") {
@@ -959,14 +959,14 @@ api service AdminApiService {
 			if !strings.Contains(text, "Node") || !strings.Contains(text, "UserApiService") {
 				t.Fatal("missing selected declarations")
 			}
-			if err := generate(skelc.ApiFilter{Prune: true, Types: []string{"shop.order.Extra"}}); err != nil {
+			if err := generate(skel.ApiFilter{Prune: true, Types: []string{"shop.order.Extra"}}); err != nil {
 				t.Fatal(err)
 			}
 			text = read()
 			if !strings.Contains(text, "Extra") || strings.Contains(text, "UserApiService") || strings.Contains(text, "Node") || strings.Contains(text, "foreignapi") {
 				t.Fatal("types-only output retained unrelated declarations or dependencies")
 			}
-			if err := generate(skelc.ApiFilter{Prune: true, Types: []string{"shop.order.Missing"}}); err == nil {
+			if err := generate(skel.ApiFilter{Prune: true, Types: []string{"shop.order.Missing"}}); err == nil {
 				t.Fatal("unknown type accepted")
 			}
 			if read() != text {
@@ -984,7 +984,7 @@ api service AdminApiService {
 			}
 
 			// Enum-only output must remove previous services, data and package dependencies.
-			if err := generate(skelc.ApiFilter{Prune: true, Types: []string{"shop.order.UnusedEnum"}}); err != nil {
+			if err := generate(skel.ApiFilter{Prune: true, Types: []string{"shop.order.UnusedEnum"}}); err != nil {
 				t.Fatal(err)
 			}
 			text = read()
@@ -1002,7 +1002,7 @@ api service AdminApiService {
 				t.Fatal(err)
 			}
 			writeTestFile(t, filepath.Join(out, "user-note.txt"), "keep handwritten file")
-			idle := skelc.ApiFilter{Prune: true, Actors: []string{"shop.order.IdleActor"}}
+			idle := skel.ApiFilter{Prune: true, Actors: []string{"shop.order.IdleActor"}}
 			if err := generate(idle); err != nil {
 				t.Fatal(err)
 			}

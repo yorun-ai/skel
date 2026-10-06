@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/command"
+	"go.yorun.ai/skel/internal/command"
 )
 
 func TestRunSkelcVersion(t *testing.T) {

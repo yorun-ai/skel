@@ -1,6 +1,6 @@
 package common
 
-import "go.yorun.ai/skelc/internal/model"
+import "go.yorun.ai/skel/internal/model"
 
 // ValidatedDomain marks the boundary between the mutable public model builder
 // and internal renderers. The model and its reachable declarations are read-only

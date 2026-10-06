@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skelc/internal/codegen/codegentest"
-	"go.yorun.ai/skelc/internal/codegen/common"
-	"go.yorun.ai/skelc/internal/model"
-	"go.yorun.ai/skelc/internal/util/sliceutil"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/util/sliceutil"
 )
 
 func TestNewGenDerivesPackageNameForApp(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"hash"
 	"slices"
 
-	"go.yorun.ai/skelc/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
 // The reverse graph owns invalidation; cached entries contain complete local

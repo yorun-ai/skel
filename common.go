@@ -1,4 +1,4 @@
-package skelc
+package skel
 
 import (
 	"context"
@@ -7,12 +7,12 @@ import (
 	"slices"
 	"strings"
 
-	"go.yorun.ai/skelc/diagnostic"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/optionvalidation"
-	"go.yorun.ai/skelc/internal/source"
-	"go.yorun.ai/skelc/model"
+	"go.yorun.ai/skel/diagnostic"
+	"go.yorun.ai/skel/internal/compiler"
+	"go.yorun.ai/skel/internal/loader"
+	"go.yorun.ai/skel/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/source"
+	"go.yorun.ai/skel/model"
 )
 
 // Input identifies the primary Skel source and any imported domains.
