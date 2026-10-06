@@ -37,16 +37,16 @@ func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema)
 	requirementStart := len(c.report.Changes)
 	c.compareRequirement(owner, "service", baseline.Require, candidate.Require, model.Position{}, model.Position{})
 	if len(c.report.Changes) > requirementStart && len(baseline.Methods) > 0 {
-		equivalent := true
+		impact := ImpactCompatible
 		for _, method := range baseline.Methods {
-			if other := candidateByName[method.Name]; other != nil && !sameRequirements(baseline.Require, method.Require, candidate.Require, other.Require) {
-				equivalent = false
-				break
+			if other := candidateByName[method.Name]; other != nil {
+				current := requirementImpact(baseline.Require, method.Require, candidate.Require, other.Require)
+				if impactOrder(current) < impactOrder(impact) {
+					impact = current
+				}
 			}
 		}
-		if equivalent {
-			c.report.Changes[requirementStart].Impact = ImpactCompatible
-		}
+		c.report.Changes[requirementStart].Impact = impact
 	}
 	for _, method := range baseline.Methods {
 		other := candidateByName[method.Name]
@@ -77,8 +77,8 @@ func (c *_Diff) compareMethod(owner string, baseline, candidate *Method, service
 	}
 	requirementStart := len(c.report.Changes)
 	c.compareRequirement(owner, "method", baseline.Require, candidate.Require, baseline.Pos, candidate.Pos)
-	if len(services) == 2 && len(c.report.Changes) > requirementStart && sameRequirements(services[0].Require, baseline.Require, services[1].Require, candidate.Require) {
-		c.report.Changes[requirementStart].Impact = ImpactCompatible
+	if len(services) == 2 && len(c.report.Changes) > requirementStart {
+		c.report.Changes[requirementStart].Impact = requirementImpact(services[0].Require, baseline.Require, services[1].Require, candidate.Require)
 	}
 	c.compareArguments(owner, "method.argument", baseline.Arguments, candidate.Arguments)
 	if !reflect.DeepEqual(baseline.Result, candidate.Result) {
@@ -165,6 +165,9 @@ func authImpact(before, after AuthMode) (string, ImpactLevel) {
 	switch {
 	case before == after:
 		return "changed", ImpactCompatible
+	case before == AuthModeOff && (after == AuthModeRequired || after == AuthModeOptional || after == AuthModeAnonymous):
+		// All validating modes reject credentials that off forwarded unchanged.
+		return "tightened", ImpactBreaking
 	case before == AuthModeOptional && (after == AuthModeRequired || after == AuthModeAnonymous):
 		return "tightened", ImpactBreaking
 	case (before == AuthModeRequired && after == AuthModeAnonymous) || (before == AuthModeAnonymous && after == AuthModeRequired):
@@ -180,12 +183,11 @@ func (c *_Diff) compareRequirement(owner, prefix string, baseline, candidate *Re
 	if reflect.DeepEqual(baseline, candidate) {
 		return
 	}
-	impact := ImpactDangerous
+	impact := requirementImpact(baseline, nil, candidate, nil)
 	code := prefix + ".require.changed"
 	message := "permission requirement changed"
 	if baseline == nil {
 		code, message = prefix+".require.added", "permission requirement was added"
-		impact = ImpactBreaking
 	} else if candidate == nil {
 		code, message = prefix+".require.removed", "permission requirement was removed"
 	}
@@ -218,48 +220,51 @@ func authComparisonMode(mode AuthMode, declaration string) AuthMode {
 	}
 }
 
-// Flatten conjunctions and ignore duplicate terms when policies move between
-// service and method scope. Other logical rewrites remain conservatively risky.
-func sameRequirements(beforeService, beforeMethod, afterService, afterMethod *Requirement) bool {
-	terms := func(service, method *Requirement) []*Requirement {
-		var result []*Requirement
-		var add func(*Requirement)
-		add = func(value *Requirement) {
-			if value == nil {
-				return
+// Compare effective service and method requirements as sets of conjuncts.
+// Disjunctions remain opaque: recognizing arbitrary logical implications is
+// outside this comparison, so non-equivalent expressions stay dangerous.
+func requirementImpact(beforeService, beforeMethod, afterService, afterMethod *Requirement) ImpactLevel {
+	before := requirementConjuncts(beforeService, beforeMethod)
+	after := requirementConjuncts(afterService, afterMethod)
+	containsBefore := true
+	for _, left := range before {
+		if !slices.ContainsFunc(after, func(right *Requirement) bool { return reflect.DeepEqual(left, right) }) {
+			containsBefore = false
+			break
+		}
+	}
+	if containsBefore && len(before) == len(after) {
+		return ImpactCompatible
+	}
+	if len(before) == 0 {
+		return ImpactBreaking
+	}
+	isDisjunction := func(value *Requirement) bool { return value.Mode == RequirementModeAny }
+	if containsBefore && !slices.ContainsFunc(before, isDisjunction) && !slices.ContainsFunc(after, isDisjunction) {
+		return ImpactBreaking
+	}
+	return ImpactDangerous
+}
+
+// Flatten conjunctions and deduplicate terms, including across policy scopes.
+func requirementConjuncts(service, method *Requirement) []*Requirement {
+	var result []*Requirement
+	var add func(*Requirement)
+	add = func(value *Requirement) {
+		if value == nil {
+			return
+		}
+		if value.Mode == RequirementModeAll {
+			for _, child := range value.Children {
+				add(child)
 			}
-			if value.Mode == RequirementModeAll {
-				for _, child := range value.Children {
-					add(child)
-				}
-				return
-			}
-			for _, term := range result {
-				if reflect.DeepEqual(term, value) {
-					return
-				}
-			}
+			return
+		}
+		if !slices.ContainsFunc(result, func(term *Requirement) bool { return reflect.DeepEqual(term, value) }) {
 			result = append(result, value)
 		}
-		add(service)
-		add(method)
-		return result
 	}
-	before, after := terms(beforeService, beforeMethod), terms(afterService, afterMethod)
-	if len(before) != len(after) {
-		return false
-	}
-	for _, left := range before {
-		found := false
-		for _, right := range after {
-			if reflect.DeepEqual(left, right) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
+	add(service)
+	add(method)
+	return result
 }

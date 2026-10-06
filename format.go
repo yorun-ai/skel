@@ -13,13 +13,21 @@ import (
 	"go.yorun.ai/skelc/internal/parser"
 )
 
-// ErrFormatCompilation identifies source loading or validation failures.
+// ErrFormatCompilation identifies source loading or validation failures,
+// excluding cancellation and deadline expiration.
 var ErrFormatCompilation = errors.New("format source compilation failed")
 
 type _FormatCompilationError struct{ cause error }
 
 func (e *_FormatCompilationError) Error() string   { return e.cause.Error() }
 func (e *_FormatCompilationError) Unwrap() []error { return []error{ErrFormatCompilation, e.cause} }
+
+func formatCompilationError(err error) error {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	return &_FormatCompilationError{cause: err}
+}
 
 // FormatSource returns canonical Skel syntax without writing any files.
 // Invalid source returns an error; formatting preserves declaration order.
@@ -73,16 +81,16 @@ func FormatFilesContext(ctx context.Context, option FormatOption) (FormatResult,
 	}
 	loaded, err := loader.LoadFrom(ctx, provider, normalized.SkelIn)
 	if err != nil {
-		return FormatResult{}, &_FormatCompilationError{cause: err}
+		return FormatResult{}, formatCompilationError(err)
 	}
 	result := FormatResult{Files: []FormattedFile{}, Diagnostics: compiler.LoaderWarningDiagnostics(loaded.Warnings)}
 	if option.Strict {
 		checked, err := compiler.CheckLoaded(ctx, loaded, normalized)
 		if err != nil {
-			return FormatResult{}, &_FormatCompilationError{cause: err}
+			return FormatResult{}, formatCompilationError(err)
 		}
 		if checked.Diagnostics.HasErrors() {
-			return FormatResult{}, &_FormatCompilationError{cause: checked.Diagnostics}
+			return FormatResult{}, formatCompilationError(checked.Diagnostics)
 		}
 		result.Diagnostics = checked.Diagnostics
 	}
@@ -91,7 +99,7 @@ func FormatFilesContext(ctx context.Context, option FormatOption) (FormatResult,
 			return FormatResult{}, err
 		}
 		if err := parser.ValidateSource(file.FilePath, file.Content); err != nil {
-			return FormatResult{}, &_FormatCompilationError{cause: err}
+			return FormatResult{}, formatCompilationError(err)
 		}
 		formatted, err := formatter.Source(file.Content)
 		if err != nil {
@@ -103,6 +111,9 @@ func FormatFilesContext(ctx context.Context, option FormatOption) (FormatResult,
 		if !bytes.Equal(file.Content, formatted) {
 			result.Files = append(result.Files, FormattedFile{Path: file.FilePath, Original: bytes.Clone(file.Content), Content: formatted})
 		}
+	}
+	if err := ctx.Err(); err != nil {
+		return FormatResult{}, err
 	}
 	result.Changed = len(result.Files) != 0
 	return result, nil

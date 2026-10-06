@@ -2,10 +2,12 @@ package skelc_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"go.yorun.ai/skelc"
 )
@@ -72,6 +74,28 @@ func TestFormatPlanPreservesDiscoveryWarnings(t *testing.T) {
 		}
 		if result.Diagnostics[0].Position.File != filepath.Join(dir, ".hidden.skel") {
 			t.Fatalf("warning lost source location: %+v", result.Diagnostics)
+		}
+	}
+}
+
+func TestFormatCancellationIsNotCompilationFailure(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "source.skel")
+	files := map[string][]byte{path: []byte("domain demo\npub data Value{value:string}\n")}
+	for _, strict := range []bool{false, true} {
+		for _, deadline := range []bool{false, true} {
+			ctx, cancel := context.WithCancel(t.Context())
+			cancel()
+			if deadline {
+				ctx, cancel = context.WithDeadline(t.Context(), time.Now().Add(-time.Second))
+				defer cancel()
+			}
+			result, err := skelc.FormatFilesContext(ctx, skelc.FormatOption{SkelIn: path, Sources: files, Strict: strict})
+			if !errors.Is(err, ctx.Err()) || errors.Is(err, skelc.ErrFormatCompilation) {
+				t.Fatalf("strict=%v deadline=%v: unexpected error classification: %v", strict, deadline, err)
+			}
+			if result.Changed || len(result.Files) != 0 {
+				t.Fatalf("canceled format returned a plan: %+v", result)
+			}
 		}
 	}
 }

@@ -258,3 +258,54 @@ func TestDiffDuplicatePermissionRequirement(t *testing.T) {
 		t.Fatalf("unexpected report: %+v", report)
 	}
 }
+
+func TestDiffEffectivePermissionConjunctions(t *testing.T) {
+	p := &Requirement{Mode: RequirementModeCode, Code: "read"}
+	q := &Requirement{Mode: RequirementModeCode, Code: "write"}
+	r := &Requirement{Mode: RequirementModeCode, Code: "admin"}
+	all := func(children ...*Requirement) *Requirement {
+		return &Requirement{Mode: RequirementModeAll, Children: children}
+	}
+	any := func(children ...*Requirement) *Requirement {
+		return &Requirement{Mode: RequirementModeAny, Children: children}
+	}
+	for _, test := range []struct {
+		name                                                   string
+		beforeService, beforeMethod, afterService, afterMethod *Requirement
+		impact                                                 ImpactLevel
+	}{
+		{"service tightened", p, nil, all(p, q), nil, ImpactBreaking},
+		{"method tightened", nil, p, nil, all(p, q), ImpactBreaking},
+		{"nested conjunction tightened", all(p, q), nil, all(q, all(r, p, p)), nil, ImpactBreaking},
+		{"relaxed", all(p, q), nil, p, nil, ImpactDangerous},
+		{"reordered and duplicated", all(p, q), nil, all(q, p, p), nil, ImpactCompatible},
+		{"replacement", p, nil, q, nil, ImpactDangerous},
+		{"disjunction remains opaque", p, nil, all(p, any(p, q)), nil, ImpactDangerous},
+		{"disjunction replaced", any(p, q), nil, p, nil, ImpactDangerous},
+		{"already enforced by method", p, q, all(p, q), q, ImpactCompatible},
+		{"already enforced by service", q, p, q, all(p, q), ImpactCompatible},
+		{"moved between scopes", p, q, all(p, q), nil, ImpactCompatible},
+		{"additional requirement across scopes", p, q, all(p, r), q, ImpactBreaking},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			makeDocument := func(servicePolicy, methodPolicy *Requirement) *Document {
+				service := serviceDeclaration("Service", "read")
+				service.Service.Require = servicePolicy
+				service.Service.Methods[0].Require = methodPolicy
+				return newTestDocument(service)
+			}
+			report, err := Diff(makeDocument(test.beforeService, test.beforeMethod), makeDocument(test.afterService, test.afterMethod))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(report.Changes) == 0 || report.Compatible != (test.impact != ImpactBreaking) {
+				t.Fatalf("unexpected report: %+v", report)
+			}
+			for _, change := range report.Changes {
+				if change.Impact != test.impact {
+					t.Fatalf("unexpected change: %+v", change)
+				}
+			}
+		})
+	}
+}
