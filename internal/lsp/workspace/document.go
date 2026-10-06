@@ -3,16 +3,16 @@ package workspace
 import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skel/internal/binding"
 	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/lsp/source"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	textsource "go.yorun.ai/skel/internal/source"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 // Document is an immutable syntax and symbol index shared by workspace snapshots.
 type Document struct {
-	Bindings         *binding.Document
+	Bindings         *symbol.Document
 	Revision         *textsource.Document
 	URI              uri.URI
 	Path             string
@@ -42,7 +42,7 @@ type Definition struct {
 }
 
 type Occurrence struct {
-	Binding binding.Resolution
+	Binding symbol.Resolution
 	Key     string
 	Range   protocol.Range
 }
@@ -71,7 +71,7 @@ func BuildDocument(documentURI uri.URI, path, content string, version int32) *Do
 	document.Buffer = source.FromDocument(document.Revision)
 	parsed, diagnostics := compiler.ParseSourceRecovering(document.AnalysisPath(), []byte(content))
 	document.Parsed = parsed
-	document.Bindings = binding.Build(document.Revision, parsed)
+	document.Bindings = symbol.Build(document.Revision, parsed)
 	document.ParseDiagnostics = diagnostics
 	if len(diagnostics) > 0 {
 		indexIncompleteDocument(document, document.Buffer.IdentifierTokens())
@@ -129,10 +129,10 @@ func (d *Document) AnalysisPath() string {
 }
 
 func addParameterDefinitions(document *Document) {
-	for _, symbol := range document.Bindings.Symbols {
-		if symbol.Kind != binding.Parameter {
+	for _, declaration := range document.Bindings.Symbols {
+		if declaration.Kind != symbol.Parameter {
 			continue
 		}
-		document.Definitions = append(document.Definitions, Definition{Confirmed: true, Key: symbol.ID.Key(), Name: symbol.ID.Name, Detail: "type parameter", Kind: protocol.SymbolKindTypeParameter, Range: document.Buffer.Range(symbol.Span.Start, symbol.Span.End)})
+		document.Definitions = append(document.Definitions, Definition{Confirmed: true, Key: declaration.ID.Key(), Name: declaration.ID.Name, Detail: "type parameter", Kind: protocol.SymbolKindTypeParameter, Range: document.Buffer.Range(declaration.Span.Start, declaration.Span.End)})
 	}
 }

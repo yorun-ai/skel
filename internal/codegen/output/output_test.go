@@ -9,8 +9,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"go.yorun.ai/skel/internal/codegen/common"
 )
 
 type countingReader struct {
@@ -128,7 +126,7 @@ func TestManagedOutputRemovesModifiedStaleFileThatRetainsMarker(t *testing.T) {
 }
 
 func TestGeneratedFileMarkerScanReadsOnlyPrefix(t *testing.T) {
-	content := "// " + common.GeneratedFileMarker + "\n\n" + strings.Repeat("x", generatedFileMarkerScanLimit*2)
+	content := "// " + GeneratedFileMarker + "\n\n" + strings.Repeat("x", generatedFileMarkerScanLimit*2)
 	reader := &countingReader{reader: strings.NewReader(content)}
 	marked, err := generatedFileMarkerInReader(reader)
 	if err != nil {
@@ -269,7 +267,7 @@ func newOutputTestTransaction(t *testing.T, target string) *ManagedOutput {
 
 func writeGeneratedOutputTestFile(t *testing.T, path, content string) {
 	t.Helper()
-	marked, err := common.MarkGeneratedFile(filepath.Base(path), content)
+	marked, err := MarkGeneratedFile(filepath.Base(path), content)
 	if err != nil {
 		t.Fatal(err)
 	}

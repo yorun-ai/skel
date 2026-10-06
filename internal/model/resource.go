@@ -22,7 +22,7 @@ type Resource struct {
 	Checks []*ResourceCheck
 	// Actions lists the resource's permission-bearing actions.
 	Actions []*ResourceAction
-	// CheckService is the generated service that implements resource checks.
+	// CheckService is the language-defined service that implements resource checks.
 	CheckService *Service
 }
 

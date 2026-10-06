@@ -11,7 +11,6 @@ import (
 	ucli "github.com/urfave/cli/v3"
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
 	compiler "go.yorun.ai/skel/internal/compiler"
-	"go.yorun.ai/skel/internal/util/logutil"
 )
 
 type Result struct {
@@ -32,9 +31,6 @@ const (
 
 	logFormatText  = "text"
 	logFormatJSONL = "jsonl"
-
-	logLevelWarn  = string(logutil.LevelWarn)
-	logLevelError = string(logutil.LevelError)
 )
 
 func Main() {
@@ -108,20 +104,20 @@ func runCLICommand(command *ucli.Command, args []string, stdin io.Reader, stdout
 	if err != nil {
 		if _, ok := err.(*_CommandUnsatisfied); ok {
 			if _, writeErr := io.WriteString(stdout, commandStdout.String()); writeErr != nil {
-				return Result{ExitCode: ExitCodeError, Stderr: logutil.Format(logutil.Error("write command result: %s", writeErr), rawLogFormat)}
+				return Result{ExitCode: ExitCodeError, Stderr: formatLog(errorLogEntry("write command result: %s", writeErr), rawLogFormat)}
 			}
 			return Result{ExitCode: ExitCodeUnsatisfied}
 		}
 		if failure, ok := err.(*_CommandFailure); ok {
 			if writeErr := writeJSONTo(stdout, failure.result()); writeErr != nil {
-				return Result{ExitCode: ExitCodeError, Stderr: logutil.Format(logutil.Error("write command error result: %s", writeErr), rawLogFormat)}
+				return Result{ExitCode: ExitCodeError, Stderr: formatLog(errorLogEntry("write command error result: %s", writeErr), rawLogFormat)}
 			}
 			return Result{ExitCode: ExitCodeError, Stderr: commandFailureLogs(failure, rawLogFormat)}
 		}
 		if isJSONCommand {
 			failure := &output.Error{Code: output.ErrorCodeInvalidArgument, Message: err.Error()}
 			if writeErr := writeJSONTo(stdout, failure); writeErr != nil {
-				return Result{ExitCode: ExitCodeError, Stderr: logutil.Format(logutil.Error("write command error result: %s", writeErr), rawLogFormat)}
+				return Result{ExitCode: ExitCodeError, Stderr: formatLog(errorLogEntry("write command error result: %s", writeErr), rawLogFormat)}
 			}
 			return Result{ExitCode: ExitCodeError}
 		}
@@ -140,17 +136,17 @@ func runCLICommand(command *ucli.Command, args []string, stdin io.Reader, stdout
 		if stderr.Len() > 0 {
 			return Result{
 				ExitCode: ExitCodeError,
-				Stderr:   logutil.Format(logutil.Error("%s", stderr.String()), rawLogFormat),
+				Stderr:   formatLog(errorLogEntry("%s", stderr.String()), rawLogFormat),
 			}
 		}
-		return Result{ExitCode: ExitCodeError, Stderr: logutil.Format(logutil.Error("%s", err.Error()), rawLogFormat)}
+		return Result{ExitCode: ExitCodeError, Stderr: formatLog(errorLogEntry("%s", err.Error()), rawLogFormat)}
 	}
 	if stderr.Len() > 0 && !isJSONCommand {
-		return Result{ExitCode: ExitCodeError, Stderr: logutil.Format(logutil.Error("%s", stderr.String()), rawLogFormat)}
+		return Result{ExitCode: ExitCodeError, Stderr: formatLog(errorLogEntry("%s", stderr.String()), rawLogFormat)}
 	}
 	if isJSONCommand {
 		if _, err := io.WriteString(stdout, commandStdout.String()); err != nil {
-			return Result{ExitCode: ExitCodeError, Stderr: logutil.Format(logutil.Error("write command result: %s", err), rawLogFormat)}
+			return Result{ExitCode: ExitCodeError, Stderr: formatLog(errorLogEntry("write command result: %s", err), rawLogFormat)}
 		}
 	}
 	return Result{ExitCode: ExitCodeSuccess, Stderr: stderr.String()}
@@ -160,11 +156,11 @@ func formatDiagnostics(diagnostics compiler.Diagnostics, format string) string {
 	if format != logFormatJSONL {
 		var output strings.Builder
 		for _, diagnostic := range diagnostics {
-			level := logutil.LevelError
+			level := logLevelError
 			if diagnostic.Severity == compiler.DiagnosticSeverityWarning {
-				level = logutil.LevelWarn
+				level = logLevelWarn
 			}
-			formatted := logutil.Format(logutil.Entry{Level: level, Message: diagnostic.Error()}, format)
+			formatted := formatLog(_LogEntry{Level: level, Message: diagnostic.Error()}, format)
 			output.WriteString(formatted)
 			if !strings.HasSuffix(formatted, "\n") {
 				output.WriteByte('\n')
@@ -195,7 +191,7 @@ func formatDiagnostics(diagnostics compiler.Diagnostics, format string) string {
 func formatErrors(errors []error, format string) string {
 	var output strings.Builder
 	for _, err := range errors {
-		formatted := logutil.Format(logutil.Entry{Level: logutil.LevelError, Message: err.Error()}, format)
+		formatted := formatLog(_LogEntry{Level: logLevelError, Message: err.Error()}, format)
 		output.WriteString(formatted)
 		if !strings.HasSuffix(formatted, "\n") {
 			output.WriteByte('\n')

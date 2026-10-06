@@ -8,11 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"go.yorun.ai/skel/internal/binding"
 	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	textsource "go.yorun.ai/skel/internal/source"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 // Source is an in-memory Skel document used by workspace analysis. Domain is a
@@ -23,7 +23,7 @@ import (
 type Source struct {
 	// Document, when supplied, owns the authoritative immutable source revision.
 	Document       *textsource.Document
-	Bindings       *binding.Document
+	Bindings       *symbol.Document
 	Path           string
 	Domain         string
 	Root           string
@@ -229,7 +229,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 			domain.syntaxInvalid = true
 		}
 		if source.Bindings == nil {
-			source.Bindings = binding.Build(source.Document, content)
+			source.Bindings = symbol.Build(source.Document, content)
 		}
 		domain.contents = append(domain.contents, content)
 		domain.sources = append(domain.sources, source)

@@ -175,8 +175,9 @@ func TestParseReturnsStructuredWarnings(t *testing.T) {
 func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 	const internalPrefix = "go.yorun.ai/skel/internal/"
 	rules := []struct {
-		directory string
-		forbidden func(string) bool
+		directory   string
+		forbidden   func(string) bool
+		packageOnly bool
 	}{
 		{
 			directory: "internal/parser",
@@ -240,6 +241,13 @@ func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 			},
 		},
 		{
+			directory: "codegen",
+			forbidden: func(path string) bool {
+				return strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"codegen"
+			},
+		},
+
+		{
 			directory: "schema",
 			forbidden: func(path string) bool {
 				return strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"schema"
@@ -270,17 +278,27 @@ func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 			},
 		},
 		{
-			directory: "internal/codegen/common",
-			forbidden: targetCodegenImport,
+			directory:   "internal/codegen",
+			packageOnly: true,
+			forbidden: func(path string) bool {
+				return path == internalPrefix+"codegen/binding" || targetCodegenImport(path)
+			},
+		},
+		{
+			directory:   "internal/codegen/binding",
+			packageOnly: true,
+			forbidden:   targetCodegenImport,
 		},
 		{
 			directory: "internal/codegen/output",
-			forbidden: targetCodegenImport,
+			forbidden: func(path string) bool {
+				return path == internalPrefix+"codegen" || path == internalPrefix+"codegen/binding" || targetCodegenImport(path)
+			},
 		},
 	}
 
 	// Shared capabilities must not depend on API adapters or command implementations.
-	for _, directory := range []string{"internal/compiler", "internal/parser", "internal/analyzer", "internal/model", "internal/schema", "internal/projection", "internal/formatter", "internal/codegen", "internal/lsp", "internal/sourcediff", "internal/loader", "internal/source", "internal/hasher", "internal/optionvalidation"} {
+	for _, directory := range []string{"internal/compiler", "internal/parser", "internal/symbol", "internal/analyzer", "internal/model", "internal/schema", "internal/projection", "internal/formatter", "internal/codegen", "internal/lsp", "internal/sourcediff", "internal/loader", "internal/source", "internal/hasher", "internal/optionvalidation"} {
 		t.Run(directory+"/no-api-or-command-dependencies", func(t *testing.T) {
 			inspectProductionImports(t, directory, func(path string) bool {
 				return path == internalPrefix+"api" || path == "go.yorun.ai/skel/api" || strings.HasPrefix(path, internalPrefix+"cmd/") || strings.HasPrefix(path, "go.yorun.ai/skel/cmd/")
@@ -289,28 +307,23 @@ func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 	}
 	for _, rule := range rules {
 		t.Run(filepath.ToSlash(rule.directory), func(t *testing.T) {
-			inspectProductionImports(t, rule.directory, rule.forbidden)
+			inspectProductionImports(t, rule.directory, rule.forbidden, rule.packageOnly)
 		})
 	}
 }
 
 func targetCodegenImport(path string) bool {
-	for _, target := range []string{"golang", "skeleton", "typescript"} {
-		if strings.HasPrefix(path, "go.yorun.ai/skel/internal/codegen/"+target) {
-			return true
-		}
-	}
-	return false
+	return strings.HasPrefix(path, "go.yorun.ai/skel/internal/codegen/binding/")
 }
 
-func inspectProductionImports(t *testing.T, directory string, forbidden func(string) bool) {
+func inspectProductionImports(t *testing.T, directory string, forbidden func(string) bool, packageOnly ...bool) {
 	t.Helper()
 	err := filepath.WalkDir(filepath.Join("..", directory), func(path string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
-		// Public subpackages and compiler adapters have their own dependency rules.
-		if entry.IsDir() && (!strings.HasPrefix(directory, "internal/") || directory == "internal/compiler") && path != filepath.Join("..", directory) {
+		// Independently owned subpackages have their own dependency rules.
+		if entry.IsDir() && (!strings.HasPrefix(directory, "internal/") || directory == "internal/compiler" || (len(packageOnly) > 0 && packageOnly[0])) && path != filepath.Join("..", directory) {
 			return filepath.SkipDir
 		}
 		if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {

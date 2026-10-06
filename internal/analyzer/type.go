@@ -1,8 +1,8 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skel/internal/binding"
 	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 const typeKindNone model.TypeKind = 0
@@ -57,10 +57,10 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			}
 			enum := import_.Domain.enumsMap[refName]
 			dataType := import_.Domain.dataMap[refName]
-			if !reporter.checkReference(resolved.Status == binding.Resolved, "%s definition of %s.%s not found", t.Pos, refQualifier, refName) {
+			if !reporter.checkReference(resolved.Status == symbol.Resolved, "%s definition of %s.%s not found", t.Pos, refQualifier, refName) {
 				return false
 			}
-			if resolved.Kind == binding.Enum {
+			if resolved.Kind == symbol.Enum {
 				if !reporter.check(enum.Pub, "%s imported enum %s.%s is not public", t.Pos, import_.Model.Alias, refName) {
 					return false
 				}
@@ -102,16 +102,16 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 		if dataType != nil && refCtx.invalidData[dataType] {
 			return false
 		}
-		if !reporter.checkReference(resolved.Status == binding.Resolved, "%s definition of %s not found", t.Pos, refName) {
+		if !reporter.checkReference(resolved.Status == symbol.Resolved, "%s definition of %s not found", t.Pos, refName) {
 			return false
 		}
-		if resolved.Kind == binding.Enum {
+		if resolved.Kind == symbol.Enum {
 			t.Kind = model.TypeKindEnum
 			t.Enum = enum
 			t.SkelName = enum.SkelName
 			return true
 		}
-		if resolved.Kind == binding.Data {
+		if resolved.Kind == symbol.Data {
 			if !checkDataValueType(reporter, t, dataType) {
 				return false
 			}

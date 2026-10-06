@@ -1,6 +1,6 @@
 package model
 
-// Domain is the validated semantic model for one Skel domain.
+// Domain is the semantic model for one Skel domain.
 //
 // Domain exposes ordered declaration collections through accessor methods so
 // generators can preserve deterministic source semantics.
@@ -95,10 +95,9 @@ func (d *Domain) Description() string { return d.description }
 // Hash returns the domain's compatibility hash.
 func (d *Domain) Hash() string { return d.hash }
 
-// SetHash replaces the domain's compatibility hash.
-// Custom generators normally consume the hash produced by skelc and do not
-// need to call SetHash.
-func (d *Domain) SetHash(hash string) { d.hash = hash }
+// SetDomainHash is reserved for the internal hashing phase. Public model aliases
+// deliberately expose no hash setter. Builders can supply a hash in DomainSpec.
+func SetDomainHash(d *Domain, hash string) { d.hash = hash }
 
 // Imports returns imported domains in deterministic order.
 func (d *Domain) Imports() []*Import { return d.imports }

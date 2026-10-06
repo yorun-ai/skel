@@ -78,6 +78,6 @@ func FillHashes(domain *model.Domain) error {
 	if state.err != nil {
 		return state.err
 	}
-	domain.SetHash(domainHash)
+	model.SetDomainHash(domain, domainHash)
 	return nil
 }

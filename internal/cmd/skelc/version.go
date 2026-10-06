@@ -10,7 +10,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	ucli "github.com/urfave/cli/v3"
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
-	"go.yorun.ai/skel/internal/codegen/golang"
+	"go.yorun.ai/skel/internal/codegen/binding/golang"
 )
 
 const (

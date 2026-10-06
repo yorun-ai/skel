@@ -6,13 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.yorun.ai/skel/internal/analyzer"
-	"go.yorun.ai/skel/internal/util/checkutil"
 )
 
 func TestDiagnosticFromErrorUsesStructuredMetadata(t *testing.T) {
-	failure := checkutil.NewFailuref("wording does not identify this diagnostic")
+	failure := analyzer.NewFailuref("wording does not identify this diagnostic")
 	failure.Code = analyzer.DiagnosticCodeNaming
-	failure.Suggestion = &checkutil.Suggestion{
+	failure.Suggestion = &analyzer.Suggestion{
 		Message: "replace with UserProfile", Replacement: "UserProfile", Replace: true,
 	}
 
@@ -26,7 +25,7 @@ func TestDiagnosticFromErrorUsesStructuredMetadata(t *testing.T) {
 }
 
 func TestDiagnosticFromErrorDoesNotInferMetadataFromMessage(t *testing.T) {
-	failure := checkutil.NewFailuref("duplicated unknown value not found; expected=WrongName")
+	failure := analyzer.NewFailuref("duplicated unknown value not found; expected=WrongName")
 
 	diagnostic := diagnosticFromError("user.skel", DiagnosticCodeSemanticValidation, failure)
 

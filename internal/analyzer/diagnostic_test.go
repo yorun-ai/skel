@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/parser/grammar"
-	"go.yorun.ai/skel/internal/util/checkutil"
 )
 
 func TestDiagnosticReporterDoesNotUsePanicControlFlow(t *testing.T) {
@@ -33,7 +32,7 @@ func TestDiagnosticReporterUsesExplicitMetadata(t *testing.T) {
 		"duplicated unknown value not found; expected=WrongName": DiagnosticCodeValidation,
 	}
 	for _, err := range reporter.result() {
-		var failure *checkutil.Failure
+		var failure *Failure
 		if !errors.As(err, &failure) {
 			t.Fatalf("expected structured failure, got %T", err)
 		}

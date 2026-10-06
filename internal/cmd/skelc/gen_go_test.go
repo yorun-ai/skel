@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
-	"go.yorun.ai/skel/internal/codegen/common"
+	codegenoutput "go.yorun.ai/skel/internal/codegen/output"
 )
 
 func TestRunSkelcStrictGenerationPreservesOutputs(t *testing.T) {
@@ -178,7 +178,7 @@ func TestRunSkelcGenGoPreservesUnmanagedOutput(t *testing.T) {
 	assertFileContains(t, filepath.Join(goOut, ".hidden-dir", "old.go"), "old")
 	assertFileContains(t, filepath.Join(goOut, "old.go"), "old")
 	assertFileContains(t, filepath.Join(goOut, "doc.go"), "package skeled")
-	assertFileContains(t, filepath.Join(goOut, "doc.go"), common.GeneratedFileMarker)
+	assertFileContains(t, filepath.Join(goOut, "doc.go"), codegenoutput.GeneratedFileMarker)
 }
 
 func TestRunSkelcGenGoDoesNotChangeOutputWhenCompilationFails(t *testing.T) {

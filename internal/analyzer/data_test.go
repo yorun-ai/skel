@@ -143,14 +143,18 @@ func TestDomainRejectsDeprecatedDecorator(t *testing.T) {
 	}
 }
 
-func TestParseDataRejectsReservedSensitiveMarkerMethod(t *testing.T) {
-	expectDataDiagnostic(t, "reserved for the generated sensitive marker method", &grammar.Data{
-		Name: ident("Credential"),
+func TestParseDataAcceptsGoMarkerFieldName(t *testing.T) {
+	data := parseDataTest(t, &grammar.Data{
+		Decorators: []*grammar.Decorator{{Name: ident("sensitive")}},
+		Name:       ident("Credential"),
 		Members: []*grammar.DataMember{{
 			Name: ident("skelSensitive"),
 			Type: plainType(grammar.String),
 		}},
 	})
+	if data.Members[0].Name != "skelSensitive" || !data.Sensitive {
+		t.Fatalf("unexpected sensitive data: %+v", data)
+	}
 }
 
 func TestParseDataRejectsInvalidSensitiveDecorator(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skel/diagnostic"
-	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/optionvalidation"
 	"go.yorun.ai/skel/internal/projection"
 	internalschema "go.yorun.ai/skel/internal/schema"
@@ -16,10 +16,10 @@ import (
 )
 
 // ApiTypeDependency identifies an external data or enum required by an API view.
-type ApiTypeDependency = common.ApiTypeDependency
+type ApiTypeDependency = codegen.ApiTypeDependency
 
 // ApiDependencyReport lists selected local declarations and external type references.
-type ApiDependencyReport = common.ApiDependencyReport
+type ApiDependencyReport = codegen.ApiDependencyReport
 
 // ApiDependencyResult contains the dependency report and source diagnostics.
 type ApiDependencyResult struct {
@@ -35,7 +35,7 @@ func QueryApiDependencies(input Input, selection ApiFilter) (ApiDependencyResult
 
 // QueryApiDependenciesContext is QueryApiDependencies with cancellation support.
 func QueryApiDependenciesContext(ctx context.Context, input Input, selection ApiFilter) (ApiDependencyResult, error) {
-	normalized, err := common.NormalizeApiFilter(selection)
+	normalized, err := codegen.NormalizeApiFilter(selection)
 	if err != nil {
 		return ApiDependencyResult{}, err
 	}
@@ -43,7 +43,7 @@ func QueryApiDependenciesContext(ctx context.Context, input Input, selection Api
 	if err != nil {
 		return ApiDependencyResult{}, err
 	}
-	report, err := common.ApiDependencies(parsed.Domain, normalized)
+	report, err := codegen.ApiDependencies(parsed.Domain, normalized)
 	if err != nil {
 		return ApiDependencyResult{}, err
 	}
@@ -80,7 +80,7 @@ func QuerySchemaDependenciesContext(ctx context.Context, input Input, selection 
 	if selection.Api && selection.Pub {
 		return SchemaDependencyResult{}, optionvalidation.NewValidationError(optionvalidation.FieldSchemaView, optionvalidation.RuleInvalid, "flags api and pub are mutually exclusive")
 	}
-	if err := common.ValidateApiFilterMode(selection.ApiFilter, selection.Api); err != nil {
+	if err := codegen.ValidateApiFilterMode(selection.ApiFilter, selection.Api); err != nil {
 		return SchemaDependencyResult{}, err
 	}
 	if selection.Api {
@@ -132,10 +132,10 @@ func QuerySchemaContext(ctx context.Context, input Input, selection SchemaQueryO
 	if selection.Api && selection.Pub {
 		return SchemaQueryResult{}, optionvalidation.NewValidationError(optionvalidation.FieldSchemaView, optionvalidation.RuleInvalid, "flags api and pub are mutually exclusive")
 	}
-	if err := common.ValidateApiFilterMode(selection.ApiFilter, selection.Api); err != nil {
+	if err := codegen.ValidateApiFilterMode(selection.ApiFilter, selection.Api); err != nil {
 		return SchemaQueryResult{}, err
 	}
-	filter, err := common.NormalizeApiFilter(selection.ApiFilter)
+	filter, err := codegen.NormalizeApiFilter(selection.ApiFilter)
 	if err != nil {
 		return SchemaQueryResult{}, err
 	}
@@ -149,11 +149,11 @@ func QuerySchemaContext(ctx context.Context, input Input, selection SchemaQueryO
 	}
 	var document *schema.Document
 	if selection.Pub || selection.Api {
-		var view *common.PublicView
+		var view *codegen.PublicView
 		if selection.Api {
-			view, err = common.BuildApiView(compiled.Domain, filter)
+			view, err = codegen.BuildApiView(compiled.Domain, filter)
 		} else {
-			view, err = common.BuildPublicView(compiled.Domain)
+			view, err = codegen.BuildPublicView(compiled.Domain)
 		}
 		if err != nil {
 			return SchemaQueryResult{}, err

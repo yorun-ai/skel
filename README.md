@@ -309,7 +309,7 @@ for _, diagnostic := range result.Diagnostics {
 
 `CompilerVersion` is required for backend Go output and must identify the actual skelc dependency version, at least `v0.17.1` (adjust the example to your pinned version). The CLI fills it automatically. Use `v0.0.0-dev` only when running a development build.
 
-The API also provides `CompileTypeScript` and `CompileSkeleton`. Parser and loader warnings use the same structured diagnostic model instead of a separate string list. Diagnostic types and stable code constants are provided by `go.yorun.ai/skel/diagnostic`; use that package directly instead of root-package aliases. All public-contract generators consume one validated `internal/codegen/common` projection, preventing Go, Skel, and TypeScript visibility rules from drifting.
+The API also provides `CompileTypeScript` and `CompileSkeleton`. Parser and loader warnings use the same structured diagnostic model instead of a separate string list. Diagnostic types and stable code constants are provided by `go.yorun.ai/skel/diagnostic`; use that package directly instead of root-package aliases. Built-in and custom generators share the `codegen` SDK for validated inputs, selection and managed output.
 
 Generation marks ownership in every generated file, atomically replaces individual outputs, rolls back every affected target when a commit fails, removes stale marked files, and preserves unmarked files in a shared output directory.
 
@@ -321,7 +321,29 @@ decoding rejects unknown fields, trailing JSON values, unsupported format
 versions and malformed normalized structures. The `go.yorun.ai/skel/api`
 package also provides source inspection and schema query APIs.
 
-Custom generators can call `api.Parse` and consume the returned `*model.Domain` through the parser-independent `go.yorun.ai/skel/model` package. Parsed models already contain compatibility hashes calculated by skelc. Built-in generators accept the same parsed domain through `GenerateGolang`, `GenerateTypeScript`, and `GenerateSkeleton`, so several targets can share one parse result.
+Custom bindings written in Go use `go.yorun.ai/skel/codegen`. Call `api.Parse`,
+then `codegen.Prepare(domain, selection)` to validate and select a generation view.
+`model` is the shared semantic graph; `codegen.Input` provides selected declarations,
+fully qualified lookups, type roots and external dependencies without a second set
+of declaration types. Keep the model read-only after preparation and keep target
+names and imports in your binding. `WalkTypeGraphs` handles recursive declarations;
+`InstantiateMembers` substitutes generic arguments without expanding named types.
+
+Implement `codegen.Generator.Generate(context.Context, codegen.Input) ([]codegen.File, error)`.
+`codegen.Generate` returns a validated, deterministically ordered file set without
+writing files. `codegen.Run` publishes it with stale-file cleanup and multi-target
+rollback. Files use relative paths; map their `Target` names to output directories.
+For another language's source files, set `File.CommentPrefix` (for example `#` for
+Python) so the SDK can mark file ownership. Generated paths replace existing files;
+unrelated unmarked files are preserved. Output directories must not overlap.
+
+`api.NewGolangGenerator`, `NewTypeScriptGenerator` and `NewSkeletonGenerator` return
+the built-in bindings using the same interface. They select the surface configured
+in their options from the input's complete graph. Their `Out` options provide naming
+context; `codegen.Run` supplies actual destinations. Go split output uses targets
+`""` and `"pub"`; other output uses `""`. Existing `GenerateGolang`,
+`GenerateTypeScript` and `GenerateSkeleton` use the same SDK runner and accept one
+shared parsed domain. See the [custom binding example](codegen/example_test.go).
 
 
 Source tools can call `Check` (unresolved imports allowed), `ScanImports`,

@@ -9,7 +9,7 @@ import (
 	ucli "github.com/urfave/cli/v3"
 	skelapi "go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
-	"go.yorun.ai/skel/internal/codegen/common"
+	"go.yorun.ai/skel/internal/codegen"
 	internalcompiler "go.yorun.ai/skel/internal/compiler"
 	schemas "go.yorun.ai/skel/internal/schema"
 )
@@ -170,8 +170,8 @@ func loadSchemaList(cmd *ucli.Command) (*schemas.Document, error) {
 	if api && pub {
 		return nil, commandFailure(output.ErrorCodeInvalidArgument, fmt.Errorf("flags api and pub are mutually exclusive"))
 	}
-	selection := common.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)}
-	if err := common.ValidateApiFilterMode(selection, api); err != nil {
+	selection := codegen.ApiFilter{Actors: cmd.StringSlice(flagGenActor), Prune: cmd.Bool(flagGenPrune), Types: cmd.StringSlice(flagGenName)}
+	if err := codegen.ValidateApiFilterMode(selection, api); err != nil {
 		return nil, generationCommandFailure(err)
 	}
 	if !api && !pub {

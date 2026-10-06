@@ -8,7 +8,6 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/model"
-	"go.yorun.ai/skel/internal/util/checkutil"
 )
 
 // MaxDiagnosticsPerDomain bounds validation work and prevents a badly broken
@@ -73,7 +72,7 @@ func (r *_DiagnosticReporter) reportDuplicatef(message string, args ...any) {
 	failure := newDiagnosticFailure(DiagnosticCodeDuplicate, message, args...)
 	positions := diagnosticArgumentPositions(args)
 	if len(positions) > 1 {
-		failure.Related = []checkutil.RelatedLocation{{Position: positions[len(positions)-1], Message: "first declaration"}}
+		failure.Related = []RelatedLocation{{Position: positions[len(positions)-1], Message: "first declaration"}}
 	}
 	r.report(failure)
 }
@@ -84,7 +83,7 @@ func (r *_DiagnosticReporter) reportReferencef(message string, args ...any) {
 
 func (r *_DiagnosticReporter) reportNamingf(replacement string, message string, args ...any) {
 	failure := newDiagnosticFailure(DiagnosticCodeNaming, message, args...)
-	failure.Suggestion = &checkutil.Suggestion{
+	failure.Suggestion = &Suggestion{
 		Message:     "replace with " + replacement,
 		Replacement: replacement,
 		Replace:     true,
@@ -92,8 +91,8 @@ func (r *_DiagnosticReporter) reportNamingf(replacement string, message string, 
 	r.report(failure)
 }
 
-func newDiagnosticFailure(code string, message string, args ...any) *checkutil.Failure {
-	failure := checkutil.NewFailuref(message, args...)
+func newDiagnosticFailure(code string, message string, args ...any) *Failure {
+	failure := NewFailuref(message, args...)
 	failure.Code = code
 	return failure
 }
@@ -115,7 +114,7 @@ func (r *_DiagnosticReporter) report(err error) {
 	if r.cancelled() || err == nil || len(r.errors) >= MaxDiagnosticsPerDomain {
 		return
 	}
-	position, _ := checkutil.Position(err)
+	position, _ := Position(err)
 	key := position.String() + "\x00" + err.Error()
 	if r.seen[key] {
 		return
@@ -131,8 +130,8 @@ func (r *_DiagnosticReporter) full() bool {
 func (r *_DiagnosticReporter) result() []error {
 	result := append([]error{}, r.errors...)
 	slices.SortFunc(result, func(left, right error) int {
-		leftPosition, _ := checkutil.Position(left)
-		rightPosition, _ := checkutil.Position(right)
+		leftPosition, _ := Position(left)
+		rightPosition, _ := Position(right)
 		if compared := strings.Compare(leftPosition.File, rightPosition.File); compared != 0 {
 			return compared
 		}

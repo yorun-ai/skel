@@ -6,7 +6,6 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
-	"go.yorun.ai/skel/internal/skelmeta"
 )
 
 func parseData(reporter *_DiagnosticReporter, gs *grammar.Data) (*model.Data, bool) {
@@ -121,9 +120,6 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.D
 		}
 		member, memberValid := parseDataMember(reporter, grammarMember)
 		valid = memberValid && valid
-		valid = reporter.check(member.Name != skelmeta.SensitiveMarkerFieldName(),
-			"%s DataMember %s is reserved for the generated sensitive marker method",
-			member.Pos, skelmeta.SensitiveMarkerFieldName()) && valid
 		duplicatedPosition, duplicated := memberPos[member.Name]
 		if duplicated {
 			reporter.reportDuplicatef("%s duplicated DataMember %s found, also present at %s", member.Pos, member.Name, duplicatedPosition)

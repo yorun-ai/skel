@@ -77,7 +77,7 @@ type DataMember struct {
 	DeprecatedReason string
 	// Example is the member's example value as source text.
 	Example string
-	// Sensitive reports whether generated Go values mark this member for redaction.
+	// Sensitive reports whether the member carries redaction semantics.
 	Sensitive bool
 	// Type is the member's resolved semantic type.
 	Type *Type

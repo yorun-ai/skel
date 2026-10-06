@@ -46,13 +46,10 @@ type Type struct {
 	TypeArguments []*Type
 	// ExternalDomain is the fully qualified domain name for an imported type.
 	ExternalDomain string
-	// ExternalAlias is the source or generated qualifier for an imported type.
+	// ExternalAlias is the source qualifier for an imported type.
 	ExternalAlias string
 	// ExternalAliasExplicit reports whether ExternalAlias was declared in source.
 	ExternalAliasExplicit bool
-	// ExternalImportPath is the target-language import path selected by a
-	// generator for an imported type.
-	ExternalImportPath string
 }
 
 // Name returns a stable identifier-style name for t.

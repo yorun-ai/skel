@@ -6,8 +6,8 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skel/internal/binding"
 	"go.yorun.ai/skel/internal/lsp/source"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 // Snapshot is an immutable workspace view used by one request or analysis.
@@ -18,7 +18,7 @@ type Snapshot struct {
 	byDomain            map[string][]*Document
 	definitions         map[string][]DefinitionLocation
 	occurrences         map[string][]OccurrenceLocation
-	symbols             map[string][]binding.Symbol
+	symbols             map[string][]symbol.Symbol
 	documentOccurrences map[uri.URI][]Occurrence
 	roots               map[uri.URI]string
 	domainRoots         map[string]map[string]bool
@@ -40,7 +40,7 @@ func newSnapshot(revision uint64, documents map[uri.URI]*Document, ordered []*Do
 	snapshot := Snapshot{
 		revision: revision, documents: documents, ordered: ordered,
 		byDomain: map[string][]*Document{}, definitions: map[string][]DefinitionLocation{},
-		occurrences: map[string][]OccurrenceLocation{}, roots: map[uri.URI]string{}, domainRoots: map[string]map[string]bool{}, symbols: map[string][]binding.Symbol{}, documentOccurrences: map[uri.URI][]Occurrence{},
+		occurrences: map[string][]OccurrenceLocation{}, roots: map[uri.URI]string{}, domainRoots: map[string]map[string]bool{}, symbols: map[string][]symbol.Symbol{}, documentOccurrences: map[uri.URI][]Occurrence{},
 	}
 	directories := map[uri.URI]bool{}
 	for _, document := range ordered {
@@ -74,12 +74,12 @@ func newSnapshot(revision uint64, documents map[uri.URI]*Document, ordered []*Do
 		}
 	}
 	for _, document := range ordered {
-		occurrences := bindOccurrences(document, func(id binding.SymbolID) []binding.Symbol {
+		occurrences := bindOccurrences(document, func(id symbol.SymbolID) []symbol.Symbol {
 			return snapshot.symbols[snapshot.ResolveKey(document, id.Key())]
 		})
 		snapshot.documentOccurrences[document.URI] = occurrences
 		for _, occurrence := range occurrences {
-			if occurrence.Binding.Status != binding.Resolved && occurrence.Binding.Status != binding.Ambiguous {
+			if occurrence.Binding.Status != symbol.Resolved && occurrence.Binding.Status != symbol.Ambiguous {
 				continue
 			}
 			key := snapshot.ResolveKey(document, occurrence.Key)
@@ -122,7 +122,7 @@ func (s Snapshot) Occurrences(key string) []OccurrenceLocation {
 // ResolveKey binds local references to the compiler input and imported references
 // only to an unambiguous input. Copies of a domain must never share rename edits.
 func (s Snapshot) ResolveKey(document *Document, key string) string {
-	id := binding.ParseKey(key)
+	id := symbol.ParseKey(key)
 	domain := id.Domain
 	if !strings.Contains(key, ".") {
 		return ""
@@ -160,7 +160,7 @@ func (s Snapshot) DocumentsFor(document *Document, domain string) []*Document {
 // shared per-document syntax index.
 func (s Snapshot) OccurrenceAt(document *Document, position protocol.Position) (Occurrence, bool) {
 	for _, occurrence := range s.documentOccurrences[document.URI] {
-		if occurrence.Binding.Status != binding.Resolved && occurrence.Binding.Status != binding.Ambiguous {
+		if occurrence.Binding.Status != symbol.Resolved && occurrence.Binding.Status != symbol.Ambiguous {
 			continue
 		}
 		if source.ContainsPosition(occurrence.Range, position) {

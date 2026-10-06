@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skel/diagnostic"
-	"go.yorun.ai/skel/internal/codegen/common"
-	"go.yorun.ai/skel/internal/codegen/golang"
-	"go.yorun.ai/skel/internal/codegen/skeleton"
-	"go.yorun.ai/skel/internal/codegen/typescript"
+	"go.yorun.ai/skel/internal/codegen"
+	"go.yorun.ai/skel/internal/codegen/binding/golang"
+	"go.yorun.ai/skel/internal/codegen/binding/skeleton"
+	"go.yorun.ai/skel/internal/codegen/binding/typescript"
 	"go.yorun.ai/skel/model"
 )
 
@@ -27,7 +27,7 @@ type CompileResult struct {
 }
 
 // ApiFilter selects API services and optional local type roots for pruning.
-type ApiFilter = common.ApiFilter
+type ApiFilter = codegen.ApiFilter
 
 // GolangOption configures Go generation.
 type GolangOption = golang.Option
@@ -48,7 +48,7 @@ func GenerateGolang(domain *model.Domain, option GolangOption) error {
 	if err != nil {
 		return err
 	}
-	return golang.GenerateManaged(domain, codegenOption)
+	return golang.Generate(domain, codegenOption)
 }
 
 // CompileGolang parses input and generates Go source or a standalone Go module.
@@ -66,7 +66,7 @@ func CompileGolang(input Input, option GolangOption) (CompileResult, error) {
 	if err != nil {
 		return CompileResult{}, err
 	}
-	if err := golang.GenerateManaged(parsed.Domain, codegenOption); err != nil {
+	if err := golang.Generate(parsed.Domain, codegenOption); err != nil {
 		return CompileResult{}, err
 	}
 	return CompileResult{Diagnostics: parsed.Diagnostics}, nil
@@ -82,7 +82,7 @@ func GenerateTypeScript(domain *model.Domain, option TypeScriptOption) error {
 	if err != nil {
 		return err
 	}
-	return typescript.GenerateManaged(domain, codegenOption)
+	return typescript.Generate(domain, codegenOption)
 }
 
 // CompileTypeScript parses input and generates TypeScript source. Parsing
@@ -100,7 +100,7 @@ func CompileTypeScript(input Input, option TypeScriptOption) (CompileResult, err
 	if err != nil {
 		return CompileResult{}, err
 	}
-	if err := typescript.GenerateManaged(parsed.Domain, codegenOption); err != nil {
+	if err := typescript.Generate(parsed.Domain, codegenOption); err != nil {
 		return CompileResult{}, err
 	}
 	return CompileResult{Diagnostics: parsed.Diagnostics}, nil
@@ -116,7 +116,7 @@ func GenerateSkeleton(domain *model.Domain, option SkeletonOption) error {
 	if err != nil {
 		return err
 	}
-	return skeleton.GenerateManaged(domain, codegenOption)
+	return skeleton.Generate(domain, codegenOption)
 }
 
 // CompileSkeleton parses input and generates a Skel contract. Parsing completes
@@ -134,7 +134,7 @@ func CompileSkeleton(input Input, option SkeletonOption) (CompileResult, error) 
 	if err != nil {
 		return CompileResult{}, err
 	}
-	if err := skeleton.GenerateManaged(parsed.Domain, codegenOption); err != nil {
+	if err := skeleton.Generate(parsed.Domain, codegenOption); err != nil {
 		return CompileResult{}, err
 	}
 	return CompileResult{Diagnostics: parsed.Diagnostics}, nil

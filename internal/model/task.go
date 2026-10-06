@@ -42,6 +42,6 @@ type TaskTrigger struct {
 	ArgumentsSensitive bool
 	// Arguments lists trigger arguments in source order.
 	Arguments []*Argument
-	// ArgumentsData is the generated data model representing trigger arguments.
+	// ArgumentsData is the language-defined data model representing trigger arguments.
 	ArgumentsData *Data
 }

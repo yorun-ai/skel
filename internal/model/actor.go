@@ -36,19 +36,19 @@ type Actor struct {
 	Vias []*ActorVia
 	// AuthEnabled reports whether the actor declares authentication.
 	AuthEnabled bool
-	// AuthCredential is the generated authentication credential data model.
+	// AuthCredential is the language-defined authentication credential data model.
 	AuthCredential *Data
-	// AuthInfo is the generated authenticated-actor information data model.
+	// AuthInfo is the language-defined authenticated-actor information data model.
 	AuthInfo *Data
 	// IdentifierField names the optional identity field in AuthInfo.
 	IdentifierField string
-	// AuthService is the generated authentication service.
+	// AuthService is the language-defined authentication service.
 	AuthService *Service
 	// AuthMethod is the authentication method in AuthService.
 	AuthMethod *Method
 	// PermEnabled reports whether the actor declares permission support.
 	PermEnabled bool
-	// PermService is the generated permission service.
+	// PermService is the language-defined permission service.
 	PermService *Service
 	// PermMethod is the permission-checking method in PermService.
 	PermMethod *Method

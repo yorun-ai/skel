@@ -286,7 +286,7 @@ for _, diagnostic := range result.Diagnostics {
 
 后端 Go 输出必须设置 `CompilerVersion`，并填写不低于 `v0.17.1` 的实际 skelc 依赖版本（请按锁定版本调整示例）。CLI 会自动填写；仅开发构建使用 `v0.0.0-dev`。
 
-API 同时提供 `CompileTypeScript` 和 `CompileSkeleton`。parser 与 loader warning 使用同一套结构化诊断，不再维护独立的字符串列表。诊断类型和稳定的 code 常量统一由 `go.yorun.ai/skel/diagnostic` 提供，调用方直接使用该公开 package，不再通过根 package 别名访问。所有公开契约生成器共用一次经过校验的 `internal/codegen/common` 投影，避免 Go、Skel 和 TypeScript 的可见性规则漂移。
+API 同时提供 `CompileTypeScript` 和 `CompileSkeleton`。parser 与 loader warning 使用同一套结构化诊断，不再维护独立的字符串列表。诊断类型和稳定的 code 常量统一由 `go.yorun.ai/skel/diagnostic` 提供，调用方直接使用该公开 package，不再通过根 package 别名访问。内置与自定义生成器共用 `codegen` SDK 的输入校验、声明选择和输出管理。
 
 生成过程在每个文件中标记所有权，以原子方式逐个替换输出；提交失败时回滚所有受影响的目标，删除带标记的过期生成文件，并保留共享输出目录中的无标记文件。
 
@@ -296,7 +296,23 @@ Go 集成通过公开 facade `go.yorun.ai/skel/schema` 消费 schema 命令 JSON
 `schema.Encode`，用于拒绝未知字段、尾随 JSON、不支持的格式版本以及不完整的
 规范化结构。`go.yorun.ai/skel/api` package 同时提供源码检查和 schema 查询 API。
 
-自定义 generator 可以调用 `api.Parse`，并通过与 parser 无关的 `go.yorun.ai/skel/model` 使用返回的 `*model.Domain`。解析完成的模型已经包含由 skelc 计算好的兼容性 hash。内置的 `GenerateGolang`、`GenerateTypeScript` 和 `GenerateSkeleton` 也接受同一个已解析 domain，因此多个目标可以共享一次解析结果。
+使用 Go 编写的自定义 binding 通过 `go.yorun.ai/skel/codegen` 接入。调用
+`api.Parse` 后，使用 `codegen.Prepare(domain, selection)` 校验并选择生成视图。
+`model` 是共享语义图；`codegen.Input` 提供选中的声明、完整名称查询、类型根和外部依赖，
+不另建一套声明类型。准备完成后应只读使用模型，目标语言名称和导入信息由 binding 自己保存。
+`WalkTypeGraphs` 可安全遍历递归声明，`InstantiateMembers` 替换泛型参数但不展开命名类型。
+
+实现 `codegen.Generator.Generate(context.Context, codegen.Input) ([]codegen.File, error)`。
+`codegen.Generate` 校验并稳定排序返回的文件集合，不写磁盘；`codegen.Run` 负责落盘、
+清理过期生成文件和多目标失败回滚。文件路径必须为相对路径，通过 `Target` 映射到输出目录。
+其他语言可设置 `File.CommentPrefix`（如 Python 使用 `#`），让 SDK 标记文件归属。
+生成路径上的已有文件会被替换，无关的未标记文件会保留。输出目录不能重叠。
+
+`api.NewGolangGenerator`、`NewTypeScriptGenerator` 和 `NewSkeletonGenerator` 返回使用
+相同接口的内置 binding，并按各自选项从完整语义图选择生成范围。其 `Out` 选项提供命名上下文，
+实际输出位置由 `codegen.Run` 指定。Go 分离输出使用 `""` 和 `"pub"` 两个 target，
+其他输出使用 `""`。现有 `GenerateGolang`、`GenerateTypeScript` 和 `GenerateSkeleton`
+也使用同一 SDK 执行入口，支持共享一次解析结果。参见[自定义 binding 示例](codegen/example_test.go)。
 
 
 源码工具可以调用 `Check`（允许未解析导入）、`ScanImports`、`FormatSource` 和

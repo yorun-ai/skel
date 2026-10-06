@@ -9,7 +9,6 @@ import (
 	"go.yorun.ai/skel/internal/analyzer"
 	"go.yorun.ai/skel/internal/model"
 	textsource "go.yorun.ai/skel/internal/source"
-	"go.yorun.ai/skel/internal/util/checkutil"
 )
 
 const (
@@ -50,13 +49,13 @@ func diagnosticFromError(path, fallbackCode string, err error) Diagnostic {
 		Code: fallbackCode, Severity: DiagnosticSeverityError,
 		Position: model.Position{File: path, Line: 1, Column: 1}, Message: err.Error(),
 	}
-	if sourcePosition, ok := checkutil.Position(err); ok {
+	if sourcePosition, ok := analyzer.Position(err); ok {
 		diagnostic.Position = sourcePosition
 		diagnostic.Message = strings.TrimPrefix(err.Error(), sourcePosition.String()+" ")
 	}
-	var failure *checkutil.Failure
+	var failure *analyzer.Failure
 	if errors.As(err, &failure) {
-		if failure.Code != "" && failure.Code != checkutil.CodeValidation {
+		if failure.Code != "" && failure.Code != analyzer.CodeValidation {
 			diagnostic.Code = failure.Code
 		}
 		for _, related := range failure.Related {

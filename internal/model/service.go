@@ -92,7 +92,7 @@ type Method struct {
 	Require *PermissionRequire
 	// Arguments lists input arguments in source order.
 	Arguments []*Argument
-	// ArgumentsData is the generated data model representing method arguments.
+	// ArgumentsData is the language-defined data model representing method arguments.
 	ArgumentsData *Data
 	// InputDescription documents the method input as a whole.
 	InputDescription string
@@ -134,7 +134,7 @@ type Argument struct {
 	DeprecatedReason string
 	// Example is the argument's example value as source text.
 	Example string
-	// Sensitive reports whether generated Go values mark this argument for redaction.
+	// Sensitive reports whether the argument carries redaction semantics.
 	Sensitive bool
 	// Type is the argument's resolved semantic type.
 	Type *Type

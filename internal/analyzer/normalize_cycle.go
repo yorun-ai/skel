@@ -6,11 +6,10 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/model"
-	"go.yorun.ai/skel/internal/util/graphutil"
 )
 
 func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {
-	graph := graphutil.New[*model.Data]()
+	graph := newGraph[*model.Data]()
 	edges := map[*model.Data][]*model.Data{}
 	for _, data := range dataList {
 		if p.reporter.cancelled() {
@@ -37,14 +36,14 @@ func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {
 		}
 		slices.SortFunc(edges[data], func(a, b *model.Data) int { return strings.Compare(a.Name, b.Name) })
 		for _, target := range edges[data] {
-			graph.AddEdge(data, target)
+			graph.addEdge(data, target)
 		}
 	}
 	ctx := p.reporter.ctx
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	components, err := graph.FindCyclesContext(ctx)
+	components, err := graph.findCyclesContext(ctx)
 	if err != nil {
 		return
 	}
