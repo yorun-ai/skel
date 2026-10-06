@@ -37,7 +37,7 @@ func (g *_Gen) buildDataGoPayload() *DataGoPayload {
 		castedData := g.types.castData(dataType)
 		payload.Data = append(payload.Data, castedData)
 	}
-	imports := g.apiImports(buildDataImports(payload.Data))
+	imports := buildDataImports(payload.Data)
 	payload.StdImports, payload.ModuleImports = splitImports(imports)
 
 	return payload

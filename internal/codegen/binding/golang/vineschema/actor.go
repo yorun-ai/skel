@@ -3,7 +3,7 @@ package vineschema
 import (
 	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/projection"
-	contractschema "go.yorun.ai/skel/internal/schema"
+	contractschema "go.yorun.ai/skel/schema"
 )
 
 func (g *_Gen) buildActorSchema(value *model.Actor, projected *contractschema.Declaration) *_ActorSchema {

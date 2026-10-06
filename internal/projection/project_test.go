@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/model"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestProjectMapsDeclarationKinds(t *testing.T) {
@@ -86,7 +86,7 @@ func TestProjectMapsCompatibilityFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	config := schema.Find(document, string(schema.DeclarationTypeConfig), "demo.contract.Runtime")
+	config := schema.Find(document, schema.DeclarationTypeConfig, "demo.contract.Runtime")
 	if config == nil || config.Pos != configPos || config.Data.Lifecycle != schema.ConfigLifecycleInstant || !config.Data.Sensitive {
 		t.Fatalf("config projection = %#v", config)
 	}
@@ -98,7 +98,7 @@ func TestProjectMapsCompatibilityFields(t *testing.T) {
 		t.Fatalf("member projection = %#v", member)
 	}
 
-	service := schema.Find(document, string(schema.DeclarationTypeService), "demo.contract.Documents")
+	service := schema.Find(document, schema.DeclarationTypeService, "demo.contract.Documents")
 	if service == nil || service.Pos != servicePos || service.Service.Auth != schema.AuthModeOptional {
 		t.Fatalf("service projection = %#v", service)
 	}

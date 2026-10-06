@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/model"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 func Project(domain *model.Domain, importAliases map[string]string) (*schema.Document, error) {

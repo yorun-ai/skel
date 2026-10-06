@@ -536,6 +536,7 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 						if mode == "split" {
 							testutil.Go(t, out, "mod", "edit", "-replace=example.com/apub="+opts.PubOut)
 						}
+						testutil.UseLocalSkel(t, out)
 						testutil.Go(t, out, "mod", "tidy")
 						files, err := filepath.Glob(filepath.Join(out, "*.go"))
 						if err != nil {
@@ -1030,31 +1031,4 @@ func moduleForTarget(target, module string) string {
 		return module
 	}
 	return ""
-}
-
-func apiOutputSnapshot(t *testing.T, dir string) map[string]string {
-	t.Helper()
-	files := map[string]string{}
-	err := filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() {
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		relative, err := filepath.Rel(dir, path)
-		if err != nil {
-			return err
-		}
-		files[filepath.ToSlash(relative)] = string(data)
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	return files
 }

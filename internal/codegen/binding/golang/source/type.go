@@ -17,7 +17,10 @@ type Type struct {
 	DefaultImports []*Import
 }
 
-const skelImport = "go.yorun.ai/vine/core/skel"
+const (
+	skelImport  = "go.yorun.ai/vine/core/skel"
+	typesImport = "go.yorun.ai/skel/types"
+)
 
 func (r _Types) castType(p *model.Type) *Type {
 	if p == nil {

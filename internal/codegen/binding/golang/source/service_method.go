@@ -91,6 +91,12 @@ type MethodArgument struct {
 
 func (r _Types) castMethodArgument(p *model.Argument) *MethodArgument {
 	argType := r.castType(p.Type)
+	name := nameutil.ToLowerCamel(p.Name)
+	// Generated method bodies may refer to the scalar package, including when
+	// a business parameter is named types. Keep its wire name unchanged.
+	if name == "types" {
+		name = "types_"
+	}
 	description := binding.MergeDescriptionAndExample(p.Description, p.Example)
 	if p.Deprecated {
 		if description != "" {
@@ -99,7 +105,7 @@ func (r _Types) castMethodArgument(p *model.Argument) *MethodArgument {
 		description += "Deprecated: " + binding.EnsureSentence(p.DeprecatedReason)
 	}
 	return &MethodArgument{
-		Name:        nameutil.ToLowerCamel(p.Name),
+		Name:        name,
 		SkelName:    p.Name,
 		Description: description,
 		Type:        argType,

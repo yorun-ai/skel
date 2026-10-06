@@ -11,8 +11,8 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 	"go.yorun.ai/skel/internal/lsp/features"
-	"go.yorun.ai/skel/internal/schema"
 	"go.yorun.ai/skel/internal/testutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestSchemaCompatibilityCodeLensAndCommandUseInMemoryDocument(t *testing.T) {

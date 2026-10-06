@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
-	schemas "go.yorun.ai/skel/internal/schema"
 	"go.yorun.ai/skel/internal/testutil"
+	schemas "go.yorun.ai/skel/schema"
 )
 
 func TestRunSkelcStrictSchemaCommands(t *testing.T) {

@@ -112,7 +112,7 @@ func TestGeneratedStructuredConfig(t *testing.T) {
 					t.Fatal(err)
 				}
 				config := strings.Join(strings.Fields(readFileForTest(t, filepath.Join(out, "config.go"))), " ")
-				for _, expected := range []string{"Record *Record", "Records []Record", "Groups map[string][]Entry[*skel.Binary]", "Content skel.Binary"} {
+				for _, expected := range []string{"Record *Record", "Records []Record", "Groups map[string][]Entry[*types.Binary]", "Content types.Binary"} {
 					if !strings.Contains(config, expected) {
 						t.Fatalf("missing %s in %s", expected, config)
 					}

@@ -1,13 +1,16 @@
 package golang_test
 
 import (
-	"go.yorun.ai/skel/internal/codegen/binding/golang"
-	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"go.yorun.ai/skel/api"
+	"go.yorun.ai/skel/internal/codegen/binding/golang"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestGeneratorGoRendersSchemaFile(t *testing.T) {
@@ -210,5 +213,86 @@ func TestGeneratorGoRendersWebMountInSpecAndSchema(t *testing.T) {
 				t.Fatal("non-deterministic generation")
 			}
 		}
+	}
+}
+
+func TestGeneratedAuthModesWithPublishedVine(t *testing.T) {
+	testutil.RequireToolchain(t)
+	root := t.TempDir()
+	input := filepath.Join(root, "domain.skel")
+	writeFileForTest(t, input, `domain demo.auth
+actor ClientActor { via client {} }
+api service SessionApiService {
+ for ClientActor via client
+ auth required
+ method profile {}
+ method browse { auth optional }
+ method login { auth anonymous }
+}
+web RequiredWeb { for ClientActor via client auth required }
+web OptionalWeb { for ClientActor via client auth optional }
+web AnonymousWeb { for ClientActor via client auth anonymous }
+web OffWeb { for ClientActor via client auth off }
+`)
+	out := filepath.Join(root, "auth")
+	if _, err := api.CompileGolang(api.Input{SkelIn: input, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auth", AsModule: true}); err != nil {
+		t.Fatal(err)
+	}
+	writeFileForTest(t, filepath.Join(out, "auth_test.go"), `package auth
+import (
+ "testing"
+ "go.yorun.ai/vine/core/skel"
+)
+func TestAuthModes(t *testing.T) {
+ if _DomainSchema.Services[0].AuthMode != skel.AuthModeRequired { t.Fatal("wrong service auth") }
+ methods:=_DomainSchema.Services[0].Methods
+ want:=map[string]skel.AuthMode{"profile":skel.AuthModeInherit,"browse":skel.AuthModeOptional,"login":skel.AuthModeAnonymous}
+ for _,method:=range methods { if method.AuthMode!=want[method.Name] { t.Fatalf("method %s: %s",method.Name,method.AuthMode) } }
+ webs:=map[string]skel.AuthMode{"RequiredWeb":skel.AuthModeRequired,"OptionalWeb":skel.AuthModeOptional,"AnonymousWeb":skel.AuthModeAnonymous,"OffWeb":skel.AuthModeOff}
+ for _,web:=range _DomainSchema.Webs { if web.AuthMode!=webs[web.Name] { t.Fatalf("web %s: %s",web.Name,web.AuthMode) } }
+}
+`)
+	testutil.UseLocalSkel(t, out)
+	testutil.Go(t, out, "test", "-mod=mod", "./...")
+}
+
+func TestApiBackendSchemaAndClientBoundary(t *testing.T) {
+	root := t.TempDir()
+	entry := filepath.Join(root, "order.skel")
+	writeFileForTest(t, entry, `domain demo.order
+actor TestActor { via client {} }
+api service OrderApiService { for TestActor via client method ping {} }
+pub service BackendService { method ping {} }
+`)
+	input := api.Input{SkelIn: entry}
+	out := filepath.Join(root, "server")
+	option := api.GolangOption{CompilerVersion: "v0.0.0-dev", AsModule: true, Module: "example.com/orderserver", Out: out}
+	if _, err := api.CompileGolang(input, option); err != nil {
+		t.Fatal(err)
+	}
+	schema, err := os.ReadFile(filepath.Join(out, "schema.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(string(schema), "Api:") != 1 {
+		t.Fatalf("missing explicit API schema: %s", schema)
+	}
+	service, err := os.ReadFile(filepath.Join(out, "service.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(service), "NewOrderApiServiceClient") || !strings.Contains(string(service), "NewBackendServiceClient") {
+		t.Fatalf("wrong backend client generation: %s", service)
+	}
+	mod, err := os.ReadFile(filepath.Join(out, "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(mod), "go.yorun.ai/vine "+api.DefaultGolangVineVersion) {
+		t.Fatalf("unsupported Vine requirement: %s", mod)
+	}
+	option.VineVersion = "v0.15.6"
+	if _, err := api.CompileGolang(input, option); err == nil {
+		t.Fatal("accepted runtime below the minimum Vine version")
 	}
 }

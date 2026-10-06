@@ -5,7 +5,7 @@ import (
 	"slices"
 
 	"go.yorun.ai/skel/internal/model"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 // ApiTypeDependency identifies a foreign declaration, not a generic instantiation.

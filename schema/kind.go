@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// ValidateKind reports whether kind names a supported top-level declaration type.
 func ValidateKind(kind string) error {
 	if slices.Contains(declarationKinds, DeclarationType(kind)) {
 		return nil

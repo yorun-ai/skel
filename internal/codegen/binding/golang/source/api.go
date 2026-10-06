@@ -3,12 +3,9 @@ package source
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
 )
-
-const apiSkelImport = "go.yorun.ai/vrpc/skel"
 
 var apiGoTemplate = joinTemplates(
 	"imports.go.tpl",
@@ -47,19 +44,6 @@ type _ApiMethod struct {
 	ResultSensitive    bool
 }
 
-func (g *_Gen) apiImports(imports []*Import) []*Import {
-	if g.mode != view.ModeApi {
-		return imports
-	}
-	imports = cloneImports(imports)
-	for _, item := range imports {
-		if item.Path == skelImport {
-			item.Path = apiSkelImport
-		}
-	}
-	return imports
-}
-
 func (g *_Gen) genApiGo() {
 	payload := &_ApiPayload{PackageName: g.pkgName}
 	imports := newImportSet()
@@ -81,7 +65,7 @@ func (g *_Gen) genApiGo() {
 			for _, arg := range method.Arguments {
 				argument := g.types.castMethodArgument(arg)
 				m.Arguments = append(m.Arguments, argument)
-				imports.addMany(g.apiImports(argument.Type.Imports))
+				imports.addMany(argument.Type.Imports)
 			}
 			m.ArgumentsBinary = methodArgumentsContainBinaryType(method)
 			if method.ArgumentsData != nil {
@@ -104,7 +88,7 @@ func (g *_Gen) genApiGo() {
 					return
 				}
 				m.ResultType = kind
-				imports.addMany(g.apiImports(kind.Imports))
+				imports.addMany(kind.Imports)
 			}
 			m._ClientMethodNames = buildClientMethodNames(m.Arguments)
 			m.CommentLines = goMethodDocLines(

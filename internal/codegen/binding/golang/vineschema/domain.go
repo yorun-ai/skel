@@ -3,7 +3,7 @@ package vineschema
 import (
 	"fmt"
 	"go.yorun.ai/skel/internal/projection"
-	contractschema "go.yorun.ai/skel/internal/schema"
+	contractschema "go.yorun.ai/skel/schema"
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 )
@@ -93,7 +93,7 @@ func (g *_Gen) buildDomainSchema() (*_DomainSchema, error) {
 
 func findProjected(document *contractschema.Document, kind contractschema.DeclarationType, skelName, name string) (*contractschema.Declaration, error) {
 	if skelName != "" {
-		if declaration := contractschema.Find(document, string(kind), skelName); declaration != nil {
+		if declaration := contractschema.Find(document, kind, skelName); declaration != nil {
 			return declaration, nil
 		}
 	}

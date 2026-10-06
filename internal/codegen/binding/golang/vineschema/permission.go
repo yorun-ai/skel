@@ -2,7 +2,7 @@ package vineschema
 
 import (
 	"go.yorun.ai/skel/internal/model"
-	contractschema "go.yorun.ai/skel/internal/schema"
+	contractschema "go.yorun.ai/skel/schema"
 )
 
 func (g *_Gen) buildPermRequireSchema(semantic *model.PermissionRequire, projected *contractschema.Requirement) *_PermRequire {

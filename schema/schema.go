@@ -1,5 +1,3 @@
-// Package schema implements shared contract types, querying, encoding,
-// validation, and compatibility diffing without compiling or loading inputs.
 package schema
 
 const (
@@ -13,22 +11,33 @@ const (
 type DeclarationType string
 
 const (
-	DeclarationTypeActor    DeclarationType = "actor"
-	DeclarationTypeConfig   DeclarationType = "config"
-	DeclarationTypeData     DeclarationType = "data"
-	DeclarationTypeEnum     DeclarationType = "enum"
-	DeclarationTypeEvent    DeclarationType = "event"
+	// DeclarationTypeActor identifies an actor declaration.
+	DeclarationTypeActor DeclarationType = "actor"
+	// DeclarationTypeConfig identifies a config declaration.
+	DeclarationTypeConfig DeclarationType = "config"
+	// DeclarationTypeData identifies a data declaration.
+	DeclarationTypeData DeclarationType = "data"
+	// DeclarationTypeEnum identifies an enum declaration.
+	DeclarationTypeEnum DeclarationType = "enum"
+	// DeclarationTypeEvent identifies an event declaration.
+	DeclarationTypeEvent DeclarationType = "event"
+	// DeclarationTypeResource identifies a resource declaration.
 	DeclarationTypeResource DeclarationType = "resource"
-	DeclarationTypeService  DeclarationType = "service"
-	DeclarationTypeTask     DeclarationType = "task"
-	DeclarationTypeWeb      DeclarationType = "web"
+	// DeclarationTypeService identifies a service declaration.
+	DeclarationTypeService DeclarationType = "service"
+	// DeclarationTypeTask identifies a task declaration.
+	DeclarationTypeTask DeclarationType = "task"
+	// DeclarationTypeWeb identifies a web declaration.
+	DeclarationTypeWeb DeclarationType = "web"
 )
 
 // ConfigLifecycle identifies the lifetime of a config declaration.
 type ConfigLifecycle string
 
 const (
+	// ConfigLifecycleEternal identifies an eternal configuration lifecycle.
 	ConfigLifecycleEternal ConfigLifecycle = "eternal"
+	// ConfigLifecycleInstant identifies an instant configuration lifecycle.
 	ConfigLifecycleInstant ConfigLifecycle = "instant"
 )
 
@@ -36,15 +45,24 @@ const (
 type TypeKind string
 
 const (
-	TypeKindScalar            TypeKind = "scalar"
-	TypeKindEnum              TypeKind = "enum"
-	TypeKindData              TypeKind = "data"
-	TypeKindConfig            TypeKind = "config"
-	TypeKindEvent             TypeKind = "event"
-	TypeKindTypeParameter     TypeKind = "typeParameter"
+	// TypeKindScalar identifies a built-in scalar type.
+	TypeKindScalar TypeKind = "scalar"
+	// TypeKindEnum identifies a normalized enum reference.
+	TypeKindEnum TypeKind = "enum"
+	// TypeKindData identifies a normalized data reference.
+	TypeKindData TypeKind = "data"
+	// TypeKindConfig identifies a normalized config reference.
+	TypeKindConfig TypeKind = "config"
+	// TypeKindEvent identifies a normalized event reference.
+	TypeKindEvent TypeKind = "event"
+	// TypeKindTypeParameter identifies a generic type parameter.
+	TypeKindTypeParameter TypeKind = "typeParameter"
+	// TypeKindImportedReference identifies an unresolved imported-domain type.
 	TypeKindImportedReference TypeKind = "importedReference"
-	TypeKindList              TypeKind = "list"
-	TypeKindMap               TypeKind = "map"
+	// TypeKindList identifies a list type.
+	TypeKindList TypeKind = "list"
+	// TypeKindMap identifies a map type.
+	TypeKindMap TypeKind = "map"
 )
 
 // AuthMode identifies the authentication behavior of a service, method, or web.
@@ -53,7 +71,8 @@ type AuthMode string
 const (
 	// AuthModeInherit uses the enclosing service authentication mode on methods.
 	AuthModeInherit AuthMode = "inherit"
-	AuthModeUnset   AuthMode = "unset"
+	// AuthModeUnset inherits authentication behavior from the enclosing context.
+	AuthModeUnset AuthMode = "unset"
 	// AuthModeRequired requires valid credentials.
 	AuthModeRequired AuthMode = "required"
 	// AuthModeOptional allows anonymous callers and authenticates supplied credentials.
@@ -63,7 +82,9 @@ const (
 	// AuthModeOff bypasses portal authentication for web declarations.
 	AuthModeOff AuthMode = "off"
 
-	AuthModeAuth   AuthMode = "auth"
+	// AuthModeAuth requires an authenticated actor.
+	AuthModeAuth AuthMode = "auth"
+	// AuthModeNoAuth explicitly permits unauthenticated access.
 	AuthModeNoAuth AuthMode = "noauth"
 )
 
@@ -71,11 +92,16 @@ const (
 type RequirementMode string
 
 const (
-	RequirementModeCode      RequirementMode = "code"
+	// RequirementModeCode requires one permission code.
+	RequirementModeCode RequirementMode = "code"
+	// RequirementModeReference identifies a normalized permission reference.
 	RequirementModeReference RequirementMode = "reference"
-	RequirementModeCheck     RequirementMode = "check"
-	RequirementModeAll       RequirementMode = "all"
-	RequirementModeAny       RequirementMode = "any"
+	// RequirementModeCheck invokes a resource permission check.
+	RequirementModeCheck RequirementMode = "check"
+	// RequirementModeAll requires every child expression.
+	RequirementModeAll RequirementMode = "all"
+	// RequirementModeAny requires at least one child expression.
+	RequirementModeAny RequirementMode = "any"
 )
 
 var declarationKinds = []DeclarationType{

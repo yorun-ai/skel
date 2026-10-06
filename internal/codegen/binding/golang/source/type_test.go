@@ -76,10 +76,10 @@ func TestCastMapTypeMapsUUIDKeyToSkelUUID(t *testing.T) {
 		},
 	})
 
-	if got.Plain != "map[skel.UUID]string" {
+	if got.Plain != "map[types.UUID]string" {
 		t.Fatalf("unexpected map type: %s", got.Plain)
 	}
-	if len(got.Imports) != 1 || got.Imports[0].Path != skelImport {
+	if len(got.Imports) != 1 || got.Imports[0].Path != typesImport {
 		t.Fatalf("unexpected map imports: %+v", got.Imports)
 	}
 }

@@ -279,6 +279,12 @@ and superseded analysis is cancelled immediately.
 
 ## Programmatic API
 
+`go.yorun.ai/skel/types` provides portable Go values such as `types.Decimal`,
+`types.Timestamp`, and `types.UUID`, their constructors, and JSON/CBOR encodings.
+Backend and API Go output share these types. Generated modules require the Skel
+compiler version used for generation; development builds require a local workspace
+or module replacement. See the [types example](types/example_test.go).
+
 Go programs can invoke generation through `go.yorun.ai/skel/api` without importing implementation packages:
 
 Import `go.yorun.ai/skel/api` and use the `api` package for source inspection, compilation, and generation. Move existing root-package toolchain imports to `go.yorun.ai/skel/api` and replace `skel.` references with `api.`; The CLI wire contract moves to `go.yorun.ai/skel/cmd/skelc/output`; `schema` and `model` keep their existing paths. The executable name and CLI commands remain `skelc`.
@@ -313,10 +319,10 @@ The API also provides `CompileTypeScript` and `CompileSkeleton`. Parser and load
 
 Generation marks ownership in every generated file, atomically replaces individual outputs, rolls back every affected target when a commit fails, removes stale marked files, and preserves unmarked files in a shared output directory.
 
-Go integrations consume schema command JSON through the public facade
+Go integrations consume schema command JSON through the public package
 `go.yorun.ai/skel/schema`. It provides the response and nested wire types,
 typed constants, and strict `schema.Decode`, `schema.Validate`, and
-`schema.Encode` functions while the implementation remains internal. Strict
+`schema.Encode` functions, all implemented directly in this package. Strict
 decoding rejects unknown fields, trailing JSON values, unsupported format
 versions and malformed normalized structures. The `go.yorun.ai/skel/api`
 package also provides source inspection and schema query APIs.
@@ -374,7 +380,7 @@ contract. Read APIs also have `Context` variants for cancellation.
 
 skelc reads contracts and generates code; it is not the application runtime:
 
-- Generated Go code uses runtime types and service infrastructure from `go.yorun.ai/vine`
+- Generated Go code uses scalar values from `go.yorun.ai/skel/types`; backend services use `go.yorun.ai/vine` and API clients use `go.yorun.ai/vrpc`
 - Generated TypeScript service clients use `@yorun-ai/vrpc`
 - Runtime capabilities such as a CBOR codec are configured by the application when it creates a vRPC client; skelc does not bundle them into generated code
 

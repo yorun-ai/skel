@@ -10,7 +10,7 @@ import (
 
 	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/loader"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 // ErrGitHistoryUnavailable identifies a domain for which no usable Git HEAD

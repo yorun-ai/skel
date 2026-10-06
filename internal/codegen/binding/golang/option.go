@@ -11,6 +11,8 @@ type Option struct {
 	ApiFilter codegen.ApiFilter
 	// CompilerVersion identifies the actual skelc version embedded in generated metadata.
 	// Required for backend output; v0.0.0-dev identifies development builds.
+	// Generated modules also pin go.yorun.ai/skel to this version. If omitted
+	// for API output, the linked Skel module version is used when available.
 	CompilerVersion string
 	AsModule        bool
 	PubOnly         bool

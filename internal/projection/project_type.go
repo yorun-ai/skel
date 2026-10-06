@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/model"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 func projectRequirement(value *model.PermissionRequire) *schema.Requirement {

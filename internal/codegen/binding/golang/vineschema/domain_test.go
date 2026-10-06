@@ -5,7 +5,7 @@ import (
 	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/projection"
-	contractschema "go.yorun.ai/skel/internal/schema"
+	contractschema "go.yorun.ai/skel/schema"
 	"path/filepath"
 	"testing"
 )
@@ -36,7 +36,7 @@ func TestVineSchemaAdaptsNormalizedSchemaProjection(t *testing.T) {
 	gen := newGen(Option{Domain: domain, View: mustView(t, view.ModeFull, domain), Mode: view.ModeFull})
 	runtime := mustBuildDomainSchema(t, gen)
 
-	projectedData := contractschema.Find(document, string(contractschema.DeclarationTypeData), profile.SkelName)
+	projectedData := contractschema.Find(document, contractschema.DeclarationTypeData, profile.SkelName)
 	if runtime.Description != document.Description || runtime.Data[0].Description != projectedData.Description {
 		t.Fatalf("runtime metadata diverged from normalized schema: %#v", runtime.Data[0])
 	}
@@ -50,7 +50,7 @@ func TestVineSchemaAdaptsNormalizedSchemaProjection(t *testing.T) {
 	}
 
 	serviceValue := domain.Services()[0]
-	projectedService := contractschema.Find(document, string(contractschema.DeclarationTypeService), serviceValue.SkelName)
+	projectedService := contractschema.Find(document, contractschema.DeclarationTypeService, serviceValue.SkelName)
 	runtimeService := runtime.Services[0]
 	if string(runtimeService.AuthMode) != string(projectedService.Service.Auth) || runtimeService.Audiences[0].SkelName != projectedService.Service.Audiences[0].Actor {
 		t.Fatalf("runtime service diverged from normalized schema: projected=%#v runtime=%#v", projectedService.Service, runtimeService)

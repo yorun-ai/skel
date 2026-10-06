@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
@@ -170,4 +171,15 @@ func assertFileMissing(t *testing.T, path string) {
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatalf("expected file %s to be missing, err=%v", path, err)
 	}
+}
+
+func generateFixture(domain *model.Domain, option golang.Option) error {
+	if option.CompilerVersion == "" {
+		option.CompilerVersion = "v0.0.0-dev"
+	}
+	resolved, err := golang.ResolveOption(option)
+	if err != nil {
+		return err
+	}
+	return golang.Generate(domain, resolved)
 }

@@ -1,5 +1,6 @@
 package schema
 
+// Entries returns declaration summaries in document order.
 func Entries(document *Document) []*Entry {
 	entries := make([]*Entry, 0, len(document.Declarations))
 	for _, declaration := range document.Declarations {
@@ -10,9 +11,10 @@ func Entries(document *Document) []*Entry {
 	return entries
 }
 
-func Find(document *Document, kind, skelName string) *Declaration {
+// Find returns a declaration or nil when the name and kind are absent.
+func Find(document *Document, kind DeclarationType, skelName string) *Declaration {
 	for _, declaration := range document.Declarations {
-		if declaration.Kind == DeclarationType(kind) && declaration.SkelName == skelName {
+		if declaration.Kind == kind && declaration.SkelName == skelName {
 			return declaration
 		}
 	}

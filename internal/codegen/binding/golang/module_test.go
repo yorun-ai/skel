@@ -3,6 +3,7 @@ package golang
 import (
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"testing"
 )
@@ -65,5 +66,42 @@ func TestGenerateRejectsRuntimeDependencyOverride(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(out, "go.mod")); !os.IsNotExist(err) {
 		t.Fatalf("wrote output on conflict: %v", err)
+	}
+}
+
+func TestSkelModuleVersion(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		compiler string
+		info     *debug.BuildInfo
+		want     string
+	}{
+		{name: "explicit", compiler: "v1.2.3", want: "v1.2.3"},
+		{name: "main", info: &debug.BuildInfo{Main: debug.Module{Path: skelModule, Version: "v1.2.3"}}, want: "v1.2.3"},
+		{name: "library", info: &debug.BuildInfo{Deps: []*debug.Module{{Path: skelModule, Version: "v1.2.4"}}}, want: "v1.2.4"},
+		{name: "replacement", info: &debug.BuildInfo{Deps: []*debug.Module{{Path: skelModule, Version: "v1.2.4", Replace: &debug.Module{Path: "../skel"}}}}, want: developmentCompilerVersion},
+		{name: "development", info: &debug.BuildInfo{Main: debug.Module{Path: skelModule, Version: "(devel)"}}, want: developmentCompilerVersion},
+		{name: "unavailable", want: developmentCompilerVersion},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := skelModuleVersion(tc.compiler, tc.info); got != tc.want {
+				t.Fatalf("version = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestGeneratePinsSkelTypesDependency(t *testing.T) {
+	for _, api := range []bool{false, true} {
+		out := t.TempDir()
+		if err := generateModule(_ModuleOption{
+			Out: out, Module: "example.com/generated", Api: api,
+			CompilerVersion: "v1.2.3", VineVersion: DefaultVineVersion, VrpcVersion: defaultVrpcVersion,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if content := readGoModForTest(t, out); !strings.Contains(content, skelModule+" v1.2.3") {
+			t.Fatalf("missing Skel types dependency:\n%s", content)
+		}
 	}
 }

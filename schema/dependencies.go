@@ -29,7 +29,7 @@ type DependencyReport struct {
 	Dependencies []Dependency `json:"dependencies"`
 }
 
-func NewDependencyReport(domain string) *DependencyReport {
+func newDependencyReport(domain string) *DependencyReport {
 	return new(DependencyReport{
 		Domain: domain, Services: []string{}, Data: []string{}, Enums: []string{},
 		Actors: []string{}, Configs: []string{}, Events: []string{},
@@ -40,7 +40,7 @@ func NewDependencyReport(domain string) *DependencyReport {
 
 // Dependencies consumes a normalized projection without loading or compiling inputs.
 func Dependencies(document *Document) *DependencyReport {
-	result := NewDependencyReport(document.Domain)
+	result := newDependencyReport(document.Domain)
 	seen := map[Dependency]bool{}
 	add := func(name, kind string) {
 		i := strings.LastIndex(name, ".")

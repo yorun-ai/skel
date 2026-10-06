@@ -3,8 +3,11 @@ module go.yorun.ai/skel
 go 1.27.0
 
 require (
+	cloud.google.com/go v0.123.0
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/alecthomas/participle/v2 v2.1.4
+	github.com/fxamacker/cbor/v2 v2.9.3
+	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v3 v3.13.0
 	go.lsp.dev/jsonrpc2 v1.0.1
@@ -16,5 +19,6 @@ require (
 
 require (
 	github.com/go-json-experiment/json v0.0.0-20260623181947-01eb4420fa68 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 )

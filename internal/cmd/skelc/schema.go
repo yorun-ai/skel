@@ -11,7 +11,7 @@ import (
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
 	"go.yorun.ai/skel/internal/codegen"
 	internalcompiler "go.yorun.ai/skel/internal/compiler"
-	schemas "go.yorun.ai/skel/internal/schema"
+	schemas "go.yorun.ai/skel/schema"
 )
 
 const (
@@ -77,7 +77,7 @@ func newSchemaGetCommand() *ucli.Command {
 			if err != nil {
 				return err
 			}
-			declaration := schemas.Find(document, kind, skelName)
+			declaration := schemas.Find(document, schemas.DeclarationType(kind), skelName)
 			return writeSchemaResult(cmd, declaration, "schema declaration")
 		},
 	}

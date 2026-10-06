@@ -111,7 +111,8 @@ func newGen(option _GenOption) (*_Gen, error) {
 	if option.AsModule && option.Mode != view.ModeApi {
 		if _, err := moduleDependencies(_ModuleOption{
 			Imports: option.Imports, VineVersion: option.VineVersion,
-			Api: option.Mode == view.ModeApi, VrpcVersion: option.VrpcVersion,
+			CompilerVersion: option.CompilerVersion,
+			Api:             option.Mode == view.ModeApi, VrpcVersion: option.VrpcVersion,
 			ExtraDependencies: option.ExtraDependencies,
 		}); err != nil {
 			return nil, err
@@ -173,6 +174,7 @@ func (g *_Gen) gen(validated codegen.Input) error {
 			VineVersion:       g.vineVersion,
 			Api:               g.mode == view.ModeApi,
 			VrpcVersion:       g.vrpcVersion,
+			CompilerVersion:   g.compilerVersion,
 			Imports:           imports,
 			ExtraDependencies: g.extraDependencies,
 		}); err != nil {

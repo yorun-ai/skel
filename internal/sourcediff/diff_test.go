@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	compiler "go.yorun.ai/skel/internal/compiler"
-	"go.yorun.ai/skel/internal/schema"
 	"go.yorun.ai/skel/internal/testutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestDiffWorkspaceDomainUsesInMemoryCandidateAndGitHeadBaseline(t *testing.T) {

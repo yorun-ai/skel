@@ -8,7 +8,7 @@ import (
 
 	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/model"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCompileAuthModes(t *testing.T) {

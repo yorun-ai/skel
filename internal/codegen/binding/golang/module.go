@@ -2,6 +2,7 @@ package golang
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"go.yorun.ai/skel/internal/codegen/binding"
 	"go.yorun.ai/skel/internal/optionvalidation"
@@ -16,6 +17,7 @@ const (
 	decimalModule  = "github.com/shopspring/decimal"
 	decimalVersion = "v1.4.0"
 	vineModule     = "go.yorun.ai/vine"
+	skelModule     = "go.yorun.ai/skel"
 
 	defaultGoImportVersion = "v0.0.0-00010101000000-000000000000"
 )
@@ -27,6 +29,7 @@ type _ModuleOption struct {
 	Api               bool
 	VineVersion       string
 	VrpcVersion       string
+	CompilerVersion   string
 	Imports           map[string]string
 	ExtraDependencies []string
 }
@@ -75,6 +78,29 @@ func moduleDependencies(option _ModuleOption) ([]_GoImportDependency, error) {
 	if option.Api {
 		runtimeModule, runtimeVersion = "go.yorun.ai/vrpc", option.VrpcVersion
 	}
-	extra := append([]string{decimalModule + "@" + decimalVersion, runtimeModule + "@" + runtimeVersion}, option.ExtraDependencies...)
+	info, _ := debug.ReadBuildInfo()
+	extra := append([]string{
+		decimalModule + "@" + decimalVersion,
+		runtimeModule + "@" + runtimeVersion,
+		skelModule + "@" + skelModuleVersion(option.CompilerVersion, info),
+	}, option.ExtraDependencies...)
 	return goModDependencies(option.Imports, extra)
+}
+
+// Released tools pin their own module version. Library callers may omit the
+// compiler version; in that case use the linked Skel module. Development builds
+// require the caller to provide a local workspace or replacement.
+func skelModuleVersion(compilerVersion string, info *debug.BuildInfo) string {
+	if compilerVersion != "" {
+		return compilerVersion
+	}
+	if info != nil {
+		modules := append([]*debug.Module{&info.Main}, info.Deps...)
+		for _, module := range modules {
+			if module.Path == skelModule && module.Replace == nil && gomodule.Check(skelModule, module.Version) == nil {
+				return module.Version
+			}
+		}
+	}
+	return developmentCompilerVersion
 }

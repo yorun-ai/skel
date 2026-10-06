@@ -6,7 +6,7 @@ import (
 
 	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/projection"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 // PublicView contains declarations that belong to a domain's public contract.

@@ -30,9 +30,9 @@ The source-processing pipeline is intentionally separated:
 4. `internal/codegen/binding/{golang,skeleton,typescript}` renders Go, public Skel, and TypeScript output; `internal/codegen` owns the generator SDK, `internal/codegen/binding` shares rendering and import helpers, and `internal/codegen/output` manages generated files.
 5. The public `api` facade delegates to `internal/api`, which adapts source inputs and composes the internal compilation pipeline and independent capabilities. Target generators own option normalization, import validation and rendering. The public `codegen` SDK provides validated inputs and shared file generation and publication for built-in and third-party bindings. `internal/cmd/skelc` maps flags to that API and exposes stable terminal output and exit codes.
 
-`internal/projection` converts compiler models into shared contracts; `internal/sourcediff` compiles source baselines for comparisons. `internal/schema` owns contract types, validation, codecs and contract diffing without depending on compiler implementation. Source positions are shared through `internal/location`.
+`internal/projection` converts compiler models into shared contracts; `internal/sourcediff` compiles source baselines for comparisons. The public `schema` package directly owns contract types, validation, codecs and contract diffing without depending on compiler implementation. The public `types` package directly owns portable Go scalar values and their JSON/CBOR encodings, independently of the compiler and application runtimes. Source positions are shared through `internal/location`.
 
-Keep the executable under `cmd/skelc` thin. Implementation packages remain under `internal`; avoid exposing their types through the CLI package.
+Keep the executable under `cmd/skelc` thin. Compiler and tool implementation packages remain under `internal`; avoid exposing their types through the CLI package. Reusable contracts and values live directly in `schema` and `types` without internal mirrors.
 
 ## Compatibility
 

@@ -6,7 +6,6 @@ capabilities; using a capability does not make that capability part of a tool.
 | Directory | Responsibility |
 | --- | --- |
 | `parser`, `symbol`, `analyzer`, `model` | Syntax, symbols, semantic analysis and semantic data |
-| `schema` | Shared contract types, validation, codecs, queries and contract comparisons |
 | `projection` | Convert semantic models into shared contracts without loading sources |
 | `loader`, `source`, `location` | Input providers, immutable source revisions and shared positions |
 | `hasher` | Compatibility hashes |
@@ -24,7 +23,10 @@ capabilities; using a capability does not make that capability part of a tool.
 | `optionvalidation` | Shared validation errors for source and generator options |
 | `util`, `testutil` | Reusable helpers and test infrastructure |
 
-`schema` must not import semantic models or tool implementations. `projection`
+The public `schema` and `types` packages directly own shared contracts and Go
+scalar values; they have no matching internal packages. `schema` must not import
+semantic models or tool implementations. `types` must remain independent of the
+compiler, schemas, generators and application runtimes. `projection`
 may use models and schema, but must not load or compile sources. The compiler
 core must not depend on API adapters, command implementations or LSP.
 Capability packages must not depend on compiler orchestration simply because

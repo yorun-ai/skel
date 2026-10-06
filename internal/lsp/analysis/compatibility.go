@@ -11,8 +11,8 @@ import (
 	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/lsp/source"
 	"go.yorun.ai/skel/internal/model"
-	"go.yorun.ai/skel/internal/schema"
 	"go.yorun.ai/skel/internal/sourcediff"
+	"go.yorun.ai/skel/schema"
 )
 
 type _CompatibilityDiagnosticData struct {

@@ -3,7 +3,7 @@ package vineschema
 import (
 	"strings"
 
-	contractschema "go.yorun.ai/skel/internal/schema"
+	contractschema "go.yorun.ai/skel/schema"
 )
 
 func (g *_Gen) buildMemberSchemas(members []*contractschema.Member) []*_MemberSchema {

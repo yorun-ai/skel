@@ -12,8 +12,8 @@ import (
 	"go.yorun.ai/skel/internal/lsp/analysis"
 	"go.yorun.ai/skel/internal/lsp/features"
 	"go.yorun.ai/skel/internal/lsp/workspace"
-	"go.yorun.ai/skel/internal/schema"
 	"go.yorun.ai/skel/internal/sourcediff"
+	"go.yorun.ai/skel/schema"
 )
 
 const (

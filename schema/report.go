@@ -4,8 +4,11 @@ package schema
 type ImpactLevel string
 
 const (
-	ImpactBreaking   ImpactLevel = "BREAKING"
-	ImpactDangerous  ImpactLevel = "DANGEROUS"
+	// ImpactBreaking identifies a structurally incompatible change.
+	ImpactBreaking ImpactLevel = "BREAKING"
+	// ImpactDangerous identifies a structurally compatible semantic change.
+	ImpactDangerous ImpactLevel = "DANGEROUS"
+	// ImpactCompatible identifies a compatible change.
 	ImpactCompatible ImpactLevel = "COMPATIBLE"
 )
 
@@ -13,8 +16,11 @@ const (
 type ChangeType string
 
 const (
-	ChangeAdded    ChangeType = "ADDED"
-	ChangeRemoved  ChangeType = "REMOVED"
+	// ChangeAdded identifies an added schema element.
+	ChangeAdded ChangeType = "ADDED"
+	// ChangeRemoved identifies a removed schema element.
+	ChangeRemoved ChangeType = "REMOVED"
+	// ChangeModified identifies a modified schema element.
 	ChangeModified ChangeType = "MODIFIED"
 )
 

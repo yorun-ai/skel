@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/model"
-	contractschema "go.yorun.ai/skel/internal/schema"
+	contractschema "go.yorun.ai/skel/schema"
 )
 
 func (g *_Gen) buildEnumSchema(value *model.Enum, projected *contractschema.Declaration) *_EnumSchema {

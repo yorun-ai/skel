@@ -1,15 +1,18 @@
 package schema
 
+// EnumSchema is the normalized body of an enum declaration.
 type EnumSchema struct {
 	Items []*EnumItem `json:"items"`
 }
 
+// EnumItem is one normalized enum item.
 type EnumItem struct {
 	Metadata
 	Name string   `json:"name"`
 	Pos  Position `json:"-"`
 }
 
+// DataSchema is the normalized body shared by data, config, and event declarations.
 type DataSchema struct {
 	Ext            bool            `json:"ext,omitempty"`
 	Lifecycle      ConfigLifecycle `json:"lifecycle,omitempty"`
@@ -18,6 +21,7 @@ type DataSchema struct {
 	Members        []*Member       `json:"members"`
 }
 
+// Member is one normalized structured-data member.
 type Member struct {
 	Metadata
 	Name      string   `json:"name"`
@@ -27,6 +31,7 @@ type Member struct {
 	Pos       Position `json:"-"`
 }
 
+// Type is a normalized type expression.
 type Type struct {
 	Kind      TypeKind `json:"kind"`
 	Nullable  bool     `json:"nullable,omitempty"`
@@ -37,6 +42,7 @@ type Type struct {
 	Value     *Type    `json:"value,omitempty"`
 }
 
+// ActorSchema is the normalized body of an actor declaration.
 type ActorSchema struct {
 	IdentifierField string      `json:"identifierField,omitempty"`
 	Vias            []*ActorVia `json:"vias"`
@@ -46,16 +52,19 @@ type ActorSchema struct {
 	PermEnabled     bool        `json:"permEnabled,omitempty"`
 }
 
+// ActorVia is one actor transport capability.
 type ActorVia struct {
 	Name string   `json:"name"`
 	Pos  Position `json:"-"`
 }
 
+// ResourceSchema is the normalized body of a resource declaration.
 type ResourceSchema struct {
 	Checks  []*ResourceCheck  `json:"checks,omitempty"`
 	Actions []*ResourceAction `json:"actions"`
 }
 
+// ResourceAction is one normalized resource action.
 type ResourceAction struct {
 	Metadata
 	Name           string           `json:"name"`
@@ -64,6 +73,7 @@ type ResourceAction struct {
 	Pos            Position         `json:"-"`
 }
 
+// ResourceCheck is one normalized resource permission check.
 type ResourceCheck struct {
 	Metadata
 	Name      string      `json:"name"`
@@ -71,6 +81,7 @@ type ResourceCheck struct {
 	Pos       Position    `json:"-"`
 }
 
+// ServiceSchema is the normalized body of a service declaration.
 type ServiceSchema struct {
 	Audiences []*Audience  `json:"audiences"`
 	Api       bool         `json:"api,omitempty"`
@@ -80,12 +91,14 @@ type ServiceSchema struct {
 	Methods   []*Method    `json:"methods"`
 }
 
+// Audience is one normalized actor audience.
 type Audience struct {
 	Actor string   `json:"actor"`
 	Via   string   `json:"via,omitempty"`
 	Pos   Position `json:"-"`
 }
 
+// Method is one normalized service method.
 type Method struct {
 	Metadata
 	Name               string       `json:"name"`
@@ -103,6 +116,7 @@ type Method struct {
 	Pos                Position     `json:"-"`
 }
 
+// Argument is one normalized method, check, or trigger argument.
 type Argument struct {
 	Metadata
 	Name      string   `json:"name"`
@@ -112,6 +126,7 @@ type Argument struct {
 	Pos       Position `json:"-"`
 }
 
+// Requirement is one node in a normalized permission expression.
 type Requirement struct {
 	Mode     RequirementMode   `json:"mode"`
 	Code     string            `json:"code,omitempty"`
@@ -119,6 +134,7 @@ type Requirement struct {
 	Children []*Requirement    `json:"children,omitempty"`
 }
 
+// RequirementCheck is one normalized permission check invocation.
 type RequirementCheck struct {
 	Resource  string                      `json:"resource"`
 	Action    string                      `json:"action,omitempty"`
@@ -126,22 +142,26 @@ type RequirementCheck struct {
 	Arguments []*RequirementCheckArgument `json:"arguments,omitempty"`
 }
 
+// RequirementCheckArgument binds one permission-check argument.
 type RequirementCheckArgument struct {
 	Name     string `json:"name"`
 	JSONPath string `json:"jsonPath"`
 	Type     *Type  `json:"type"`
 }
 
+// WebSchema is the normalized body of a web declaration.
 type WebSchema struct {
 	Audiences []*Audience `json:"audiences"`
 	Auth      AuthMode    `json:"auth,omitempty"`
 	MountPath string      `json:"mountPath,omitempty"`
 }
 
+// TaskSchema is the normalized body of a task declaration.
 type TaskSchema struct {
 	Triggers []*Trigger `json:"triggers"`
 }
 
+// Trigger is one normalized task trigger.
 type Trigger struct {
 	Metadata
 	Name               string      `json:"name"`

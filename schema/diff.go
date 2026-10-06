@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Diff validates and compares two canonical snapshots.
 func Diff(baseline, candidate *Document) (*Report, error) {
 	if err := Validate(baseline); err != nil {
 		return nil, fmt.Errorf("baseline: %w", err)

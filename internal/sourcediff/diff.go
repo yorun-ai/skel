@@ -14,7 +14,7 @@ import (
 	"time"
 
 	compiler "go.yorun.ai/skel/internal/compiler"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 // ErrSourceCompilation identifies a source input that could not be compiled

@@ -9,7 +9,6 @@ import (
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/optionvalidation"
 	"go.yorun.ai/skel/internal/projection"
-	internalschema "go.yorun.ai/skel/internal/schema"
 	"go.yorun.ai/skel/internal/sourcediff"
 	"go.yorun.ai/skel/model"
 	"go.yorun.ai/skel/schema"
@@ -58,10 +57,10 @@ type SchemaDependencyOption struct {
 }
 
 // SchemaDependencyReport contains selected local declarations and external references.
-type SchemaDependencyReport = internalschema.DependencyReport
+type SchemaDependencyReport = schema.DependencyReport
 
 // SchemaDeclarationDependency identifies one external declaration.
-type SchemaDeclarationDependency = internalschema.Dependency
+type SchemaDeclarationDependency = schema.Dependency
 
 // SchemaDependencyResult includes the report and compiler diagnostics.
 type SchemaDependencyResult struct {
@@ -99,7 +98,7 @@ func QuerySchemaDependenciesContext(ctx context.Context, input Input, selection 
 	if err != nil {
 		return SchemaDependencyResult{}, err
 	}
-	return SchemaDependencyResult{Report: internalschema.Dependencies(result.Document), Diagnostics: result.Diagnostics}, nil
+	return SchemaDependencyResult{Report: schema.Dependencies(result.Document), Diagnostics: result.Diagnostics}, nil
 }
 
 // SchemaQueryOption selects a complete, public, or API schema view.

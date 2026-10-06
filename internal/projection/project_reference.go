@@ -1,8 +1,8 @@
 package projection
 
 import (
-	"go.yorun.ai/skel/internal/schema"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func normalizeReferenceNames(document *schema.Document, domainName string, importAliases map[string]string) {

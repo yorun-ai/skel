@@ -256,6 +256,11 @@ stdout 输出只包含稳定 `code` 和供人阅读的 `message` 的 JSON 对象
 
 ## 程序调用 API
 
+`go.yorun.ai/skel/types` 提供 `types.Decimal`、`types.Timestamp`、`types.UUID` 等
+Go 值类型、构造函数及 JSON/CBOR 编解码。服务端和 API 客户端的 Go 生成代码共用这些类型。
+生成模块依赖本次使用的 Skel 编译器版本；开发构建需要配置本地 workspace 或 module replace。
+用法见 [types 示例](types/example_test.go)。
+
 Go 程序可以通过 `go.yorun.ai/skel/api` 调用生成能力，无需导入实现 package：
 
 导入 `go.yorun.ai/skel/api`，使用 `api` package 调用源码检查、编译和生成能力。原先使用根包编译 API 的程序需要将导入改为 `go.yorun.ai/skel/api`，并将 `skel.` 引用改为 `api.`；CLI wire 契约移到 `go.yorun.ai/skel/cmd/skelc/output`；`schema` 和 `model` 保持现有路径。可执行文件名和 CLI 命令仍为 `skelc`。
@@ -290,8 +295,8 @@ API 同时提供 `CompileTypeScript` 和 `CompileSkeleton`。parser 与 loader w
 
 生成过程在每个文件中标记所有权，以原子方式逐个替换输出；提交失败时回滚所有受影响的目标，删除带标记的过期生成文件，并保留共享输出目录中的无标记文件。
 
-Go 集成通过公开 facade `go.yorun.ai/skel/schema` 消费 schema 命令 JSON，
-无需复制 wire 结构。该 package 在实现保持 internal 的同时，统一提供响应类型、
+Go 集成通过公开 package `go.yorun.ai/skel/schema` 消费 schema 命令 JSON，
+无需复制 wire 结构。该 package 直接定义并实现响应类型、
 嵌套 wire 类型、带类型的常量，以及严格的 `schema.Decode`、`schema.Validate` 和
 `schema.Encode`，用于拒绝未知字段、尾随 JSON、不支持的格式版本以及不完整的
 规范化结构。`go.yorun.ai/skel/api` package 同时提供源码检查和 schema 查询 API。
@@ -338,7 +343,7 @@ Go 集成通过公开 facade `go.yorun.ai/skel/schema` 消费 schema 命令 JSON
 
 skelc 负责读取契约并生成代码，本身不是应用运行时：
 
-- 生成的 Go 代码使用 `go.yorun.ai/vine` 提供的运行时类型和服务基础设施
+- 生成的 Go 代码使用 `go.yorun.ai/skel/types` 提供的标量值；服务端使用 `go.yorun.ai/vine`，API 客户端使用 `go.yorun.ai/vrpc`
 - 生成的 TypeScript service client 使用 `@yorun-ai/vrpc`
 - CBOR codec 等运行时能力由应用在创建 vRPC client 时配置，不会被 skelc 打包进生成代码
 
