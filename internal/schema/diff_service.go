@@ -15,11 +15,39 @@ func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema)
 	if baseline.Api != candidate.Api {
 		c.add(ImpactBreaking, "service.api.changed", owner, "service invocation boundary changed", model.Position{}, model.Position{})
 	}
-	c.compareAudiences(owner, "service.audience", baseline.Audiences, candidate.Audiences)
-	c.compareAuth(owner, "service", baseline.Auth, candidate.Auth, model.Position{}, model.Position{})
-	c.compareRequirement(owner, "service", baseline.Require, candidate.Require, model.Position{}, model.Position{})
 	baselineByName := methodsByName(baseline.Methods)
 	candidateByName := methodsByName(candidate.Methods)
+	c.compareAudiences(owner, "service.audience", baseline.Audiences, candidate.Audiences)
+	authChangeStart := len(c.report.Changes)
+	c.compareAuth(owner, "service", baseline.Auth, candidate.Auth, model.Position{}, model.Position{})
+	// A service default only affects methods that inherit it. Explicit method
+	// policies can preserve every existing interaction despite a default change.
+	if len(c.report.Changes) > authChangeStart && len(baseline.Methods) > 0 {
+		impact := ImpactCompatible
+		for _, method := range baseline.Methods {
+			if other := candidateByName[method.Name]; other != nil {
+				_, current := authImpact(effectiveMethodAuth(method.Auth, baseline.Auth), effectiveMethodAuth(other.Auth, candidate.Auth))
+				if impactOrder(current) < impactOrder(impact) {
+					impact = current
+				}
+			}
+		}
+		c.report.Changes[authChangeStart].Impact = impact
+	}
+	requirementStart := len(c.report.Changes)
+	c.compareRequirement(owner, "service", baseline.Require, candidate.Require, model.Position{}, model.Position{})
+	if len(c.report.Changes) > requirementStart && len(baseline.Methods) > 0 {
+		equivalent := true
+		for _, method := range baseline.Methods {
+			if other := candidateByName[method.Name]; other != nil && !sameRequirements(baseline.Require, method.Require, candidate.Require, other.Require) {
+				equivalent = false
+				break
+			}
+		}
+		if equivalent {
+			c.report.Changes[requirementStart].Impact = ImpactCompatible
+		}
+	}
 	for _, method := range baseline.Methods {
 		other := candidateByName[method.Name]
 		symbol := owner + "." + method.Name
@@ -27,7 +55,7 @@ func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema)
 			c.add(ImpactBreaking, "service.method.removed", symbol, fmt.Sprintf("service method %s was removed", method.Name), method.Pos, model.Position{})
 			continue
 		}
-		c.compareMethod(symbol, method, other)
+		c.compareMethod(symbol, method, other, baseline, candidate)
 	}
 	for _, method := range candidate.Methods {
 		if baselineByName[method.Name] == nil {
@@ -37,12 +65,24 @@ func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema)
 	}
 }
 
-func (c *_Diff) compareMethod(owner string, baseline, candidate *Method) {
-	c.compareAuth(owner, "method", baseline.Auth, candidate.Auth, baseline.Pos, candidate.Pos)
+func (c *_Diff) compareMethod(owner string, baseline, candidate *Method, services ...*ServiceSchema) {
+	before, after := baseline.Auth, candidate.Auth
+	if len(services) == 2 {
+		before = effectiveMethodAuth(before, services[0].Auth)
+		after = effectiveMethodAuth(after, services[1].Auth)
+	}
+	if baseline.Auth != candidate.Auth || before != after {
+		code, impact := authImpact(authComparisonMode(before, "method"), authComparisonMode(after, "method"))
+		c.add(impact, "method.auth."+code, owner, fmt.Sprintf("effective authentication changed from %s to %s", before, after), baseline.Pos, candidate.Pos)
+	}
+	requirementStart := len(c.report.Changes)
 	c.compareRequirement(owner, "method", baseline.Require, candidate.Require, baseline.Pos, candidate.Pos)
+	if len(services) == 2 && len(c.report.Changes) > requirementStart && sameRequirements(services[0].Require, baseline.Require, services[1].Require, candidate.Require) {
+		c.report.Changes[requirementStart].Impact = ImpactCompatible
+	}
 	c.compareArguments(owner, "method.argument", baseline.Arguments, candidate.Arguments)
 	if !reflect.DeepEqual(baseline.Result, candidate.Result) {
-		c.add(ImpactBreaking, "method.result.changed", owner,
+		c.add(typeChangeImpact(baseline.Result, candidate.Result, usageOutput), "method.result.changed", owner,
 			fmt.Sprintf("method result changed from %s to %s", typeDisplay(baseline.Result), typeDisplay(candidate.Result)), baseline.Pos, candidate.Pos)
 	}
 	if baseline.ArgumentsSensitive != candidate.ArgumentsSensitive || baseline.ResultSensitive != candidate.ResultSensitive {
@@ -66,7 +106,7 @@ func (c *_Diff) compareArguments(owner, prefix string, baseline, candidate []*Ar
 			continue
 		}
 		if !reflect.DeepEqual(argument.Type, other.Type) {
-			c.add(ImpactBreaking, prefix+".type.changed", symbol,
+			c.add(typeChangeImpact(argument.Type, other.Type, usageInput), prefix+".type.changed", symbol,
 				fmt.Sprintf("argument type changed from %s to %s", typeDisplay(argument.Type), typeDisplay(other.Type)), argument.Pos, other.Pos)
 		}
 		if argument.Sensitive != other.Sensitive {
@@ -109,32 +149,47 @@ func (c *_Diff) compareAuth(owner, prefix string, baseline, candidate AuthMode, 
 	if baseline == candidate {
 		return
 	}
-	code := prefix + ".auth.changed"
-	impact := ImpactDangerous
-	before, after := authComparisonMode(baseline, prefix), authComparisonMode(candidate, prefix)
+	code, impact := authImpact(authComparisonMode(baseline, prefix), authComparisonMode(candidate, prefix))
+	c.add(impact, prefix+".auth."+code, owner, fmt.Sprintf("authentication changed from %s to %s", baseline, candidate), baselinePos, candidatePos)
+}
+
+func effectiveMethodAuth(mode, service AuthMode) AuthMode {
+	mode = authComparisonMode(mode, "method")
+	if mode == AuthModeInherit {
+		return authComparisonMode(service, "service")
+	}
+	return mode
+}
+
+func authImpact(before, after AuthMode) (string, ImpactLevel) {
 	switch {
 	case before == after:
-		impact = ImpactCompatible
+		return "changed", ImpactCompatible
 	case before == AuthModeOptional && (after == AuthModeRequired || after == AuthModeAnonymous):
-		code = prefix + ".auth.tightened"
+		return "tightened", ImpactBreaking
+	case (before == AuthModeRequired && after == AuthModeAnonymous) || (before == AuthModeAnonymous && after == AuthModeRequired):
+		return "changed", ImpactBreaking
 	case after == AuthModeOptional && (before == AuthModeRequired || before == AuthModeAnonymous):
-		code = prefix + ".auth.relaxed"
+		return "relaxed", ImpactDangerous
+	default:
+		return "changed", ImpactDangerous
 	}
-	c.add(impact, code, owner, fmt.Sprintf("authentication changed from %s to %s", baseline, candidate), baselinePos, candidatePos)
 }
 
 func (c *_Diff) compareRequirement(owner, prefix string, baseline, candidate *Requirement, baselinePos, candidatePos model.Position) {
 	if reflect.DeepEqual(baseline, candidate) {
 		return
 	}
+	impact := ImpactDangerous
 	code := prefix + ".require.changed"
 	message := "permission requirement changed"
 	if baseline == nil {
 		code, message = prefix+".require.added", "permission requirement was added"
+		impact = ImpactBreaking
 	} else if candidate == nil {
 		code, message = prefix+".require.removed", "permission requirement was removed"
 	}
-	c.add(ImpactDangerous, code, owner, message, baselinePos, candidatePos)
+	c.add(impact, code, owner, message, baselinePos, candidatePos)
 }
 
 // Legacy spellings are compared by their runtime meaning without changing schema values.
@@ -161,4 +216,50 @@ func authComparisonMode(mode AuthMode, declaration string) AuthMode {
 	default:
 		return mode
 	}
+}
+
+// Flatten conjunctions and ignore duplicate terms when policies move between
+// service and method scope. Other logical rewrites remain conservatively risky.
+func sameRequirements(beforeService, beforeMethod, afterService, afterMethod *Requirement) bool {
+	terms := func(service, method *Requirement) []*Requirement {
+		var result []*Requirement
+		var add func(*Requirement)
+		add = func(value *Requirement) {
+			if value == nil {
+				return
+			}
+			if value.Mode == RequirementModeAll {
+				for _, child := range value.Children {
+					add(child)
+				}
+				return
+			}
+			for _, term := range result {
+				if reflect.DeepEqual(term, value) {
+					return
+				}
+			}
+			result = append(result, value)
+		}
+		add(service)
+		add(method)
+		return result
+	}
+	before, after := terms(beforeService, beforeMethod), terms(afterService, afterMethod)
+	if len(before) != len(after) {
+		return false
+	}
+	for _, left := range before {
+		found := false
+		for _, right := range after {
+			if reflect.DeepEqual(left, right) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }

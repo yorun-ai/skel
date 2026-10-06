@@ -83,7 +83,7 @@ func (c *_Diff) compareData(owner string, baseline, candidate *DataSchema) {
 	if !slices.Equal(baseline.TypeParameters, candidate.TypeParameters) {
 		c.add(ImpactBreaking, "data.type-parameters.changed", owner, "data type parameters changed", model.Position{}, model.Position{})
 	}
-	c.compareMembers(owner, "data.member", baseline.Members, candidate.Members, ImpactDangerous)
+	c.compareMembers(owner, "data.member", baseline.Members, candidate.Members, ImpactCompatible)
 }
 
 func (c *_Diff) compareMembers(owner, prefix string, baseline, candidate []*Member, reorderImpact ImpactLevel) {
@@ -97,7 +97,14 @@ func (c *_Diff) compareMembers(owner, prefix string, baseline, candidate []*Memb
 			continue
 		}
 		if !reflect.DeepEqual(member.Type, other.Type) {
-			c.add(ImpactBreaking, prefix+".type.changed", symbol,
+			direction := c.usage[owner]
+			if prefix == "actor.auth-credential.member" {
+				direction = usageInput
+			}
+			if prefix == "actor.auth-info.member" {
+				direction = usageOutput
+			}
+			c.add(typeChangeImpact(member.Type, other.Type, direction), prefix+".type.changed", symbol,
 				fmt.Sprintf("member type changed from %s to %s", typeDisplay(member.Type), typeDisplay(other.Type)), member.Pos, other.Pos)
 		}
 		if member.Sensitive != other.Sensitive {
@@ -110,8 +117,12 @@ func (c *_Diff) compareMembers(owner, prefix string, baseline, candidate []*Memb
 	}
 	for _, member := range candidate {
 		if baselineByName[member.Name] == nil {
-			c.add(ImpactBreaking, prefix+".added", owner+"."+member.Name,
-				fmt.Sprintf("required member %s was added", member.Name), model.Position{}, member.Pos)
+			impact := ImpactBreaking
+			if (prefix == "actor.auth-credential.member" && member.Type.Nullable) || c.usage[owner] == usageOutput {
+				impact = ImpactCompatible
+			}
+			c.add(impact, prefix+".added", owner+"."+member.Name,
+				fmt.Sprintf("member %s was added", member.Name), model.Position{}, member.Pos)
 		}
 	}
 	if sameNamedSet(memberNames(baseline), memberNames(candidate)) && !slices.Equal(memberNames(baseline), memberNames(candidate)) {
@@ -130,11 +141,15 @@ func (c *_Diff) compareActor(owner string, baseline, candidate *ActorSchema) {
 		if baseline.AuthEnabled {
 			code, message = "actor.auth.removed", "actor authentication was removed"
 		}
-		c.add(ImpactDangerous, code, owner, message, model.Position{}, model.Position{})
+		impact := ImpactDangerous
+		if baseline.AuthEnabled {
+			impact = ImpactBreaking
+		}
+		c.add(impact, code, owner, message, model.Position{}, model.Position{})
 	}
 	if baseline.AuthEnabled && candidate.AuthEnabled {
-		c.compareMembers(owner+".credential", "actor.auth-credential.member", baseline.AuthCredential.Members, candidate.AuthCredential.Members, ImpactDangerous)
-		c.compareMembers(owner+".info", "actor.auth-info.member", baseline.AuthInfo.Members, candidate.AuthInfo.Members, ImpactDangerous)
+		c.compareMembers(owner+".credential", "actor.auth-credential.member", baseline.AuthCredential.Members, candidate.AuthCredential.Members, ImpactCompatible)
+		c.compareMembers(owner+".info", "actor.auth-info.member", baseline.AuthInfo.Members, candidate.AuthInfo.Members, ImpactCompatible)
 	}
 	if baseline.PermEnabled != candidate.PermEnabled {
 		code := "actor.permission.added"
@@ -142,7 +157,11 @@ func (c *_Diff) compareActor(owner string, baseline, candidate *ActorSchema) {
 		if baseline.PermEnabled {
 			code, message = "actor.permission.removed", "actor permission support was removed"
 		}
-		c.add(ImpactDangerous, code, owner, message, model.Position{}, model.Position{})
+		impact := ImpactDangerous
+		if baseline.PermEnabled {
+			impact = ImpactBreaking
+		}
+		c.add(impact, code, owner, message, model.Position{}, model.Position{})
 	}
 }
 

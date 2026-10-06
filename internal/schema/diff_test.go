@@ -116,7 +116,7 @@ func TestDiffRecognizesDeclarationTypeChangeWithoutNamespaceCollision(t *testing
 	}
 }
 
-func TestDiffTreatsAuthenticationAndPermissionSemanticsAsDangerous(t *testing.T) {
+func TestDiffAuthenticationAndPermissionImpacts(t *testing.T) {
 	readRequirement := func() *Requirement {
 		return &Requirement{Mode: "code", Code: "identity.User:read"}
 	}
@@ -146,8 +146,13 @@ func TestDiffTreatsAuthenticationAndPermissionSemanticsAsDangerous(t *testing.T)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !report.Compatible || report.Summary != (Summary{Dangerous: 1}) || len(report.Changes) != 1 ||
-				report.Changes[0].Impact != ImpactDangerous || report.Changes[0].Code != test.code {
+			impact := ImpactDangerous
+			switch test.code {
+			case "actor.auth.removed", "actor.permission.removed", "service.auth.tightened", "service.require.added":
+				impact = ImpactBreaking
+			}
+			if report.Compatible != (impact != ImpactBreaking) || len(report.Changes) != 1 ||
+				report.Changes[0].Impact != impact || report.Changes[0].Code != test.code {
 				t.Fatalf("unexpected report: %+v", report)
 			}
 		})

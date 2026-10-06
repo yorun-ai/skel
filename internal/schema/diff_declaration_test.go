@@ -74,9 +74,9 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 			prefix        string
 			reorderImpact ImpactLevel
 		}{
-			{"data.member", ImpactDangerous},
-			{"actor.auth-credential.member", ImpactDangerous},
-			{"actor.auth-info.member", ImpactDangerous},
+			{"data.member", ImpactCompatible},
+			{"actor.auth-credential.member", ImpactCompatible},
+			{"actor.auth-info.member", ImpactCompatible},
 		}
 		for _, test := range tests {
 			t.Run(test.prefix, func(t *testing.T) {
@@ -150,9 +150,9 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 			"actor.via.removed":        ImpactBreaking,
 			"actor.via.added":          ImpactCompatible,
 			"actor.auth.added":         ImpactDangerous,
-			"actor.auth.removed":       ImpactDangerous,
+			"actor.auth.removed":       ImpactBreaking,
 			"actor.permission.added":   ImpactDangerous,
-			"actor.permission.removed": ImpactDangerous,
+			"actor.permission.removed": ImpactBreaking,
 		})
 	})
 }
@@ -246,8 +246,28 @@ func TestWebAuthDiff(t *testing.T) {
 		baseline := &Declaration{Kind: DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &WebSchema{Auth: test.before}}
 		candidate := &Declaration{Kind: DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &WebSchema{Auth: test.after}}
 		changes := diffChanges(func(diff *_Diff) { diff.compareDeclaration(baseline, candidate) })
-		if len(changes) != 1 || changes[0].Code != test.code || changes[0].Impact != ImpactDangerous {
+		impact := ImpactDangerous
+		if test.before == AuthModeOptional && test.after != AuthModeOptional {
+			impact = ImpactBreaking
+		}
+		if len(changes) != 1 || changes[0].Code != test.code || changes[0].Impact != impact {
 			t.Fatalf("auth diff: %+v", changes)
+		}
+	}
+}
+
+func TestAddedNullableCredentialIsCompatible(t *testing.T) {
+	for _, nullable := range []bool{false, true} {
+		before, after := actorDocument(true, false), actorDocument(true, false)
+		kind := scalarType("string")
+		kind.Nullable = nullable
+		after.Declarations[0].Actor.AuthCredential.Members = []*Member{{Name: "extra", Type: kind}}
+		report, err := Diff(before, after)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(report.Changes) != 1 || report.Compatible != nullable {
+			t.Fatalf("nullable=%v: %+v", nullable, report)
 		}
 	}
 }

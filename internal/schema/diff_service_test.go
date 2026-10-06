@@ -66,11 +66,11 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 			}
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
-			"service.auth.changed":   ImpactDangerous,
-			"service.auth.tightened": ImpactDangerous,
+			"service.auth.changed":   ImpactBreaking,
+			"service.auth.tightened": ImpactBreaking,
 			"service.auth.relaxed":   ImpactDangerous,
-			"method.auth.changed":    ImpactDangerous,
-			"method.auth.tightened":  ImpactDangerous,
+			"method.auth.changed":    ImpactBreaking,
+			"method.auth.tightened":  ImpactBreaking,
 			"method.auth.relaxed":    ImpactDangerous,
 		})
 	})
@@ -86,10 +86,10 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 			}
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
-			"service.require.added":   ImpactDangerous,
+			"service.require.added":   ImpactBreaking,
 			"service.require.removed": ImpactDangerous,
 			"service.require.changed": ImpactDangerous,
-			"method.require.added":    ImpactDangerous,
+			"method.require.added":    ImpactBreaking,
 			"method.require.removed":  ImpactDangerous,
 			"method.require.changed":  ImpactDangerous,
 		})
@@ -142,10 +142,10 @@ func TestAuthModeTransitionClassification(t *testing.T) {
 			change        string
 			impact        ImpactLevel
 		}{
-			{AuthModeRequired, AuthModeAnonymous, "changed", ImpactDangerous},
-			{AuthModeAnonymous, AuthModeRequired, "changed", ImpactDangerous},
-			{AuthModeOptional, AuthModeRequired, "tightened", ImpactDangerous},
-			{AuthModeOptional, AuthModeAnonymous, "tightened", ImpactDangerous},
+			{AuthModeRequired, AuthModeAnonymous, "changed", ImpactBreaking},
+			{AuthModeAnonymous, AuthModeRequired, "changed", ImpactBreaking},
+			{AuthModeOptional, AuthModeRequired, "tightened", ImpactBreaking},
+			{AuthModeOptional, AuthModeAnonymous, "tightened", ImpactBreaking},
 			{AuthModeRequired, AuthModeOptional, "relaxed", ImpactDangerous},
 			{AuthModeAnonymous, AuthModeOptional, "relaxed", ImpactDangerous},
 			{AuthModeUnset, AuthModeRequired, "changed", ImpactDangerous},
@@ -198,5 +198,63 @@ func TestAuthModeDefaultMigrationClassification(t *testing.T) {
 				t.Fatalf("%s %q -> %s: %+v", test.declaration, legacy, test.canonical, changes)
 			}
 		}
+	}
+}
+
+func TestDiffEffectiveAuthentication(t *testing.T) {
+	for _, test := range []struct {
+		name                                                   string
+		beforeService, afterService, beforeMethod, afterMethod AuthMode
+		breaking                                               bool
+	}{
+		{"explicit equals inherited", AuthModeRequired, AuthModeRequired, AuthModeInherit, AuthModeRequired, false},
+		{"legacy equals inherited", AuthModeRequired, AuthModeRequired, AuthModeUnset, AuthModeInherit, false},
+		{"inherited tightening", AuthModeOptional, AuthModeRequired, AuthModeInherit, AuthModeInherit, true},
+		{"explicit method unaffected", AuthModeOptional, AuthModeRequired, AuthModeOptional, AuthModeOptional, false},
+		{"preserve old default explicitly", AuthModeOptional, AuthModeRequired, AuthModeInherit, AuthModeOptional, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			makeDocument := func(serviceAuth, methodAuth AuthMode) *Document {
+				service := serviceDeclaration("Service", "read")
+				service.Service.Auth = serviceAuth
+				service.Service.Methods[0].Auth = methodAuth
+				return newTestDocument(service)
+			}
+			report, err := Diff(makeDocument(test.beforeService, test.beforeMethod), makeDocument(test.afterService, test.afterMethod))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if report.Compatible == test.breaking {
+				t.Fatalf("unexpected report: %+v", report)
+			}
+			if !test.breaking && report.Summary.Dangerous != 0 {
+				t.Fatalf("equivalent auth marked dangerous: %+v", report)
+			}
+		})
+	}
+}
+
+func TestAddedExtensionMethodRemainsCompatible(t *testing.T) {
+	before, after := serviceDeclaration("Extension", "old"), serviceDeclaration("Extension", "old", "new")
+	before.Service.Ext, after.Service.Ext = true, true
+	report, err := Diff(newTestDocument(before), newTestDocument(after))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Changes) != 1 || report.Changes[0].Impact != ImpactCompatible {
+		t.Fatalf("unexpected report: %+v", report)
+	}
+}
+
+func TestDiffDuplicatePermissionRequirement(t *testing.T) {
+	before, after := serviceDeclaration("Service", "read"), serviceDeclaration("Service", "read")
+	before.Service.Require, after.Service.Require = &Requirement{Mode: RequirementModeCode, Code: "read"}, &Requirement{Mode: RequirementModeCode, Code: "read"}
+	after.Service.Methods[0].Require = &Requirement{Mode: RequirementModeCode, Code: "read"}
+	report, err := Diff(newTestDocument(before), newTestDocument(after))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Changes) != 1 || report.Changes[0].Impact != ImpactCompatible {
+		t.Fatalf("unexpected report: %+v", report)
 	}
 }

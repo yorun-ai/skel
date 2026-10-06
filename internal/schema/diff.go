@@ -15,7 +15,7 @@ func Diff(baseline, candidate *Document) (*Report, error) {
 	if err := Validate(candidate); err != nil {
 		return nil, fmt.Errorf("candidate: %w", err)
 	}
-	diff := &_Diff{report: &Report{
+	diff := &_Diff{usage: collectDiffUsage(baseline, candidate), report: &Report{
 		Compatible: true, BaselineDomain: baseline.Domain, CandidateDomain: candidate.Domain,
 		Changes: []*Change{},
 	}}
@@ -74,6 +74,7 @@ func Diff(baseline, candidate *Document) (*Report, error) {
 }
 
 type _Diff struct {
+	usage  map[string]_Usage
 	report *Report
 }
 
