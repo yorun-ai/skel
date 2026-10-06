@@ -6,8 +6,11 @@ import (
 	"go.yorun.ai/skel/internal/model"
 )
 
+// Option configures Go generation. NormalizeOption resolves paths and validates settings.
 type Option struct {
-	ApiFilter       common.ApiFilter
+	ApiFilter common.ApiFilter
+	// CompilerVersion identifies the actual skelc version embedded in generated metadata.
+	// Required for backend output; v0.0.0-dev identifies development builds.
 	CompilerVersion string
 	AsModule        bool
 	PubOnly         bool
@@ -18,8 +21,9 @@ type Option struct {
 	PubModule       string
 	Imports         map[string]string
 	ModulePrefix    string
-	VineVersion     string
-	VrpcVersion     string
+	// VineVersion defaults to DefaultVineVersion and must satisfy MinimumVineVersion.
+	VineVersion string
+	VrpcVersion string
 }
 
 // ResolvedOption carries generation options with validated compiler and runtime versions.

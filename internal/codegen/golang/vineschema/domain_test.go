@@ -4,6 +4,7 @@ import (
 	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/internal/codegen/golang/view"
 	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/projection"
 	contractschema "go.yorun.ai/skel/internal/schema"
 	"path/filepath"
 	"testing"
@@ -28,7 +29,7 @@ func TestVineSchemaAdaptsNormalizedSchemaProjection(t *testing.T) {
 			})},
 		})},
 	})
-	document, err := contractschema.Project(domain, nil)
+	document, err := projection.Project(domain, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

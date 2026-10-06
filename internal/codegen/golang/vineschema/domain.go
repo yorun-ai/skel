@@ -2,13 +2,14 @@ package vineschema
 
 import (
 	"fmt"
+	"go.yorun.ai/skel/internal/projection"
+	contractschema "go.yorun.ai/skel/internal/schema"
 
 	"go.yorun.ai/skel/internal/codegen/golang/view"
-	contractschema "go.yorun.ai/skel/internal/schema"
 )
 
 func (g *_Gen) buildDomainSchema() (*_DomainSchema, error) {
-	document, err := contractschema.Project(g.Domain, nil)
+	document, err := projection.Project(g.Domain, nil)
 	if err != nil {
 		return nil, err
 	}

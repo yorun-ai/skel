@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/api"
 )
 
 func TestOptionalActorCredentialGeneration(t *testing.T) {
@@ -26,15 +26,15 @@ pub actor UserActor {
     }
 }
 `)
-	input := skel.Input{SkelIn: source}
+	input := api.Input{SkelIn: source}
 	goOut, tsOut, skelOut := filepath.Join(root, "golang"), filepath.Join(root, "ts"), filepath.Join(root, "skel")
-	if _, err := skel.CompileGolang(input, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: goOut}); err != nil {
+	if _, err := api.CompileGolang(input, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: goOut}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := skel.CompileTypeScript(input, skel.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
+	if _, err := api.CompileTypeScript(input, api.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := skel.CompileSkeleton(input, skel.SkeletonOption{Out: skelOut, PubOnly: true}); err != nil {
+	if _, err := api.CompileSkeleton(input, api.SkeletonOption{Out: skelOut, PubOnly: true}); err != nil {
 		t.Fatal(err)
 	}
 	goFile, err := stdparser.ParseFile(token.NewFileSet(), filepath.Join(goOut, "actor.go"), nil, 0)
@@ -68,7 +68,7 @@ pub actor UserActor {
 	if !found {
 		t.Fatal("missing generated optional credential")
 	}
-	roundTrip, err := skel.Parse(skel.Input{SkelIn: skelOut})
+	roundTrip, err := api.Parse(api.Input{SkelIn: skelOut})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,22 +4,20 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
-
-	"go.yorun.ai/skel/internal/model"
 )
 
 func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema) {
 	if baseline.Ext != candidate.Ext {
-		c.add(ImpactBreaking, "service.ext.changed", owner, "service contract direction changed", model.Position{}, model.Position{})
+		c.add(ImpactBreaking, "service.ext.changed", owner, "service contract direction changed", Position{}, Position{})
 	}
 	if baseline.Api != candidate.Api {
-		c.add(ImpactBreaking, "service.api.changed", owner, "service invocation boundary changed", model.Position{}, model.Position{})
+		c.add(ImpactBreaking, "service.api.changed", owner, "service invocation boundary changed", Position{}, Position{})
 	}
 	baselineByName := methodsByName(baseline.Methods)
 	candidateByName := methodsByName(candidate.Methods)
 	c.compareAudiences(owner, "service.audience", baseline.Audiences, candidate.Audiences)
 	authChangeStart := len(c.report.Changes)
-	c.compareAuth(owner, "service", baseline.Auth, candidate.Auth, model.Position{}, model.Position{})
+	c.compareAuth(owner, "service", baseline.Auth, candidate.Auth, Position{}, Position{})
 	// A service default only affects methods that inherit it. Explicit method
 	// policies can preserve every existing interaction despite a default change.
 	if len(c.report.Changes) > authChangeStart && len(baseline.Methods) > 0 {
@@ -35,7 +33,7 @@ func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema)
 		c.report.Changes[authChangeStart].Impact = impact
 	}
 	requirementStart := len(c.report.Changes)
-	c.compareRequirement(owner, "service", baseline.Require, candidate.Require, model.Position{}, model.Position{})
+	c.compareRequirement(owner, "service", baseline.Require, candidate.Require, Position{}, Position{})
 	if len(c.report.Changes) > requirementStart && len(baseline.Methods) > 0 {
 		impact := ImpactCompatible
 		for _, method := range baseline.Methods {
@@ -52,7 +50,7 @@ func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema)
 		other := candidateByName[method.Name]
 		symbol := owner + "." + method.Name
 		if other == nil {
-			c.add(ImpactBreaking, "service.method.removed", symbol, fmt.Sprintf("service method %s was removed", method.Name), method.Pos, model.Position{})
+			c.add(ImpactBreaking, "service.method.removed", symbol, fmt.Sprintf("service method %s was removed", method.Name), method.Pos, Position{})
 			continue
 		}
 		c.compareMethod(symbol, method, other, baseline, candidate)
@@ -60,7 +58,7 @@ func (c *_Diff) compareService(owner string, baseline, candidate *ServiceSchema)
 	for _, method := range candidate.Methods {
 		if baselineByName[method.Name] == nil {
 			c.add(ImpactCompatible, "service.method.added", owner+"."+method.Name,
-				fmt.Sprintf("service method %s was added", method.Name), model.Position{}, method.Pos)
+				fmt.Sprintf("service method %s was added", method.Name), Position{}, method.Pos)
 		}
 	}
 }
@@ -102,7 +100,7 @@ func (c *_Diff) compareArguments(owner, prefix string, baseline, candidate []*Ar
 		other := candidateByName[argument.Name]
 		symbol := owner + "." + argument.Name
 		if other == nil {
-			c.add(ImpactBreaking, prefix+".removed", symbol, fmt.Sprintf("argument %s was removed", argument.Name), argument.Pos, model.Position{})
+			c.add(ImpactBreaking, prefix+".removed", symbol, fmt.Sprintf("argument %s was removed", argument.Name), argument.Pos, Position{})
 			continue
 		}
 		if !reflect.DeepEqual(argument.Type, other.Type) {
@@ -120,11 +118,11 @@ func (c *_Diff) compareArguments(owner, prefix string, baseline, candidate []*Ar
 	for _, argument := range candidate {
 		if baselineByName[argument.Name] == nil {
 			c.add(ImpactBreaking, prefix+".added", owner+"."+argument.Name,
-				fmt.Sprintf("required argument %s was added", argument.Name), model.Position{}, argument.Pos)
+				fmt.Sprintf("required argument %s was added", argument.Name), Position{}, argument.Pos)
 		}
 	}
 	if sameNamedSet(argumentNames(baseline), argumentNames(candidate)) && !slices.Equal(argumentNames(baseline), argumentNames(candidate)) {
-		c.add(ImpactBreaking, prefix+".order.changed", owner, "argument order changed", model.Position{}, model.Position{})
+		c.add(ImpactBreaking, prefix+".order.changed", owner, "argument order changed", Position{}, Position{})
 	}
 }
 
@@ -134,18 +132,18 @@ func (c *_Diff) compareAudiences(owner, prefix string, baseline, candidate []*Au
 	for key, audience := range baselineByKey {
 		if candidateByKey[key] == nil {
 			c.add(ImpactBreaking, prefix+".removed", owner,
-				fmt.Sprintf("audience %s via %s was removed", audience.Actor, audience.Via), audience.Pos, model.Position{})
+				fmt.Sprintf("audience %s via %s was removed", audience.Actor, audience.Via), audience.Pos, Position{})
 		}
 	}
 	for key, audience := range candidateByKey {
 		if baselineByKey[key] == nil {
 			c.add(ImpactCompatible, prefix+".added", owner,
-				fmt.Sprintf("audience %s via %s was added", audience.Actor, audience.Via), model.Position{}, audience.Pos)
+				fmt.Sprintf("audience %s via %s was added", audience.Actor, audience.Via), Position{}, audience.Pos)
 		}
 	}
 }
 
-func (c *_Diff) compareAuth(owner, prefix string, baseline, candidate AuthMode, baselinePos, candidatePos model.Position) {
+func (c *_Diff) compareAuth(owner, prefix string, baseline, candidate AuthMode, baselinePos, candidatePos Position) {
 	if baseline == candidate {
 		return
 	}
@@ -179,7 +177,7 @@ func authImpact(before, after AuthMode) (string, ImpactLevel) {
 	}
 }
 
-func (c *_Diff) compareRequirement(owner, prefix string, baseline, candidate *Requirement, baselinePos, candidatePos model.Position) {
+func (c *_Diff) compareRequirement(owner, prefix string, baseline, candidate *Requirement, baselinePos, candidatePos Position) {
 	if reflect.DeepEqual(baseline, candidate) {
 		return
 	}

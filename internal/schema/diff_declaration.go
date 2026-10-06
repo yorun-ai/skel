@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
-
-	"go.yorun.ai/skel/internal/model"
 )
 
 func (c *_Diff) compareDeclaration(baseline, candidate *Declaration) {
@@ -56,7 +54,7 @@ func (c *_Diff) compareEnum(owner string, baseline, candidate *EnumSchema) {
 		other := candidateByName[item.Name]
 		symbol := owner + "." + item.Name
 		if other == nil {
-			c.add(ImpactBreaking, "enum.item.removed", symbol, fmt.Sprintf("enum item %s was removed", item.Name), item.Pos, model.Position{})
+			c.add(ImpactBreaking, "enum.item.removed", symbol, fmt.Sprintf("enum item %s was removed", item.Name), item.Pos, Position{})
 			continue
 		}
 		c.compareMetadata("enum.item", symbol, item.Metadata, other.Metadata, item.Pos, other.Pos)
@@ -64,24 +62,24 @@ func (c *_Diff) compareEnum(owner string, baseline, candidate *EnumSchema) {
 	for _, item := range candidate.Items {
 		if baselineByName[item.Name] == nil {
 			c.add(ImpactDangerous, "enum.item.added", owner+"."+item.Name,
-				fmt.Sprintf("enum item %s was added", item.Name), model.Position{}, item.Pos)
+				fmt.Sprintf("enum item %s was added", item.Name), Position{}, item.Pos)
 		}
 	}
 }
 
 func (c *_Diff) compareData(owner string, baseline, candidate *DataSchema) {
 	if baseline.Ext != candidate.Ext {
-		c.add(ImpactBreaking, "event.ext.changed", owner, "event extension direction changed", model.Position{}, model.Position{})
+		c.add(ImpactBreaking, "event.ext.changed", owner, "event extension direction changed", Position{}, Position{})
 	}
 	if baseline.Lifecycle != candidate.Lifecycle {
 		c.add(ImpactDangerous, "config.lifecycle.changed", owner,
-			fmt.Sprintf("config lifecycle changed from %s to %s", baseline.Lifecycle, candidate.Lifecycle), model.Position{}, model.Position{})
+			fmt.Sprintf("config lifecycle changed from %s to %s", baseline.Lifecycle, candidate.Lifecycle), Position{}, Position{})
 	}
 	if baseline.Sensitive != candidate.Sensitive {
-		c.add(ImpactDangerous, "data.sensitive.changed", owner, "data sensitivity changed", model.Position{}, model.Position{})
+		c.add(ImpactDangerous, "data.sensitive.changed", owner, "data sensitivity changed", Position{}, Position{})
 	}
 	if !slices.Equal(baseline.TypeParameters, candidate.TypeParameters) {
-		c.add(ImpactBreaking, "data.type-parameters.changed", owner, "data type parameters changed", model.Position{}, model.Position{})
+		c.add(ImpactBreaking, "data.type-parameters.changed", owner, "data type parameters changed", Position{}, Position{})
 	}
 	c.compareMembers(owner, "data.member", baseline.Members, candidate.Members, ImpactCompatible)
 }
@@ -93,7 +91,7 @@ func (c *_Diff) compareMembers(owner, prefix string, baseline, candidate []*Memb
 		other := candidateByName[member.Name]
 		symbol := owner + "." + member.Name
 		if other == nil {
-			c.add(ImpactBreaking, prefix+".removed", symbol, fmt.Sprintf("member %s was removed", member.Name), member.Pos, model.Position{})
+			c.add(ImpactBreaking, prefix+".removed", symbol, fmt.Sprintf("member %s was removed", member.Name), member.Pos, Position{})
 			continue
 		}
 		if !reflect.DeepEqual(member.Type, other.Type) {
@@ -122,17 +120,17 @@ func (c *_Diff) compareMembers(owner, prefix string, baseline, candidate []*Memb
 				impact = ImpactCompatible
 			}
 			c.add(impact, prefix+".added", owner+"."+member.Name,
-				fmt.Sprintf("member %s was added", member.Name), model.Position{}, member.Pos)
+				fmt.Sprintf("member %s was added", member.Name), Position{}, member.Pos)
 		}
 	}
 	if sameNamedSet(memberNames(baseline), memberNames(candidate)) && !slices.Equal(memberNames(baseline), memberNames(candidate)) {
-		c.add(reorderImpact, prefix+".order.changed", owner, "member order changed", model.Position{}, model.Position{})
+		c.add(reorderImpact, prefix+".order.changed", owner, "member order changed", Position{}, Position{})
 	}
 }
 
 func (c *_Diff) compareActor(owner string, baseline, candidate *ActorSchema) {
 	if baseline.IdentifierField != candidate.IdentifierField {
-		c.add(ImpactDangerous, "actor.identifier.changed", owner, "actor identifier field changed", model.Position{}, model.Position{})
+		c.add(ImpactDangerous, "actor.identifier.changed", owner, "actor identifier field changed", Position{}, Position{})
 	}
 	c.compareStringSet(owner, "actor.via", actorViaNames(baseline.Vias), actorViaNames(candidate.Vias), ImpactBreaking, ImpactCompatible)
 	if baseline.AuthEnabled != candidate.AuthEnabled {
@@ -145,7 +143,7 @@ func (c *_Diff) compareActor(owner string, baseline, candidate *ActorSchema) {
 		if baseline.AuthEnabled {
 			impact = ImpactBreaking
 		}
-		c.add(impact, code, owner, message, model.Position{}, model.Position{})
+		c.add(impact, code, owner, message, Position{}, Position{})
 	}
 	if baseline.AuthEnabled && candidate.AuthEnabled {
 		c.compareMembers(owner+".credential", "actor.auth-credential.member", baseline.AuthCredential.Members, candidate.AuthCredential.Members, ImpactCompatible)
@@ -161,11 +159,11 @@ func (c *_Diff) compareActor(owner string, baseline, candidate *ActorSchema) {
 		if baseline.PermEnabled {
 			impact = ImpactBreaking
 		}
-		c.add(impact, code, owner, message, model.Position{}, model.Position{})
+		c.add(impact, code, owner, message, Position{}, Position{})
 	}
 }
 
-func (c *_Diff) compareMetadata(prefix, symbol string, baseline, candidate Metadata, baselinePos, candidatePos model.Position) {
+func (c *_Diff) compareMetadata(prefix, symbol string, baseline, candidate Metadata, baselinePos, candidatePos Position) {
 	if baseline.Description != candidate.Description {
 		c.add(ImpactCompatible, prefix+".description.changed", symbol, "description changed", baselinePos, candidatePos)
 	}
@@ -186,12 +184,12 @@ func (c *_Diff) compareStringSet(owner, prefix string, baseline, candidate []str
 	candidateSet := stringSet(candidate)
 	for _, value := range baseline {
 		if !candidateSet[value] {
-			c.add(removedImpact, prefix+".removed", owner, fmt.Sprintf("%s %s was removed", prefix, value), model.Position{}, model.Position{})
+			c.add(removedImpact, prefix+".removed", owner, fmt.Sprintf("%s %s was removed", prefix, value), Position{}, Position{})
 		}
 	}
 	for _, value := range candidate {
 		if !baselineSet[value] {
-			c.add(addedImpact, prefix+".added", owner, fmt.Sprintf("%s %s was added", prefix, value), model.Position{}, model.Position{})
+			c.add(addedImpact, prefix+".added", owner, fmt.Sprintf("%s %s was added", prefix, value), Position{}, Position{})
 		}
 	}
 }
@@ -204,7 +202,7 @@ func (c *_Diff) compareResource(owner string, baseline, candidate *ResourceSchem
 		other := candidateByName[action.Name]
 		symbol := owner + "." + action.Name
 		if other == nil {
-			c.add(ImpactBreaking, "resource.action.removed", symbol, fmt.Sprintf("resource action %s was removed", action.Name), action.Pos, model.Position{})
+			c.add(ImpactBreaking, "resource.action.removed", symbol, fmt.Sprintf("resource action %s was removed", action.Name), action.Pos, Position{})
 			continue
 		}
 		if action.PermissionCode != other.PermissionCode {
@@ -216,7 +214,7 @@ func (c *_Diff) compareResource(owner string, baseline, candidate *ResourceSchem
 	for _, action := range candidate.Actions {
 		if baselineByName[action.Name] == nil {
 			c.add(ImpactCompatible, "resource.action.added", owner+"."+action.Name,
-				fmt.Sprintf("resource action %s was added", action.Name), model.Position{}, action.Pos)
+				fmt.Sprintf("resource action %s was added", action.Name), Position{}, action.Pos)
 		}
 	}
 }
@@ -228,7 +226,7 @@ func (c *_Diff) compareResourceChecks(owner string, baseline, candidate []*Resou
 		other := candidateByName[check.Name]
 		symbol := owner + "." + check.Name
 		if other == nil {
-			c.add(ImpactBreaking, "resource.check.removed", symbol, fmt.Sprintf("resource check %s was removed", check.Name), check.Pos, model.Position{})
+			c.add(ImpactBreaking, "resource.check.removed", symbol, fmt.Sprintf("resource check %s was removed", check.Name), check.Pos, Position{})
 			continue
 		}
 		c.compareArguments(symbol, "resource.check.argument", check.Arguments, other.Arguments)
@@ -237,7 +235,7 @@ func (c *_Diff) compareResourceChecks(owner string, baseline, candidate []*Resou
 	for _, check := range candidate {
 		if baselineByName[check.Name] == nil {
 			c.add(ImpactCompatible, "resource.check.added", owner+"."+check.Name,
-				fmt.Sprintf("resource check %s was added", check.Name), model.Position{}, check.Pos)
+				fmt.Sprintf("resource check %s was added", check.Name), Position{}, check.Pos)
 		}
 	}
 }
@@ -249,7 +247,7 @@ func (c *_Diff) compareTask(owner string, baseline, candidate *TaskSchema) {
 		other := candidateByName[trigger.Name]
 		symbol := owner + "." + trigger.Name
 		if other == nil {
-			c.add(ImpactBreaking, "task.trigger.removed", symbol, fmt.Sprintf("task trigger %s was removed", trigger.Name), trigger.Pos, model.Position{})
+			c.add(ImpactBreaking, "task.trigger.removed", symbol, fmt.Sprintf("task trigger %s was removed", trigger.Name), trigger.Pos, Position{})
 			continue
 		}
 		c.compareArguments(symbol, "task.trigger.argument", trigger.Arguments, other.Arguments)
@@ -264,7 +262,7 @@ func (c *_Diff) compareTask(owner string, baseline, candidate *TaskSchema) {
 	for _, trigger := range candidate.Triggers {
 		if baselineByName[trigger.Name] == nil {
 			c.add(ImpactCompatible, "task.trigger.added", owner+"."+trigger.Name,
-				fmt.Sprintf("task trigger %s was added", trigger.Name), model.Position{}, trigger.Pos)
+				fmt.Sprintf("task trigger %s was added", trigger.Name), Position{}, trigger.Pos)
 		}
 	}
 }

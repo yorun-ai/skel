@@ -1,7 +1,5 @@
 package schema
 
-import "go.yorun.ai/skel/internal/model"
-
 // ImpactLevel classifies a schema change's compatibility impact.
 type ImpactLevel string
 
@@ -22,13 +20,13 @@ const (
 
 // Change is one change in a Report.
 type Change struct {
-	Code      string          `json:"code"`
-	Change    ChangeType      `json:"change"`
-	Impact    ImpactLevel     `json:"impact"`
-	Symbol    string          `json:"symbol"`
-	Message   string          `json:"message"`
-	Baseline  *model.Position `json:"baseline,omitempty"`
-	Candidate *model.Position `json:"candidate,omitempty"`
+	Code      string      `json:"code"`
+	Change    ChangeType  `json:"change"`
+	Impact    ImpactLevel `json:"impact"`
+	Symbol    string      `json:"symbol"`
+	Message   string      `json:"message"`
+	Baseline  *Position   `json:"baseline,omitempty"`
+	Candidate *Position   `json:"candidate,omitempty"`
 }
 
 // Summary contains schema diff counts grouped by impact level.

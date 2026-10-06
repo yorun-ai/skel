@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/testutil"
 )
 
@@ -27,7 +27,7 @@ web AnonymousWeb { for ClientActor via client auth anonymous }
 web OffWeb { for ClientActor via client auth off }
 `)
 	out := filepath.Join(root, "auth")
-	if _, err := skel.CompileGolang(skel.Input{SkelIn: input, Strict: true}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auth", AsModule: true}); err != nil {
+	if _, err := api.CompileGolang(api.Input{SkelIn: input, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auth", AsModule: true}); err != nil {
 		t.Fatal(err)
 	}
 	writeFileForTest(t, filepath.Join(out, "auth_test.go"), `package auth

@@ -1,12 +1,6 @@
-// Package skel provides the supported programmatic API for inspecting Skel
-// sources, querying schemas, comparing contracts, and generating Go,
-// TypeScript, and public Skel output.
+// Package skel is the root of the Skel language toolkit.
 //
-// Use [Parse] when several generators or a custom generator need to share one
-// validated model. The Compile functions combine parsing and one generation
-// step. [Check] and [ScanImports] inspect sources without loading dependencies.
-// [QuerySchema] returns normalized schema documents for inspection or comparison.
-//
-// Generated files carry an ownership marker. Existing files without that
-// marker are preserved.
+// Source inspection, compilation, and generation APIs are provided by
+// go.yorun.ai/skel/api. Contract types and operations are provided by
+// go.yorun.ai/skel/schema, and semantic models by go.yorun.ai/skel/model.
 package skel

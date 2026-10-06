@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"go.yorun.ai/skel/model"
 	"io"
 
 	internalschema "go.yorun.ai/skel/internal/schema"
@@ -85,6 +84,9 @@ const (
 	// RequirementModeAny requires at least one child expression.
 	RequirementModeAny = internalschema.RequirementModeAny
 )
+
+// Position identifies a one-based source location attached to a contract.
+type Position = internalschema.Position
 
 // DeclarationType identifies a top-level Skel declaration in schema JSON.
 type DeclarationType = internalschema.DeclarationType
@@ -218,12 +220,6 @@ func Decode(reader io.Reader) (*Document, error) {
 // Validate checks a schema snapshot's format version and normalized structure.
 func Validate(document *Document) error {
 	return internalschema.Validate(document)
-}
-
-// Project converts a semantic domain into a canonical schema snapshot.
-// Optional aliases normalize unresolved imported references.
-func Project(domain *model.Domain, aliases map[string]string) (*Document, error) {
-	return internalschema.Project(domain, aliases)
 }
 
 // Entries returns declaration summaries in document order.

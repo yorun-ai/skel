@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/optionvalidation"
+	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
 )
 

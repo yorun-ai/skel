@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/codegen/golang"
-	"go.yorun.ai/skel/internal/compiler"
+	compiler "go.yorun.ai/skel/internal/compiler"
 )
 
 func TestGeneratedConfigTags(t *testing.T) {

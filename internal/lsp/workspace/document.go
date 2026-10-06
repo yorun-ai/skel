@@ -4,7 +4,7 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 	"go.yorun.ai/skel/internal/binding"
-	"go.yorun.ai/skel/internal/compiler"
+	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/lsp/source"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	textsource "go.yorun.ai/skel/internal/source"

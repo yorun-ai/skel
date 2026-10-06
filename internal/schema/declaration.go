@@ -1,15 +1,13 @@
 package schema
 
-import "go.yorun.ai/skel/internal/model"
-
 type EnumSchema struct {
 	Items []*EnumItem `json:"items"`
 }
 
 type EnumItem struct {
 	Metadata
-	Name string         `json:"name"`
-	Pos  model.Position `json:"-"`
+	Name string   `json:"name"`
+	Pos  Position `json:"-"`
 }
 
 type DataSchema struct {
@@ -22,11 +20,11 @@ type DataSchema struct {
 
 type Member struct {
 	Metadata
-	Name      string         `json:"name"`
-	Example   string         `json:"example,omitempty"`
-	Sensitive bool           `json:"sensitive,omitempty"`
-	Type      *Type          `json:"type"`
-	Pos       model.Position `json:"-"`
+	Name      string   `json:"name"`
+	Example   string   `json:"example,omitempty"`
+	Sensitive bool     `json:"sensitive,omitempty"`
+	Type      *Type    `json:"type"`
+	Pos       Position `json:"-"`
 }
 
 type Type struct {
@@ -49,8 +47,8 @@ type ActorSchema struct {
 }
 
 type ActorVia struct {
-	Name string         `json:"name"`
-	Pos  model.Position `json:"-"`
+	Name string   `json:"name"`
+	Pos  Position `json:"-"`
 }
 
 type ResourceSchema struct {
@@ -63,14 +61,14 @@ type ResourceAction struct {
 	Name           string           `json:"name"`
 	PermissionCode string           `json:"permissionCode"`
 	Checks         []*ResourceCheck `json:"checks,omitempty"`
-	Pos            model.Position   `json:"-"`
+	Pos            Position         `json:"-"`
 }
 
 type ResourceCheck struct {
 	Metadata
-	Name      string         `json:"name"`
-	Arguments []*Argument    `json:"arguments"`
-	Pos       model.Position `json:"-"`
+	Name      string      `json:"name"`
+	Arguments []*Argument `json:"arguments"`
+	Pos       Position    `json:"-"`
 }
 
 type ServiceSchema struct {
@@ -83,35 +81,35 @@ type ServiceSchema struct {
 }
 
 type Audience struct {
-	Actor string         `json:"actor"`
-	Via   string         `json:"via,omitempty"`
-	Pos   model.Position `json:"-"`
+	Actor string   `json:"actor"`
+	Via   string   `json:"via,omitempty"`
+	Pos   Position `json:"-"`
 }
 
 type Method struct {
 	Metadata
-	Name               string         `json:"name"`
-	SkelName           string         `json:"skelName"`
-	Example            string         `json:"example,omitempty"`
-	Auth               AuthMode       `json:"auth"`
-	Require            *Requirement   `json:"require,omitempty"`
-	InputDescription   string         `json:"inputDescription,omitempty"`
-	ArgumentsSensitive bool           `json:"argumentsSensitive,omitempty"`
-	OutputDescription  string         `json:"outputDescription,omitempty"`
-	OutputExample      string         `json:"outputExample,omitempty"`
-	ResultSensitive    bool           `json:"resultSensitive,omitempty"`
-	Arguments          []*Argument    `json:"arguments"`
-	Result             *Type          `json:"result,omitempty"`
-	Pos                model.Position `json:"-"`
+	Name               string       `json:"name"`
+	SkelName           string       `json:"skelName"`
+	Example            string       `json:"example,omitempty"`
+	Auth               AuthMode     `json:"auth"`
+	Require            *Requirement `json:"require,omitempty"`
+	InputDescription   string       `json:"inputDescription,omitempty"`
+	ArgumentsSensitive bool         `json:"argumentsSensitive,omitempty"`
+	OutputDescription  string       `json:"outputDescription,omitempty"`
+	OutputExample      string       `json:"outputExample,omitempty"`
+	ResultSensitive    bool         `json:"resultSensitive,omitempty"`
+	Arguments          []*Argument  `json:"arguments"`
+	Result             *Type        `json:"result,omitempty"`
+	Pos                Position     `json:"-"`
 }
 
 type Argument struct {
 	Metadata
-	Name      string         `json:"name"`
-	Example   string         `json:"example,omitempty"`
-	Sensitive bool           `json:"sensitive,omitempty"`
-	Type      *Type          `json:"type"`
-	Pos       model.Position `json:"-"`
+	Name      string   `json:"name"`
+	Example   string   `json:"example,omitempty"`
+	Sensitive bool     `json:"sensitive,omitempty"`
+	Type      *Type    `json:"type"`
+	Pos       Position `json:"-"`
 }
 
 type Requirement struct {
@@ -146,10 +144,10 @@ type TaskSchema struct {
 
 type Trigger struct {
 	Metadata
-	Name               string         `json:"name"`
-	SkelName           string         `json:"skelName"`
-	InputDescription   string         `json:"inputDescription,omitempty"`
-	ArgumentsSensitive bool           `json:"argumentsSensitive,omitempty"`
-	Arguments          []*Argument    `json:"arguments"`
-	Pos                model.Position `json:"-"`
+	Name               string      `json:"name"`
+	SkelName           string      `json:"skelName"`
+	InputDescription   string      `json:"inputDescription,omitempty"`
+	ArgumentsSensitive bool        `json:"argumentsSensitive,omitempty"`
+	Arguments          []*Argument `json:"arguments"`
+	Pos                Position    `json:"-"`
 }

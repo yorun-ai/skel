@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/testutil"
 )
 
@@ -23,12 +23,12 @@ func TestExtServicePublicServer(t *testing.T) {
  `
 	writeFileForTest(t, input, source)
 	skelOut := filepath.Join(root, "skel")
-	if _, err := skel.CompileSkeleton(skel.Input{SkelIn: input, Strict: true}, skel.SkeletonOption{Out: skelOut, PubOnly: true}); err != nil {
+	if _, err := api.CompileSkeleton(api.Input{SkelIn: input, Strict: true}, api.SkeletonOption{Out: skelOut, PubOnly: true}); err != nil {
 		t.Fatal(err)
 	}
 	pub := filepath.Join(root, "storagepub")
 	regular := filepath.Join(root, "storage")
-	if _, err := skel.CompileGolang(skel.Input{SkelIn: input, Strict: true}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: regular, Module: "example.com/storage", PubOut: pub, PubModule: "example.com/storagepub", AsModule: true}); err != nil {
+	if _, err := api.CompileGolang(api.Input{SkelIn: input, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: regular, Module: "example.com/storage", PubOut: pub, PubModule: "example.com/storagepub", AsModule: true}); err != nil {
 		t.Fatal(err)
 	}
 	service, err := os.ReadFile(filepath.Join(pub, "service.go"))
@@ -96,7 +96,7 @@ func TestPublicServer(t *testing.T) {
 		if pubOnly {
 			out = filepath.Join(root, "public-only")
 		}
-		if _, err := skel.CompileGolang(skel.Input{SkelIn: skelOut, Strict: true}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/standalone", AsModule: true, PubOnly: pubOnly}); err != nil {
+		if _, err := api.CompileGolang(api.Input{SkelIn: skelOut, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/standalone", AsModule: true, PubOnly: pubOnly}); err != nil {
 			t.Fatal(err)
 		}
 		testutil.Go(t, out, "build", "-mod=mod", "./...")
@@ -119,9 +119,9 @@ api service HealthApiService { for ClientActor via client noauth method ping {} 
 			out := filepath.Join(t.TempDir(), "api")
 			var err error
 			if target == "go" {
-				_, err = skel.CompileGolang(skel.Input{SkelIn: source}, skel.GolangOption{ApiOnly: true, Out: out})
+				_, err = api.CompileGolang(api.Input{SkelIn: source}, api.GolangOption{ApiOnly: true, Out: out})
 			} else {
-				_, err = skel.CompileTypeScript(skel.Input{SkelIn: source}, skel.TypeScriptOption{ApiOnly: true, Out: out})
+				_, err = api.CompileTypeScript(api.Input{SkelIn: source}, api.TypeScriptOption{ApiOnly: true, Out: out})
 			}
 			if err != nil {
 				t.Fatal(err)

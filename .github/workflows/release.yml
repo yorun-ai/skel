@@ -50,7 +50,7 @@ jobs:
           echo "RELEASE_DIST=$RELEASE_DIST" >> "$GITHUB_ENV"
           version="${RELEASE_TAG#v}"
           revision="$(git rev-parse HEAD)"
-          ldflags="-s -w -X go.yorun.ai/skel/internal/cli.ldModuleVersion=$RELEASE_TAG"
+          ldflags="-s -w -X go.yorun.ai/skel/internal/cmd/skelc.ldModuleVersion=$RELEASE_TAG"
           mkdir -p "$RELEASE_DIST"
 
           for target in \

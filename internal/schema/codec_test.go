@@ -6,18 +6,16 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-
-	"go.yorun.ai/skel/internal/model"
 )
 
 func TestEncodeDecodeRoundTripOmitsSourcePositions(t *testing.T) {
 	document := newTestDocument(
 		&Declaration{
 			Pub: true, Name: "User", Kind: DeclarationTypeData, SkelName: "demo.user.User",
-			Pos: model.Position{File: "/workspace/user.skel", Line: 2, Column: 10},
+			Pos: Position{File: "/workspace/user.skel", Line: 2, Column: 10},
 			Data: &DataSchema{Members: []*Member{{
 				Name: "id", Type: scalarType("string"),
-				Pos: model.Position{File: "/workspace/user.skel", Line: 3, Column: 5},
+				Pos: Position{File: "/workspace/user.skel", Line: 3, Column: 5},
 			}}},
 		},
 	)
@@ -35,7 +33,7 @@ func TestEncodeDecodeRoundTripOmitsSourcePositions(t *testing.T) {
 	if decoded.Domain != document.Domain || len(decoded.Declarations) != 1 {
 		t.Fatalf("unexpected decoded schema: %+v", decoded)
 	}
-	if decoded.Declarations[0].Pos != (model.Position{}) {
+	if decoded.Declarations[0].Pos != (Position{}) {
 		t.Fatalf("decoded source position should be empty: %+v", decoded.Declarations[0].Pos)
 	}
 }

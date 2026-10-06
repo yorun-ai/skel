@@ -1,7 +1,7 @@
 // Package diagnostic defines skelc's public structured diagnostic contract.
 package diagnostic
 
-import "go.yorun.ai/skel/model"
+import "go.yorun.ai/skel/internal/location"
 
 const (
 	CodeAuthLegacy         = "auth.legacy-marker"
@@ -36,10 +36,13 @@ const (
 	SeverityWarning Severity = "warning"
 )
 
+// Position identifies a one-based location in a Skel source file.
+type Position = location.Position
+
 // SourceRange identifies a source span using one-based Skel positions.
 type SourceRange struct {
-	Start model.Position `json:"start"`
-	End   model.Position `json:"end"`
+	Start Position `json:"start"`
+	End   Position `json:"end"`
 }
 
 // RelatedInformation points to another source range relevant to a diagnostic.
@@ -59,7 +62,7 @@ type Suggestion struct {
 type Diagnostic struct {
 	Code       string               `json:"code"`
 	Severity   Severity             `json:"severity"`
-	Position   model.Position       `json:"-"`
+	Position   Position             `json:"-"`
 	Range      SourceRange          `json:"range"`
 	Message    string               `json:"message"`
 	Related    []RelatedInformation `json:"related,omitempty"`

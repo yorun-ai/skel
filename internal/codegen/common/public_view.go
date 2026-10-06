@@ -3,6 +3,7 @@ package common
 
 import (
 	"fmt"
+	"go.yorun.ai/skel/internal/projection"
 	"strings"
 
 	"go.yorun.ai/skel/internal/model"
@@ -28,7 +29,7 @@ func (v *PublicView) ProjectSchema(domain *model.Domain) (*schema.Document, erro
 		Enums: v.Enums, Data: v.Data, Configs: v.Configs, Actors: v.Actors,
 		Resources: v.Resources, Events: v.Events, Services: v.Services,
 	})
-	return schema.Project(selected, nil)
+	return projection.Project(selected, nil)
 }
 
 // BuildPublicView constructs and validates one public-contract projection.

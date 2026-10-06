@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"go.yorun.ai/skel/internal/projection"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -36,7 +37,7 @@ func TestCompileAuthModes(t *testing.T) {
 			if wantCode != "" && (len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != wantCode || result.Diagnostics[0].Severity != DiagnosticSeverityWarning) {
 				t.Fatal(result.Diagnostics)
 			}
-			document, err := schema.Project(result.Domain, nil)
+			document, err := projection.Project(result.Domain, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,7 +77,7 @@ func TestCompileWebAuthModes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			document, err := schema.Project(result.Domain, nil)
+			document, err := projection.Project(result.Domain, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -191,7 +192,7 @@ web ConsoleWeb { for ClientActor via client noauth }
 			t.Fatal(item)
 		}
 	}
-	document, err := schema.Project(result.Domain, nil)
+	document, err := projection.Project(result.Domain, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

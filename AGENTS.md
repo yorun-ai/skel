@@ -9,17 +9,20 @@
 
 ## Architecture Boundaries
 
-- `cmd/skelc` is the executable entry point; keep it thin and delegate CLI behavior to `internal/cli`.
-- `internal/cli` owns command definitions, flag-specific validation, terminal output, and exit codes. Generation commands call the root `skel` API; input normalization, target-option normalization, and output-directory lifecycle must not be duplicated in CLI code.
+- `cmd/skelc/output` exposes CLI result, error and exit-code contracts through `internal/cmd/skelc/output`; keep command execution in `internal/cmd/skelc`.
+- `cmd/skelc` is the executable entry point; keep it thin and delegate CLI behavior to `internal/cmd/skelc`.
+- `internal/cmd/skelc` owns command definitions, flag-specific validation, terminal output, and exit codes. Generation commands call the public `api` package; input normalization, target-option normalization, and output-directory lifecycle must not be duplicated in CLI code.
+- `internal/compiler` is the source-compilation orchestration package; CLI implementation and output contracts belong to `internal/cmd/skelc`, while shared option validation lives in `internal/optionvalidation`. LSP, formatting and generation remain independent capabilities.
 - Keep source loading, syntax parsing, semantic analysis and compatibility hashing separate. `internal/compiler` coordinates them and owns recovery, diagnostics, imports and incremental analysis; `internal/model` remains parser-independent.
 - `internal/source` owns immutable document revisions and byte locations; `internal/loader` owns input discovery and filesystem, memory, and Git providers.
-- `internal/schema` owns canonical schema projection, validation and diffing without compiler or input-loading dependencies. `internal/schema/sourcediff` coordinates compilation and source baselines for CLI and LSP comparisons. `internal/codegen/golang/vineschema` adapts the pure projection to Vine with runtime metadata only.
+- `internal/schema` owns shared contract types, querying, encoding, validation and contract diffing; it must not depend on compiler models, parsing or input loading. `internal/projection` converts semantic models into the shared contract. `internal/sourcediff` coordinates compilation and source baselines for CLI and LSP comparisons. `internal/codegen/golang/vineschema` adapts the pure projection to Vine with runtime metadata only.
 - Target generators live in `internal/codegen/{golang,skeleton,typescript}`. Shared helpers in `internal/codegen/common` must not depend on a target generator; `internal/codegen/output` owns managed multi-target transactions.
 - Keep module metadata generation in its target generator package. TypeScript rendering and template payloads belong to `internal/codegen/typescript`; Go source rendering and Vine schema adaptation retain their separate boundaries.
 - `internal/lsp/workspace` owns document indexing, workspace state and immutable snapshots; analysis scheduling and language features consume those snapshots.
+- `internal/location` owns shared source-position values used by schema, semantic models and diagnostics. Reusable helpers stay in `internal/util`; language capabilities remain peer packages under `internal`, regardless of which tools consume them.
 - Prefer cohesive packages with responsibility-specific files. Add a package only for a meaningful dependency, ownership or reuse boundary, not for each implementation stage or helper.
 - `internal/formatter` owns pure Skel source formatting. The CLI owns in-place formatting and must validate all applicable inputs before writing files so a failed operation does not leave a partially updated source tree.
-- Keep implementation packages under `internal` unless they form part of the supported programmatic API. The root `skel` facade exposes parsing and generation, while `model` exposes parser-independent semantic data required by custom generators. Keep public facade packages limited to aliases, constants, and narrowly scoped function forwarding to their matching implementation package.
+- Keep implementation packages under `internal` unless they form part of the supported programmatic API. The public `api` package is a facade over `internal/api`, which owns source-input adaptation, source inspection and cross-capability orchestration. Target-option normalization and managed output transactions belong to the target generators. The API implementation composes the core pipeline and independent generators; the core must not depend on this adapter. The root `skel` package does not expose toolchain APIs. `model` exposes parser-independent semantic data required by custom generators. Public facade packages remain limited to aliases, constants, and narrowly scoped function forwarding to their matching implementation package.
 
 ## Language and Compatibility
 

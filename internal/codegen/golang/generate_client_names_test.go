@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/testutil"
 )
 
@@ -37,7 +37,7 @@ pub service NameService {
 		t.Fatal(err)
 	}
 	output := filepath.Join(root, "generated")
-	if _, err := skel.CompileGolang(skel.Input{SkelIn: input}, skel.GolangOption{
+	if _, err := api.CompileGolang(api.Input{SkelIn: input}, api.GolangOption{
 		CompilerVersion: "v0.0.0-dev",
 		PubOnly:         true,
 		AsModule:        true,

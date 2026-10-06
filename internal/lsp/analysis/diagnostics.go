@@ -9,7 +9,7 @@ import (
 
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skel/internal/compiler"
+	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/loader"
 	lspdiagnostic "go.yorun.ai/skel/internal/lsp/diagnostic"
 	"go.yorun.ai/skel/internal/lsp/source"

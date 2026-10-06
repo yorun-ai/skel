@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-
-	"go.yorun.ai/skel/internal/model"
 )
 
 func Diff(baseline, candidate *Document) (*Report, error) {
@@ -21,7 +19,7 @@ func Diff(baseline, candidate *Document) (*Report, error) {
 	}}
 	if baseline.Domain != candidate.Domain {
 		diff.add(ImpactBreaking, "domain.name.changed", candidate.Domain,
-			fmt.Sprintf("domain name changed from %s to %s", baseline.Domain, candidate.Domain), model.Position{}, model.Position{})
+			fmt.Sprintf("domain name changed from %s to %s", baseline.Domain, candidate.Domain), Position{}, Position{})
 		// A domain name identifies the schema root. Replacing it subsumes every
 		// nested declaration change, so the report intentionally stops here.
 		diff.finish()
@@ -29,7 +27,7 @@ func Diff(baseline, candidate *Document) (*Report, error) {
 	}
 	if baseline.Description != candidate.Description {
 		diff.add(ImpactCompatible, "domain.description.changed", candidate.Domain,
-			"domain description changed", model.Position{}, model.Position{})
+			"domain description changed", Position{}, Position{})
 	}
 
 	candidateByName := declarationsByKey(candidate.Declarations)
@@ -60,14 +58,14 @@ func Diff(baseline, candidate *Document) (*Report, error) {
 			continue
 		}
 		diff.add(ImpactBreaking, "declaration.removed", declaration.SkelName,
-			fmt.Sprintf("%s %s was removed", declaration.Kind, declaration.SkelName), declaration.Pos, model.Position{})
+			fmt.Sprintf("%s %s was removed", declaration.Kind, declaration.SkelName), declaration.Pos, Position{})
 	}
 	for _, declaration := range candidate.Declarations {
 		if matchedCandidate[declaration] {
 			continue
 		}
 		diff.add(ImpactCompatible, "declaration.added", declaration.SkelName,
-			fmt.Sprintf("%s %s was added", declaration.Kind, declaration.SkelName), model.Position{}, declaration.Pos)
+			fmt.Sprintf("%s %s was added", declaration.Kind, declaration.SkelName), Position{}, declaration.Pos)
 	}
 	diff.finish()
 	return diff.report, nil
@@ -78,7 +76,7 @@ type _Diff struct {
 	report *Report
 }
 
-func (c *_Diff) add(impact ImpactLevel, code, symbol, message string, baseline, candidate model.Position) {
+func (c *_Diff) add(impact ImpactLevel, code, symbol, message string, baseline, candidate Position) {
 	c.report.Changes = append(c.report.Changes, &Change{
 		Code: code, Change: changeType(code), Impact: impact, Symbol: symbol, Message: message,
 		Baseline: positionPointer(baseline), Candidate: positionPointer(candidate),
@@ -135,11 +133,11 @@ func impactOrder(impact ImpactLevel) int {
 	}
 }
 
-func positionPointer(position model.Position) *model.Position {
+func positionPointer(position Position) *Position {
 	if position.File == "" && position.Line == 0 && position.Column == 0 {
 		return nil
 	}
-	return new(model.Position(position))
+	return new(Position(position))
 }
 
 func declarationsByKey(values []*Declaration) map[string]*Declaration {

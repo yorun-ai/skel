@@ -28,7 +28,9 @@ The source-processing pipeline is intentionally separated:
 2. `internal/compiler` coordinates imports and the compilation pipeline.
 3. `internal/parser`, `internal/analyzer`, and `internal/hasher` parse syntax, build and validate semantic state, and derive compatibility hashes; the public `model` package contains parser-independent semantic data.
 4. `internal/codegen/{golang,skeleton,typescript}` renders Go, public Skel, and TypeScript output; `internal/codegen/common` contains target-independent generation infrastructure.
-5. The root `skel` API normalizes inputs and target options and manages output-directory lifecycle. `internal/cli` maps flags to that API and exposes stable terminal output and exit codes.
+5. The public `api` facade delegates to `internal/api`, which adapts source inputs and composes the internal compilation pipeline and independent capabilities. Target generators own option normalization, import validation and managed output transactions. `internal/cmd/skelc` maps flags to that API and exposes stable terminal output and exit codes.
+
+`internal/projection` converts compiler models into shared contracts; `internal/sourcediff` compiles source baselines for comparisons. `internal/schema` owns contract types, validation, codecs and contract diffing without depending on compiler implementation. Source positions are shared through `internal/location`.
 
 Keep the executable under `cmd/skelc` thin. Implementation packages remain under `internal`; avoid exposing their types through the CLI package.
 
@@ -60,7 +62,7 @@ While iterating, run the narrowest relevant package tests:
 ```bash
 go test ./internal/parser/...
 go test ./internal/codegen/...
-go test ./internal/cli
+go test ./internal/cmd/skelc
 ```
 
 Before submitting a repository-wide Go change, run:

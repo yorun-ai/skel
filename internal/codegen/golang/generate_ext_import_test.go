@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel"
+	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/testutil"
 )
 
@@ -19,12 +19,12 @@ pub data Record { id: string }
 data Hidden { value: string }
 `)
 	sharedSkel := filepath.Join(root, "shared-skel")
-	if _, err := skel.CompileSkeleton(skel.Input{SkelIn: sharedSource, Strict: true}, skel.SkeletonOption{Out: sharedSkel, PubOnly: true}); err != nil {
+	if _, err := api.CompileSkeleton(api.Input{SkelIn: sharedSource, Strict: true}, api.SkeletonOption{Out: sharedSkel, PubOnly: true}); err != nil {
 		t.Fatal(err)
 	}
 	sharedGo := filepath.Join(root, "contractspub")
 	const sharedModule = "example.com/contractspub"
-	if _, err := skel.CompileGolang(skel.Input{SkelIn: sharedSkel, Strict: true}, skel.GolangOption{CompilerVersion: "v0.0.0-dev", Out: sharedGo, Module: sharedModule, PubOnly: true, AsModule: true}); err != nil {
+	if _, err := api.CompileGolang(api.Input{SkelIn: sharedSkel, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: sharedGo, Module: sharedModule, PubOnly: true, AsModule: true}); err != nil {
 		t.Fatal(err)
 	}
 	ownerSource := filepath.Join(root, "audit.skel")
@@ -39,11 +39,11 @@ ext event AuditRecordedEvent { payload { envelope: Envelope records: shared.Page
 `)
 	imports := map[string]string{"common.contracts": sharedSkel}
 	ownerSkel := filepath.Join(root, "audit-skel")
-	if _, err := skel.CompileSkeleton(skel.Input{SkelIn: ownerSource, SkelImports: imports, Strict: true}, skel.SkeletonOption{Out: ownerSkel, PubOnly: true}); err != nil {
+	if _, err := api.CompileSkeleton(api.Input{SkelIn: ownerSource, SkelImports: imports, Strict: true}, api.SkeletonOption{Out: ownerSkel, PubOnly: true}); err != nil {
 		t.Fatal(err)
 	}
-	input := skel.Input{SkelIn: ownerSkel, SkelImports: imports, Strict: true}
-	parsed, err := skel.Parse(input)
+	input := api.Input{SkelIn: ownerSkel, SkelImports: imports, Strict: true}
+	parsed, err := api.Parse(input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ ext event AuditRecordedEvent { payload { envelope: Envelope records: shared.Page
 	}
 	pub := filepath.Join(root, "auditpub")
 	regular := filepath.Join(root, "audit")
-	if _, err := skel.CompileGolang(input, skel.GolangOption{
+	if _, err := api.CompileGolang(input, api.GolangOption{
 		CompilerVersion: "v0.0.0-dev", Out: regular, Module: "example.com/audit",
 		PubOut: pub, PubModule: "example.com/auditpub", AsModule: true,
 		Imports: map[string]string{"common.contracts": sharedModule},
@@ -69,7 +69,7 @@ ext event AuditRecordedEvent { payload { envelope: Envelope records: shared.Page
 	}
 	for _, directory := range []string{pub, regular} {
 		mod := readFileForTest(t, filepath.Join(directory, "go.mod"))
-		if !strings.Contains(mod, sharedModule+" ") || !strings.Contains(mod, "go.yorun.ai/vine "+skel.DefaultGolangVineVersion) {
+		if !strings.Contains(mod, sharedModule+" ") || !strings.Contains(mod, "go.yorun.ai/vine "+api.DefaultGolangVineVersion) {
 			t.Fatalf("generated module lost its contract or runtime dependency: %s", mod)
 		}
 		testutil.Go(t, directory, "mod", "edit", "-replace="+sharedModule+"="+sharedGo)

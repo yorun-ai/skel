@@ -2,6 +2,7 @@ package vineschema
 
 import (
 	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/internal/projection"
 	contractschema "go.yorun.ai/skel/internal/schema"
 )
 
@@ -16,8 +17,8 @@ func (g *_Gen) buildActorSchema(value *model.Actor, projected *contractschema.De
 		result.Vias = append(result.Vias, actorVia(via.Name))
 	}
 	if value.AuthEnabled {
-		result.AuthCredential = g.buildDataSchema(value.AuthCredential, contractschema.ProjectDataDeclaration(g.Domain, value.AuthCredential))
-		result.AuthInfo = g.buildDataSchema(value.AuthInfo, contractschema.ProjectDataDeclaration(g.Domain, value.AuthInfo))
+		result.AuthCredential = g.buildDataSchema(value.AuthCredential, projection.ProjectDataDeclaration(g.Domain, value.AuthCredential))
+		result.AuthInfo = g.buildDataSchema(value.AuthInfo, projection.ProjectDataDeclaration(g.Domain, value.AuthInfo))
 		result.AuthService = g.buildGeneratedServiceSchema(value.AuthService)
 		result.AuthMethod = g.buildGeneratedMethodSchema(value.AuthMethod)
 	}
@@ -41,12 +42,12 @@ func (g *_Gen) buildGeneratedServiceSchema(value *model.Service) *_ServiceSchema
 	if value == nil {
 		return nil
 	}
-	return g.buildServiceSchema(value, contractschema.ProjectServiceDeclaration(g.Domain, value))
+	return g.buildServiceSchema(value, projection.ProjectServiceDeclaration(g.Domain, value))
 }
 
 func (g *_Gen) buildGeneratedMethodSchema(value *model.Method) *_MethodSchema {
 	if value == nil {
 		return nil
 	}
-	return g.buildMethodSchema(value, contractschema.ProjectMethodSchema(g.Domain, value))
+	return g.buildMethodSchema(value, projection.ProjectMethodSchema(g.Domain, value))
 }

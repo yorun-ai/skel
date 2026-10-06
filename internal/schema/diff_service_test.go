@@ -2,8 +2,6 @@ package schema
 
 import (
 	"testing"
-
-	"go.yorun.ai/skel/internal/model"
 )
 
 func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
@@ -60,9 +58,9 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 	t.Run("authentication", func(t *testing.T) {
 		changes := diffChanges(func(diff *_Diff) {
 			for _, prefix := range []string{"service", "method"} {
-				diff.compareAuth("owner", prefix, AuthModeRequired, AuthModeAnonymous, model.Position{}, model.Position{})
-				diff.compareAuth("owner", prefix, AuthModeOptional, AuthModeAuth, model.Position{}, model.Position{})
-				diff.compareAuth("owner", prefix, AuthModeAuth, AuthModeOptional, model.Position{}, model.Position{})
+				diff.compareAuth("owner", prefix, AuthModeRequired, AuthModeAnonymous, Position{}, Position{})
+				diff.compareAuth("owner", prefix, AuthModeOptional, AuthModeAuth, Position{}, Position{})
+				diff.compareAuth("owner", prefix, AuthModeAuth, AuthModeOptional, Position{}, Position{})
 			}
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
@@ -80,9 +78,9 @@ func _testServiceRules(t *testing.T, coverage *_RuleCoverage) {
 		write := &Requirement{Mode: RequirementModeCode, Code: "write"}
 		changes := diffChanges(func(diff *_Diff) {
 			for _, prefix := range []string{"service", "method"} {
-				diff.compareRequirement("owner", prefix, nil, read, model.Position{}, model.Position{})
-				diff.compareRequirement("owner", prefix, read, nil, model.Position{}, model.Position{})
-				diff.compareRequirement("owner", prefix, read, write, model.Position{}, model.Position{})
+				diff.compareRequirement("owner", prefix, nil, read, Position{}, Position{})
+				diff.compareRequirement("owner", prefix, read, nil, Position{}, Position{})
+				diff.compareRequirement("owner", prefix, read, write, Position{}, Position{})
 			}
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
@@ -154,7 +152,7 @@ func TestAuthModeTransitionClassification(t *testing.T) {
 			{AuthModeRequired, AuthModeAuth, "changed", ImpactCompatible},
 		} {
 			changes := diffChanges(func(diff *_Diff) {
-				diff.compareAuth("owner", prefix, test.before, test.after, model.Position{}, model.Position{})
+				diff.compareAuth("owner", prefix, test.before, test.after, Position{}, Position{})
 			})
 			impact := test.impact
 			if prefix == "service" && (test.before == AuthModeUnset || test.after == AuthModeUnset) {
@@ -169,7 +167,7 @@ func TestAuthModeTransitionClassification(t *testing.T) {
 			equivalent = AuthModeOff
 		}
 		changes := diffChanges(func(diff *_Diff) {
-			diff.compareAuth("owner", prefix, AuthModeNoAuth, equivalent, model.Position{}, model.Position{})
+			diff.compareAuth("owner", prefix, AuthModeNoAuth, equivalent, Position{}, Position{})
 		})
 		if len(changes) != 1 || changes[0].Impact != ImpactCompatible {
 			t.Fatalf("%s legacy noauth: %+v", prefix, changes)
@@ -192,7 +190,7 @@ func TestAuthModeDefaultMigrationClassification(t *testing.T) {
 			{"method", AuthModeRequired, ImpactDangerous},
 		} {
 			changes := diffChanges(func(diff *_Diff) {
-				diff.compareAuth("owner", test.declaration, legacy, test.canonical, model.Position{}, model.Position{})
+				diff.compareAuth("owner", test.declaration, legacy, test.canonical, Position{}, Position{})
 			})
 			if len(changes) != 1 || changes[0].Impact != test.impact {
 				t.Fatalf("%s %q -> %s: %+v", test.declaration, legacy, test.canonical, changes)

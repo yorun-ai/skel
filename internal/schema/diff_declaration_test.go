@@ -2,8 +2,6 @@ package schema
 
 import (
 	"testing"
-
-	"go.yorun.ai/skel/internal/model"
 )
 
 func TestEventDirectionChangesAreBreaking(t *testing.T) {
@@ -58,7 +56,7 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 				changes := diffChanges(func(diff *_Diff) {
 					diff.compareMetadata(prefix, "symbol", Metadata{}, Metadata{
 						Description: "new", Deprecated: true, DeprecatedReason: "reason",
-					}, model.Position{}, model.Position{})
+					}, Position{}, Position{})
 				})
 				coverage.assert(t, changes, map[string]ImpactLevel{
 					prefix + ".description.changed":       ImpactCompatible,

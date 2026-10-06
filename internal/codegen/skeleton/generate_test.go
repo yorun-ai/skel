@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel/internal/compiler"
+	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/model"
 )
 

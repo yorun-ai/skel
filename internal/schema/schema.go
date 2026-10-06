@@ -1,8 +1,6 @@
-// Package schema implements normalized schema projection, querying, encoding,
+// Package schema implements shared contract types, querying, encoding,
 // validation, and compatibility diffing without compiling or loading inputs.
 package schema
-
-import "go.yorun.ai/skel/internal/model"
 
 const (
 	// Format identifies schema snapshot JSON produced by skelc.
@@ -117,7 +115,7 @@ type Declaration struct {
 	Service  *ServiceSchema  `json:"service,omitempty"`
 	Web      *WebSchema      `json:"web,omitempty"`
 	Task     *TaskSchema     `json:"task,omitempty"`
-	Pos      model.Position  `json:"-"`
+	Pos      Position        `json:"-"`
 }
 
 // Entry is one declaration summary emitted by schema list.

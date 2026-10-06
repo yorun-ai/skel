@@ -11,7 +11,7 @@ import (
 	"go.yorun.ai/skel/internal/codegen/common"
 	"go.yorun.ai/skel/internal/codegen/golang"
 	"go.yorun.ai/skel/internal/codegen/typescript"
-	"go.yorun.ai/skel/internal/compiler"
+	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/model"
 )
 
