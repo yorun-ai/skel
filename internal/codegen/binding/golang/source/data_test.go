@@ -54,7 +54,7 @@ func TestCastData(t *testing.T) {
 	if len(data.Members) != 2 {
 		t.Fatalf("unexpected member count: %d", len(data.Members))
 	}
-	if data.Members[0].Type.Plain != "types.Timestamp" {
+	if data.Members[0].Type.Plain != "skeltype.Timestamp" {
 		t.Fatalf("unexpected first member type: %s", data.Members[0].Type.Plain)
 	}
 	if len(data.Members[1].CommentLines) == 0 || data.Members[1].CommentLines[0] != `AvatarUrl Avatar URL (e.g. "https://xxx.com/a.png")` {
@@ -97,7 +97,7 @@ func TestCastDataMapsDurationToSkelDuration(t *testing.T) {
 			},
 		},
 	})
-	if data.Members[0].Type.Plain != "types.Duration" {
+	if data.Members[0].Type.Plain != "skeltype.Duration" {
 		t.Fatalf("unexpected duration member type: %s", data.Members[0].Type.Plain)
 	}
 }
@@ -115,7 +115,7 @@ func TestCastDataMapsLocalDateToSkelLocalDate(t *testing.T) {
 			},
 		},
 	})
-	if data.Members[0].Type.Plain != "types.LocalDate" {
+	if data.Members[0].Type.Plain != "skeltype.LocalDate" {
 		t.Fatalf("unexpected date member type: %s", data.Members[0].Type.Plain)
 	}
 }

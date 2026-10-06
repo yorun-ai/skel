@@ -32,7 +32,7 @@ func TestFillHashesIncludesActorCredential(t *testing.T) {
 func TestActorIdentifierChangesHash(t *testing.T) {
 	baseline := newHashActorCredentialTestDomain(t, "token")
 	candidate := newHashActorCredentialTestDomain(t, "token")
-	candidate.Actors()[0].IdentifierField = "userId"
+	candidate.Actors()[0].Auth.IdentifierField = "userId"
 	fillHashes(t, baseline, candidate)
 	if baseline.Hash() == candidate.Hash() || baseline.Actors()[0].Hash == candidate.Actors()[0].Hash {
 		t.Fatal("identifier change did not affect hashes")

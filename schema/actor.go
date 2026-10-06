@@ -34,24 +34,36 @@ type Actor struct {
 	Pub bool
 	// Vias lists the transports declared by the actor.
 	Vias []*ActorVia
-	// AuthEnabled reports whether the actor declares authentication.
-	AuthEnabled bool
-	// AuthCredential is the language-defined authentication credential data schema.
-	AuthCredential *Data
-	// AuthInfo is the language-defined authenticated-actor information data schema.
-	AuthInfo *Data
-	// IdentifierField names the optional identity field in AuthInfo.
+	// Auth describes authentication; nil means no auth section was declared.
+	Auth *ActorAuth
+	// Permission describes permission support; nil means no permission section was declared.
+	Permission *ActorPermission
+}
+
+// ActorAuth describes an actor's authentication declaration and derived service.
+type ActorAuth struct {
+	// Pos is the auth section's source position.
+	Pos Position
+	// Credential is the language-defined authentication credential data schema.
+	Credential *Data
+	// Info is the language-defined authenticated-actor information data schema.
+	Info *Data
+	// IdentifierField names the optional identity field in Info.
 	IdentifierField string
-	// AuthService is the language-defined authentication service.
-	AuthService *Service
-	// AuthMethod is the authentication method in AuthService.
-	AuthMethod *Method
-	// PermissionEnabled reports whether the actor declares permission support.
-	PermissionEnabled bool
-	// PermissionService is the language-defined permission service.
-	PermissionService *Service
-	// PermissionMethod is the permission-checking method in PermissionService.
-	PermissionMethod *Method
+	// Service is the language-defined authentication service.
+	Service *Service
+	// Method is the canonical authentication method node in Service.Methods.
+	Method *Method
+}
+
+// ActorPermission describes an actor's permission declaration and derived service.
+type ActorPermission struct {
+	// Pos is the permission section's source position.
+	Pos Position
+	// Service is the language-defined permission service.
+	Service *Service
+	// Method is the canonical permission-checking method node in Service.Methods.
+	Method *Method
 }
 
 // ActorVia describes one transport declared by an actor.

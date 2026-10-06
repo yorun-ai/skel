@@ -89,18 +89,24 @@ func (e *_SchemaEncoder) projectMembers(values []*schema.DataMember) []*SchemaMe
 }
 
 func (e *_SchemaEncoder) projectActor(value *schema.Actor) *SchemaDeclaration {
-	vias := make([]*SchemaActorVia, 0, len(value.Vias))
+	actor := new(SchemaActor{Vias: make([]*SchemaActorVia, 0, len(value.Vias))})
 	for _, via := range value.Vias {
-		vias = append(vias, &SchemaActorVia{Name: via.Name})
+		actor.Vias = append(actor.Vias, &SchemaActorVia{Name: via.Name})
 	}
-	return &SchemaDeclaration{
+	if auth := value.Auth; auth != nil {
+		actor.Auth = new(SchemaActorAuth{
+			Credential: e.projectDataSchema(auth.Credential), Info: e.projectDataSchema(auth.Info),
+			IdentifierField: auth.IdentifierField,
+		})
+	}
+	if value.Permission != nil {
+		actor.Permission = new(SchemaActorPermission{})
+	}
+	return new(SchemaDeclaration{
 		SchemaMetadata: metadata(value.Description, value.Deprecated, value.DeprecatedReason),
 		Pub:            value.Pub, Name: value.Name, Kind: schema.DeclarationTypeActor, SkelName: value.SkelName,
-		Actor: &SchemaActor{
-			IdentifierField: value.IdentifierField, Vias: vias, AuthEnabled: value.AuthEnabled, AuthCredential: e.projectDataSchema(value.AuthCredential),
-			AuthInfo: e.projectDataSchema(value.AuthInfo), PermissionEnabled: value.PermissionEnabled,
-		},
-	}
+		Actor: actor,
+	})
 }
 
 func (e *_SchemaEncoder) projectResource(value *schema.Resource) *SchemaDeclaration {

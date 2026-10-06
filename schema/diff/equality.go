@@ -47,12 +47,12 @@ func typeKey(domain *schema.Domain, value *schema.Type) string {
 		body = "map<" + typeKey(domain, value.Map.Key) + "," + typeKey(domain, value.Map.Value) + ">"
 	case schema.TypeKindTypeParameter:
 		body = "parameter:" + strconv.Quote(value.TypeParameter.Name)
+	case schema.TypeKindUnresolvedReference, schema.TypeKindData, schema.TypeKindEnum:
+		// Resolution adds declaration metadata, not a new reference identity.
+		// Declaration-kind changes are compared at the declaration itself.
+		body = "named:" + strconv.Quote(typeName(domain, value))
 	default:
-		kind := fmt.Sprint(value.Kind)
-		if value.Kind == schema.TypeKindData && value.Data != nil {
-			kind += ":" + string(value.Data.Kind)
-		}
-		body = kind + ":" + strconv.Quote(typeName(domain, value))
+		body = fmt.Sprint(value.Kind) + ":" + strconv.Quote(typeName(domain, value))
 	}
 	for _, argument := range value.TypeArguments {
 		body += "<" + typeKey(domain, argument) + ">"
@@ -106,6 +106,7 @@ func expressionKey(domain *schema.Domain, value *schema.PermissionExpression) st
 	if value == nil {
 		return ""
 	}
+	value = comparisonExpression(value)
 	code := value.Code
 	if resource, action, ok := strings.Cut(code, ":"); ok {
 		code = referenceName(domain, resource) + ":" + action
@@ -114,7 +115,9 @@ func expressionKey(domain *schema.Domain, value *schema.PermissionExpression) st
 	if check := value.Check; check != nil {
 		result += "[" + strconv.Quote(referenceName(domain, check.ResourceSkelName)) + "," + strconv.Quote(check.ActionName) + "," + strconv.Quote(check.CheckName)
 		for _, arg := range check.Arguments {
-			result += "," + strconv.Quote(arg.Name) + ":" + strconv.Quote(arg.JsonPath) + ":" + typeKey(domain, arg.Type)
+			// Target parameter names and types are supplied by resolution. The
+			// source contract specifies ordered argument paths at the call site.
+			result += "," + strconv.Quote(arg.JsonPath)
 		}
 		result += "]"
 	}
@@ -122,6 +125,28 @@ func expressionKey(domain *schema.Domain, value *schema.PermissionExpression) st
 		result += "(" + expressionKey(domain, child) + ")"
 	}
 	return result
+}
+
+// Unresolved require terms implicitly combine an action code and an optional
+// check. Expand that syntax for comparison without modifying either schema.
+func comparisonExpression(value *schema.PermissionExpression) *schema.PermissionExpression {
+	if value.Mode != "" || value.Check == nil {
+		return value
+	}
+	check := value.Check
+	code := new(schema.PermissionExpression{
+		Mode: schema.PermissionRequireModeCode,
+		Code: check.ResourceSkelName + ":" + check.ActionName,
+	})
+	if check.CheckName == "" {
+		return code
+	}
+	return new(schema.PermissionExpression{
+		Mode: schema.PermissionRequireModeAll,
+		Children: []*schema.PermissionExpression{code, {
+			Mode: schema.PermissionRequireModeCheck, Check: check,
+		}},
+	})
 }
 
 // Service and method policies form a conjunction. Disjunctions remain opaque.
@@ -154,6 +179,7 @@ func requirementConjuncts(domain *schema.Domain, policies ...*schema.PermissionR
 		if value == nil {
 			return
 		}
+		value = comparisonExpression(value)
 		if value.Mode == schema.PermissionRequireModeAll {
 			for _, child := range value.Children {
 				add(child)

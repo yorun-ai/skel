@@ -35,10 +35,10 @@ func (g *_Gen) validateSensitiveMembers() error {
 		}
 	}
 	for _, actor := range g.authServiceActors() {
-		if !actor.AuthEnabled {
+		if actor.Auth == nil {
 			continue
 		}
-		for _, data := range []*schema.Data{actor.AuthCredential, actor.AuthInfo} {
+		for _, data := range []*schema.Data{actor.Auth.Credential, actor.Auth.Info} {
 			if err := validateSensitiveData(data); err != nil {
 				return err
 			}

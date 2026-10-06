@@ -33,7 +33,7 @@ api service ScalarApiService {
     for ClientActor via client
     auth required
     method exchange {
-        input { types: Values }
+        input { types: Values skeltype: Values }
         output uuid
     }
 }
@@ -55,7 +55,7 @@ api service ScalarApiService {
 				t.Fatal(err)
 			}
 			data := readFileForTest(t, filepath.Join(dataOut, "data.go"))
-			if !strings.Contains(data, `"go.yorun.ai/skel/types"`) {
+			if !strings.Contains(data, `skeltype "go.yorun.ai/skel/types"`) {
 				t.Fatalf("data does not import shared types:\n%s", data)
 			}
 			if strings.Contains(data, `"go.yorun.ai/vrpc/skel"`) || strings.Contains(data, `"go.yorun.ai/vine/core/skel"`) {

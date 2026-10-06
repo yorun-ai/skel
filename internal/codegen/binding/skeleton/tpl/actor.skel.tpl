@@ -11,26 +11,26 @@ import {{ $import.Name }}{{ with importAlias $import }} as {{ . }}{{ end }}
 {{- range $via := $actor.Vias }}
     via {{ $via.Name }} {}
 {{- end }}
-{{- if $actor.AuthEnabled }}
+{{- if $actor.Auth }}
     auth {
-{{- with $actor.AuthCredential }}
+{{- with $actor.Auth.Credential }}
 {{ template "sensitive" (sensitive .Sensitive 8) }}        credential {
 {{- range $member := .Members }}
 {{ template "description" (description $member.Description 12) }}{{ template "deprecated" (deprecated $member.Deprecated $member.DeprecatedReason 12) }}{{ template "example" (example $member.Example 12) }}{{ template "sensitive" (sensitive $member.Sensitive 12) }}            {{ $member.Name }}: {{ template "type" (typeRef $member.Type) }}
 {{- end }}
         }
 {{- end }}
-{{- with $actor.AuthInfo }}
+{{- with $actor.Auth.Info }}
 {{ template "sensitive" (sensitive .Sensitive 8) }}        info {
 {{- range $member := .Members }}
-{{ template "description" (description $member.Description 12) }}{{ template "deprecated" (deprecated $member.Deprecated $member.DeprecatedReason 12) }}{{ template "example" (example $member.Example 12) }}{{ template "sensitive" (sensitive $member.Sensitive 12) }}{{ if eq $member.Name $actor.IdentifierField }}            @identifier
+{{ template "description" (description $member.Description 12) }}{{ template "deprecated" (deprecated $member.Deprecated $member.DeprecatedReason 12) }}{{ template "example" (example $member.Example 12) }}{{ template "sensitive" (sensitive $member.Sensitive 12) }}{{ if eq $member.Name $actor.Auth.IdentifierField }}            @identifier
 {{ end }}            {{ $member.Name }}: {{ template "type" (typeRef $member.Type) }}
 {{- end }}
         }
 {{- end }}
     }
 {{- end }}
-{{- if $actor.PermissionEnabled }}
+{{- if $actor.Permission }}
     permission {}
 {{- end }}
 }

@@ -47,9 +47,9 @@ func collectActorImports(domain *schema.Domain, actors []*schema.Actor) []*schem
 	used := map[string]struct{}{}
 	types := make([]*schema.Type, 0)
 	for _, actor := range actors {
-		if actor.AuthEnabled {
-			types = appendDataImportTypes(types, actor.AuthCredential)
-			types = appendDataImportTypes(types, actor.AuthInfo)
+		if actor.Auth != nil {
+			types = appendDataImportTypes(types, actor.Auth.Credential)
+			types = appendDataImportTypes(types, actor.Auth.Info)
 		}
 	}
 	collectImportsFromTypes(used, types)

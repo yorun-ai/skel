@@ -59,20 +59,20 @@ func (g *_Gen) genActorGo() {
 		payload.HasActorInfo = payload.HasActorInfo || actor.HasInfo
 	}
 	for _, tokenActor := range g.authServiceActors() {
-		if tokenActor.AuthEnabled {
-			info := g.types.castData(tokenActor.AuthInfo)
+		if tokenActor.Auth != nil {
+			info := g.types.castData(tokenActor.Auth.Info)
 			for _, member := range info.Members {
-				member.Identifier = member.SkelName == tokenActor.IdentifierField
+				member.Identifier = member.SkelName == tokenActor.Auth.IdentifierField
 			}
 			payload.CredentialData = append(
 				payload.CredentialData,
-				g.types.castData(tokenActor.AuthCredential),
+				g.types.castData(tokenActor.Auth.Credential),
 				info,
 			)
-			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.AuthService))
+			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.Auth.Service))
 		}
-		if tokenActor.PermissionService != nil {
-			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.PermissionService))
+		if tokenActor.Permission != nil {
+			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.Permission.Service))
 		}
 	}
 	if len(payload.Actors) == 0 && len(payload.AuthServices) == 0 {
@@ -110,9 +110,9 @@ func castActor(p *schema.Actor) *Actor {
 		CommentLines: deprecatedGoDocLines(goDocLines(p.Name, p.Description), p.Name, p.DeprecatedReason),
 		Vias:         make([]string, 0, len(p.Vias)),
 	}
-	if p.AuthEnabled {
-		actor.AuthInfoName = p.AuthInfo.Name
-		actor.AuthInfoSkelName = p.AuthInfo.SkelName
+	if p.Auth != nil {
+		actor.AuthInfoName = p.Auth.Info.Name
+		actor.AuthInfoSkelName = p.Auth.Info.SkelName
 		actor.HasInfo = true
 	}
 	for _, via := range p.Vias {

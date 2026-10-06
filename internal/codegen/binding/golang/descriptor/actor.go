@@ -6,24 +6,34 @@ import (
 )
 
 func (g *_Gen) buildActorDescriptor(value *schema.Actor) *descriptor.Actor {
-	result := &descriptor.Actor{
-		IdentifierField: value.IdentifierField, Name: value.Name, SkelName: value.SkelName, Hash: value.Hash,
+	result := new(descriptor.Actor{
+		Name: value.Name, SkelName: value.SkelName, Hash: value.Hash,
 		Description: value.Description, Deprecated: value.Deprecated,
 		DeprecatedReason: value.DeprecatedReason, Vias: make([]descriptor.ActorVia, 0, len(value.Vias)),
-		AuthEnabled: value.AuthEnabled, PermissionEnabled: value.PermissionEnabled,
-	}
+	})
 	for _, via := range value.Vias {
 		result.Vias = append(result.Vias, actorVia(via.Name))
 	}
-	if value.AuthEnabled {
-		result.AuthCredential = g.buildDataDescriptor(value.AuthCredential)
-		result.AuthInfo = g.buildDataDescriptor(value.AuthInfo)
-		result.AuthService = g.buildGeneratedServiceDescriptor(value.AuthService)
-		result.AuthMethod = g.buildGeneratedMethodDescriptor(value.AuthMethod)
+	if auth := value.Auth; auth != nil {
+		result.Auth = new(descriptor.ActorAuth{
+			Credential: g.buildDataDescriptor(auth.Credential), Info: g.buildDataDescriptor(auth.Info),
+			IdentifierField: auth.IdentifierField,
+			Service:         g.buildGeneratedServiceDescriptor(auth.Service), MethodName: generatedMethodName(auth.Method),
+		})
 	}
-	result.PermissionService = g.buildGeneratedServiceDescriptor(value.PermissionService)
-	result.PermissionMethod = g.buildGeneratedMethodDescriptor(value.PermissionMethod)
+	if permission := value.Permission; permission != nil {
+		result.Permission = new(descriptor.ActorPermission{
+			Service: g.buildGeneratedServiceDescriptor(permission.Service), MethodName: generatedMethodName(permission.Method),
+		})
+	}
 	return result
+}
+
+func generatedMethodName(value *schema.Method) string {
+	if value == nil {
+		return ""
+	}
+	return value.Name
 }
 
 func (g *_Gen) buildWebDescriptor(value *schema.Web) *descriptor.Web {
@@ -42,11 +52,4 @@ func (g *_Gen) buildGeneratedServiceDescriptor(value *schema.Service) *descripto
 		return nil
 	}
 	return g.buildServiceDescriptor(value)
-}
-
-func (g *_Gen) buildGeneratedMethodDescriptor(value *schema.Method) *descriptor.Method {
-	if value == nil {
-		return nil
-	}
-	return g.buildMethodDescriptor(value)
 }

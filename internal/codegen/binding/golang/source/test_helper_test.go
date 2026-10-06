@@ -15,24 +15,27 @@ func buildSchemaDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.Doma
 		data.Domain = spec.Name
 	}
 	for _, actor := range spec.Actors {
-		for _, data := range []*schema.Data{actor.AuthInfo, actor.AuthCredential} {
+		if actor.Auth == nil {
+			continue
+		}
+		for _, data := range []*schema.Data{actor.Auth.Info, actor.Auth.Credential} {
 			if data != nil {
 				data.Kind = schema.DataKindData
 				data.Domain = spec.Name
 			}
 		}
-		if actor.AuthEnabled && actor.AuthService == nil {
+		if actor.Auth != nil && actor.Auth.Service == nil {
 			method := &schema.Method{
 				Name:       "auth",
 				SkelName:   "auth",
 				Auth:       schema.AuthModeNoAuth,
-				ResultType: codegentest.DataType(actor.AuthInfo),
+				ResultType: codegentest.DataType(actor.Auth.Info),
 				Arguments: []*schema.Argument{
-					{Name: "credential", Type: codegentest.DataType(actor.AuthCredential)},
+					{Name: "credential", Type: codegentest.DataType(actor.Auth.Credential)},
 				},
 			}
-			actor.AuthMethod = method
-			actor.AuthService = &schema.Service{
+			actor.Auth.Method = method
+			actor.Auth.Service = &schema.Service{
 				Name:     actor.Name + "AuthService",
 				SkelName: spec.Name + "." + actor.Name + "AuthService",
 				Auth:     schema.AuthModeNoAuth,

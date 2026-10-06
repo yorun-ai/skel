@@ -21,7 +21,7 @@ func TestDependenciesCoverAllDeclarationReferences(t *testing.T) {
 	event, config := value("Changed"), value("Settings")
 	event.Data.Kind, config.Data.Kind = DataKindEvent, DataKindConfig
 	doc := NewDomainFromSpec(DomainSpec{Name: "demo",
-		Actors:  []*Actor{{SkelName: "demo.Caller", AuthCredential: members("Credential"), AuthInfo: members("AuthInfo")}},
+		Actors:  []*Actor{{SkelName: "demo.Caller", Auth: new(ActorAuth{Credential: members("Credential"), Info: members("AuthInfo")})}},
 		Configs: []*Data{members("ConfigValue")}, Events: []*Data{members("EventValue")},
 		Resources: []*Resource{{SkelName: "demo.Record", Checks: []*ResourceCheck{{Method: new(Method{Arguments: arguments("ResourceArgument")})}}, Actions: []*ResourceAction{{Checks: []*ResourceCheck{{Method: new(Method{Arguments: arguments("ActionArgument")})}}}}}},
 		Services: []*Service{{SkelName: "demo.ReadService", Audiences: []*ActorAudience{{Actor: "foreign.ServiceCaller"}},

@@ -186,12 +186,19 @@ func collectViewData(domain *schema.Domain, view *PublicView) {
 		visitData(d)
 	}
 	for _, a := range view.Actors {
-		visitData(a.AuthCredential)
-		visitData(a.AuthInfo)
+		if a.Auth != nil {
+			visitData(a.Auth.Credential)
+			visitData(a.Auth.Info)
+		}
 	}
 	services := append([]*schema.Service{}, view.Services...)
 	for _, a := range view.Actors {
-		services = append(services, a.AuthService, a.PermissionService)
+		if a.Auth != nil {
+			services = append(services, a.Auth.Service)
+		}
+		if a.Permission != nil {
+			services = append(services, a.Permission.Service)
+		}
 	}
 	for _, r := range view.Resources {
 		services = append(services, r.CheckService)

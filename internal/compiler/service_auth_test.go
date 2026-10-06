@@ -150,7 +150,7 @@ api service UserApiService {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Diagnostics) != 0 || !result.Domain.Actors()[0].AuthEnabled {
+	if len(result.Diagnostics) != 0 || result.Domain.Actors()[0].Auth == nil {
 		t.Fatalf("actor auth deprecated: %+v", result)
 	}
 }

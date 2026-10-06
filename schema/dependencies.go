@@ -131,9 +131,9 @@ func Dependencies(domain *Domain) *DependencyReport {
 			*list = append(*list, declaration.SkelName)
 		}
 		data(declaration.Data)
-		if declaration.Actor != nil {
-			data(declaration.Actor.AuthCredential)
-			data(declaration.Actor.AuthInfo)
+		if declaration.Actor != nil && declaration.Actor.Auth != nil {
+			data(declaration.Actor.Auth.Credential)
+			data(declaration.Actor.Auth.Info)
 		}
 		if declaration.Resource != nil {
 			checks(declaration.Resource.Checks)

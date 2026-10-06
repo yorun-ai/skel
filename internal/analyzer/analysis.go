@@ -80,10 +80,13 @@ func analyzeContext(ctx context.Context, content *grammar.SkelContent, importedD
 		return domain, domain.reporter.result(), nil
 	}
 	diagnosticsBeforeImports := len(domain.reporter.errors)
-	if allowMissingImports {
-		domain.loadUnresolvedImports()
-	} else {
-		domain.loadImports(domainByName)
+	domain.validateImportNames()
+	if len(domain.reporter.errors) == diagnosticsBeforeImports {
+		if allowMissingImports {
+			domain.loadUnresolvedImports()
+		} else {
+			domain.loadImports(domainByName)
+		}
 	}
 	if ctx.Err() == nil && len(domain.reporter.errors) == diagnosticsBeforeImports {
 		domain.normalizeWithMissingImports(allowMissingImports)

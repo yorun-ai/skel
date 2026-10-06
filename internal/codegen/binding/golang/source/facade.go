@@ -75,12 +75,12 @@ func (g *_Gen) genFacadeGo() {
 	for _, actor := range g.Domain.Actors() {
 		if actor.Pub {
 			payload.Actors = append(payload.Actors, castActor(actor))
-			if actor.AuthEnabled {
-				payload.AuthCredentialData = append(payload.AuthCredentialData, g.types.castData(actor.AuthCredential), g.types.castData(actor.AuthInfo))
-				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.AuthService))
+			if actor.Auth != nil {
+				payload.AuthCredentialData = append(payload.AuthCredentialData, g.types.castData(actor.Auth.Credential), g.types.castData(actor.Auth.Info))
+				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.Auth.Service))
 			}
-			if actor.PermissionService != nil {
-				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.PermissionService))
+			if actor.Permission != nil {
+				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.Permission.Service))
 			}
 		}
 	}

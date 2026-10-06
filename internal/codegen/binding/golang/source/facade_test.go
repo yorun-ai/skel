@@ -28,12 +28,10 @@ func TestFacadeGoRendersActorAuthService(t *testing.T) {
 		Name: "demo.auth",
 		Actors: []*schema.Actor{
 			{
-				Pub:            true,
-				Name:           "PublicActor",
-				Vias:           []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
-				AuthEnabled:    true,
-				AuthCredential: credential,
-				AuthInfo:       info,
+				Pub:  true,
+				Name: "PublicActor",
+				Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
+				Auth: new(schema.ActorAuth{Credential: credential, Info: info}),
 			},
 		},
 	})

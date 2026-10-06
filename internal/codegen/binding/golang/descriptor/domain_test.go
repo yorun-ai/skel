@@ -47,13 +47,50 @@ func TestBuildDomainDescriptorProducesPortableDescriptor(t *testing.T) {
 		t.Fatal("descriptor lost the compiled domain hash")
 	}
 	actor := decoded.Actors[0]
-	if !actor.PermissionEnabled || actor.PermissionService == nil || actor.PermissionMethod == nil || actor.AuthService == nil {
+	if actor.Permission == nil || actor.Permission.Service == nil || actor.Permission.Method() == nil || actor.Auth == nil || actor.Auth.Service == nil {
 		t.Fatalf("descriptor lost derived actor contracts: %+v", actor)
 	}
+	capabilities := map[string][2]bool{
+		"ClientActor": {true, true}, "GuestActor": {false, false},
+		"PermissionActor": {false, true}, "TokenActor": {true, false},
+	}
+	if len(decoded.Actors) != len(capabilities) {
+		t.Fatalf("unexpected actors: %+v", decoded.Actors)
+	}
+	for _, actor := range decoded.Actors {
+		want, ok := capabilities[actor.Name]
+		if !ok || (actor.Auth != nil) != want[0] || (actor.Permission != nil) != want[1] {
+			t.Fatalf("actor %s lost declared capability presence: %+v", actor.Name, actor)
+		}
+		if auth := actor.Auth; auth != nil && (auth.Credential == nil || auth.Info == nil || auth.Service == nil || auth.Method() == nil) {
+			t.Fatalf("actor %s lost authentication metadata: %+v", actor.Name, auth)
+		}
+		if permission := actor.Permission; permission != nil && (permission.Service == nil || permission.Method() == nil) {
+			t.Fatalf("actor %s lost permission metadata: %+v", actor.Name, permission)
+		}
+		if auth := actor.Auth; auth != nil && (auth.MethodName != "auth" || auth.Method() != auth.Service.Methods[0]) {
+			t.Fatalf("actor %s lost its authentication method reference: %+v", actor.Name, auth)
+		}
+		if permission := actor.Permission; permission != nil && (permission.MethodName != "checkCodes" || permission.Method() != permission.Service.Methods[0]) {
+			t.Fatalf("actor %s lost its permission method reference: %+v", actor.Name, permission)
+		}
+	}
 	resource := decoded.Resources[0]
+	for _, current := range []*descriptor.Resource{domain.Resources[0], resource} {
+		checks := []*descriptor.ResourceCheck{current.Checks[0], current.Actions[0].Checks[0], current.Actions[1].Checks[0]}
+		for index, check := range checks {
+			method := current.CheckMethod(check)
+			if method == nil || method != current.CheckService.Methods[index] || len(method.Arguments) != 2 {
+				t.Fatalf("resource check lost its canonical method: %+v", check)
+			}
+			if method.Arguments[0].Name != "code" || method.Arguments[1].Name != []string{"id", "ownerId", "editorId"}[index] {
+				t.Fatalf("resource check resolved the wrong method: %+v", method)
+			}
+		}
+	}
 	check := decoded.Services[0].Methods[0].Require.Expression.Children[1].Check
 	if check == nil || check.ServiceSkelName != resource.CheckService.SkelName ||
-		check.MethodSkelName != resource.Checks[0].Method.SkelName || check.CodeArgumentName != "code" ||
+		check.MethodSkelName != resource.CheckMethod(resource.Checks[0]).SkelName || check.CodeArgumentName != "code" ||
 		len(check.Arguments) != 1 || check.Arguments[0].Name != "id" || check.Arguments[0].JsonPath != "id" {
 		t.Fatalf("descriptor lost resolved permission-check bindings: %+v", check)
 	}
@@ -61,7 +98,7 @@ func TestBuildDomainDescriptorProducesPortableDescriptor(t *testing.T) {
 	if element.Kind != descriptor.TypeKindData || element.SkelName != "demo.Node" {
 		t.Fatalf("recursive data reference was not preserved by name: %+v", element)
 	}
-	for _, field := range []string{`"permissionEnabled"`, `"permissionService"`, `"permissionMethod"`, `"expression"`} {
+	for _, field := range []string{`"permission"`, `"service"`, `"methodName"`, `"expression"`} {
 		if !bytes.Contains(encoded, []byte(field)) {
 			t.Errorf("descriptor JSON is missing %s", field)
 		}
@@ -155,7 +192,7 @@ func TestBuildDomainDescriptorCopiesHashes(t *testing.T) {
 	if len(meta.Actors) != 1 || meta.Actors[0].Hash != "actor-hash" {
 		t.Fatalf("unexpected actor hash: %+v", meta.Actors)
 	}
-	if meta.Actors[0].AuthEnabled {
+	if meta.Actors[0].Auth != nil {
 		t.Fatal("expected actor auth disabled")
 	}
 	if len(meta.Services) != 1 || meta.Services[0].Hash != "service-hash" {
@@ -346,25 +383,26 @@ func TestBuildDomainDescriptorIncludesActorAuthMethod(t *testing.T) {
 	pkg := buildDescriptorDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
 		Actors: []*schema.Actor{{
-			Name:        "ClientActor",
-			Vias:        []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
-			AuthEnabled: true,
-			AuthCredential: &schema.Data{
-				Name: "ClientActorCredential",
-				Members: []*schema.DataMember{
-					{Name: "token", Type: codegentest.StringType()},
+			Name: "ClientActor",
+			Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
+			Auth: new(schema.ActorAuth{
+				Credential: &schema.Data{
+					Name: "ClientActorCredential",
+					Members: []*schema.DataMember{
+						{Name: "token", Type: codegentest.StringType()},
+					},
 				},
-			},
-			AuthInfo: &schema.Data{
-				Name: "ClientActorInfo",
-				Members: []*schema.DataMember{
-					{Name: "userId", Type: codegentest.StringType()},
+				Info: &schema.Data{
+					Name: "ClientActorInfo",
+					Members: []*schema.DataMember{
+						{Name: "userId", Type: codegentest.StringType()},
+					},
 				},
-			},
+			}),
 		}},
 	})
-	pkg.Actors()[0].AuthService.Hash = "auth-service-hash"
-	pkg.Actors()[0].AuthMethod.Hash = "auth-method-hash"
+	pkg.Actors()[0].Auth.Service.Hash = "auth-service-hash"
+	pkg.Actors()[0].Auth.Method.Hash = "auth-method-hash"
 
 	gen := newGen(Option{
 		Domain:      pkg,
@@ -379,16 +417,16 @@ func TestBuildDomainDescriptorIncludesActorAuthMethod(t *testing.T) {
 		t.Fatalf("expected one actor, got %d", len(meta.Actors))
 	}
 	actor := meta.Actors[0]
-	if !actor.AuthEnabled {
+	if actor.Auth == nil {
 		t.Fatal("expected actor auth enabled")
 	}
-	if actor.AuthMethod == nil {
+	if actor.Auth.Method() == nil {
 		t.Fatal("expected actor auth method")
 	}
-	if actor.AuthMethod.SkelName != "auth" || actor.AuthMethod.Hash != "auth-method-hash" {
-		t.Fatalf("unexpected actor auth method: %+v", actor.AuthMethod)
+	if actor.Auth.Method().SkelName != "auth" || actor.Auth.Method().Hash != "auth-method-hash" {
+		t.Fatalf("unexpected actor auth method: %+v", actor.Auth.Method())
 	}
-	if actor.AuthService == nil || len(actor.AuthService.Methods) != 1 || actor.AuthService.Methods[0].SkelName != actor.AuthMethod.SkelName {
-		t.Fatalf("unexpected actor auth service: %+v", actor.AuthService)
+	if actor.Auth.Service == nil || len(actor.Auth.Service.Methods) != 1 || actor.Auth.Service.Methods[0] != actor.Auth.Method() {
+		t.Fatalf("unexpected actor auth service: %+v", actor.Auth.Service)
 	}
 }

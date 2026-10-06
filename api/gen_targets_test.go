@@ -18,6 +18,68 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
+func TestBuiltinGeneratorsPreserveNormalizedMethodAuth(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "domain.skel")
+	source := `domain demo
+pub actor ClientActor { via client {} }
+pub service BackendService { method read {} }
+api service EntryApiService { for ClientActor auth required method read {} }
+`
+	var inputs []codegen.Input
+	for _, normalized := range []bool{false, true} {
+		parsed, err := api.Parse(api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(source)}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, service := range parsed.Domain.Services() {
+			clientApi := service.ClientApi()
+			if normalized {
+				for _, method := range service.Methods {
+					method.Auth = method.NormalizedAuth()
+				}
+			}
+			if service.ClientApi() != clientApi {
+				t.Fatal("normalizing inherited method auth changed service selection")
+			}
+		}
+		input, err := codegen.Prepare(parsed.Domain, codegen.Selection{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		inputs = append(inputs, input)
+	}
+	for _, target := range []string{"go", "go-api", "ts", "skel"} {
+		t.Run(target, func(t *testing.T) {
+			out := filepath.Join(root, target, "generated")
+			var generator codegen.Generator
+			var err error
+			switch target {
+			case "go", "go-api":
+				generator, err = api.NewGolangGenerator(api.GolangOption{Out: out, CompilerVersion: "v0.0.0-dev", ApiOnly: target == "go-api"})
+			case "ts":
+				generator, err = api.NewTypeScriptGenerator(api.TypeScriptOption{Out: out, ApiOnly: true})
+			case "skel":
+				generator, err = api.NewSkeletonGenerator(api.SkeletonOption{Out: out, PubOnly: true})
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			before, err := codegen.Generate(t.Context(), inputs[0], generator)
+			if err != nil {
+				t.Fatal(err)
+			}
+			after, err := codegen.Generate(t.Context(), inputs[1], generator)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(before) == 0 || !reflect.DeepEqual(before, after) {
+				t.Fatal("normalizing inherited method auth changed generated files")
+			}
+		})
+	}
+}
+
 func TestOptionalActorCredentialGeneration(t *testing.T) {
 	root := t.TempDir()
 	source := filepath.Join(root, "source")
@@ -80,7 +142,7 @@ pub actor UserActor {
 	if err != nil {
 		t.Fatal(err)
 	}
-	credential := roundTrip.Domain.Actors()[0].AuthCredential
+	credential := roundTrip.Domain.Actors()[0].Auth.Credential
 	if credential.Members[0].Type.Nullable || !credential.Members[1].Type.Nullable {
 		t.Fatal("public Skel did not preserve required and optional credential fields")
 	}

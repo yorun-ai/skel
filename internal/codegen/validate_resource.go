@@ -10,14 +10,14 @@ func validateResource(resource *schema.Resource) error {
 	if resource == nil {
 		return fmt.Errorf("generated schema contains nil resource")
 	}
-	if err := validateResourceChecks("resource "+resource.Name, resource.Checks); err != nil {
+	if err := validateResourceChecks("resource "+resource.Name, resource.CheckService, resource.Checks); err != nil {
 		return err
 	}
 	for _, action := range resource.Actions {
 		if action == nil {
 			return fmt.Errorf("resource %s contains a nil action", resource.Name)
 		}
-		if err := validateResourceChecks("resource "+resource.Name+" action "+action.Name, action.Checks); err != nil {
+		if err := validateResourceChecks("resource "+resource.Name+" action "+action.Name, resource.CheckService, action.Checks); err != nil {
 			return err
 		}
 	}
@@ -32,12 +32,12 @@ func validateResource(resource *schema.Resource) error {
 	return nil
 }
 
-func validateResourceChecks(owner string, checks []*schema.ResourceCheck) error {
+func validateResourceChecks(owner string, service *schema.Service, checks []*schema.ResourceCheck) error {
 	for _, check := range checks {
 		if check == nil {
 			return fmt.Errorf("%s contains a nil check", owner)
 		}
-		if err := validateMethod(owner+" check "+check.Name, check.Method); err != nil {
+		if err := validateServiceMethodReference(owner+" check "+check.Name, service, check.Method); err != nil {
 			return err
 		}
 	}

@@ -20,6 +20,19 @@ type Service struct {
 	Methods []*Method          `json:"methods"`
 }
 
+// Method returns the method with the given local name, or nil if unavailable.
+func (service *Service) Method(name string) *Method {
+	if service == nil || name == "" {
+		return nil
+	}
+	for _, method := range service.Methods {
+		if method != nil && method.Name == name {
+			return method
+		}
+	}
+	return nil
+}
+
 // Method describes a callable method.
 type Method struct {
 	Name               string             `json:"name"`

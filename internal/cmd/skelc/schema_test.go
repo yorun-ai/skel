@@ -98,6 +98,62 @@ pub resource User {
 	}
 }
 
+func TestRunSkelcSchemaGetActorCapabilities(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		auth       bool
+		permission bool
+	}{
+		{name: "neither"},
+		{name: "auth", auth: true},
+		{name: "permission", permission: true},
+		{name: "both", auth: true, permission: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			entry := filepath.Join(t.TempDir(), "actor.skel")
+			source := "domain demo.user\npub actor ClientActor { via client {}\n"
+			if test.auth {
+				source += "auth { credential { token: string } info { @identifier id: uuid } }\n"
+			}
+			if test.permission {
+				source += "permission {}\n"
+			}
+			writeCLIFile(t, entry, source+"}\n")
+			result := Run([]string{"schema", "get", "actor", "demo.user.ClientActor", "--skel-in", entry})
+			if result.ExitCode != ExitCodeSuccess {
+				t.Fatalf("actor query failed: %+v", result)
+			}
+			var declaration struct {
+				Actor map[string]json.RawMessage `json:"actor"`
+			}
+			if err := json.Unmarshal([]byte(result.Stdout), &declaration); err != nil {
+				t.Fatal(err)
+			}
+			actor := declaration.Actor
+			if string(actor["vias"]) == "" || (actor["auth"] != nil) != test.auth || (actor["permission"] != nil) != test.permission {
+				t.Fatalf("unexpected actor capabilities: %s", result.Stdout)
+			}
+			for key := range actor {
+				if key != "vias" && key != "auth" && key != "permission" {
+					t.Fatalf("unexpected flattened actor field %q", key)
+				}
+			}
+			if test.permission && strings.TrimSpace(string(actor["permission"])) != "{}" {
+				t.Fatalf("expected permission declaration without derived services: %s", actor["permission"])
+			}
+			if test.auth {
+				var auth map[string]json.RawMessage
+				if err := json.Unmarshal(actor["auth"], &auth); err != nil {
+					t.Fatal(err)
+				}
+				if len(auth) != 3 || auth["credential"] == nil || auth["info"] == nil || string(auth["identifierField"]) != `"id"` {
+					t.Fatalf("unexpected authentication declaration: %s", actor["auth"])
+				}
+			}
+		})
+	}
+}
+
 func TestRunSkelcSchemaQueryRejectsInvalidType(t *testing.T) {
 	dir := t.TempDir()
 	writeCLIFile(t, filepath.Join(dir, "domain.skel"), `domain demo.user`)

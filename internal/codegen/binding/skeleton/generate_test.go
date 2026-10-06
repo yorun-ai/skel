@@ -483,7 +483,7 @@ pub actor UserActor {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Domain == nil || result.Domain.Actors()[0].IdentifierField != "id" {
+	if result.Domain == nil || result.Domain.Actors()[0].Auth.IdentifierField != "id" {
 		t.Fatalf("lost identifier: %+v", result)
 	}
 }
@@ -512,18 +512,18 @@ pub data Value { id: string }
 
 func TestGenImportAliasesDoNotSelectUnrelatedDomains(t *testing.T) {
 	imports := map[string]string{}
-	for _, name := range []string{"user", "other"} {
+	for _, name := range []string{"identity.user", "other"} {
 		_, path := parseDomainForTest(t, name+"/domain.skel", "domain "+name+"\n", name+"/types.skel", "domain "+name+"\npub data Value {}\npub actor ClientActor { via client {} }\n", nil)
 		imports[name] = path
 	}
 	for _, test := range []struct{ name, declaration, usedDomain, expectedImport, filename string }{
-		{"data domain collides with alias", "pub data Payload { value: legacy.Value }", "user", "import user as legacy", "types.skel"},
-		{"data alias collides with domain", "pub data Payload { value: user.Value }", "other", "import other as user", "types.skel"},
-		{"actor domain collides with alias", "pub service ProxyService { for legacy.ClientActor method ping {} }", "user", "import user as legacy", "service.skel"},
-		{"actor alias collides with domain", "pub service ProxyService { for user.ClientActor method ping {} }", "other", "import other as user", "service.skel"},
+		{"data domain suffix matches alias", "pub data Payload { value: legacy.Value }", "identity.user", "import identity.user as legacy", "types.skel"},
+		{"data alias matches domain suffix", "pub data Payload { value: user.Value }", "other", "import other as user", "types.skel"},
+		{"actor domain suffix matches alias", "pub service ProxyService { for legacy.ClientActor method ping {} }", "identity.user", "import identity.user as legacy", "service.skel"},
+		{"actor alias matches domain suffix", "pub service ProxyService { for user.ClientActor method ping {} }", "other", "import other as user", "service.skel"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			domain, _ := parseDomainForTest(t, "app/domain.skel", "domain demo.app\n", "app/content.skel", "domain demo.app\nimport user as legacy\nimport other as user\n"+test.declaration+"\n", imports)
+			domain, _ := parseDomainForTest(t, "app/domain.skel", "domain demo.app\n", "app/content.skel", "domain demo.app\nimport identity.user as legacy\nimport other as user\n"+test.declaration+"\n", imports)
 			out := t.TempDir()
 			mustGenerateForTest(t, domain, Option{Out: out, PubOnly: true})
 			content := readGeneratedFileForTest(t, filepath.Join(out, test.filename))

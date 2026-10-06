@@ -38,8 +38,8 @@ func buildDescriptorDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.
 		event.Domain = spec.Name
 	}
 	for _, actor := range spec.Actors {
-		if actor.AuthEnabled && actor.AuthService == nil {
-			for _, data := range []*schema.Data{actor.AuthCredential, actor.AuthInfo} {
+		if actor.Auth != nil && actor.Auth.Service == nil {
+			for _, data := range []*schema.Data{actor.Auth.Credential, actor.Auth.Info} {
 				data.Kind = schema.DataKindData
 				data.Domain = spec.Name
 				if data.SkelName == "" {
@@ -50,13 +50,13 @@ func buildDescriptorDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.
 				Name:       "auth",
 				SkelName:   "auth",
 				Auth:       schema.AuthModeNoAuth,
-				ResultType: codegentest.DataType(actor.AuthInfo),
+				ResultType: codegentest.DataType(actor.Auth.Info),
 				Arguments: []*schema.Argument{
-					{Name: "credential", Type: codegentest.DataType(actor.AuthCredential)},
+					{Name: "credential", Type: codegentest.DataType(actor.Auth.Credential)},
 				},
 			}
-			actor.AuthMethod = method
-			actor.AuthService = &schema.Service{
+			actor.Auth.Method = method
+			actor.Auth.Service = &schema.Service{
 				Name:     actor.Name + "AuthService",
 				SkelName: spec.Name + "." + actor.Name + "AuthService",
 				Auth:     schema.AuthModeNoAuth,
@@ -81,7 +81,8 @@ const portableDescriptorSource = `domain demo
 pub data Node { children: list<Node> }
 pub resource Document {
     check byId { input { id: string } }
-    action read
+    action read { check owner { input { ownerId: string } } }
+    action write { check owner { input { editorId: string } } }
 }
 actor ClientActor {
     via client {}
@@ -90,6 +91,15 @@ actor ClientActor {
         info { id: string }
     }
     permission {}
+}
+actor GuestActor { via client {} }
+actor PermissionActor { via client {} permission {} }
+actor TokenActor {
+    via client {}
+    auth {
+        credential { token: string }
+        info { @identifier id: string }
+    }
 }
 service DocumentService {
     for ClientActor

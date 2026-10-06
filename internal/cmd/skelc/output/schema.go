@@ -75,13 +75,20 @@ type SchemaType struct {
 
 // SchemaActor is the serialized body of an actor declaration.
 type SchemaActor struct {
-	IdentifierField   string            `json:"identifierField,omitempty"`
-	Vias              []*SchemaActorVia `json:"vias"`
-	AuthEnabled       bool              `json:"authEnabled,omitempty"`
-	AuthCredential    *SchemaData       `json:"authCredential,omitempty"`
-	AuthInfo          *SchemaData       `json:"authInfo,omitempty"`
-	PermissionEnabled bool              `json:"permEnabled,omitempty"`
+	Vias       []*SchemaActorVia      `json:"vias"`
+	Auth       *SchemaActorAuth       `json:"auth,omitzero"`
+	Permission *SchemaActorPermission `json:"permission,omitzero"`
 }
+
+// SchemaActorAuth is the authentication declaration without derived services.
+type SchemaActorAuth struct {
+	Credential      *SchemaData `json:"credential"`
+	Info            *SchemaData `json:"info"`
+	IdentifierField string      `json:"identifierField,omitempty"`
+}
+
+// SchemaActorPermission records the presence of an actor permission declaration.
+type SchemaActorPermission struct{}
 
 // SchemaActorVia is one actor transport capability.
 type SchemaActorVia struct {

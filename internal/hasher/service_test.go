@@ -148,8 +148,8 @@ func TestFillHashesIncludesWholeSensitiveMetadata(t *testing.T) {
 		name       string
 		selectData func(*schema.Actor) *schema.Data
 	}{
-		{name: "actor credential", selectData: func(actor *schema.Actor) *schema.Data { return actor.AuthCredential }},
-		{name: "actor info", selectData: func(actor *schema.Actor) *schema.Data { return actor.AuthInfo }},
+		{name: "actor credential", selectData: func(actor *schema.Actor) *schema.Data { return actor.Auth.Credential }},
+		{name: "actor info", selectData: func(actor *schema.Actor) *schema.Data { return actor.Auth.Info }},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			oldDomain := newHashActorCredentialTestDomain(t, "token")

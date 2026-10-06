@@ -117,7 +117,7 @@ pub service BackendService { method ping {} }
 	if strings.Contains(string(data), "OrderApiServiceGetArguments") || strings.Contains(string(service), "type OrderApiServiceGetArguments") {
 		t.Fatal("API arguments must not be public data types")
 	}
-	if !strings.Contains(string(service), "type _OrderApiServiceGetArguments struct") || !strings.Contains(string(service), "payload sharedapi.Page[sharedapi.Page[types.Binary]]") {
+	if !strings.Contains(string(service), "type _OrderApiServiceGetArguments struct") || !strings.Contains(string(service), "payload sharedapi.Page[sharedapi.Page[skeltype.Binary]]") {
 		t.Fatalf("missing positional API arguments: %s", service)
 	}
 	for _, fragment := range []string{"Get external data", "@param payload - Nested payload", "payload example", "@returns", "External result", "result example", "Deprecated: Use fetch."} {

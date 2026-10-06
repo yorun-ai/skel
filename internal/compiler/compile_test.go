@@ -233,7 +233,7 @@ data AppItem {
 	if got := members["boxedDetails"].TypeArguments[0].List.Value.Kind; got != schema.TypeKindData {
 		t.Fatalf("nested generic list element kind = %d, want %d", got, schema.TypeKindData)
 	}
-	authInfo := baseDomain.Actors()[0].AuthInfo
+	authInfo := baseDomain.Actors()[0].Auth.Info
 	wantKinds := []schema.TypeKind{schema.TypeKindEnum, schema.TypeKindData}
 	for index, member := range authInfo.Members {
 		if member.Type.Kind != wantKinds[index] {

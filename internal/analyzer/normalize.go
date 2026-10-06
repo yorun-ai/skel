@@ -44,10 +44,12 @@ func (p *Analysis) normalizeOwnedTypes(refs *_RefContext, allowMissingImports bo
 			break
 		}
 		actor := p.actorsMap[name]
-		p.normalizeDataType(actor.AuthCredential, refs)
-		p.normalizeDataType(actor.AuthInfo, refs)
-		if actor.PermissionService != nil {
-			p.normalizeServiceTypes(actor.PermissionService, refs)
+		if actor.Auth != nil {
+			p.normalizeDataType(actor.Auth.Credential, refs)
+			p.normalizeDataType(actor.Auth.Info, refs)
+		}
+		if actor.Permission != nil {
+			p.normalizeServiceTypes(actor.Permission.Service, refs)
 		}
 	}
 	for _, name := range slices.Sorted(maps.Keys(p.resourcesMap)) {
@@ -110,11 +112,14 @@ func (p *Analysis) validateNormalizedData() {
 			break
 		}
 		actor := p.actorsMap[name]
-		if actor.AuthCredential != nil {
-			allData = append(allData, actor.AuthCredential)
+		if actor.Auth == nil {
+			continue
 		}
-		if actor.AuthInfo != nil {
-			allData = append(allData, actor.AuthInfo)
+		if actor.Auth.Credential != nil {
+			allData = append(allData, actor.Auth.Credential)
+		}
+		if actor.Auth.Info != nil {
+			allData = append(allData, actor.Auth.Info)
 		}
 	}
 	p.checkHardCycleReferences(allData)

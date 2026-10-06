@@ -146,7 +146,7 @@ func (s *Service) HasClientRules() bool {
 		return true
 	}
 	for _, method := range s.Methods {
-		if (method.Auth != "" && method.Auth != AuthModeUnset) || method.Require != nil {
+		if method.NormalizedAuth() != AuthModeInherit || method.Require != nil {
 			return true
 		}
 	}

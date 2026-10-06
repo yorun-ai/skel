@@ -55,19 +55,19 @@ func prepareSchemaSpecForTest(spec *schema.DomainSpec) {
 	prepareSchemaDataForTest(spec.Name, spec.Events, schema.DataKindEvent)
 	for _, actor := range spec.Actors {
 		setSchemaSkelNameForTest(spec.Name, actor.Name, &actor.SkelName)
-		if actor.AuthEnabled && actor.AuthService == nil {
-			prepareSchemaDataForTest(spec.Name, []*schema.Data{actor.AuthCredential, actor.AuthInfo}, schema.DataKindData)
+		if actor.Auth != nil && actor.Auth.Service == nil {
+			prepareSchemaDataForTest(spec.Name, []*schema.Data{actor.Auth.Credential, actor.Auth.Info}, schema.DataKindData)
 			method := &schema.Method{
 				Name:       "auth",
 				SkelName:   "auth",
 				Auth:       schema.AuthModeNoAuth,
-				ResultType: codegentest.DataType(actor.AuthInfo),
+				ResultType: codegentest.DataType(actor.Auth.Info),
 				Arguments: []*schema.Argument{
-					{Name: "credential", Type: codegentest.DataType(actor.AuthCredential)},
+					{Name: "credential", Type: codegentest.DataType(actor.Auth.Credential)},
 				},
 			}
-			actor.AuthMethod = method
-			actor.AuthService = &schema.Service{
+			actor.Auth.Method = method
+			actor.Auth.Service = &schema.Service{
 				Name:     actor.Name + "AuthService",
 				SkelName: spec.Name + "." + actor.Name + "AuthService",
 				Auth:     schema.AuthModeNoAuth,

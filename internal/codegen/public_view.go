@@ -72,16 +72,16 @@ func validatePublicView(domain *schema.Domain, view *PublicView) error {
 		}
 	}
 	for _, actor := range view.Actors {
-		if !actor.AuthEnabled {
+		if actor.Auth == nil {
 			continue
 		}
-		if actor.AuthCredential == nil || actor.AuthInfo == nil {
+		if actor.Auth.Credential == nil || actor.Auth.Info == nil {
 			return fmt.Errorf("pub actor %s has incomplete auth data", actor.Name)
 		}
-		if err := validateMembers("pub actor "+actor.Name+" credential", actor.AuthCredential.Members, map[*schema.Data]bool{}); err != nil {
+		if err := validateMembers("pub actor "+actor.Name+" credential", actor.Auth.Credential.Members, map[*schema.Data]bool{}); err != nil {
 			return err
 		}
-		if err := validateMembers("pub actor "+actor.Name+" info", actor.AuthInfo.Members, map[*schema.Data]bool{}); err != nil {
+		if err := validateMembers("pub actor "+actor.Name+" info", actor.Auth.Info.Members, map[*schema.Data]bool{}); err != nil {
 			return err
 		}
 	}

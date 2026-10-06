@@ -18,55 +18,49 @@ func validateActor(actor *schema.Actor) error {
 			return fmt.Errorf("actor %s: %w", actor.Name, err)
 		}
 	}
-	if actor.AuthEnabled {
-		if actor.AuthCredential == nil || actor.AuthInfo == nil || actor.AuthService == nil || actor.AuthMethod == nil {
+	if actor.Auth != nil {
+		if actor.Auth.Credential == nil || actor.Auth.Info == nil || actor.Auth.Service == nil || actor.Auth.Method == nil {
 			return fmt.Errorf("actor %s has incomplete auth support", actor.Name)
 		}
-		if err := validateData(actor.AuthCredential); err != nil {
+		if err := validateData(actor.Auth.Credential); err != nil {
 			return fmt.Errorf("actor %s auth credential: %w", actor.Name, err)
 		}
-		if err := validateData(actor.AuthInfo); err != nil {
+		if err := validateData(actor.Auth.Info); err != nil {
 			return fmt.Errorf("actor %s auth info: %w", actor.Name, err)
 		}
-		if actor.AuthService.Api {
-			return fmt.Errorf("API service %s cannot be used as a framework callback", actor.AuthService.Name)
+		if actor.Auth.Service.Api {
+			return fmt.Errorf("API service %s cannot be used as a framework callback", actor.Auth.Service.Name)
 		}
-		if err := validateService(actor.AuthService); err != nil {
+		if err := validateService(actor.Auth.Service); err != nil {
 			return fmt.Errorf("actor %s auth: %w", actor.Name, err)
 		}
-		if err := validateMethod("actor "+actor.Name+" auth method", actor.AuthMethod); err != nil {
+		if err := validateServiceMethodReference("actor "+actor.Name+" auth method", actor.Auth.Service, actor.Auth.Method); err != nil {
 			return err
 		}
-	}
-	if actor.IdentifierField != "" {
-		valid := false
-		if actor.AuthEnabled && actor.AuthInfo != nil {
-			for _, member := range actor.AuthInfo.Members {
-				if member.Name == actor.IdentifierField {
+		if actor.Auth.IdentifierField != "" {
+			valid := false
+			for _, member := range actor.Auth.Info.Members {
+				if member.Name == actor.Auth.IdentifierField {
 					kind := member.Type
 					valid = kind.Kind == schema.TypeKindScalar && !kind.Nullable && (kind.Scalar == schema.ScalarString || kind.Scalar == schema.ScalarUUID || kind.Scalar == schema.ScalarInt)
 				}
 			}
-		}
-		if !valid {
-			return fmt.Errorf("actor %s identifier must name a non-nullable string, uuid, or int info field", actor.Name)
+			if !valid {
+				return fmt.Errorf("actor %s identifier must name a non-nullable string, uuid, or int info field", actor.Name)
+			}
 		}
 	}
-	if actor.PermissionEnabled {
-		if actor.PermissionService == nil || actor.PermissionMethod == nil {
+	if actor.Permission != nil {
+		if actor.Permission.Service == nil || actor.Permission.Method == nil {
 			return fmt.Errorf("actor %s has incomplete permission support", actor.Name)
 		}
-	}
-	if actor.PermissionService != nil {
-		if actor.PermissionService.Api {
-			return fmt.Errorf("API service %s cannot be used as a framework callback", actor.PermissionService.Name)
+		if actor.Permission.Service.Api {
+			return fmt.Errorf("API service %s cannot be used as a framework callback", actor.Permission.Service.Name)
 		}
-		if err := validateService(actor.PermissionService); err != nil {
+		if err := validateService(actor.Permission.Service); err != nil {
 			return fmt.Errorf("actor %s permission: %w", actor.Name, err)
 		}
-	}
-	if actor.PermissionMethod != nil {
-		if err := validateMethod("actor "+actor.Name+" permission method", actor.PermissionMethod); err != nil {
+		if err := validateServiceMethodReference("actor "+actor.Name+" permission method", actor.Permission.Service, actor.Permission.Method); err != nil {
 			return err
 		}
 	}

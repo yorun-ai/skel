@@ -71,6 +71,12 @@ type SchemaType = internaloutput.SchemaType
 // SchemaActor is part of the schema inspection JSON output.
 type SchemaActor = internaloutput.SchemaActor
 
+// SchemaActorAuth is part of the schema inspection JSON output.
+type SchemaActorAuth = internaloutput.SchemaActorAuth
+
+// SchemaActorPermission is part of the schema inspection JSON output.
+type SchemaActorPermission = internaloutput.SchemaActorPermission
+
 // SchemaActorVia is part of the schema inspection JSON output.
 type SchemaActorVia = internaloutput.SchemaActorVia
 

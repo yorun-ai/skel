@@ -381,7 +381,7 @@ func TestGeneratorsReturnErrorsForMalformedNestedSchemas(t *testing.T) {
 		{
 			name: "incomplete actor auth",
 			domain: schema.NewDomainFromSpec(schema.DomainSpec{
-				Name: "demo.invalid", Actors: []*schema.Actor{{Name: "Client", AuthEnabled: true}},
+				Name: "demo.invalid", Actors: []*schema.Actor{{Name: "Client", Auth: new(schema.ActorAuth{})}},
 			}),
 			expected: "incomplete auth support",
 		},

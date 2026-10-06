@@ -93,9 +93,9 @@ func (r _Types) castMethodArgument(p *schema.Argument) *MethodArgument {
 	argType := r.castType(p.Type)
 	name := nameutil.ToLowerCamel(p.Name)
 	// Generated method bodies may refer to the scalar package, including when
-	// a business parameter is named types. Keep its wire name unchanged.
-	if name == "types" {
-		name = "types_"
+	// a business parameter is named skeltype. Keep its wire name unchanged.
+	if name == "skeltype" {
+		name = "skeltype_"
 	}
 	description := binding.MergeDescriptionAndExample(p.Description, p.Example)
 	if p.Deprecated {

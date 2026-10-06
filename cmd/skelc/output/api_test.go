@@ -21,6 +21,8 @@ func TestFacadeWireContract(t *testing.T) {
 		{name: "check", value: output.CheckResult{Valid: true, Diagnostics: []diagnostic.Diagnostic{}}, want: `{"valid":true,"diagnostics":[]}`},
 		{name: "format", value: output.FormatResult{Changed: false, Files: []string{}}, want: `{"changed":false,"files":[]}`},
 		{name: "generation", value: output.GenerationResult{Generated: true}, want: `{"generated":true}`},
+		{name: "actor permission declared", value: output.SchemaActor{Vias: []*output.SchemaActorVia{}, Permission: new(output.SchemaActorPermission{})}, want: `{"vias":[],"permission":{}}`},
+		{name: "actor permission absent", value: output.SchemaActor{Vias: []*output.SchemaActorVia{}}, want: `{"vias":[]}`},
 		{
 			name: "version",
 			value: output.VersionResult{

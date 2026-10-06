@@ -43,8 +43,10 @@ func validateMethod(owner string, method *schema.Method) error {
 	if method == nil {
 		return fmt.Errorf("%s is nil", owner)
 	}
-	if err := validateAuthMode(method.Auth); err != nil {
-		return fmt.Errorf("%s: %w", owner, err)
+	if method.Auth != schema.AuthModeInherit {
+		if err := validateAuthMode(method.Auth); err != nil {
+			return fmt.Errorf("%s: %w", owner, err)
+		}
 	}
 	if err := validatePermissionExpression(method.Require); err != nil {
 		return fmt.Errorf("%s: %w", owner, err)
@@ -91,4 +93,35 @@ func validateAuthMode(mode schema.AuthMode) error {
 	default:
 		return fmt.Errorf("unsupported auth mode %q", mode)
 	}
+}
+
+// References must share the service's canonical node, not a same-name copy whose
+// signature or hash can diverge from the method emitted in the service.
+func validateServiceMethodReference(owner string, service *schema.Service, method *schema.Method) error {
+	if method == nil {
+		return fmt.Errorf("%s is nil", owner)
+	}
+	if service == nil {
+		return fmt.Errorf("%s has no service", owner)
+	}
+	if method.Name == "" {
+		return fmt.Errorf("%s has no method name", owner)
+	}
+	var canonical *schema.Method
+	for _, candidate := range service.Methods {
+		if candidate == nil || candidate.Name != method.Name {
+			continue
+		}
+		if canonical != nil {
+			return fmt.Errorf("%s: service %s contains duplicate method %s", owner, service.Name, method.Name)
+		}
+		canonical = candidate
+	}
+	if canonical == nil {
+		return fmt.Errorf("%s: method %s not found in service %s", owner, method.Name, service.Name)
+	}
+	if canonical != method {
+		return fmt.Errorf("%s must reference the method node in service %s", owner, service.Name)
+	}
+	return nil
 }

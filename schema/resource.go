@@ -52,6 +52,6 @@ type ResourceCheck struct {
 	Deprecated bool
 	// DeprecatedReason explains why the check is deprecated and what to use instead.
 	DeprecatedReason string
-	// Method is the generated service method implementing the check.
+	// Method is the canonical method node in the owning Resource.CheckService.Methods.
 	Method *Method
 }

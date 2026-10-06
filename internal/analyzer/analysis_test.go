@@ -137,16 +137,16 @@ func TestAnalyze(t *testing.T) {
 	if domain.Actors()[0].SkelName != "demo.user.PortalAdminActor" {
 		t.Fatalf("unexpected actor skel name: %q", domain.Actors()[0].SkelName)
 	}
-	if domain.Actors()[0].AuthCredential == nil || domain.Actors()[0].AuthCredential.SkelName != "demo.user.PortalAdminActorCredential" {
-		t.Fatalf("unexpected actor credential: %+v", domain.Actors()[0].AuthCredential)
+	if domain.Actors()[0].Auth.Credential == nil || domain.Actors()[0].Auth.Credential.SkelName != "demo.user.PortalAdminActorCredential" {
+		t.Fatalf("unexpected actor credential: %+v", domain.Actors()[0].Auth.Credential)
 	}
-	if domain.Actors()[0].AuthInfo == nil || domain.Actors()[0].AuthInfo.SkelName != "demo.user.PortalAdminActorInfo" {
-		t.Fatalf("unexpected actor info: %+v", domain.Actors()[0].AuthInfo)
+	if domain.Actors()[0].Auth.Info == nil || domain.Actors()[0].Auth.Info.SkelName != "demo.user.PortalAdminActorInfo" {
+		t.Fatalf("unexpected actor info: %+v", domain.Actors()[0].Auth.Info)
 	}
 	if len(domain.Services()) != 1 || domain.Services()[0].SkelName != "demo.user.UserService" {
 		t.Fatalf("unexpected services: %+v", domain.Services())
 	}
-	authService := domain.Actors()[0].AuthService
+	authService := domain.Actors()[0].Auth.Service
 	if authService.Name != "PortalAdminActorAuthService" || authService.SkelName != "demo.user.PortalAdminActorAuthService" {
 		t.Fatalf("unexpected actor auth service: %+v", authService)
 	}
@@ -154,16 +154,16 @@ func TestAnalyze(t *testing.T) {
 		t.Fatalf("unexpected actor auth service methods: %+v", authService.Methods)
 	}
 	credentialMethod := authService.Methods[0]
-	if domain.Actors()[0].AuthMethod != credentialMethod {
-		t.Fatalf("unexpected actor auth method: %+v", domain.Actors()[0].AuthMethod)
+	if domain.Actors()[0].Auth.Method != credentialMethod {
+		t.Fatalf("unexpected actor auth method: %+v", domain.Actors()[0].Auth.Method)
 	}
 	if len(credentialMethod.Arguments) != 1 || credentialMethod.Arguments[0].Name != "credential" {
 		t.Fatalf("unexpected actor credential method arguments: %+v", credentialMethod.Arguments)
 	}
-	if credentialMethod.Arguments[0].Type.Kind != schema.TypeKindData || credentialMethod.Arguments[0].Type.Data != domain.Actors()[0].AuthCredential {
+	if credentialMethod.Arguments[0].Type.Kind != schema.TypeKindData || credentialMethod.Arguments[0].Type.Data != domain.Actors()[0].Auth.Credential {
 		t.Fatalf("unexpected actor credential method argument type: %+v", credentialMethod.Arguments[0].Type)
 	}
-	if credentialMethod.ResultType.Kind != schema.TypeKindData || credentialMethod.ResultType.Data != domain.Actors()[0].AuthInfo {
+	if credentialMethod.ResultType.Kind != schema.TypeKindData || credentialMethod.ResultType.Data != domain.Actors()[0].Auth.Info {
 		t.Fatalf("unexpected actor credential method result type: %+v", credentialMethod.ResultType)
 	}
 	if credentialMethod.ArgumentsData == nil || credentialMethod.ArgumentsData.Name != "PortalAdminActorAuthServiceAuthArguments" {

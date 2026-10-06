@@ -21,13 +21,13 @@ func FillHashes(domain *schema.Domain) error {
 		event.Hash = state.dataHash(event)
 	}
 	for _, actor := range domain.Actors() {
-		if actor.AuthEnabled {
-			actor.AuthCredential.Hash = state.dataHash(actor.AuthCredential)
-			actor.AuthInfo.Hash = state.dataHash(actor.AuthInfo)
-			actor.AuthService.Hash = state.serviceHash(actor.AuthService)
+		if actor.Auth != nil {
+			actor.Auth.Credential.Hash = state.dataHash(actor.Auth.Credential)
+			actor.Auth.Info.Hash = state.dataHash(actor.Auth.Info)
+			actor.Auth.Service.Hash = state.serviceHash(actor.Auth.Service)
 		}
-		if actor.PermissionService != nil {
-			actor.PermissionService.Hash = state.serviceHash(actor.PermissionService)
+		if actor.Permission != nil {
+			actor.Permission.Service.Hash = state.serviceHash(actor.Permission.Service)
 		}
 		actor.Hash = state.actorHash(actor)
 	}

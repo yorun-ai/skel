@@ -91,42 +91,44 @@ func (s *_HashState) webHash(web *schema.Web) string {
 
 func (s *_HashState) actorHash(actor *schema.Actor) string {
 	return s.memoHash("actor", actor.SkelName, func() string {
+		var identifierField string
 		var authCredentialName string
 		var authCredentialHash string
 		var authInfoName string
 		var authInfoHash string
 		var authMethodName string
 		var authMethodHash string
-		if actor.AuthEnabled {
-			authCredentialName = actor.AuthCredential.SkelName
-			authCredentialHash = s.dataHash(actor.AuthCredential)
-			authInfoName = actor.AuthInfo.SkelName
-			authInfoHash = s.dataHash(actor.AuthInfo)
-			authMethodName = actor.AuthMethod.SkelName
-			authMethodHash = s.methodHash(actor.AuthMethod)
+		if actor.Auth != nil {
+			identifierField = actor.Auth.IdentifierField
+			authCredentialName = actor.Auth.Credential.SkelName
+			authCredentialHash = s.dataHash(actor.Auth.Credential)
+			authInfoName = actor.Auth.Info.SkelName
+			authInfoHash = s.dataHash(actor.Auth.Info)
+			authMethodName = actor.Auth.Method.SkelName
+			authMethodHash = s.methodHash(actor.Auth.Method)
 		}
 		var permMethodName string
 		var permMethodHash string
-		if actor.PermissionMethod != nil {
-			permMethodName = actor.PermissionMethod.SkelName
-			permMethodHash = s.methodHash(actor.PermissionMethod)
+		if actor.Permission != nil && actor.Permission.Method != nil {
+			permMethodName = actor.Permission.Method.SkelName
+			permMethodHash = s.methodHash(actor.Permission.Method)
 		}
 		return s.hashValue(_ActorHashValue{
-			IdentifierField:    actor.IdentifierField,
+			IdentifierField:    identifierField,
 			Name:               actor.Name,
 			SkelName:           actor.SkelName,
 			Description:        actor.Description,
 			Deprecated:         actor.Deprecated,
 			DeprecatedReason:   actor.DeprecatedReason,
 			Vias:               buildActorViaNames(actor.Vias),
-			AuthEnabled:        actor.AuthEnabled,
+			AuthEnabled:        actor.Auth != nil,
 			AuthCredential:     authCredentialName,
 			AuthCredentialHash: authCredentialHash,
 			AuthInfo:           authInfoName,
 			AuthInfoHash:       authInfoHash,
 			AuthMethod:         authMethodName,
 			AuthMethodHash:     authMethodHash,
-			PermissionEnabled:  actor.PermissionEnabled,
+			PermissionEnabled:  actor.Permission != nil,
 			PermissionMethod:   permMethodName,
 			PermMethodHash:     permMethodHash,
 		})

@@ -15,12 +15,6 @@ var actorViaKinds = []schema.ActorViaKind{
 	schema.ActorViaOpenAPI,
 }
 
-type _ActorAuth struct {
-	Credential      *schema.Data
-	Info            *schema.Data
-	IdentifierField string
-}
-
 func parseActor(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.Actor, bool) {
 	valid := checkCaseAdvanced(reporter, "Actor", "", "Actor", caseTypeCamel, ga.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, ga.Decorators, _DecoratorContext{
@@ -33,41 +27,32 @@ func parseActor(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.Actor
 	valid = viasValid && valid
 	auth, authValid := parseActorAuth(reporter, ga)
 	valid = authValid && valid
-	var authCredential *schema.Data
-	var authInfo *schema.Data
-	var identifierField string
-	if auth != nil {
-		authCredential = auth.Credential
-		authInfo = auth.Info
-		identifierField = auth.IdentifierField
-	}
-	permEnabled, permissionValid := actorPermissionDeclared(reporter, ga)
+	permission, permissionValid := parseActorPermission(reporter, ga)
 	valid = permissionValid && valid
 	return &schema.Actor{
-		Pos:               position(ga.Name.Pos),
-		Name:              ga.Name.Value,
-		SkelName:          "",
-		Description:       meta.Description,
-		Deprecated:        meta.Deprecated,
-		DeprecatedReason:  meta.DeprecatedReason,
-		Pub:               ga.Pub,
-		Vias:              vias,
-		AuthEnabled:       auth != nil,
-		AuthCredential:    authCredential,
-		AuthInfo:          authInfo,
-		IdentifierField:   identifierField,
-		PermissionEnabled: permEnabled,
+		Pos:              position(ga.Name.Pos),
+		Name:             ga.Name.Value,
+		SkelName:         "",
+		Description:      meta.Description,
+		Deprecated:       meta.Deprecated,
+		DeprecatedReason: meta.DeprecatedReason,
+		Pub:              ga.Pub,
+		Vias:             vias,
+		Auth:             auth,
+		Permission:       permission,
 	}, valid
 }
 
-func parseActorAuth(reporter *_DiagnosticReporter, ga *grammar.Actor) (*_ActorAuth, bool) {
+func parseActorAuth(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.ActorAuth, bool) {
 	authSection, valid := actorAuthSection(reporter, ga)
 	if authSection == nil {
 		return nil, valid
 	}
 	credential, credentialValid := parseActorCredential(reporter, ga, authSection)
 	info, identifierField, infoValid := parseActorInfo(reporter, ga, authSection)
-	return &_ActorAuth{Credential: credential, Info: info, IdentifierField: identifierField}, credentialValid && infoValid && valid
+	return new(schema.ActorAuth{
+		Pos: position(authSection.Pos), Credential: credential, Info: info, IdentifierField: identifierField,
+	}), credentialValid && infoValid && valid
 }
 
 func parseActorCredential(reporter *_DiagnosticReporter, ga *grammar.Actor, authSection *grammar.ActorAuth) (*schema.Data, bool) {
@@ -76,7 +61,7 @@ func parseActorCredential(reporter *_DiagnosticReporter, ga *grammar.Actor, auth
 		allowSensitive: true,
 	})
 	name := &grammar.Identifier{
-		Pos:   ga.Name.Pos,
+		Pos:   credentialSection.Pos,
 		Value: ga.Name.Value + "Credential",
 	}
 	credential, valid := parseDataLike(reporter, &grammar.Data{
@@ -112,7 +97,7 @@ func parseActorInfo(reporter *_DiagnosticReporter, ga *grammar.Actor, authSectio
 		allowSensitive: true,
 	})
 	name := &grammar.Identifier{
-		Pos:   ga.Name.Pos,
+		Pos:   infoSection.Pos,
 		Value: ga.Name.Value + "Info",
 	}
 	members := make([]*grammar.DataMember, 0, len(infoSection.Members))
@@ -190,7 +175,7 @@ func actorAuthSection(reporter *_DiagnosticReporter, ga *grammar.Actor) (*gramma
 	return auth, valid
 }
 
-func actorPermissionDeclared(reporter *_DiagnosticReporter, ga *grammar.Actor) (bool, bool) {
+func parseActorPermission(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.ActorPermission, bool) {
 	var permission *grammar.ActorPermission
 	var permissionPos lexer.Position
 	valid := true
@@ -210,9 +195,9 @@ func actorPermissionDeclared(reporter *_DiagnosticReporter, ga *grammar.Actor) (
 		permissionPos = section.Permission.Pos
 	}
 	if permission == nil {
-		return false, valid
+		return nil, valid
 	}
-	return true, valid
+	return new(schema.ActorPermission{Pos: position(permission.Pos)}), valid
 }
 
 func parseActorVias(reporter *_DiagnosticReporter, owner *grammar.Identifier, grammarVias []*grammar.ActorVia) ([]*schema.ActorVia, bool) {
@@ -251,15 +236,15 @@ func parseActorVia(reporter *_DiagnosticReporter, gv *grammar.ActorVia) (*schema
 }
 
 func buildActorAuthService(actor *schema.Actor) *schema.Service {
-	if !actor.AuthEnabled {
+	if actor.Auth == nil {
 		return nil
 	}
 	serviceName := actor.Name + "AuthService"
-	credentialType := dataRefType(actor.AuthCredential)
-	infoType := dataRefType(actor.AuthInfo)
+	credentialType := dataRefType(actor.Auth.Credential)
+	infoType := dataRefType(actor.Auth.Info)
 	credentialArgument := &schema.Argument{
 		Name: "credential",
-		Pos:  actor.AuthCredential.Pos,
+		Pos:  actor.Auth.Credential.Pos,
 		Type: credentialType,
 	}
 	credentialMethod := &schema.Method{
@@ -272,21 +257,21 @@ func buildActorAuthService(actor *schema.Actor) *schema.Service {
 	}
 	credentialMethod.ArgumentsData = &schema.Data{
 		Name:     serviceName + "AuthArguments",
-		Domain:   actor.AuthCredential.Domain,
-		SkelName: actor.AuthCredential.Domain + "." + serviceName + "AuthArguments",
+		Domain:   actor.Auth.Credential.Domain,
+		SkelName: actor.Auth.Credential.Domain + "." + serviceName + "AuthArguments",
 		Members:  buildArgumentMembers(credentialMethod.Arguments),
 	}
-	actor.AuthMethod = credentialMethod
+	actor.Auth.Method = credentialMethod
 	return &schema.Service{
 		Name:     serviceName,
-		SkelName: actor.AuthCredential.Domain + "." + serviceName,
+		SkelName: actor.Auth.Credential.Domain + "." + serviceName,
 		Pos:      actor.Pos,
 		Methods:  []*schema.Method{credentialMethod},
 	}
 }
 
 func buildActorPermissionService(actor *schema.Actor) *schema.Service {
-	if !actor.PermissionEnabled {
+	if actor.Permission == nil {
 		return nil
 	}
 	serviceName := actor.Name + "PermissionService"
@@ -320,7 +305,7 @@ func buildActorPermissionService(actor *schema.Actor) *schema.Service {
 		SkelName: skelPrefix + serviceName + "CheckCodesArguments",
 		Members:  buildArgumentMembers(method.Arguments),
 	}
-	actor.PermissionMethod = method
+	actor.Permission.Method = method
 	return &schema.Service{
 		Name:     serviceName,
 		SkelName: skelPrefix + serviceName,

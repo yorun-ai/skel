@@ -29,56 +29,56 @@ func castScalarType(p *schema.Type) *Type {
 		}
 	case schema.ScalarDecimal:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.Decimal", "types.Decimal"),
-			Imports:      []*Import{{Path: typesImport}},
-			DefaultValue: binding.ChooseString(p.Nullable, "nil", "types.Decimal{}"),
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.Decimal", "skeltype.Decimal"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
+			DefaultValue: binding.ChooseString(p.Nullable, "nil", "skeltype.Decimal{}"),
 		}
 	case schema.ScalarBinary:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.Binary", "types.Binary"),
-			Imports:      []*Import{{Path: typesImport}},
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.Binary", "skeltype.Binary"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
 			DefaultValue: "nil",
 		}
 	case schema.ScalarTimestamp:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.Timestamp", "types.Timestamp"),
-			Imports:      []*Import{{Path: typesImport}},
-			DefaultValue: binding.ChooseString(p.Nullable, "nil", "types.Timestamp{}"),
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.Timestamp", "skeltype.Timestamp"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
+			DefaultValue: binding.ChooseString(p.Nullable, "nil", "skeltype.Timestamp{}"),
 		}
 	case schema.ScalarDuration:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.Duration", "types.Duration"),
-			Imports:      []*Import{{Path: typesImport}},
-			DefaultValue: binding.ChooseString(p.Nullable, "nil", "types.Duration{}"),
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.Duration", "skeltype.Duration"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
+			DefaultValue: binding.ChooseString(p.Nullable, "nil", "skeltype.Duration{}"),
 		}
 	case schema.ScalarLocalDate:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.LocalDate", "types.LocalDate"),
-			Imports:      []*Import{{Path: typesImport}},
-			DefaultValue: binding.ChooseString(p.Nullable, "nil", "types.LocalDate{}"),
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.LocalDate", "skeltype.LocalDate"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
+			DefaultValue: binding.ChooseString(p.Nullable, "nil", "skeltype.LocalDate{}"),
 		}
 	case schema.ScalarLocalTime:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.LocalTime", "types.LocalTime"),
-			Imports:      []*Import{{Path: typesImport}},
-			DefaultValue: binding.ChooseString(p.Nullable, "nil", "types.LocalTime{}"),
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.LocalTime", "skeltype.LocalTime"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
+			DefaultValue: binding.ChooseString(p.Nullable, "nil", "skeltype.LocalTime{}"),
 		}
 	case schema.ScalarLocalDateTime:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.LocalDateTime", "types.LocalDateTime"),
-			Imports:      []*Import{{Path: typesImport}},
-			DefaultValue: binding.ChooseString(p.Nullable, "nil", "types.LocalDateTime{}"),
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.LocalDateTime", "skeltype.LocalDateTime"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
+			DefaultValue: binding.ChooseString(p.Nullable, "nil", "skeltype.LocalDateTime{}"),
 		}
 	case schema.ScalarUUID:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.UUID", "types.UUID"),
-			Imports:      []*Import{{Path: typesImport}},
-			DefaultValue: binding.ChooseString(p.Nullable, "nil", "types.UUID{}"),
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.UUID", "skeltype.UUID"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
+			DefaultValue: binding.ChooseString(p.Nullable, "nil", "skeltype.UUID{}"),
 		}
 	case schema.ScalarJSON:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*types.JSON", "types.JSON"),
-			Imports:      []*Import{{Path: typesImport}},
+			Plain:        binding.ChooseString(p.Nullable, "*skeltype.JSON", "skeltype.JSON"),
+			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
 			DefaultValue: binding.ChooseString(p.Nullable, "nil", `""`),
 		}
 	}

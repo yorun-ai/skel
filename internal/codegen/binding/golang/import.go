@@ -37,7 +37,7 @@ func (g *_Gen) resolveExternalTypeImports() error {
 	if err != nil {
 		return err
 	}
-	reserved := []string{"context", "fmt", "errors", "reflect", "sync", "time", "json", "http", "url", "strings", "strconv", "vine", "vrpc", "skel", "types", "descriptor", "meta", "ex", "rpc", "web", "task", "_", "any", "bool", "byte", "error", "int", "string", "float64", "nil", "true", "false"}
+	reserved := []string{"context", "fmt", "errors", "reflect", "sync", "time", "json", "http", "url", "strings", "strconv", "vine", "vrpc", "skel", "skeltype", "descriptor", "meta", "ex", "rpc", "web", "task", "_", "any", "bool", "byte", "error", "int", "string", "float64", "nil", "true", "false"}
 	for keyword := token.BREAK; keyword <= token.VAR; keyword++ {
 		if keyword.IsKeyword() {
 			reserved = append(reserved, keyword.String())

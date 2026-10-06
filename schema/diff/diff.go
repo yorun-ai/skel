@@ -9,8 +9,9 @@ import (
 )
 
 // Compare compares analyzed semantic domains without loading sources or imports.
-// References are matched by identity; source positions and derived runtime data
-// do not contribute to equality. Neither input is modified.
+// References are matched by fully qualified identity, whether resolved or not;
+// imported declarations are not traversed. Source positions and derived runtime
+// data do not contribute to equality. Neither input is modified.
 func Compare(baseline, candidate *schema.Domain) (*Report, error) {
 	if baseline == nil || candidate == nil {
 		return nil, fmt.Errorf("schema comparison requires two non-nil domains")

@@ -46,6 +46,21 @@ func TestSemanticDiagnosticsDoNotResolveImportsAcrossDomainRoots(t *testing.T) {
 	assert.Empty(t, diagnostics)
 }
 
+func TestSemanticDiagnosticsRejectImportAliasAtItsSource(t *testing.T) {
+	documentURI := uri.File("/workspace/order.skel")
+	document := workspace.BuildDocument(documentURI, documentURI.FsPath(), "domain app\nimport second as first\nimport first as a\n", 1)
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
+	diagnostics, err := SemanticDiagnostics(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths)
+	require.NoError(t, err)
+	require.Len(t, diagnostics[documentURI], 1)
+	d := diagnostics[documentURI][0]
+	assert.Equal(t, protocol.String(compiler.DiagnosticCodeSemanticDuplicate), d.Code)
+	assert.Equal(t, protocol.Position{Line: 1, Character: 17}, d.Range.Start)
+	assert.Equal(t, protocol.Position{Line: 1, Character: 22}, d.Range.End)
+	require.Len(t, d.RelatedInformation, 1)
+	assert.Equal(t, protocol.Position{Line: 2, Character: 7}, d.RelatedInformation[0].Location.Range.Start)
+}
+
 func TestSemanticDiagnosticsDoNotDuplicateSyntaxErrors(t *testing.T) {
 	documentURI := uri.File("/workspace/user.skel")
 	document := workspace.BuildDocument(documentURI, "/workspace/user.skel", "domain demo.user\ndata User {", 2)

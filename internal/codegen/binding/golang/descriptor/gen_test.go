@@ -94,30 +94,45 @@ task RefreshTask { trigger manually { input { page: Page<Node> } } }
 		t.Fatal(err)
 	}
 	testutil.UseLocalSkel(t, out)
+	if err := os.WriteFile(filepath.Join(out, "descriptor_test.go"), []byte(`package generated
+import "testing"
+func TestResourceCheckReferences(t *testing.T) {
+    resource := _DomainDescriptor.Resources[0]
+    if resource.CheckMethod(resource.Checks[0]) != resource.CheckService.Methods[0] { t.Fatal("resource method reference") }
+    for index, action := range resource.Actions {
+        method := resource.CheckMethod(action.Checks[0])
+        if method == nil || method != resource.CheckService.Methods[index+1] { t.Fatal("action method reference") }
+        if len(method.Arguments) != 2 || method.Arguments[0].Name != "code" || method.Arguments[1].Name != []string{"ownerId", "editorId"}[index] { t.Fatal("action arguments") }
+    }
+}
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	testutil.Go(t, out, "test", "-mod=mod", "./...")
 }
 
-func TestGenDescriptorGoRendersActorAuthEnabled(t *testing.T) {
+func TestGenDescriptorGoRendersActorCapabilities(t *testing.T) {
 	pkg := buildDescriptorDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
 		Actors: []*schema.Actor{
 			{
-				Name:            "ClientActor",
-				Vias:            []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
-				AuthEnabled:     true,
-				IdentifierField: "userId",
-				AuthCredential: &schema.Data{
-					Name: "ClientActorCredential",
-					Members: []*schema.DataMember{
-						{Name: "token", Type: codegentest.StringType()},
+				Name: "ClientActor",
+				Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
+				Auth: new(schema.ActorAuth{
+					IdentifierField: "userId",
+					Credential: &schema.Data{
+						Name: "ClientActorCredential",
+						Members: []*schema.DataMember{
+							{Name: "token", Type: codegentest.StringType()},
+						},
 					},
-				},
-				AuthInfo: &schema.Data{
-					Name: "ClientActorInfo",
-					Members: []*schema.DataMember{
-						{Name: "userId", Type: codegentest.IntType()},
+					Info: &schema.Data{
+						Name: "ClientActorInfo",
+						Members: []*schema.DataMember{
+							{Name: "userId", Type: codegentest.IntType()},
+						},
 					},
-				},
+				}),
 			},
 			{
 				Name: "AnonymousActor",
@@ -141,9 +156,14 @@ func TestGenDescriptorGoRendersActorAuthEnabled(t *testing.T) {
 		t.Fatalf("ReadFile() error = %v", err)
 	}
 	codegentest.AssertGoSourceContains(t, string(content), `IdentifierField: "userId"`)
-	codegentest.AssertGoSourceContains(t, string(content), "AuthEnabled: true")
-	codegentest.AssertGoSourceContains(t, string(content), "AuthEnabled: false")
-	codegentest.AssertGoSourceContains(t, string(content), "PermissionEnabled: false")
+	codegentest.AssertGoSourceContains(t, string(content), "Auth: &descriptor.ActorAuth{")
+	codegentest.AssertGoSourceContains(t, string(content), `MethodName: "auth"`)
+	codegentest.AssertGoSourceContains(t, string(content), `{Name: "AnonymousActor", SkelName: "", Hash: "", Vias: []descriptor.ActorVia{descriptor.ActorViaClient}}`)
+	for _, old := range []string{"AuthEnabled:", "PermissionEnabled:", "AuthCredential:", "AuthService:"} {
+		if strings.Contains(string(content), old) {
+			t.Fatalf("generated descriptor retains flattened actor field %s", old)
+		}
+	}
 }
 
 func TestGenDescriptorGoRendersDeprecatedFields(t *testing.T) {

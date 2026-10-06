@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,6 +15,43 @@ import (
 	"go.yorun.ai/skel/internal/sourcediff"
 	"go.yorun.ai/skel/internal/testutil"
 )
+
+func TestCompatibilityDiagnosticsLocateActorCapabilities(t *testing.T) {
+	for _, capability := range []string{"auth", "permission"} {
+		for _, added := range []bool{true, false} {
+			t.Run(fmt.Sprintf("%s/added=%t", capability, added), func(t *testing.T) {
+				root := t.TempDir()
+				path, baselinePath := filepath.Join(root, "contract.skel"), filepath.Join(root, "baseline.skel")
+				body := "permission {}"
+				if capability == "auth" {
+					body = "auth { credential { token: string } info { id: string } }"
+				}
+				before := "domain demo\nactor UserActor {\n    via client {}\n}\n"
+				after := "domain demo\nactor UserActor {\n    via client {}\n    " + body + "\n}\n"
+				code := "schema.actor." + capability + ".added"
+				position := protocol.Position{Line: 3, Character: 4}
+				if !added {
+					before, after = after, before
+					code = "schema.actor." + capability + ".removed"
+					position = protocol.Position{Line: 1, Character: 6}
+				}
+				require.NoError(t, os.WriteFile(baselinePath, []byte(before), 0o600))
+				documentURI := uri.File(path)
+				document := workspace.BuildDocument(documentURI, path, after, 1)
+				sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
+				diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, false)
+				require.NoError(t, err)
+				require.Empty(t, diagnostics)
+				appendCompatibilityDiagnostics(t.Context(), sourcediff.New(), diagnostics, domains, sources, paths,
+					CompatibilityOptions{Enabled: true, BaselineSkelIn: baselinePath})
+				require.Len(t, diagnostics[documentURI], 1)
+				result := diagnostics[documentURI][0]
+				assert.Equal(t, protocol.String(code), result.Code)
+				assert.Equal(t, position, result.Range.Start)
+			})
+		}
+	}
+}
 
 func TestCompatibilityDiagnosticsUseInMemorySourceAndImpactSeverity(t *testing.T) {
 	root := t.TempDir()

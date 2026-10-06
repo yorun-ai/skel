@@ -70,8 +70,8 @@ func TestGeneratorRendersPubGoView(t *testing.T) {
 		Name: "demo.user",
 		Actors: []*schema.Actor{
 			{Pub: true, Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
-			{Name: "PartnerActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}, AuthEnabled: true, AuthCredential: partnerCredential, AuthInfo: partnerInfo},
-			{Pub: true, Name: "PublicOnlyActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}, AuthEnabled: true, AuthCredential: publicCredential, AuthInfo: publicInfo},
+			{Name: "PartnerActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}, Auth: new(schema.ActorAuth{Credential: partnerCredential, Info: partnerInfo})},
+			{Pub: true, Name: "PublicOnlyActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}, Auth: new(schema.ActorAuth{Credential: publicCredential, Info: publicInfo})},
 		},
 		Enums: []*schema.Enum{userStatus, unusedStatus, publicStatus},
 		Data:  []*schema.Data{address, user, unusedData},

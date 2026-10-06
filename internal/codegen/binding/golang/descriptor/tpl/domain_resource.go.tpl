@@ -21,7 +21,7 @@
 {{- end }}
 
 {{- define "resourceCheckDescriptorValue" -}}
-{Name: {{ quote .Name }}{{ template "deprecatedFields" . }}, Method: {{ template "methodDescriptor" .Method }}{{ template "argumentDescriptorList" .Arguments }}}
+{Name: {{ quote .Name }}{{ template "deprecatedFields" . }}, MethodName: {{ quote .MethodName }}}
 {{- end }}
 
 {{- define "resourceActionDescriptorList" -}}

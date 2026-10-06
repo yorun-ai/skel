@@ -74,6 +74,8 @@ type _WebHashValue struct {
 	Actors           []*_ActorRefHashValue `json:"actors,omitempty"`
 }
 
+// _ActorHashValue encodes language semantics independently of the public Actor layout.
+// Grouping capability metadata must not change the hash of an unchanged declaration.
 type _ActorHashValue struct {
 	IdentifierField    string   `json:"identifierField,omitempty"`
 	Name               string   `json:"name"`

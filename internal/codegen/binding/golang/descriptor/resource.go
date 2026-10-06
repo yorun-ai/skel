@@ -30,7 +30,7 @@ func (g *_Gen) buildResourceCheckDescriptors(values []*schema.ResourceCheck) []*
 	for _, value := range values {
 		result = append(result, &descriptor.ResourceCheck{
 			Name: value.Name, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason,
-			Method: g.buildGeneratedMethodDescriptor(value.Method), Arguments: g.buildArgumentDescriptors(value.Method.Arguments),
+			MethodName: generatedMethodName(value.Method),
 		})
 	}
 	return result

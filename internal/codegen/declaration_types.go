@@ -38,12 +38,14 @@ func (v Declarations) TypeRoots(api bool) []*schema.Type {
 		addService(service)
 	}
 	for _, actor := range v.Actors {
-		if actor.AuthEnabled {
-			addData(actor.AuthCredential)
-			addData(actor.AuthInfo)
-			addService(actor.AuthService)
+		if actor.Auth != nil {
+			addData(actor.Auth.Credential)
+			addData(actor.Auth.Info)
+			addService(actor.Auth.Service)
 		}
-		addService(actor.PermissionService)
+		if actor.Permission != nil {
+			addService(actor.Permission.Service)
+		}
 	}
 	for _, resource := range v.Resources {
 		addService(resource.CheckService)

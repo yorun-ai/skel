@@ -16,13 +16,14 @@ func TestActorInfoIdentifierTag(t *testing.T) {
 		pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 			Name: "demo.auth",
 			Actors: []*schema.Actor{{
-				Name:            "UserActor",
-				AuthEnabled:     true,
-				IdentifierField: "userId",
-				AuthCredential:  &schema.Data{Name: "UserActorCredential"},
-				AuthInfo: &schema.Data{Name: "UserActorInfo", Members: []*schema.DataMember{
-					{Name: "userId", Type: codegentest.StringType(), Sensitive: sensitive},
-				}},
+				Name: "UserActor",
+				Auth: new(schema.ActorAuth{
+					IdentifierField: "userId",
+					Credential:      &schema.Data{Name: "UserActorCredential"},
+					Info: &schema.Data{Name: "UserActorInfo", Members: []*schema.DataMember{
+						{Name: "userId", Type: codegentest.StringType(), Sensitive: sensitive},
+					}},
+				}),
 			}},
 		})
 		outputDir := t.TempDir()

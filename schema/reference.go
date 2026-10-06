@@ -9,8 +9,17 @@ func (d *Domain) ReferenceName(name string) string {
 		return ""
 	}
 	if i := strings.LastIndex(name, "."); i >= 0 {
+		qualifier := name[:i]
+		if qualifier == d.Name() {
+			return name
+		}
 		for _, imported := range d.Imports() {
-			if imported.Alias == name[:i] {
+			if imported.Name == qualifier {
+				return name
+			}
+		}
+		for _, imported := range d.Imports() {
+			if imported.Alias == qualifier {
 				return imported.Name + name[i:]
 			}
 		}
@@ -32,13 +41,22 @@ func (d *Domain) TypeReferenceName(value *Type) string {
 		return d.ReferenceName(value.ExternalAlias + "." + value.SkelName)
 	}
 	if value.SkelName != "" {
-		return d.ReferenceName(value.SkelName)
+		return d.qualifyLocalName(value.SkelName)
 	}
 	if value.Data != nil {
-		return d.ReferenceName(value.Data.SkelName)
+		return d.qualifyLocalName(value.Data.SkelName)
 	}
 	if value.Enum != nil {
-		return d.ReferenceName(value.Enum.SkelName)
+		return d.qualifyLocalName(value.Enum.SkelName)
 	}
 	return ""
+}
+
+// Resolved identities are already canonical; only unqualified local names need
+// a domain prefix. Never interpret a resolved identity as a source import alias.
+func (d *Domain) qualifyLocalName(name string) string {
+	if name == "" || strings.Contains(name, ".") {
+		return name
+	}
+	return d.Name() + "." + name
 }

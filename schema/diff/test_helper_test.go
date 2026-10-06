@@ -141,10 +141,14 @@ func serviceDeclaration(name string, methods ...string) *schema.Declaration {
 }
 
 func actorDomain(authEnabled, permEnabled bool) *schema.Domain {
-	actor := &schema.Actor{Vias: []*schema.ActorVia{}, AuthEnabled: authEnabled, PermissionEnabled: permEnabled}
+	actor := &schema.Actor{Vias: []*schema.ActorVia{}}
+	if permEnabled {
+		actor.Permission = new(schema.ActorPermission{})
+	}
 	if authEnabled {
-		actor.AuthCredential = &schema.Data{Members: []*schema.DataMember{}}
-		actor.AuthInfo = &schema.Data{Members: []*schema.DataMember{}}
+		actor.Auth = new(schema.ActorAuth{})
+		actor.Auth.Credential = &schema.Data{Members: []*schema.DataMember{}}
+		actor.Auth.Info = &schema.Data{Members: []*schema.DataMember{}}
 	}
 	return newTestDomain(&schema.Declaration{
 		Pub: true, Name: "UserActor", Kind: schema.DeclarationTypeActor, SkelName: "demo.user.UserActor", Actor: actor,

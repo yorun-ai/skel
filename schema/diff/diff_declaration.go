@@ -130,38 +130,83 @@ func (c *_Diff) compareMembers(owner, prefix string, baseline, candidate []*sche
 }
 
 func (c *_Diff) compareActor(owner string, baseline, candidate *schema.Actor) {
-	if baseline.IdentifierField != candidate.IdentifierField {
-		c.add(ImpactDangerous, "actor.identifier.changed", owner, "actor identifier field changed", schema.Position{}, schema.Position{})
+	var baselineIdentifier, candidateIdentifier string
+	if baseline.Auth != nil {
+		baselineIdentifier = baseline.Auth.IdentifierField
+	}
+	if candidate.Auth != nil {
+		candidateIdentifier = candidate.Auth.IdentifierField
+	}
+	if baselineIdentifier != candidateIdentifier {
+		c.add(ImpactDangerous, "actor.identifier.changed", owner, "actor identifier field changed", actorIdentifierPosition(baseline), actorIdentifierPosition(candidate))
 	}
 	c.compareStringSet(owner, "actor.via", actorViaNames(baseline.Vias), actorViaNames(candidate.Vias), ImpactBreaking, ImpactCompatible)
-	if baseline.AuthEnabled != candidate.AuthEnabled {
+	if (baseline.Auth != nil) != (candidate.Auth != nil) {
 		code := "actor.auth.added"
 		message := "actor authentication was added"
-		if baseline.AuthEnabled {
+		if baseline.Auth != nil {
 			code, message = "actor.auth.removed", "actor authentication was removed"
 		}
 		impact := ImpactDangerous
-		if baseline.AuthEnabled {
+		if baseline.Auth != nil {
 			impact = ImpactBreaking
 		}
-		c.add(impact, code, owner, message, schema.Position{}, schema.Position{})
+		c.add(impact, code, owner, message, actorAuthPosition(baseline), actorAuthPosition(candidate))
 	}
-	if baseline.AuthEnabled && candidate.AuthEnabled {
-		c.compareMembers(owner+".credential", "actor.auth-credential.member", baseline.AuthCredential.Members, candidate.AuthCredential.Members, ImpactCompatible)
-		c.compareMembers(owner+".info", "actor.auth-info.member", baseline.AuthInfo.Members, candidate.AuthInfo.Members, ImpactCompatible)
+	if baseline.Auth != nil && candidate.Auth != nil {
+		c.compareActorAuthData(owner+".credential", "actor.auth-credential", baseline.Auth.Credential, candidate.Auth.Credential, actorAuthPosition(baseline), actorAuthPosition(candidate))
+		c.compareActorAuthData(owner+".info", "actor.auth-info", baseline.Auth.Info, candidate.Auth.Info, actorAuthPosition(baseline), actorAuthPosition(candidate))
 	}
-	if baseline.PermissionEnabled != candidate.PermissionEnabled {
+	if (baseline.Permission != nil) != (candidate.Permission != nil) {
 		code := "actor.permission.added"
 		message := "actor permission support was added"
-		if baseline.PermissionEnabled {
+		if baseline.Permission != nil {
 			code, message = "actor.permission.removed", "actor permission support was removed"
 		}
 		impact := ImpactDangerous
-		if baseline.PermissionEnabled {
+		if baseline.Permission != nil {
 			impact = ImpactBreaking
 		}
-		c.add(impact, code, owner, message, schema.Position{}, schema.Position{})
+		c.add(impact, code, owner, message, actorPermissionPosition(baseline), actorPermissionPosition(candidate))
 	}
+}
+
+func (c *_Diff) compareActorAuthData(owner, prefix string, baseline, candidate *schema.Data, baselinePos, candidatePos schema.Position) {
+	if baseline.Sensitive != candidate.Sensitive {
+		if baseline.Pos != (schema.Position{}) {
+			baselinePos = baseline.Pos
+		}
+		if candidate.Pos != (schema.Position{}) {
+			candidatePos = candidate.Pos
+		}
+		c.add(ImpactDangerous, prefix+".sensitive.changed", owner, "data sensitivity changed", baselinePos, candidatePos)
+	}
+	c.compareMembers(owner, prefix+".member", baseline.Members, candidate.Members, ImpactCompatible)
+}
+
+func actorAuthPosition(actor *schema.Actor) schema.Position {
+	if actor.Auth != nil && actor.Auth.Pos != (schema.Position{}) {
+		return actor.Auth.Pos
+	}
+	return actor.Pos
+}
+
+func actorPermissionPosition(actor *schema.Actor) schema.Position {
+	if actor.Permission != nil && actor.Permission.Pos != (schema.Position{}) {
+		return actor.Permission.Pos
+	}
+	return actor.Pos
+}
+
+func actorIdentifierPosition(actor *schema.Actor) schema.Position {
+	if auth := actor.Auth; auth != nil && auth.Info != nil {
+		for _, member := range auth.Info.Members {
+			if member.Name == auth.IdentifierField && member.Pos != (schema.Position{}) {
+				return member.Pos
+			}
+		}
+	}
+	return actorAuthPosition(actor)
 }
 
 func (c *_Diff) compareMetadata(prefix, symbol string, baseline, candidate _Metadata, baselinePos, candidatePos schema.Position) {

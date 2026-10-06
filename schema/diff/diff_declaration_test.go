@@ -6,6 +6,25 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
+func TestActorCapabilityPositionsFallBackToActor(t *testing.T) {
+	actorPos := schema.Position{File: "actor.skel", Line: 5, Column: 7}
+	before := new(schema.Actor{Pos: actorPos})
+	after := new(schema.Actor{
+		Pos: actorPos, Auth: new(schema.ActorAuth{}), Permission: new(schema.ActorPermission{}),
+	})
+	for _, pair := range [][2]*schema.Actor{{before, after}, {after, before}} {
+		changes := diffChanges(func(diff *_Diff) { diff.compareActor("UserActor", pair[0], pair[1]) })
+		if len(changes) != 2 {
+			t.Fatalf("unexpected changes: %+v", changes)
+		}
+		for _, change := range changes {
+			if change.Baseline == nil || *change.Baseline != actorPos || change.Candidate == nil || *change.Candidate != actorPos {
+				t.Fatalf("missing actor fallback: %+v", change)
+			}
+		}
+	}
+}
+
 func TestEventDirectionChangesAreBreaking(t *testing.T) {
 	for _, ext := range []bool{false, true} {
 		changes := diffChanges(func(diff *_Diff) {
@@ -131,13 +150,17 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 
 	t.Run("actor", func(t *testing.T) {
 		auth := func(enabled, permission bool, vias ...string) *schema.Actor {
-			result := &schema.Actor{AuthEnabled: enabled, PermissionEnabled: permission, Vias: []*schema.ActorVia{}}
+			result := &schema.Actor{Vias: []*schema.ActorVia{}}
+			if permission {
+				result.Permission = new(schema.ActorPermission{})
+			}
 			for _, via := range vias {
 				result.Vias = append(result.Vias, &schema.ActorVia{Name: via})
 			}
 			if enabled {
-				result.AuthCredential = &schema.Data{Members: []*schema.DataMember{}}
-				result.AuthInfo = &schema.Data{Members: []*schema.DataMember{}}
+				result.Auth = new(schema.ActorAuth{})
+				result.Auth.Credential = &schema.Data{Members: []*schema.DataMember{}}
+				result.Auth.Info = &schema.Data{Members: []*schema.DataMember{}}
 			}
 			return result
 		}
@@ -145,14 +168,20 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 			diff.compareActor("Caller", auth(false, false, "old"), auth(false, false, "new"))
 			diff.compareActor("Caller", auth(false, false), auth(true, true))
 			diff.compareActor("Caller", auth(true, true), auth(false, false))
+			changed := auth(true, true)
+			changed.Auth.Credential.Sensitive = true
+			changed.Auth.Info.Sensitive = true
+			diff.compareActor("Caller", auth(true, true), changed)
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
-			"actor.via.removed":        ImpactBreaking,
-			"actor.via.added":          ImpactCompatible,
-			"actor.auth.added":         ImpactDangerous,
-			"actor.auth.removed":       ImpactBreaking,
-			"actor.permission.added":   ImpactDangerous,
-			"actor.permission.removed": ImpactBreaking,
+			"actor.via.removed":                       ImpactBreaking,
+			"actor.via.added":                         ImpactCompatible,
+			"actor.auth.added":                        ImpactDangerous,
+			"actor.auth.removed":                      ImpactBreaking,
+			"actor.permission.added":                  ImpactDangerous,
+			"actor.permission.removed":                ImpactBreaking,
+			"actor.auth-credential.sensitive.changed": ImpactDangerous,
+			"actor.auth-info.sensitive.changed":       ImpactDangerous,
 		})
 	})
 }
@@ -262,7 +291,7 @@ func TestAddedNullableCredentialIsCompatible(t *testing.T) {
 		before, after := actorDomain(true, false), actorDomain(true, false)
 		kind := scalarType("string")
 		kind.Nullable = nullable
-		after.Actors()[0].AuthCredential.Members = []*schema.DataMember{{Name: "extra", Type: kind}}
+		after.Actors()[0].Auth.Credential.Members = []*schema.DataMember{{Name: "extra", Type: kind}}
 		report, err := Compare(before, after)
 		if err != nil {
 			t.Fatal(err)
@@ -318,9 +347,9 @@ func TestWebOffAuthTransitions(t *testing.T) {
 func TestActorIdentifierChange(t *testing.T) {
 	before, after := actorDomain(true, false), actorDomain(true, false)
 	for _, domain := range []*schema.Domain{before, after} {
-		domain.Actors()[0].AuthInfo.Members = []*schema.DataMember{{Name: "id", Type: scalarType("string")}}
+		domain.Actors()[0].Auth.Info.Members = []*schema.DataMember{{Name: "id", Type: scalarType("string")}}
 	}
-	after.Actors()[0].IdentifierField = "id"
+	after.Actors()[0].Auth.IdentifierField = "id"
 	for _, pair := range [][2]*schema.Domain{{before, after}, {after, before}} {
 		report, err := Compare(pair[0], pair[1])
 		if err != nil {

@@ -64,8 +64,8 @@ func collectDiffUsage(documents ...*schema.Domain) map[string]_Usage {
 			if data := declaration.Data; data != nil && (declaration.Pub || declaration.Kind != schema.DeclarationTypeData) {
 				walk(&schema.Type{Kind: schema.TypeKindData, SkelName: declaration.SkelName, Data: declaration.Data}, usageBoth)
 			}
-			if actor := declaration.Actor; actor != nil {
-				for _, data := range []*schema.Data{actor.AuthCredential, actor.AuthInfo} {
+			if actor := declaration.Actor; actor != nil && actor.Auth != nil {
+				for _, data := range []*schema.Data{actor.Auth.Credential, actor.Auth.Info} {
 					if data != nil {
 						for _, member := range data.Members {
 							walk(member.Type, usageBoth)
