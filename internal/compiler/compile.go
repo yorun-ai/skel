@@ -31,7 +31,12 @@ type Result struct {
 func Compile(option Option) (Result, error) { return CompileContext(context.Background(), option) }
 
 func CompileContext(ctx context.Context, option Option) (Result, error) {
-	return compileFrom(ctx, loader.FileSystem{}, option, false)
+	return CompileFrom(ctx, loader.FileSystem{}, option)
+}
+
+// CompileFrom compiles a complete graph from the supplied immutable provider.
+func CompileFrom(ctx context.Context, provider loader.Provider, option Option) (Result, error) {
+	return compileFrom(ctx, provider, option, false)
 }
 
 // CompileImport allows unresolved dependencies for symbol and schema tooling.
@@ -71,7 +76,7 @@ func compileFrom(ctx context.Context, provider loader.Provider, option Option, u
 				return Result{}, fmt.Errorf("skel import %s has domain %s", name, actual)
 			}
 			inputs = append(inputs, sources...)
-			diagnostics = append(diagnostics, loaderWarningDiagnostics(loaded.Warnings)...)
+			diagnostics = append(diagnostics, LoaderWarningDiagnostics(loaded.Warnings)...)
 		}
 	}
 	loaded, err := loader.LoadFrom(ctx, provider, option.SkelIn)
@@ -83,7 +88,7 @@ func compileFrom(ctx context.Context, provider loader.Provider, option Option, u
 		return Result{}, err
 	}
 	inputs = append(inputs, sources...)
-	diagnostics = append(diagnostics, loaderWarningDiagnostics(loaded.Warnings)...)
+	diagnostics = append(diagnostics, LoaderWarningDiagnostics(loaded.Warnings)...)
 	engine := NewWorkspaceAnalyzer()
 	analyzed, domains, err := engine.AnalyzeWithOptionsContext(ctx, inputs, AnalysisOptions{AllowUnresolvedImports: unresolved, ResolveIsolatedImports: true, IncludeWarnings: true})
 	if err != nil {
@@ -125,7 +130,8 @@ func compileFrom(ctx context.Context, provider loader.Provider, option Option, u
 	return Result{}, fmt.Errorf("no complete domain in %s", option.SkelIn)
 }
 
-func loaderWarningDiagnostics(warnings []loader.Warning) Diagnostics {
+// LoaderWarningDiagnostics converts source discovery warnings to diagnostics.
+func LoaderWarningDiagnostics(warnings []loader.Warning) Diagnostics {
 	diagnostics := make(Diagnostics, 0, len(warnings))
 	for _, warning := range warnings {
 		position := model.Position{File: warning.Path, Line: 1, Column: 1}

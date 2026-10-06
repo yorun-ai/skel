@@ -73,5 +73,5 @@ func AnalyzeInputFromContext(ctx context.Context, provider loader.Provider, path
 		}
 	}
 	diagnostics, domains, err := NewWorkspaceAnalyzer().AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{AllowUnresolvedImports: true})
-	return append(diagnostics, loaderWarningDiagnostics(loaded.Warnings)...), domains, err
+	return append(diagnostics, LoaderWarningDiagnostics(loaded.Warnings)...), domains, err
 }

@@ -21,20 +21,38 @@ func Check(option Option) (CheckResult, error) {
 }
 
 func checkWithAnalyzer(option Option, workspaceAnalyzer *WorkspaceAnalyzer) (CheckResult, error) {
-	loadResult, err := loader.Load(option.SkelIn)
+	return checkFrom(context.Background(), loader.FileSystem{}, option, workspaceAnalyzer)
+}
+
+// CheckFrom validates filesystem or frozen sources with unresolved imports.
+func CheckFrom(ctx context.Context, provider loader.Provider, option Option) (CheckResult, error) {
+	return checkFrom(ctx, provider, option, NewWorkspaceAnalyzer())
+}
+
+func checkFrom(ctx context.Context, provider loader.Provider, option Option, workspaceAnalyzer *WorkspaceAnalyzer) (CheckResult, error) {
+	loadResult, err := loader.LoadFrom(ctx, provider, option.SkelIn)
 	if err != nil {
 		return CheckResult{}, err
 	}
-	sources, err := prepareInput(context.Background(), loadResult, true)
+	return checkLoaded(ctx, loadResult, option, workspaceAnalyzer)
+}
+
+// CheckLoaded validates the exact source revisions returned by the loader.
+func CheckLoaded(ctx context.Context, loaded loader.Result, option Option) (CheckResult, error) {
+	return checkLoaded(ctx, loaded, option, NewWorkspaceAnalyzer())
+}
+
+func checkLoaded(ctx context.Context, loadResult loader.Result, option Option, workspaceAnalyzer *WorkspaceAnalyzer) (CheckResult, error) {
+	sources, err := prepareInput(ctx, loadResult, true)
 	if err != nil {
 		return CheckResult{}, err
 	}
-	diagnostics, _, err := workspaceAnalyzer.AnalyzeWithOptionsContext(context.Background(), sources, AnalysisOptions{AllowUnresolvedImports: true})
+	diagnostics, _, err := workspaceAnalyzer.AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{AllowUnresolvedImports: true})
 	if err != nil {
 		return CheckResult{}, err
 	}
 	filtered := append(Diagnostics{}, diagnostics...)
-	filtered = append(filtered, loaderWarningDiagnostics(loadResult.Warnings)...)
+	filtered = append(filtered, LoaderWarningDiagnostics(loadResult.Warnings)...)
 	if option.Strict {
 		ApplyStrictMode(filtered)
 	}

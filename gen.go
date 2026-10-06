@@ -1,35 +1,229 @@
 package skelc
 
 import (
+	"context"
 	"fmt"
 	gotoken "go/token"
 	"path/filepath"
-	"slices"
 	"strings"
 
+	"go.yorun.ai/skelc/diagnostic"
 	"go.yorun.ai/skelc/internal/codegen/common"
 	"go.yorun.ai/skelc/internal/codegen/golang"
+	"go.yorun.ai/skelc/internal/codegen/output"
 	"go.yorun.ai/skelc/internal/codegen/skeleton"
 	"go.yorun.ai/skelc/internal/codegen/typescript"
-	"go.yorun.ai/skelc/internal/compiler"
 	"go.yorun.ai/skelc/internal/optionvalidation"
 	"go.yorun.ai/skelc/internal/util/nameutil"
 	"go.yorun.ai/skelc/model"
 )
 
-func normalizeInput(input Input) (compiler.Option, error) {
-	if strings.TrimSpace(input.SkelIn) == "" {
-		return compiler.Option{}, optionvalidation.NewValidationError(optionvalidation.FieldSkelInput, optionvalidation.RuleRequired, "skel input is required")
+// MinimumGolangVineVersion is the minimum Vine module version supported by
+// generated Go code.
+const MinimumGolangVineVersion = golang.MinimumVineVersion
+
+// DefaultGolangVineVersion is the Vine module version used for generated Go
+// modules when GolangOption.VineVersion is empty.
+const DefaultGolangVineVersion = golang.DefaultVineVersion
+
+// CompileResult contains structured non-fatal diagnostics produced while loading and parsing Skel sources.
+type CompileResult struct {
+	// Diagnostics contains non-fatal diagnostics produced while parsing.
+	Diagnostics []diagnostic.Diagnostic
+}
+
+// ApiFilter selects API services and optional local type roots for pruning.
+type ApiFilter = common.ApiFilter
+
+// GolangOption configures Go generation.
+type GolangOption struct {
+	// CompilerVersion identifies the actual skelc version embedded in generated metadata.
+	// Required for backend output and must be at least v0.17.1.
+	// Use v0.0.0-dev only for development builds.
+	CompilerVersion string
+	// AsModule generates a standalone Go module instead of package source for an
+	// existing module.
+	AsModule bool
+	// PubOnly generates backend public contracts. It is mutually exclusive with ApiOnly.
+	PubOnly bool
+	// ApiOnly generates standalone portal clients.
+	ApiOnly bool
+	// ApiFilter selects API services/types and optionally prunes unused public types. Requires ApiOnly.
+	ApiFilter ApiFilter
+	// Out is the output directory for generated Go files.
+	Out string
+	// Module is the module path used when AsModule is true.
+	Module string
+	// PubOut is the optional output directory for a separate public Go module.
+	PubOut string
+	// PubModule is the module path for PubOut.
+	PubModule string
+	// Imports maps imported Skel domain names to Go import paths.
+	Imports map[string]string
+	// ModulePrefix derives module paths from domain names when Module or an
+	// imported-domain mapping is omitted.
+	ModulePrefix string
+	// VineVersion selects the go.yorun.ai/vine version written to generated module
+	// metadata. It must not be lower than [MinimumGolangVineVersion]. An empty
+	// value uses [DefaultGolangVineVersion].
+	VineVersion string
+	// VrpcVersion selects the standalone client module version.
+	VrpcVersion string
+}
+
+// TypeScriptOption configures TypeScript generation.
+type TypeScriptOption struct {
+	// ApiOnly is required for TypeScript client generation.
+	ApiOnly bool
+	// ApiFilter selects API services/types and optionally prunes unused public types. Requires ApiOnly.
+	ApiFilter ApiFilter
+	// AsModule emits package metadata for a standalone npm package.
+	AsModule bool
+	// Out is the output directory for generated TypeScript files.
+	Out string
+	// Module is the npm package name used when AsModule is true.
+	Module string
+	// Imports maps imported Skel domain names to npm package specifiers.
+	Imports map[string]string
+	// ModuleScope derives npm package names for the current and imported domains.
+	ModuleScope string
+}
+
+// SkeletonOption configures Skel source generation.
+type SkeletonOption struct {
+	// PubOnly limits output to declarations in the public contract.
+	PubOnly bool
+	// Out is the output directory for generated Skel files.
+	Out string
+}
+
+// GenerateGolang generates Go source or a standalone Go module from a parsed
+// domain. Stale files carrying the skelc generated marker may be removed.
+func GenerateGolang(domain *model.Domain, option GolangOption) error {
+	if domain == nil {
+		return fmt.Errorf("parsed domain is required")
 	}
-	skelIn, err := absolutePath(input.SkelIn)
+	codegenOption, err := normalizeGolangOption(option)
 	if err != nil {
-		return compiler.Option{}, err
+		return err
 	}
-	imports, err := normalizePathMap(input.SkelImports)
+	return generateGolang(domain, codegenOption)
+}
+
+func generateGolang(domain *model.Domain, resolved golang.ResolvedOption) error {
+	option := resolved.Options()
+	if err := validateGolangImports(domain, option); err != nil {
+		return err
+	}
+	return output.RunManagedOutputs([]string{option.Out, option.PubOut}, func(staged []string) error {
+		return golang.Generate(domain, resolved.WithOutputs(staged[0], staged[1]))
+	})
+}
+
+// CompileGolang parses input and generates Go source or a standalone Go module.
+// Parsing completes before any generated output is committed.
+func CompileGolang(input Input, option GolangOption) (CompileResult, error) {
+	compilerOption, err := normalizeInput(input)
 	if err != nil {
-		return compiler.Option{}, err
+		return CompileResult{}, err
 	}
-	return compiler.Option{SkelIn: skelIn, SkelImports: imports, Strict: input.Strict}, nil
+	codegenOption, err := normalizeGolangOption(option)
+	if err != nil {
+		return CompileResult{}, err
+	}
+	parsed, err := compileInput(context.Background(), input, compilerOption, false)
+	if err != nil {
+		return CompileResult{}, err
+	}
+	if err := generateGolang(parsed.Domain, codegenOption); err != nil {
+		return CompileResult{}, err
+	}
+	return CompileResult{Diagnostics: parsed.Diagnostics}, nil
+}
+
+// GenerateTypeScript generates TypeScript source from a parsed domain. Stale
+// files carrying the skelc generated marker may be removed.
+func GenerateTypeScript(domain *model.Domain, option TypeScriptOption) error {
+	if domain == nil {
+		return fmt.Errorf("parsed domain is required")
+	}
+	codegenOption, err := normalizeTypeScriptOption(option)
+	if err != nil {
+		return err
+	}
+	return generateTypeScript(domain, codegenOption)
+}
+
+func generateTypeScript(domain *model.Domain, option typescript.Option) error {
+	if err := validateTypeScriptImports(domain, option); err != nil {
+		return err
+	}
+	return output.RunManagedOutputs([]string{option.Out}, func(staged []string) error {
+		option.Out = staged[0]
+		return typescript.Generate(domain, option)
+	})
+}
+
+// CompileTypeScript parses input and generates TypeScript source. Parsing
+// completes before generated output is committed.
+func CompileTypeScript(input Input, option TypeScriptOption) (CompileResult, error) {
+	compilerOption, err := normalizeInput(input)
+	if err != nil {
+		return CompileResult{}, err
+	}
+	codegenOption, err := normalizeTypeScriptOption(option)
+	if err != nil {
+		return CompileResult{}, err
+	}
+	parsed, err := compileInput(context.Background(), input, compilerOption, false)
+	if err != nil {
+		return CompileResult{}, err
+	}
+	if err := generateTypeScript(parsed.Domain, codegenOption); err != nil {
+		return CompileResult{}, err
+	}
+	return CompileResult{Diagnostics: parsed.Diagnostics}, nil
+}
+
+// GenerateSkeleton generates a Skel contract from a parsed domain. Stale files
+// carrying the skelc generated marker may be removed.
+func GenerateSkeleton(domain *model.Domain, option SkeletonOption) error {
+	if domain == nil {
+		return fmt.Errorf("parsed domain is required")
+	}
+	codegenOption, err := normalizeSkeletonOption(option)
+	if err != nil {
+		return err
+	}
+	return generateSkeleton(domain, codegenOption)
+}
+
+func generateSkeleton(domain *model.Domain, option skeleton.Option) error {
+	return output.RunManagedOutputs([]string{option.Out}, func(staged []string) error {
+		option.Out = staged[0]
+		return skeleton.Generate(domain, option)
+	})
+}
+
+// CompileSkeleton parses input and generates a Skel contract. Parsing completes
+// before generated output is committed.
+func CompileSkeleton(input Input, option SkeletonOption) (CompileResult, error) {
+	compilerOption, err := normalizeInput(input)
+	if err != nil {
+		return CompileResult{}, err
+	}
+	codegenOption, err := normalizeSkeletonOption(option)
+	if err != nil {
+		return CompileResult{}, err
+	}
+	parsed, err := compileInput(context.Background(), input, compilerOption, false)
+	if err != nil {
+		return CompileResult{}, err
+	}
+	if err := generateSkeleton(parsed.Domain, codegenOption); err != nil {
+		return CompileResult{}, err
+	}
+	return CompileResult{Diagnostics: parsed.Diagnostics}, nil
 }
 
 func normalizeGolangOption(option GolangOption) (golang.ResolvedOption, error) {
@@ -279,49 +473,6 @@ func checkNoTrailingSlash(value, label string, field optionvalidation.Field) err
 	return nil
 }
 
-func absolutePath(path string) (string, error) {
-	absPath, err := filepath.Abs(strings.TrimSpace(path))
-	if err != nil {
-		return "", fmt.Errorf("resolve path %s: %w", path, err)
-	}
-	return absPath, nil
-}
-
-func optionalAbsolutePath(path string) (string, error) {
-	if strings.TrimSpace(path) == "" {
-		return "", nil
-	}
-	return absolutePath(path)
-}
-
-func normalizePathMap(values map[string]string) (map[string]string, error) {
-	if len(values) == 0 {
-		return nil, nil
-	}
-	normalized := make(map[string]string, len(values))
-	for _, key := range sortedMapKeys(values) {
-		value := values[key]
-		normalizedKey := strings.TrimSpace(key)
-		if normalizedKey == "" {
-			return nil, optionvalidation.NewValidationError(optionvalidation.FieldSkelImport, optionvalidation.RuleInvalid, "Skel import domain is required")
-		}
-		if strings.TrimSpace(value) == "" {
-			return nil, optionvalidation.NewValidationError(optionvalidation.FieldSkelImport, optionvalidation.RuleRequired,
-				fmt.Sprintf("Skel import path for domain %s is required", normalizedKey))
-		}
-		path, err := absolutePath(value)
-		if err != nil {
-			return nil, err
-		}
-		if _, exists := normalized[normalizedKey]; exists {
-			return nil, optionvalidation.NewValidationError(optionvalidation.FieldSkelImport, optionvalidation.RuleInvalid,
-				fmt.Sprintf("duplicate Skel import domain %s", normalizedKey))
-		}
-		normalized[normalizedKey] = path
-	}
-	return normalized, nil
-}
-
 func normalizeImportMap(values map[string]string) (map[string]string, error) {
 	if len(values) == 0 {
 		return nil, nil
@@ -372,15 +523,6 @@ func normalizeTypeScriptImportMap(values map[string]string) (map[string]string, 
 		normalized[normalizedKey] = value
 	}
 	return normalized, nil
-}
-
-func sortedMapKeys(values map[string]string) []string {
-	keys := make([]string, 0, len(values))
-	for key := range values {
-		keys = append(keys, key)
-	}
-	slices.Sort(keys)
-	return keys
 }
 
 func apiImportDomains(domain *model.Domain, selection common.ApiFilter) (map[string]bool, error) {

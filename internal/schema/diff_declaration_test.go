@@ -74,9 +74,9 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 			prefix        string
 			reorderImpact ImpactLevel
 		}{
-			{"data.member", ImpactDangerous},
-			{"actor.auth-credential.member", ImpactDangerous},
-			{"actor.auth-info.member", ImpactDangerous},
+			{"data.member", ImpactCompatible},
+			{"actor.auth-credential.member", ImpactCompatible},
+			{"actor.auth-info.member", ImpactCompatible},
 		}
 		for _, test := range tests {
 			t.Run(test.prefix, func(t *testing.T) {
@@ -150,9 +150,9 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 			"actor.via.removed":        ImpactBreaking,
 			"actor.via.added":          ImpactCompatible,
 			"actor.auth.added":         ImpactDangerous,
-			"actor.auth.removed":       ImpactDangerous,
+			"actor.auth.removed":       ImpactBreaking,
 			"actor.permission.added":   ImpactDangerous,
-			"actor.permission.removed": ImpactDangerous,
+			"actor.permission.removed": ImpactBreaking,
 		})
 	})
 }
@@ -246,8 +246,64 @@ func TestWebAuthDiff(t *testing.T) {
 		baseline := &Declaration{Kind: DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &WebSchema{Auth: test.before}}
 		candidate := &Declaration{Kind: DeclarationTypeWeb, SkelName: "demo.PortalWeb", Web: &WebSchema{Auth: test.after}}
 		changes := diffChanges(func(diff *_Diff) { diff.compareDeclaration(baseline, candidate) })
-		if len(changes) != 1 || changes[0].Code != test.code || changes[0].Impact != ImpactDangerous {
+		impact := ImpactDangerous
+		if test.before == AuthModeOptional && test.after != AuthModeOptional {
+			impact = ImpactBreaking
+		}
+		if len(changes) != 1 || changes[0].Code != test.code || changes[0].Impact != impact {
 			t.Fatalf("auth diff: %+v", changes)
 		}
+	}
+}
+
+func TestAddedNullableCredentialIsCompatible(t *testing.T) {
+	for _, nullable := range []bool{false, true} {
+		before, after := actorDocument(true, false), actorDocument(true, false)
+		kind := scalarType("string")
+		kind.Nullable = nullable
+		after.Declarations[0].Actor.AuthCredential.Members = []*Member{{Name: "extra", Type: kind}}
+		report, err := Diff(before, after)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(report.Changes) != 1 || report.Compatible != nullable {
+			t.Fatalf("nullable=%v: %+v", nullable, report)
+		}
+	}
+}
+
+func TestWebOffAuthTransitions(t *testing.T) {
+	for _, test := range []struct {
+		before, after AuthMode
+		impact        ImpactLevel
+		code          string
+	}{
+		{AuthModeOff, AuthModeRequired, ImpactBreaking, "web.auth.tightened"},
+		{AuthModeOff, AuthModeOptional, ImpactBreaking, "web.auth.tightened"},
+		{AuthModeOff, AuthModeAnonymous, ImpactBreaking, "web.auth.tightened"},
+		{AuthModeRequired, AuthModeOff, ImpactDangerous, "web.auth.changed"},
+		{AuthModeOptional, AuthModeOff, ImpactDangerous, "web.auth.changed"},
+		{AuthModeAnonymous, AuthModeOff, ImpactDangerous, "web.auth.changed"},
+		{AuthModeNoAuth, AuthModeRequired, ImpactBreaking, "web.auth.tightened"},
+		{AuthModeNoAuth, AuthModeOff, ImpactCompatible, "web.auth.changed"},
+	} {
+		t.Run(string(test.before)+" to "+string(test.after), func(t *testing.T) {
+			makeDocument := func(mode AuthMode) *Document {
+				return newTestDocument(&Declaration{
+					Kind: DeclarationTypeWeb, Name: "ExampleWeb", SkelName: "demo.user.ExampleWeb",
+					Web: &WebSchema{Auth: mode, Audiences: []*Audience{{Actor: "demo.user.UserActor", Via: "client"}}},
+				})
+			}
+			report, err := Diff(makeDocument(test.before), makeDocument(test.after))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(report.Changes) != 1 || report.Compatible != (test.impact != ImpactBreaking) {
+				t.Fatalf("unexpected report: %+v", report)
+			}
+			if change := report.Changes[0]; change.Impact != test.impact || change.Code != test.code {
+				t.Fatalf("unexpected change: %+v", change)
+			}
+		})
 	}
 }
