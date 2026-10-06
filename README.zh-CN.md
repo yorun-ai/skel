@@ -181,6 +181,8 @@ TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含
 
 ### 查询、生成快照、查看差异和格式化
 
+Go 调用方可使用 `skelc.ScanImports(skelc.ScanOption{SkelIn: "./skel"})`，无需加载依赖即可扫描直接导入。结果包含导入、显式别名、源码位置和非致命诊断。`ScanImportsContext` 支持取消；传递导入由调用方递归收集。
+
 ```bash
 skelc scan imports --skel-in ./skel
 skelc schema list --skel-in ./skel
@@ -218,7 +220,7 @@ domain 单独检查。
 `1`；命令失败返回 `2`。无论兼容性结论如何，diff 完成后都返回退出码 `0`。失败时在
 stdout 输出只包含稳定 `code` 和供人阅读的 `message` 的 JSON 对象；stderr 只保留
 零到多条日志和诊断，默认使用 JSONL；需要人类可读的 stderr 时使用
-`--log-format text`。公开结果和错误类型由 `go.yorun.ai/skelc/command` 提供。
+`--log-format text`。公开结果和错误类型由 `go.yorun.ai/skelc/cli` 提供。
 
 `format` 会在验证全部输入后原地修改文件并返回 `{changed,files}`。使用 `--check`
 可以只报告格式不规范的文件并以退出码 `1` 结束，不修改文件。格式化会先暂存所有
@@ -280,7 +282,7 @@ for _, diagnostic := range result.Diagnostics {
 
 后端 Go 输出必须设置 `CompilerVersion`，并填写不低于 `v0.17.1` 的实际 skelc 依赖版本（请按锁定版本调整示例）。CLI 会自动填写；仅开发构建使用 `v0.0.0-dev`。
 
-API 同时提供 `CompileTypeScript` 和 `CompileSkeleton`。parser 与 loader warning 使用同一套结构化诊断，不再维护独立的字符串列表。根 package 与 `go.yorun.ai/skelc/diagnostic` 都会导出稳定的诊断 code 常量，集成方无需重复填写原始字符串。所有公开契约生成器共用一次经过校验的 `internal/codegen/common` 投影，避免 Go、Skel 和 TypeScript 的可见性规则漂移。
+API 同时提供 `CompileTypeScript` 和 `CompileSkeleton`。parser 与 loader warning 使用同一套结构化诊断，不再维护独立的字符串列表。诊断类型和稳定的 code 常量统一由 `go.yorun.ai/skelc/diagnostic` 提供，调用方直接使用该公开 package，不再通过根 package 别名访问。所有公开契约生成器共用一次经过校验的 `internal/codegen/common` 投影，避免 Go、Skel 和 TypeScript 的可见性规则漂移。
 
 生成过程在每个文件中标记所有权，以原子方式逐个替换输出；提交失败时回滚所有受影响的目标，删除带标记的过期生成文件，并保留共享输出目录中的无标记文件。
 
@@ -288,9 +290,29 @@ Go 集成通过公开 facade `go.yorun.ai/skelc/schema` 消费 schema 命令 JSO
 无需复制 wire 结构。该 package 在实现保持 internal 的同时，统一提供响应类型、
 嵌套 wire 类型、带类型的常量，以及严格的 `schema.Decode`、`schema.Validate` 和
 `schema.Encode`，用于拒绝未知字段、尾随 JSON、不支持的格式版本以及不完整的
-规范化结构。根 package `go.yorun.ai/skelc` 继续只负责解析和生成 API。
+规范化结构。根 package `go.yorun.ai/skelc` 同时提供源码检查和 schema 查询 API。
 
 自定义 generator 可以调用 `skelc.Parse`，并通过与 parser 无关的 `go.yorun.ai/skelc/model` 使用返回的 `*model.Domain`。解析完成的模型已经包含由 skelc 计算好的兼容性 hash。内置的 `GenerateGolang`、`GenerateTypeScript` 和 `GenerateSkeleton` 也接受同一个已解析 domain，因此多个目标可以共享一次解析结果。
+
+
+源码工具可以调用 `Check`（允许未解析导入）、`ScanImports`、`FormatSource` 和
+`FormatFiles`。`Check` 将源码错误放入 `Diagnostics`，并返回 `Valid: false`；
+`Parse` 和 schema 查询对无效契约返回 error。`FormatFiles` 返回全部输入校验通过后的
+只读修改计划，不写入文件；调用方负责后续写入事务。
+
+`QuerySchema` 返回规范化的 `schema.Document`：默认视图保留未解析导入，`Pub`、
+`Api` 或 `ResolveImports` 则解析完整导入图。未解析视图拒绝依赖映射。
+使用 `schema.Entries`、`schema.Find` 完成 list/get，`schema.Project` 投影已有模型，
+`schema.Diff` 比较快照。`DiffSchemaSources` 接受显式 `Baseline` 输入；未设置时，
+将磁盘候选源码与 Git HEAD 比较。历史基线不继承候选输入的严格模式。
+内存候选输入必须指定显式基线。
+
+设置 `Input.Sources`（或检查选项的 `Sources`）可提供完整的 `map[string][]byte`
+内存快照。键为逻辑文件路径，相对路径基于当前工作目录解析，目录遵循与磁盘相同的
+`domain.skel` 布局。nil 使用磁盘；非 nil 快照不会回退到磁盘读取，包括导入 domain。
+`SkelImports` 仍将 domain 名映射到快照中的逻辑路径，规范化后重复的路径会被拒绝。
+解析、生成、源码检查和依赖查询共用这套输入约定。只读 API 还提供支持取消的
+`Context` 版本。
 
 ## skelc 与 Vine、vRPC
 

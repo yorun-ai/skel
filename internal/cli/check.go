@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	ucli "github.com/urfave/cli/v3"
+	"go.yorun.ai/skelc"
+	"go.yorun.ai/skelc/diagnostic"
 	"go.yorun.ai/skelc/internal/command"
-	"go.yorun.ai/skelc/internal/compiler"
 )
 
 const (
@@ -22,20 +23,20 @@ func newCheckCommand() *ucli.Command {
 		Flags: []ucli.Flag{
 			&ucli.StringFlag{Name: flagCheckSkelIn, Usage: "skeleton input file or directory"},
 		},
-		Action: func(_ context.Context, cmd *ucli.Command) error {
+		Action: func(ctx context.Context, cmd *ucli.Command) error {
 			option, err := parseCheckCommand(cmd)
 			if err != nil {
 				return commandFailure(command.ErrorCodeInvalidArgument, err)
 			}
-			result, err := compiler.Check(option)
+			result, err := skelc.CheckContext(ctx, option)
 			if err != nil {
 				return commandFailure(command.ErrorCodeCompilationFailed, err)
 			}
 			diagnostics := result.Diagnostics
 			if diagnostics == nil {
-				diagnostics = compiler.Diagnostics{}
+				diagnostics = []diagnostic.Diagnostic{}
 			}
-			valid := !diagnostics.HasErrors()
+			valid := result.Valid
 			if err := writeJSONResult(cmd, command.CheckResult{Valid: valid, Diagnostics: diagnostics}, "check result"); err != nil {
 				return commandFailure(command.ErrorCodeCommandFailed, err)
 			}
@@ -47,13 +48,16 @@ func newCheckCommand() *ucli.Command {
 	}
 }
 
-func parseCheckCommand(cmd *ucli.Command) (compiler.Option, error) {
+func parseCheckCommand(cmd *ucli.Command) (skelc.CheckOption, error) {
 	if cmd.Args().Len() != 0 {
-		return compiler.Option{}, fmt.Errorf("unexpected args for %s", commandCheck)
+		return skelc.CheckOption{}, fmt.Errorf("unexpected args for %s", commandCheck)
 	}
-	compilerOption := compiler.Option{
+	option := skelc.CheckOption{
 		SkelIn: cmd.String(flagCheckSkelIn),
 		Strict: cmd.Bool(flagStrict),
 	}
-	return compilerOption, normalizeCompilerOption(&compilerOption)
+	if option.SkelIn == "" {
+		return skelc.CheckOption{}, fmt.Errorf("missing flag skel-in")
+	}
+	return option, nil
 }

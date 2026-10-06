@@ -1,4 +1,4 @@
-package command
+package cli
 
 import internalcommand "go.yorun.ai/skelc/internal/command"
 

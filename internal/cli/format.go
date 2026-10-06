@@ -9,11 +9,8 @@ import (
 	"path/filepath"
 
 	ucli "github.com/urfave/cli/v3"
+	"go.yorun.ai/skelc"
 	"go.yorun.ai/skelc/internal/command"
-	"go.yorun.ai/skelc/internal/compiler"
-	"go.yorun.ai/skelc/internal/formatter"
-	"go.yorun.ai/skelc/internal/loader"
-	"go.yorun.ai/skelc/internal/parser"
 	"go.yorun.ai/skelc/internal/util/fileutil"
 )
 
@@ -32,17 +29,6 @@ type _FormatOption struct {
 
 type _FormatResult = command.FormatResult
 
-type _FormattedFile struct {
-	path     string
-	original []byte
-	content  []byte
-}
-
-type _FormatCompilationError struct{ cause error }
-
-func (e *_FormatCompilationError) Error() string { return e.cause.Error() }
-func (e *_FormatCompilationError) Unwrap() error { return e.cause }
-
 func newFormatCommand() *ucli.Command {
 	return &ucli.Command{
 		Name:  commandFormat,
@@ -59,8 +45,7 @@ func newFormatCommand() *ucli.Command {
 			result, err := formatFiles(option)
 			if err != nil {
 				code := command.ErrorCodeCommandFailed
-				var compilationError *_FormatCompilationError
-				if errors.As(err, &compilationError) {
+				if errors.Is(err, skelc.ErrFormatCompilation) {
 					code = command.ErrorCodeCompilationFailed
 				}
 				return commandFailure(code, err)
@@ -92,51 +77,23 @@ func parseFormatCommand(cmd *ucli.Command) (_FormatOption, error) {
 }
 
 func formatFiles(option _FormatOption) (_FormatResult, error) {
-	if option.strict {
-		result, err := compiler.Check(compiler.Option{SkelIn: option.skelIn, Strict: true})
-		if err != nil {
-			return _FormatResult{}, &_FormatCompilationError{cause: err}
-		}
-		if result.Diagnostics.HasErrors() {
-			return _FormatResult{}, &_FormatCompilationError{cause: result.Diagnostics}
-		}
-	}
-	loadResult, err := loader.Load(option.skelIn)
+	planned, err := skelc.FormatFiles(skelc.FormatOption{SkelIn: option.skelIn, Strict: option.strict})
 	if err != nil {
-		return _FormatResult{}, &_FormatCompilationError{cause: err}
+		return _FormatResult{}, err
 	}
-	sourceFiles := loadResult.Files
-	formattedFiles := make([]_FormattedFile, 0, len(sourceFiles))
-	for _, sourceFile := range sourceFiles {
-		if err := parser.ValidateSource(sourceFile.FilePath, sourceFile.Content); err != nil {
-			return _FormatResult{}, &_FormatCompilationError{cause: err}
-		}
-		formatted, err := formatter.Source(sourceFile.Content)
-		if err != nil {
-			return _FormatResult{}, fmt.Errorf("format %s: %w", sourceFile.FilePath, err)
-		}
-		if err := parser.ValidateSource(sourceFile.FilePath, formatted); err != nil {
-			return _FormatResult{}, err
-		}
-		if bytes.Equal(sourceFile.Content, formatted) {
-			continue
-		}
-		formattedFiles = append(formattedFiles, _FormattedFile{
-			path: sourceFile.FilePath, original: sourceFile.Content, content: formatted,
-		})
-	}
+	formattedFiles := planned.Files
 	result := _FormatResult{Changed: len(formattedFiles) > 0, Files: make([]string, 0, len(formattedFiles))}
 	for _, file := range formattedFiles {
-		result.Files = append(result.Files, file.path)
+		result.Files = append(result.Files, file.Path)
 	}
 	if option.check {
 		return result, nil
 	}
 	replacements := make([]fileutil.Replacement, 0, len(formattedFiles))
 	for _, file := range formattedFiles {
-		writePath, err := filepath.EvalSymlinks(file.path)
+		writePath, err := filepath.EvalSymlinks(file.Path)
 		if err != nil {
-			return _FormatResult{}, fmt.Errorf("resolve format target %s: %w", file.path, err)
+			return _FormatResult{}, fmt.Errorf("resolve format target %s: %w", file.Path, err)
 		}
 		info, err := os.Stat(writePath)
 		if err != nil {
@@ -146,11 +103,11 @@ func formatFiles(option _FormatOption) (_FormatResult, error) {
 		if err != nil {
 			return _FormatResult{}, fmt.Errorf("read format target %s: %w", writePath, err)
 		}
-		if !bytes.Equal(current, file.original) {
+		if !bytes.Equal(current, file.Original) {
 			return _FormatResult{}, fmt.Errorf("format target %s changed while formatting", writePath)
 		}
 		replacements = append(replacements, fileutil.Replacement{
-			Path: writePath, Content: file.content, Mode: info.Mode(),
+			Path: writePath, Content: file.Content, Mode: info.Mode(),
 		})
 	}
 	if err := fileutil.ReplaceAll(replacements); err != nil {

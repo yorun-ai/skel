@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"go.yorun.ai/skelc/model"
 	"io"
 
 	internalschema "go.yorun.ai/skelc/internal/schema"
@@ -217,4 +218,23 @@ func Decode(reader io.Reader) (*Document, error) {
 // Validate checks a schema snapshot's format version and normalized structure.
 func Validate(document *Document) error {
 	return internalschema.Validate(document)
+}
+
+// Project converts a semantic domain into a canonical schema snapshot.
+// Optional aliases normalize unresolved imported references.
+func Project(domain *model.Domain, aliases map[string]string) (*Document, error) {
+	return internalschema.Project(domain, aliases)
+}
+
+// Entries returns declaration summaries in document order.
+func Entries(document *Document) []*Entry { return internalschema.Entries(document) }
+
+// Find returns a declaration or nil when the name and kind are absent.
+func Find(document *Document, kind DeclarationType, skelName string) *Declaration {
+	return internalschema.Find(document, string(kind), skelName)
+}
+
+// Diff validates and compares two canonical snapshots.
+func Diff(baseline, candidate *Document) (*Report, error) {
+	return internalschema.Diff(baseline, candidate)
 }

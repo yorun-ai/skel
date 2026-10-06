@@ -184,6 +184,8 @@ After declaring an `import` in `.skel`, generation commands use repeatable `--sk
 
 ### Inspect, Snapshot, Diff, and Format
 
+Go callers can use `skelc.ScanImports(skelc.ScanOption{SkelIn: "./skel"})` to inspect direct imports without loading dependencies. The result includes imports, explicit aliases, source positions and non-fatal diagnostics. `ScanImportsContext` supports cancellation; callers collect transitive imports themselves.
+
 ```bash
 skelc scan imports --skel-in ./skel
 skelc schema list --skel-in ./skel
@@ -233,7 +235,7 @@ A completed diff returns exit code `0` regardless of its compatibility result.
 Failures write a JSON object with stable `code` and human-readable `message`
 fields to stdout; stderr is reserved for zero or more logs and diagnostics,
 encoded as JSONL by default. Use `--log-format text` for human-readable stderr.
-Public result and error types are available from `go.yorun.ai/skelc/command`.
+Public result and error types are available from `go.yorun.ai/skelc/cli`.
 
 `format` modifies files in place after validating all inputs and returns
 `{changed,files}`. Use `--check` to report unformatted files and exit `1`
@@ -303,7 +305,7 @@ for _, diagnostic := range result.Diagnostics {
 
 `CompilerVersion` is required for backend Go output and must identify the actual skelc dependency version, at least `v0.17.1` (adjust the example to your pinned version). The CLI fills it automatically. Use `v0.0.0-dev` only when running a development build.
 
-The API also provides `CompileTypeScript` and `CompileSkeleton`. Parser and loader warnings use the same structured diagnostic model instead of a separate string list. Stable diagnostic code constants are exported by the root package and by `go.yorun.ai/skelc/diagnostic`, so integrations do not need to repeat raw code strings. All public-contract generators consume one validated `internal/codegen/common` projection, preventing Go, Skel, and TypeScript visibility rules from drifting.
+The API also provides `CompileTypeScript` and `CompileSkeleton`. Parser and loader warnings use the same structured diagnostic model instead of a separate string list. Diagnostic types and stable code constants are provided by `go.yorun.ai/skelc/diagnostic`; use that package directly instead of root-package aliases. All public-contract generators consume one validated `internal/codegen/common` projection, preventing Go, Skel, and TypeScript visibility rules from drifting.
 
 Generation marks ownership in every generated file, atomically replaces individual outputs, rolls back every affected target when a commit fails, removes stale marked files, and preserves unmarked files in a shared output directory.
 
@@ -313,9 +315,34 @@ typed constants, and strict `schema.Decode`, `schema.Validate`, and
 `schema.Encode` functions while the implementation remains internal. Strict
 decoding rejects unknown fields, trailing JSON values, unsupported format
 versions and malformed normalized structures. The root `go.yorun.ai/skelc`
-package remains focused on parsing and generation.
+package also provides source inspection and schema query APIs.
 
 Custom generators can call `skelc.Parse` and consume the returned `*model.Domain` through the parser-independent `go.yorun.ai/skelc/model` package. Parsed models already contain compatibility hashes calculated by skelc. Built-in generators accept the same parsed domain through `GenerateGolang`, `GenerateTypeScript`, and `GenerateSkeleton`, so several targets can share one parse result.
+
+
+Source tools can call `Check` (unresolved imports allowed), `ScanImports`,
+`FormatSource`, and `FormatFiles`. `Check` returns source errors in
+`Diagnostics` with `Valid: false`; `Parse` and schema queries return an error
+for invalid contracts. `FormatFiles` returns a validated, read-only replacement
+plan; it never writes files. Callers own any write transaction.
+
+`QuerySchema` produces a normalized `schema.Document`: its default view keeps
+imports unresolved, while `Pub`, `Api`, or `ResolveImports` resolves the complete
+import graph. Unresolved inspection rejects dependency mappings. Use
+`schema.Entries` and `schema.Find` for list/get, `schema.Project` for an existing
+model, and `schema.Diff` for snapshot comparisons. `DiffSchemaSources` accepts an
+explicit `Baseline` input or, when omitted, compares a filesystem candidate
+against Git HEAD. Historical baselines do not inherit candidate strict mode.
+Frozen candidates require an explicit baseline.
+
+Set `Input.Sources` (or the inspection option's `Sources`) to a complete
+`map[string][]byte` snapshot for in-memory inputs. Paths are logical file paths;
+relative paths resolve against the working directory, and directories follow
+the same `domain.skel` layout as disk inputs. Nil uses disk; a non-nil snapshot
+never falls back to disk, including for imported domains. `SkelImports` still
+maps domain names to logical snapshot paths. Duplicate normalized paths are
+rejected. Parsing, generation, inspection and dependency queries share this input
+contract. Read APIs also have `Context` variants for cancellation.
 
 ## skelc, Vine, and vRPC
 

@@ -12,7 +12,6 @@ import (
 	"go.yorun.ai/skelc/internal/command"
 	"go.yorun.ai/skelc/internal/compiler"
 	schemas "go.yorun.ai/skelc/internal/schema"
-	"go.yorun.ai/skelc/internal/schema/sourcediff"
 )
 
 const (
@@ -133,13 +132,17 @@ func newSchemaDiffCommand() *ucli.Command {
 				}
 				baselineSkelIn = baselineOption.SkelIn
 			}
-			report, err := sourcediff.DiffSource(ctx, candidateOption.SkelIn, sourcediff.Option{BaselineSkelIn: baselineSkelIn, Strict: cmd.Bool(flagStrict)})
+			option := skelc.SchemaDiffOption{}
+			if baselineSkelIn != "" {
+				option.Baseline = &skelc.Input{SkelIn: baselineSkelIn}
+			}
+			report, err := skelc.DiffSchemaSourcesContext(ctx, skelc.Input{SkelIn: candidateOption.SkelIn, Strict: cmd.Bool(flagStrict)}, option)
 			if err != nil {
 				switch {
-				case errors.Is(err, sourcediff.ErrGitHistoryUnavailable):
+				case errors.Is(err, skelc.ErrGitHistoryUnavailable):
 					return commandFailure(command.ErrorCodeGitHistoryNotFound,
 						fmt.Errorf("%w; pass an explicit --%s", err, flagSchemaBaselineSkelIn))
-				case errors.Is(err, sourcediff.ErrSourceCompilation):
+				case errors.Is(err, skelc.ErrSchemaSourceCompilation):
 					return commandFailure(command.ErrorCodeCompilationFailed, err)
 				default:
 					return commandFailure(command.ErrorCodeCommandFailed, err)
@@ -177,33 +180,16 @@ func loadSchemaList(cmd *ucli.Command) (*schemas.Document, error) {
 		}
 		return loadQuerySchema(cmd)
 	}
-	normalized, err := common.NormalizeApiFilter(selection)
-	if err != nil {
-		return nil, generationCommandFailure(err)
-	}
 	imports, err := parseMappingFlags(cmd.StringSlice(flagGenSkelImport), flagGenSkelImport)
 	if err != nil {
 		return nil, commandFailure(command.ErrorCodeInvalidArgument, err)
 	}
-	parsed, err := skelc.Parse(skelc.Input{SkelIn: cmd.String(flagSchemaSkelIn), SkelImports: imports, Strict: cmd.Bool(flagStrict)})
+	result, err := skelc.QuerySchema(skelc.Input{SkelIn: cmd.String(flagSchemaSkelIn), SkelImports: imports, Strict: cmd.Bool(flagStrict)}, skelc.SchemaQueryOption{Api: api, Pub: pub, ApiFilter: selection})
 	if err != nil {
 		return nil, generationCommandFailure(err)
 	}
-	writeWarningLogs(cmd, parsed.Diagnostics)
-	var view *common.PublicView
-	if api {
-		view, err = common.BuildApiView(parsed.Domain, normalized)
-	} else {
-		view, err = common.BuildPublicView(parsed.Domain)
-	}
-	if err != nil {
-		return nil, generationCommandFailure(err)
-	}
-	document, err := view.ProjectSchema(parsed.Domain)
-	if err != nil {
-		return nil, commandFailure(command.ErrorCodeCommandFailed, err)
-	}
-	return document, nil
+	writeWarningLogs(cmd, result.Diagnostics)
+	return result.Document, nil
 }
 
 func newSchemaGetFlags() []ucli.Flag {
@@ -258,40 +244,24 @@ func filterSchemaEntries(entries []*schemas.Entry, kind string) []*schemas.Entry
 }
 
 func loadQuerySchema(cmd *ucli.Command) (*schemas.Document, error) {
-	option := compiler.Option{SkelIn: cmd.String(flagSchemaSkelIn), Strict: cmd.Bool(flagStrict)}
-	if err := normalizeCompilerOption(&option); err != nil {
-		return nil, commandFailure(command.ErrorCodeInvalidArgument, err)
-	}
-	result, err := compiler.CompileImport(option)
+	result, err := skelc.QuerySchema(skelc.Input{SkelIn: cmd.String(flagSchemaSkelIn), Strict: cmd.Bool(flagStrict)}, skelc.SchemaQueryOption{})
 	if err != nil {
-		return nil, commandFailure(command.ErrorCodeCompilationFailed, err)
+		return nil, generationCommandFailure(err)
 	}
 	writeWarningLogs(cmd, result.Diagnostics)
-	document, err := schemas.Project(result.Domain, result.ImportAliases)
-	if err != nil {
-		return nil, commandFailure(command.ErrorCodeCommandFailed, err)
-	}
-	return document, nil
+	return result.Document, nil
 }
 
 func loadSourceSchema(cmd *ucli.Command, flagName, skelIn string) (*schemas.Document, error) {
 	if strings.TrimSpace(skelIn) == "" {
 		return nil, commandFailure(command.ErrorCodeInvalidArgument, fmt.Errorf("missing flag %s", flagName))
 	}
-	option := compiler.Option{SkelIn: skelIn, Strict: cmd.Bool(flagStrict)}
-	if err := normalizeCompilerOption(&option); err != nil {
-		return nil, commandFailure(command.ErrorCodeInvalidArgument, err)
-	}
-	shallow, err := compiler.CompileImport(option)
+	result, err := skelc.QuerySchema(skelc.Input{SkelIn: skelIn, Strict: cmd.Bool(flagStrict)}, skelc.SchemaQueryOption{})
 	if err != nil {
-		return nil, commandFailure(command.ErrorCodeCompilationFailed, err)
+		return nil, generationCommandFailure(err)
 	}
-	writeWarningLogs(cmd, shallow.Diagnostics)
-	document, err := schemas.Project(shallow.Domain, shallow.ImportAliases)
-	if err != nil {
-		return nil, commandFailure(command.ErrorCodeCommandFailed, err)
-	}
-	return document, nil
+	writeWarningLogs(cmd, result.Diagnostics)
+	return result.Document, nil
 }
 
 func writeSchemaResult(cmd *ucli.Command, value any, context string) error {

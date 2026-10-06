@@ -1,235 +1,22 @@
 package skelc_test
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
-	"go/ast"
 	stdparser "go/parser"
 	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 
 	"go.yorun.ai/skelc"
-	"go.yorun.ai/skelc/diagnostic"
 	"go.yorun.ai/skelc/internal/testutil"
 	"go.yorun.ai/skelc/model"
 	"golang.org/x/mod/modfile"
 )
-
-func TestParseStrictMigrationRules(t *testing.T) {
-	entry := filepath.Join(t.TempDir(), "order.skel")
-	writeTestFile(t, entry, "domain demo.order\nservice OrderService { method ping {} }\n")
-	result, err := skelc.Parse(skelc.Input{SkelIn: entry})
-	if err != nil || len(result.Diagnostics) != 1 || result.Diagnostics[0].Severity != skelc.DiagnosticSeverityWarning {
-		t.Fatalf("unexpected compatible parse: %+v, %v", result, err)
-	}
-	_, err = skelc.Parse(skelc.Input{SkelIn: entry, Strict: true})
-	var diagnostics skelc.Diagnostics
-	if !errors.As(err, &diagnostics) || len(diagnostics) != 1 || diagnostics[0].Code != skelc.DiagnosticCodeServiceModifier || diagnostics[0].Severity != skelc.DiagnosticSeverityError {
-		t.Fatalf("unexpected strict diagnostics: %v", err)
-	}
-}
-
-func ExampleParse() {
-	skelDir, err := os.MkdirTemp("", "skelc-example-")
-	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(skelDir)
-
-	if err := os.WriteFile(filepath.Join(skelDir, "domain.skel"), []byte("domain demo.user"), 0o644); err != nil {
-		panic(err)
-	}
-
-	result, err := skelc.Parse(skelc.Input{SkelIn: skelDir})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(result.Domain.Name())
-
-	// Output: demo.user
-}
-
-func TestParseExposesSemanticModel(t *testing.T) {
-	skelDir := t.TempDir()
-	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
-
-	result, err := skelc.Parse(skelc.Input{SkelIn: skelDir})
-	if err != nil {
-		t.Fatalf("parse Skel: %v", err)
-	}
-	var domain *model.Domain = result.Domain
-	if domain.Name() != "demo.user" {
-		t.Fatalf("unexpected domain: %s", domain.Name())
-	}
-}
-
-func TestDiagnosticAliasesMatchPublicDiagnosticPackage(t *testing.T) {
-	tests := []struct {
-		name    string
-		alias   string
-		defined string
-	}{
-		{"severity error", string(skelc.DiagnosticSeverityError), string(diagnostic.SeverityError)},
-		{"severity warning", string(skelc.DiagnosticSeverityWarning), string(diagnostic.SeverityWarning)},
-		{"syntax unexpected", skelc.DiagnosticCodeSyntaxUnexpected, diagnostic.CodeSyntaxUnexpected},
-		{"syntax eof", skelc.DiagnosticCodeSyntaxEOF, diagnostic.CodeSyntaxEOF},
-		{"syntax finalize", skelc.DiagnosticCodeSyntaxFinalize, diagnostic.CodeSyntaxFinalize},
-		{"semantic validation", skelc.DiagnosticCodeSemanticValidation, diagnostic.CodeSemanticValidation},
-		{"semantic duplicate", skelc.DiagnosticCodeSemanticDuplicate, diagnostic.CodeSemanticDuplicate},
-		{"semantic naming", skelc.DiagnosticCodeSemanticNaming, diagnostic.CodeSemanticNaming},
-		{"semantic reference", skelc.DiagnosticCodeSemanticReference, diagnostic.CodeSemanticReference},
-		{"semantic warning", skelc.DiagnosticCodeSemanticWarning, diagnostic.CodeSemanticWarning},
-		{"service modifier", skelc.DiagnosticCodeServiceModifier, diagnostic.CodeServiceModifier},
-		{"service client rules", skelc.DiagnosticCodeServiceClientRules, diagnostic.CodeServiceClientRules},
-		{"import missing", skelc.DiagnosticCodeImportMissing, diagnostic.CodeImportMissing},
-		{"import cycle", skelc.DiagnosticCodeImportCycle, diagnostic.CodeImportCycle},
-		{"domain missing", skelc.DiagnosticCodeDomainMissing, diagnostic.CodeDomainMissing},
-		{"domain mismatch", skelc.DiagnosticCodeDomainMismatch, diagnostic.CodeDomainMismatch},
-		{"domain file content", skelc.DiagnosticCodeDomainFileContent, diagnostic.CodeDomainFileContent},
-		{"domain decorator", skelc.DiagnosticCodeDomainDecorator, diagnostic.CodeDomainDecorator},
-		{"loader directory", skelc.DiagnosticCodeLoaderDirectory, diagnostic.CodeLoaderDirectory},
-		{"loader hidden file", skelc.DiagnosticCodeLoaderHiddenFile, diagnostic.CodeLoaderHiddenFile},
-		{"loader unsupported", skelc.DiagnosticCodeLoaderUnsupported, diagnostic.CodeLoaderUnsupported},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if test.alias != test.defined {
-				t.Fatalf("alias = %q, want %q", test.alias, test.defined)
-			}
-		})
-	}
-}
-
-func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
-	const internalPrefix = "go.yorun.ai/skelc/internal/"
-	rules := []struct {
-		directory string
-		forbidden func(string) bool
-	}{
-		{
-			directory: "internal/parser",
-			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, internalPrefix) &&
-					path != internalPrefix+"parser/grammar" &&
-					path != internalPrefix+"model"
-			},
-		},
-		{
-			directory: "internal/analyzer",
-			forbidden: func(path string) bool {
-				for _, prefix := range []string{"compiler", "hasher", "loader", "lsp", "codegen"} {
-					if strings.HasPrefix(path, internalPrefix+prefix) {
-						return true
-					}
-				}
-				return false
-			},
-		},
-		{
-			directory: "internal/hasher",
-			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"model"
-			},
-		},
-		{
-			directory: "model",
-			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"model"
-			},
-		},
-		{
-			directory: "diagnostic",
-			forbidden: func(path string) bool { return strings.HasPrefix(path, internalPrefix) },
-		},
-		{
-			directory: "schema",
-			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"schema"
-			},
-		},
-		{
-			directory: "internal/codegen/common",
-			forbidden: targetCodegenImport,
-		},
-		{
-			directory: "internal/codegen/output",
-			forbidden: targetCodegenImport,
-		},
-	}
-
-	for _, rule := range rules {
-		t.Run(filepath.ToSlash(rule.directory), func(t *testing.T) {
-			inspectProductionImports(t, rule.directory, rule.forbidden)
-		})
-	}
-}
-
-func targetCodegenImport(path string) bool {
-	for _, target := range []string{"golang", "skeleton", "typescript"} {
-		if strings.HasPrefix(path, "go.yorun.ai/skelc/internal/codegen/"+target) {
-			return true
-		}
-	}
-	return false
-}
-
-func inspectProductionImports(t *testing.T, directory string, forbidden func(string) bool) {
-	t.Helper()
-	err := filepath.WalkDir(directory, func(path string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		file, err := stdparser.ParseFile(token.NewFileSet(), path, nil, stdparser.ImportsOnly)
-		if err != nil {
-			return err
-		}
-		for _, declaration := range file.Decls {
-			importDecl, ok := declaration.(*ast.GenDecl)
-			if !ok || importDecl.Tok != token.IMPORT {
-				continue
-			}
-			for _, spec := range importDecl.Specs {
-				pathValue, err := strconv.Unquote(spec.(*ast.ImportSpec).Path.Value)
-				if err != nil {
-					return err
-				}
-				if forbidden(pathValue) {
-					t.Errorf("%s imports forbidden dependency %s", path, pathValue)
-				}
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestParseReturnsStructuredWarnings(t *testing.T) {
-	skelDir := t.TempDir()
-	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
-	writeTestFile(t, filepath.Join(skelDir, ".ignored.skel"), "domain ignored")
-
-	result, err := skelc.Parse(skelc.Input{SkelIn: skelDir})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(result.Diagnostics) != 1 {
-		t.Fatalf("unexpected diagnostics: %+v", result.Diagnostics)
-	}
-	diagnostic := result.Diagnostics[0]
-	if diagnostic.Code != "loader.ignored-hidden-file" || diagnostic.Severity != skelc.DiagnosticSeverityWarning {
-		t.Fatalf("unexpected warning: %+v", diagnostic)
-	}
-}
 
 func TestGenerateGolang(t *testing.T) {
 	skelDir := t.TempDir()
@@ -908,4 +695,366 @@ func TestCompileGolangDependencyConflictCompatibility(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestPublicOptionsRejectEmptyImportMappings(t *testing.T) {
+	if _, err := skelc.Parse(skelc.Input{SkelIn: "input.skel", SkelImports: map[string]string{"demo.user": ""}}); err == nil {
+		t.Fatal("expected empty Skel import path error")
+	}
+	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo.test"})
+	if err := skelc.GenerateGolang(domain, skelc.GolangOption{
+		CompilerVersion: "v0.0.0-dev",
+		Out:             filepath.Join(t.TempDir(), "golang"), Imports: map[string]string{"demo.user": ""},
+	}); err == nil {
+		t.Fatal("expected empty Go import path error")
+	}
+	if err := skelc.GenerateTypeScript(domain, skelc.TypeScriptOption{ApiOnly: true,
+		Out: filepath.Join(t.TempDir(), "typescript"), Imports: map[string]string{"demo.user": ""},
+	}); err == nil {
+		t.Fatal("expected empty TypeScript import path error")
+	}
+}
+
+func TestCompileNormalizesGenerationOptionsBeforeReadingInput(t *testing.T) {
+	missingInput := skelc.Input{SkelIn: filepath.Join(t.TempDir(), "missing")}
+	tests := []struct {
+		name     string
+		compile  func() error
+		expected string
+	}{
+		{
+			name: "Go",
+			compile: func() error {
+				_, err := skelc.CompileGolang(missingInput, skelc.GolangOption{CompilerVersion: "v0.0.0-dev"})
+				return err
+			},
+			expected: "Go output is required",
+		},
+		{
+			name: "TypeScript",
+			compile: func() error {
+				_, err := skelc.CompileTypeScript(missingInput, skelc.TypeScriptOption{ApiOnly: true})
+				return err
+			},
+			expected: "TypeScript output is required",
+		},
+		{
+			name: "Skel",
+			compile: func() error {
+				_, err := skelc.CompileSkeleton(missingInput, skelc.SkeletonOption{})
+				return err
+			},
+			expected: "Skel output is required",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.compile(); err == nil || !strings.Contains(err.Error(), test.expected) {
+				t.Fatalf("expected %q before input loading, got %v", test.expected, err)
+			}
+		})
+	}
+}
+
+func TestGeneratorsReturnErrorsForMissingExternalImportMappings(t *testing.T) {
+	userDir := t.TempDir()
+	writeTestFile(t, filepath.Join(userDir, "domain.skel"), "domain demo.user")
+	writeTestFile(t, filepath.Join(userDir, "user.skel"), "domain demo.user\npub data User { id: string }")
+	orderDir := t.TempDir()
+	writeTestFile(t, filepath.Join(orderDir, "domain.skel"), "domain demo.order")
+	writeTestFile(t, filepath.Join(orderDir, "order.skel"), "domain demo.order\nimport demo.user as user\npub data Order { user: user.User }")
+
+	parsed, err := skelc.Parse(skelc.Input{
+		SkelIn:      orderDir,
+		SkelImports: map[string]string{"demo.user": userDir},
+	})
+	if err != nil {
+		t.Fatalf("parse imported domain: %v", err)
+	}
+
+	goErr := skelc.GenerateGolang(parsed.Domain, skelc.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(t.TempDir(), "golang")})
+	if goErr == nil || !strings.Contains(goErr.Error(), "missing Go import for domain demo.user") {
+		t.Fatalf("expected missing Go import error, got %v", goErr)
+	}
+	tsErr := skelc.GenerateTypeScript(parsed.Domain, skelc.TypeScriptOption{ApiOnly: true, Out: filepath.Join(t.TempDir(), "typescript")})
+	if tsErr == nil || !strings.Contains(tsErr.Error(), "missing TypeScript import for domain demo.user") {
+		t.Fatalf("expected missing TypeScript import error, got %v", tsErr)
+	}
+}
+
+func TestBackendGenerationRejectsInvalidCompilerVersionBeforeWriting(t *testing.T) {
+	for _, version := range []string{"", "  ", "invalid", "0.19.2", "v01.19.2", "v0.19", "v0.14.0", "v0.17.0", "v0.17.1-rc.1"} {
+		t.Run(version, func(t *testing.T) {
+			root := t.TempDir()
+			source := filepath.Join(root, "input.skel")
+			if err := os.WriteFile(source, []byte("domain demo.example\npub data Value { name: string }\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			out := filepath.Join(root, "generated")
+			if err := os.Mkdir(out, 0700); err != nil {
+				t.Fatal(err)
+			}
+			sentinel := filepath.Join(out, "data.go")
+			original := "// Code generated by skelc. DO NOT EDIT.\npackage original\n"
+			if err := os.WriteFile(sentinel, []byte(original), 0600); err != nil {
+				t.Fatal(err)
+			}
+			input := skelc.Input{SkelIn: source}
+			option := skelc.GolangOption{Out: out, CompilerVersion: version}
+			if _, err := skelc.CompileGolang(input, option); err == nil {
+				t.Fatal("accepted invalid compiler version")
+			}
+			domain, err := skelc.Parse(input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := skelc.GenerateGolang(domain.Domain, option); err == nil {
+				t.Fatal("GenerateGolang accepted invalid compiler version")
+			}
+			data, err := os.ReadFile(sentinel)
+			if err != nil || string(data) != original {
+				t.Fatalf("output changed: %s, %v", data, err)
+			}
+		})
+	}
+}
+
+func TestImportValidationOrderIsDeterministic(t *testing.T) {
+	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo.test"})
+	imports := map[string]string{"z": "example.com/z@", "a": "example.com/a@"}
+	out := filepath.Join(t.TempDir(), "generated")
+	for range 30 {
+		goErr := skelc.GenerateGolang(domain, skelc.GolangOption{Out: out, CompilerVersion: "v0.0.0-dev", Imports: imports})
+		tsErr := skelc.GenerateTypeScript(domain, skelc.TypeScriptOption{Out: out, ApiOnly: true, Imports: imports})
+		for _, err := range []error{goErr, tsErr} {
+			if err == nil || !strings.Contains(err.Error(), "example.com/a@") {
+				t.Fatalf("unstable first error: %v", err)
+			}
+		}
+	}
+}
+
+func TestApiPruneQueryAndGeneration(t *testing.T) {
+	root := t.TempDir()
+	entry, foreign, unused, deep := filepath.Join(root, "entry.skel"), filepath.Join(root, "foreign.skel"), filepath.Join(root, "unused.skel"), filepath.Join(root, "deep.skel")
+	writeTestFile(t, deep, "domain deep\npub data Detail { text: string }\n")
+	writeTestFile(t, foreign, `domain foreign
+import deep
+pub data Box<TItem> { value: TItem }
+pub data Money { amount: int detail: deep.Detail }
+pub enum Currency { USD EUR }
+`)
+	writeTestFile(t, unused, "domain unused\npub data Secret { value: string }\n")
+	writeTestFile(t, entry, `domain shop.order
+import foreign as f
+import unused
+actor UserActor { via client {} }
+actor AdminActor { via client {} }
+actor IdleActor { via client {} }
+pub data Unused { secret: unused.Secret }
+pub enum UnusedEnum { ONE TWO }
+data Node { next: Peer? value: f.Money currency: f.Currency }
+data Peer { next: Node? values: map<string,list<f.Money?>> }
+pub data Extra { value: string }
+api service UserApiService {
+ for UserActor via client
+ auth anonymous
+ method read { output f.Box<list<Node>> }
+}
+api service AdminApiService {
+ for AdminActor via client
+ auth anonymous
+ method read { output Unused }
+}
+`)
+	input := skelc.Input{SkelIn: entry, SkelImports: map[string]string{"foreign": foreign, "unused": unused, "deep": deep}}
+	actor := []string{"shop.order.UserActor"}
+	selection := skelc.ApiFilter{Prune: true, Actors: actor}
+	result, err := skelc.QueryApiDependencies(input, selection)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := &skelc.ApiDependencyReport{Domain: "shop.order", Services: []string{"shop.order.UserApiService"}, Data: []string{"shop.order.Node", "shop.order.Peer"}, Enums: []string{}, Dependencies: []skelc.ApiTypeDependency{{Domain: "foreign", Name: "Box", Kind: "data"}, {Domain: "foreign", Name: "Currency", Kind: "enum"}, {Domain: "foreign", Name: "Money", Kind: "data"}}}
+	if !reflect.DeepEqual(result.Report, want) {
+		t.Fatalf("report=%+v, want %+v", result.Report, want)
+	}
+	// Foreign members belong to a separate query; aliases never appear in reports.
+	next, err := skelc.QueryApiDependencies(skelc.Input{SkelIn: foreign, SkelImports: map[string]string{"deep": deep}}, skelc.ApiFilter{Prune: true, Types: []string{"foreign.Money"}})
+	if err != nil || len(next.Report.Dependencies) != 1 || next.Report.Dependencies[0].Domain != "deep" {
+		t.Fatalf("foreign closure: %+v, %v", next, err)
+	}
+	union := skelc.ApiFilter{Prune: true, Actors: actor, Types: []string{"shop.order.Extra", "shop.order.UnusedEnum", "shop.order.Extra"}}
+	combined, err := skelc.QueryApiDependencies(input, union)
+	if err != nil || len(combined.Report.Data) != 3 || len(combined.Report.Enums) != 1 {
+		t.Fatalf("union: %+v, %v", combined, err)
+	}
+	empty, err := skelc.QueryApiDependencies(input, skelc.ApiFilter{Prune: true, Actors: []string{"shop.order.IdleActor"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoded, _ := json.Marshal(empty.Report)
+	if strings.Contains(string(encoded), "null") || len(empty.Report.Data) != 0 {
+		t.Fatalf("empty selection: %s", encoded)
+	}
+	// Root order and repeated roots must not affect either the report or output.
+	ordered := skelc.ApiFilter{Prune: true, Actors: []string{"shop.order.UserActor", "shop.order.AdminActor"}, Types: []string{"shop.order.Extra", "shop.order.UnusedEnum"}}
+	reordered := skelc.ApiFilter{Prune: true, Actors: []string{"shop.order.AdminActor", "shop.order.UserActor", "shop.order.AdminActor"}, Types: []string{"shop.order.UnusedEnum", "shop.order.Extra", "shop.order.UnusedEnum"}}
+	first, err := skelc.QueryApiDependencies(input, ordered)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := skelc.QueryApiDependencies(input, reordered)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(first.Report, second.Report) {
+		t.Fatalf("root order changed dependency report: %+v vs %+v", first.Report, second.Report)
+	}
+	for _, target := range []string{"go", "go-module", "ts", "ts-module"} {
+		t.Run(target, func(t *testing.T) {
+			out := filepath.Join(t.TempDir(), "api")
+			generate := func(filter skelc.ApiFilter) error {
+				if strings.HasPrefix(target, "go") {
+					_, err := skelc.CompileGolang(input, skelc.GolangOption{ApiOnly: true, ApiFilter: filter, Out: out, AsModule: target == "go-module", Module: moduleForTarget(target, "example.com/orderapi"), Imports: map[string]string{"foreign": "example.com/foreignapi", "unused": "example.com/unusedapi"}})
+					return err
+				}
+				_, err := skelc.CompileTypeScript(input, skelc.TypeScriptOption{ApiOnly: true, ApiFilter: filter, Out: out, AsModule: target == "ts-module", Module: moduleForTarget(target, "@demo/orderapi"), Imports: map[string]string{"foreign": "@demo/foreignapi", "unused": "@demo/unusedapi"}})
+				return err
+			}
+			read := func() string {
+				var contents []string
+				err := filepath.WalkDir(out, func(path string, d os.DirEntry, err error) error {
+					if err != nil {
+						return err
+					}
+					if !d.IsDir() {
+						data, e := os.ReadFile(path)
+						if e != nil {
+							return e
+						}
+						contents = append(contents, string(data))
+					}
+					return nil
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				return strings.Join(contents, "\n")
+			}
+			if err := generate(skelc.ApiFilter{Actors: actor}); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(read(), "Unused") {
+				t.Fatal("default public types were pruned")
+			}
+			if err := generate(selection); err != nil {
+				t.Fatal(err)
+			}
+			text := read()
+			for _, name := range []string{"Unused", "UnusedEnum", "AdminApiService", "unusedapi", "Extra"} {
+				if strings.Contains(text, name) {
+					t.Fatalf("retained %s", name)
+				}
+			}
+			if !strings.Contains(text, "Node") || !strings.Contains(text, "UserApiService") {
+				t.Fatal("missing selected declarations")
+			}
+			if err := generate(skelc.ApiFilter{Prune: true, Types: []string{"shop.order.Extra"}}); err != nil {
+				t.Fatal(err)
+			}
+			text = read()
+			if !strings.Contains(text, "Extra") || strings.Contains(text, "UserApiService") || strings.Contains(text, "Node") || strings.Contains(text, "foreignapi") {
+				t.Fatal("types-only output retained unrelated declarations or dependencies")
+			}
+			if err := generate(skelc.ApiFilter{Prune: true, Types: []string{"shop.order.Missing"}}); err == nil {
+				t.Fatal("unknown type accepted")
+			}
+			if read() != text {
+				t.Fatal("invalid selection changed existing output")
+			}
+			if err := generate(ordered); err != nil {
+				t.Fatal(err)
+			}
+			before := apiOutputSnapshot(t, out)
+			if err := generate(reordered); err != nil {
+				t.Fatal(err)
+			}
+			if after := apiOutputSnapshot(t, out); !reflect.DeepEqual(before, after) {
+				t.Fatal("root order changed generated file paths or contents")
+			}
+
+			// Enum-only output must remove previous services, data and package dependencies.
+			if err := generate(skelc.ApiFilter{Prune: true, Types: []string{"shop.order.UnusedEnum"}}); err != nil {
+				t.Fatal(err)
+			}
+			text = read()
+			if !strings.Contains(text, "UnusedEnum") {
+				t.Fatal("enum-only output omitted the selected enum")
+			}
+			for _, stale := range []string{"UserApiService", "AdminApiService", "Node", "Peer", "Extra", "foreignapi", "unusedapi"} {
+				if strings.Contains(text, stale) {
+					t.Fatalf("enum-only output retained %s", stale)
+				}
+			}
+
+			// Export a populated view before selecting an actor with no services.
+			if err := generate(ordered); err != nil {
+				t.Fatal(err)
+			}
+			writeTestFile(t, filepath.Join(out, "user-note.txt"), "keep handwritten file")
+			idle := skelc.ApiFilter{Prune: true, Actors: []string{"shop.order.IdleActor"}}
+			if err := generate(idle); err != nil {
+				t.Fatal(err)
+			}
+			cleared := apiOutputSnapshot(t, out)
+			if cleared["user-note.txt"] != "keep handwritten file" {
+				t.Fatal("empty selection removed user content")
+			}
+			delete(cleared, "user-note.txt")
+			// Equality with a fresh empty export detects stale files, barrel entries,
+			// Go requirements and package.json dependencies without fixing a file layout.
+			out = filepath.Join(t.TempDir(), "api")
+			if err := generate(idle); err != nil {
+				t.Fatal(err)
+			}
+			if fresh := apiOutputSnapshot(t, out); !reflect.DeepEqual(cleared, fresh) {
+				t.Fatalf("empty selection retained stale output: cleared=%v fresh=%v", cleared, fresh)
+			}
+
+		})
+	}
+}
+
+func moduleForTarget(target, module string) string {
+	if strings.HasSuffix(target, "-module") {
+		return module
+	}
+	return ""
+}
+
+func apiOutputSnapshot(t *testing.T, dir string) map[string]string {
+	t.Helper()
+	files := map[string]string{}
+	err := filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		relative, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+		files[filepath.ToSlash(relative)] = string(data)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
 }

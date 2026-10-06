@@ -224,3 +224,14 @@ func TestCompileRejectsFinalDeclarationsAsValueTypes(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckLoadedUsesOriginalRevision(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "domain.skel")
+	require.NoError(t, os.WriteFile(path, []byte("domain demo\n"), 0o600))
+	loaded, err := loader.LoadFrom(t.Context(), loader.FileSystem{}, path)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, []byte("invalid replacement"), 0o600))
+	result, err := CheckLoaded(t.Context(), loaded, Option{SkelIn: path, Strict: true})
+	require.NoError(t, err)
+	require.Empty(t, result.Diagnostics)
+}

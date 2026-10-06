@@ -71,6 +71,9 @@ func DiffWorkspaceDomain(ctx context.Context, candidate compiler.WorkspaceDomain
 func DiffSource(ctx context.Context, candidateSkelIn string, option Option) (*schema.Report, error) {
 	compiled, err := compiler.CompileImportContext(ctx, compiler.Option{SkelIn: candidateSkelIn, Strict: option.Strict})
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("%w: %w", ErrSourceCompilation, err)
 	}
 	root, err := filepath.Abs(candidateSkelIn)
@@ -126,6 +129,9 @@ func (d *Differ) DiffWorkspaceDomain(ctx context.Context, candidate compiler.Wor
 		}
 		baseline, compileErr := compiler.CompileImportContext(ctx, compiler.Option{SkelIn: baselineSkelIn})
 		if compileErr != nil {
+			if errors.Is(compileErr, context.Canceled) || errors.Is(compileErr, context.DeadlineExceeded) {
+				return nil, compileErr
+			}
 			return nil, fmt.Errorf("%w: compile schema compatibility baseline %s: %w", ErrSourceCompilation, baselineSkelIn, compileErr)
 		}
 		baselineSchema, err = schema.Project(baseline.Domain, baseline.ImportAliases)
