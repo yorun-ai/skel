@@ -3,8 +3,8 @@ package analyzer
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestParseService(t *testing.T) {
@@ -180,16 +180,16 @@ func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 		},
 	})
 
-	if service.Auth != model.AuthModeNoAuth {
+	if service.Auth != schema.AuthModeNoAuth {
 		t.Fatalf("unexpected service auth: %s", service.Auth)
 	}
 	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "client" {
 		t.Fatalf("unexpected audiences: %+v", service.Audiences)
 	}
-	if service.Methods[0].Auth != model.AuthModeUnset {
+	if service.Methods[0].Auth != schema.AuthModeUnset {
 		t.Fatalf("expected list auth to stay unset, got %s", service.Methods[0].Auth)
 	}
-	if service.Methods[1].Auth != model.AuthModeAuth {
+	if service.Methods[1].Auth != schema.AuthModeAuth {
 		t.Fatalf("expected update to override auth, got %s", service.Methods[1].Auth)
 	}
 }
@@ -202,10 +202,10 @@ func TestParseServiceDefaultsAuthToUnset(t *testing.T) {
 		},
 	})
 
-	if service.Auth != model.AuthModeUnset {
+	if service.Auth != schema.AuthModeUnset {
 		t.Fatalf("expected service auth unset, got %s", service.Auth)
 	}
-	if service.Methods[0].Auth != model.AuthModeUnset {
+	if service.Methods[0].Auth != schema.AuthModeUnset {
 		t.Fatalf("expected method auth unset, got %s", service.Methods[0].Auth)
 	}
 }

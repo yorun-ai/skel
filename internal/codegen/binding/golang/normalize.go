@@ -8,9 +8,9 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/optionvalidation"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 // NormalizeOption validates and normalizes generation options before source compilation.
@@ -126,7 +126,7 @@ func NormalizeOption(option Option) (ResolvedOption, error) {
 	return resolved, nil
 }
 
-func validateGolangImports(domain *model.Domain, option Option) error {
+func validateGolangImports(domain *schema.Domain, option Option) error {
 	var apiDomains map[string]bool
 	if option.ApiOnly {
 		var err error
@@ -137,7 +137,7 @@ func validateGolangImports(domain *model.Domain, option Option) error {
 	}
 	for _, domainImport := range domain.Imports() {
 		if domainImport == nil {
-			return fmt.Errorf("generated model contains nil import")
+			return fmt.Errorf("generated schema contains nil import")
 		}
 		if option.ApiOnly && !apiDomains[domainImport.Name] {
 			continue

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.yorun.ai/skel/internal/projection"
 	"path/filepath"
 	"strings"
 
@@ -17,7 +16,7 @@ import (
 // baseline exists. Continuous editor diagnostics may ignore this condition.
 var ErrGitHistoryUnavailable = errors.New("git history unavailable")
 
-func projectGitBaseline(ctx context.Context, differ *Differ, candidate compiler.WorkspaceDomain) (*schema.Document, string, error) {
+func compileGitBaseline(ctx context.Context, differ *Differ, candidate compiler.WorkspaceDomain) (*schema.Domain, string, error) {
 	root, err := filepath.Abs(candidate.Root)
 	if err != nil {
 		return nil, "", gitHistoryError(candidate.Root, err)
@@ -65,8 +64,8 @@ func projectGitBaseline(ctx context.Context, differ *Differ, candidate compiler.
 		requireDomainFile = requireDomainFile || input.DirectoryInput
 	}
 	cacheKey := repositoryRoot + "\x00" + filepath.Clean(relativeRoot) + "\x00" + candidate.Name + fmt.Sprintf("\x00%t", requireDomainFile)
-	if document, cachedRoot, cachedErr, ok := differ.cachedBaseline(cacheKey, head); ok {
-		return document, cachedRoot, cachedErr
+	if domain, cachedRoot, cachedErr, ok := differ.cachedBaseline(cacheKey, head); ok {
+		return domain, cachedRoot, cachedErr
 	}
 	provider, err := loader.NewGit(ctx, repositoryRoot, head, root)
 	if err != nil {
@@ -84,18 +83,15 @@ func projectGitBaseline(ctx context.Context, differ *Differ, candidate compiler.
 		return nil, repositoryRoot, failure
 	}
 	diagnostics, domains, err := compiler.AnalyzeInputFromContext(ctx, provider, root, requireDomainFile)
-	var document *schema.Document
-	for _, domain := range domains {
-		if domain.Name != candidate.Name {
+	var domain *schema.Domain
+	for _, analyzed := range domains {
+		if analyzed.Name != candidate.Name {
 			continue
 		}
-		document, err = projection.Project(domain.Model, domain.ImportAliases)
-		if err != nil {
-			return nil, "", err
-		}
+		domain = analyzed.Schema
 		break
 	}
-	if document == nil && (err != nil || diagnostics.HasErrors()) {
+	if domain == nil && (err != nil || diagnostics.HasErrors()) {
 		if ctx.Err() != nil {
 			return nil, "", ctx.Err()
 		}
@@ -109,7 +105,7 @@ func projectGitBaseline(ctx context.Context, differ *Differ, candidate compiler.
 		differ.storeBaseline(cacheKey, head, repositoryRoot, nil, failure)
 		return nil, repositoryRoot, failure
 	}
-	if document == nil {
+	if domain == nil {
 		failure := gitHistoryError(root, nil)
 		differ.storeBaseline(cacheKey, head, repositoryRoot, nil, failure)
 		return nil, repositoryRoot, failure
@@ -118,8 +114,8 @@ func projectGitBaseline(ctx context.Context, differ *Differ, candidate compiler.
 	if ctx.Err() != nil {
 		return nil, "", ctx.Err()
 	}
-	differ.storeBaseline(cacheKey, head, repositoryRoot, document, nil)
-	return document, repositoryRoot, nil
+	differ.storeBaseline(cacheKey, head, repositoryRoot, domain, nil)
+	return domain, repositoryRoot, nil
 }
 
 func gitOutput(ctx context.Context, directory string, args ...string) (string, error) {

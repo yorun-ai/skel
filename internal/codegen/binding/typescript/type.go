@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type _Types struct{ bindings binding.TypeBindings }
@@ -19,80 +19,80 @@ type _TypeImport struct {
 	Path  string
 }
 
-func (r _Types) castType(p *model.Type) *_Type {
+func (r _Types) castType(p *schema.Type) *_Type {
 	if p == nil {
 		return nil
 	}
 
 	switch p.Kind {
-	case model.TypeKindScalar:
+	case schema.TypeKindScalar:
 		return castScalarType(p)
-	case model.TypeKindList:
+	case schema.TypeKindList:
 		return r.castListType(p)
-	case model.TypeKindMap:
+	case schema.TypeKindMap:
 		return r.castMapType(p)
-	case model.TypeKindEnum:
+	case schema.TypeKindEnum:
 		return r.castEnumType(p)
-	case model.TypeKindData:
+	case schema.TypeKindData:
 		return r.castDataType(p)
-	case model.TypeKindTypeParameter:
+	case schema.TypeKindTypeParameter:
 		return r.castTypeParameter(p)
 	}
 
 	return nil
 }
 
-func castScalarType(p *model.Type) *_Type {
+func castScalarType(p *schema.Type) *_Type {
 	switch p.Scalar {
-	case model.ScalarInt:
+	case schema.ScalarInt:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "number | null", "number"),
 		}
-	case model.ScalarFloat:
+	case schema.ScalarFloat:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "number | null", "number"),
 		}
-	case model.ScalarBoolean:
+	case schema.ScalarBoolean:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "boolean | null", "boolean"),
 		}
-	case model.ScalarString:
+	case schema.ScalarString:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
-	case model.ScalarDecimal:
+	case schema.ScalarDecimal:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
-	case model.ScalarBinary:
+	case schema.ScalarBinary:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "Uint8Array | null", "Uint8Array"),
 		}
-	case model.ScalarTimestamp:
+	case schema.ScalarTimestamp:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
-	case model.ScalarDuration:
+	case schema.ScalarDuration:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
-	case model.ScalarLocalDate:
+	case schema.ScalarLocalDate:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
-	case model.ScalarLocalTime:
+	case schema.ScalarLocalTime:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
-	case model.ScalarLocalDateTime:
+	case schema.ScalarLocalDateTime:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
-	case model.ScalarUUID:
+	case schema.ScalarUUID:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
-	case model.ScalarJSON:
+	case schema.ScalarJSON:
 		return &_Type{
 			Plain: binding.ChooseString(p.Nullable, "string | null", "string"),
 		}
@@ -100,7 +100,7 @@ func castScalarType(p *model.Type) *_Type {
 	return nil
 }
 
-func (r _Types) castListType(p *model.Type) *_Type {
+func (r _Types) castListType(p *schema.Type) *_Type {
 	valueType := r.castType(p.List.Value)
 	arrayType := fmt.Sprintf("Array<%s>", valueType.Plain)
 	return &_Type{
@@ -108,7 +108,7 @@ func (r _Types) castListType(p *model.Type) *_Type {
 	}
 }
 
-func (r _Types) castMapType(p *model.Type) *_Type {
+func (r _Types) castMapType(p *schema.Type) *_Type {
 	keyType := r.castType(p.Map.Key)
 	valueType := r.castType(p.Map.Value)
 	mapType := fmt.Sprintf("Record<%s, %s>", keyType.Plain, valueType.Plain)
@@ -117,7 +117,7 @@ func (r _Types) castMapType(p *model.Type) *_Type {
 	}
 }
 
-func (r _Types) castEnumType(p *model.Type) *_Type {
+func (r _Types) castEnumType(p *schema.Type) *_Type {
 	importBinding := r.bindings[p]
 	enumName := transEnumName(p.Enum)
 	if importBinding != nil && importBinding.Alias != "" {
@@ -128,7 +128,7 @@ func (r _Types) castEnumType(p *model.Type) *_Type {
 	}
 }
 
-func (r _Types) castDataType(p *model.Type) *_Type {
+func (r _Types) castDataType(p *schema.Type) *_Type {
 	importBinding := r.bindings[p]
 	dataName := transDataName(p.Data)
 	if importBinding != nil && importBinding.Alias != "" {
@@ -147,7 +147,7 @@ func (r _Types) castDataType(p *model.Type) *_Type {
 	}
 }
 
-func (r _Types) castTypeParameter(p *model.Type) *_Type {
+func (r _Types) castTypeParameter(p *schema.Type) *_Type {
 	return &_Type{
 		Plain: binding.ChooseString(p.Nullable, p.TypeParameter.Name+" | null", p.TypeParameter.Name),
 	}

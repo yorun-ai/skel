@@ -1,13 +1,13 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/symbol"
+	"go.yorun.ai/skel/schema"
 )
 
 // The analyzer supplies its declaration tables to the same resolver used by
-// recovered editor syntax. Model mutation and semantic validation stay here.
-func (r *_RefContext) bindType(kind *model.Type) symbol.Resolution {
+// recovered editor syntax. Schema mutation and semantic validation stay here.
+func (r *_RefContext) bindType(kind *schema.Type) symbol.Resolution {
 	imports := map[string]string{}
 	enums, data, parameters := r.enums, r.dataList, r.typeParameters
 	if kind.ExternalAlias != "" {

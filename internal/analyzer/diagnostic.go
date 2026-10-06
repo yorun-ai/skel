@@ -7,7 +7,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/diagnostic"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 // MaxDiagnosticsPerDomain bounds validation work and prevents a badly broken
@@ -97,14 +97,14 @@ func newDiagnosticFailure(code string, message string, args ...any) *Failure {
 	return failure
 }
 
-func diagnosticArgumentPositions(args []any) []model.Position {
-	positions := []model.Position{}
+func diagnosticArgumentPositions(args []any) []schema.Position {
+	positions := []schema.Position{}
 	for _, argument := range args {
 		switch position := argument.(type) {
-		case model.Position:
+		case schema.Position:
 			positions = append(positions, position)
 		case lexer.Position:
-			positions = append(positions, model.Position{File: position.Filename, Line: position.Line, Column: position.Column})
+			positions = append(positions, schema.Position{File: position.Filename, Line: position.Line, Column: position.Column})
 		}
 	}
 	return positions

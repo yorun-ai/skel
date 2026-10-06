@@ -8,13 +8,13 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestGeneratorAlwaysRendersGoDocFile(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "skeled")
 
-	pkg := newModelDomainForTest(t, codegentest.DomainModel("demo.user"))
+	pkg := newSchemaDomainForTest(t, codegentest.DomainSchema("demo.user"))
 
 	if err := generateFixture(pkg, golang.Option{Out: goOutDir}); err != nil {
 		t.Fatal(err)
@@ -45,18 +45,18 @@ func TestGeneratorAlwaysRendersGoDocFile(t *testing.T) {
 func TestGeneratorRendersDescriptionComments(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "skeled")
 
-	userStatus := &model.Enum{
+	userStatus := &schema.Enum{
 		Name:        "UserStatus",
 		Description: "User status",
-		Items: []*model.EnumItem{
+		Items: []*schema.EnumItem{
 			{Name: "ACTIVE", Description: "Active"},
 		},
 	}
-	userProfile := &model.Data{
+	userProfile := &schema.Data{
 		Name:        "UserProfile",
 		Description: "User profile",
 		Sensitive:   true,
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name:        "avatarUrl",
 				Description: "Avatar URL",
@@ -71,23 +71,23 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 			},
 		},
 	}
-	pkg := newModelDomainForTest(t, model.DomainSpec{
+	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name:        "demo.user",
 		Description: "User domain",
-		Enums:       []*model.Enum{userStatus},
-		Data:        []*model.Data{userProfile},
-		Actors: []*model.Actor{
-			{Name: "ClientActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)}},
-			{Name: "PartnerActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaAgent)}},
-			{Name: "OpenAPIActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaOpenAPI)}},
+		Enums:       []*schema.Enum{userStatus},
+		Data:        []*schema.Data{userProfile},
+		Actors: []*schema.Actor{
+			{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
+			{Name: "PartnerActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
+			{Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaOpenAPI)}},
 		},
-		Services: []*model.Service{
+		Services: []*schema.Service{
 			{
 				Name:        "UserService",
 				Description: "User service",
-				Audiences:   []*model.ActorAudience{{Actor: "ClientActor"}},
-				Methods: []*model.Method{
-					methodForTest("UserService", &model.Method{
+				Audiences:   []*schema.ActorAudience{{Actor: "ClientActor"}},
+				Methods: []*schema.Method{
+					methodForTest("UserService", &schema.Method{
 						Name:               "getUser",
 						Description:        "Get a user by ID",
 						InputDescription:   "Input parameters",
@@ -96,7 +96,7 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 						OutputExample:      `{ id:10001, avatarUrl:"https://xxx.com/a.png" }`,
 						ResultSensitive:    true,
 						ResultType:         codegentest.DataType(userProfile),
-						Arguments: []*model.Argument{
+						Arguments: []*schema.Argument{
 							{
 								Name:        "userId",
 								Description: "User ID",
@@ -109,17 +109,17 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 				},
 			},
 		},
-		Tasks: []*model.Task{
+		Tasks: []*schema.Task{
 			{
 				Name:        "RebuildUserIndexTask",
 				Description: "Rebuild the user index",
-				Triggers: []*model.TaskTrigger{
-					triggerForTest("RebuildUserIndexTask", &model.TaskTrigger{
+				Triggers: []*schema.TaskTrigger{
+					triggerForTest("RebuildUserIndexTask", &schema.TaskTrigger{
 						Name:               "atTime",
 						Description:        "Scheduled trigger",
 						InputDescription:   "Trigger parameters",
 						ArgumentsSensitive: true,
-						Arguments: []*model.Argument{
+						Arguments: []*schema.Argument{
 							{
 								Name:        "startAt",
 								Description: "Start time",
@@ -132,23 +132,23 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 				},
 			},
 		},
-		Configs: []*model.Data{
+		Configs: []*schema.Data{
 			{
 				Name:      "SecretConfig",
-				Kind:      model.DataKindConfig,
-				Lifecycle: model.ConfigLifecycleEternal,
+				Kind:      schema.DataKindConfig,
+				Lifecycle: schema.ConfigLifecycleEternal,
 				Sensitive: true,
-				Members: []*model.DataMember{
+				Members: []*schema.DataMember{
 					{Name: "token", Type: codegentest.StringType()},
 				},
 			},
 		},
-		Events: []*model.Data{
+		Events: []*schema.Data{
 			{
 				Name:        "UserCreatedEvent",
 				Description: "User created event",
 				Sensitive:   true,
-				Members: []*model.DataMember{
+				Members: []*schema.DataMember{
 					{Name: "userId", Description: "User ID", Sensitive: true, Type: codegentest.StringType()},
 				},
 			},
@@ -271,11 +271,11 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 	if !strings.Contains(string(goActorContent), `return "demo.user.ClientActor"`) {
 		t.Fatalf("expected go actor skel name, got:\n%s", string(goActorContent))
 	}
-	if !strings.Contains(string(goActorContent), "return []skel.ActorVia{\n\t\tskel.ActorViaClient,") {
+	if !strings.Contains(string(goActorContent), "return []descriptor.ActorVia{\n\t\tdescriptor.ActorViaClient,") {
 		t.Fatalf("expected go actor vias, got:\n%s", string(goActorContent))
 	}
 
-	goSchemaContent, err := os.ReadFile(filepath.Join(goOutDir, "schema.go"))
+	goSchemaContent, err := os.ReadFile(filepath.Join(goOutDir, "descriptor.go"))
 	if err != nil {
 		t.Fatalf("read go schema file: %v", err)
 	}
@@ -288,7 +288,7 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 		t.Fatalf("expected sensitive metadata in go schema, got:\n%s", string(goSchemaContent))
 	}
 	initIndex := strings.Index(string(goSchemaContent), "func init()")
-	schemaIndex := strings.Index(string(goSchemaContent), "var _DomainSchema")
+	schemaIndex := strings.Index(string(goSchemaContent), "var _DomainDescriptor")
 	if initIndex < 0 || schemaIndex < 0 || initIndex > schemaIndex {
 		t.Fatalf("expected schema init before schema var, got:\n%s", string(goSchemaContent))
 	}

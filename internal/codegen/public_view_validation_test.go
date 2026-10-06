@@ -4,23 +4,23 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestBuildPublicViewRejectsNonPublicReferences(t *testing.T) {
 	tests := []struct {
 		name     string
-		spec     model.DomainSpec
+		spec     schema.DomainSpec
 		expected string
 	}{
 		{
 			name: "non-pub enum",
-			spec: model.DomainSpec{
-				Data: []*model.Data{{Pub: true, Name: "Payload", Members: []*model.DataMember{{
+			spec: schema.DomainSpec{
+				Data: []*schema.Data{{Pub: true, Name: "Payload", Members: []*schema.DataMember{{
 					Name: "status",
-					Type: &model.Type{
-						Kind:           model.TypeKindEnum,
-						Enum:           &model.Enum{Name: "Status"},
+					Type: &schema.Type{
+						Kind:           schema.TypeKindEnum,
+						Enum:           &schema.Enum{Name: "Status"},
 						ExternalDomain: "demo.shared",
 					},
 				}}}},
@@ -29,12 +29,12 @@ func TestBuildPublicViewRejectsNonPublicReferences(t *testing.T) {
 		},
 		{
 			name: "non-pub imported data",
-			spec: model.DomainSpec{
-				Data: []*model.Data{{Pub: true, Name: "Payload", Members: []*model.DataMember{{
+			spec: schema.DomainSpec{
+				Data: []*schema.Data{{Pub: true, Name: "Payload", Members: []*schema.DataMember{{
 					Name: "remote",
-					Type: &model.Type{
-						Kind:           model.TypeKindData,
-						Data:           &model.Data{Kind: model.DataKindData, Name: "Remote"},
+					Type: &schema.Type{
+						Kind:           schema.TypeKindData,
+						Data:           &schema.Data{Kind: schema.DataKindData, Name: "Remote"},
 						ExternalDomain: "demo.shared",
 					},
 				}}}},
@@ -43,20 +43,20 @@ func TestBuildPublicViewRejectsNonPublicReferences(t *testing.T) {
 		},
 		{
 			name: "invalid list type",
-			spec: model.DomainSpec{
-				Data: []*model.Data{{Pub: true, Name: "Payload", Members: []*model.DataMember{{
+			spec: schema.DomainSpec{
+				Data: []*schema.Data{{Pub: true, Name: "Payload", Members: []*schema.DataMember{{
 					Name: "values",
-					Type: &model.Type{Kind: model.TypeKindList},
+					Type: &schema.Type{Kind: schema.TypeKindList},
 				}}}},
 			},
 			expected: "contains an invalid list type",
 		},
 		{
 			name: "invalid map type",
-			spec: model.DomainSpec{
-				Data: []*model.Data{{Pub: true, Name: "Payload", Members: []*model.DataMember{{
+			spec: schema.DomainSpec{
+				Data: []*schema.Data{{Pub: true, Name: "Payload", Members: []*schema.DataMember{{
 					Name: "values",
-					Type: &model.Type{Kind: model.TypeKindMap},
+					Type: &schema.Type{Kind: schema.TypeKindMap},
 				}}}},
 			},
 			expected: "contains an invalid map type",
@@ -64,7 +64,7 @@ func TestBuildPublicViewRejectsNonPublicReferences(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			domain := model.NewDomainFromSpec(test.spec)
+			domain := schema.NewDomainFromSpec(test.spec)
 			_, err := BuildPublicView(domain)
 			if err == nil || !strings.Contains(err.Error(), test.expected) {
 				t.Fatalf("expected error containing %q, got %v", test.expected, err)
@@ -74,15 +74,15 @@ func TestBuildPublicViewRejectsNonPublicReferences(t *testing.T) {
 }
 
 func TestBuildPublicViewValidatesNestedPublicDataOnce(t *testing.T) {
-	shared := &model.Data{Pub: true, Name: "Shared", Members: []*model.DataMember{{
+	shared := &schema.Data{Pub: true, Name: "Shared", Members: []*schema.DataMember{{
 		Name: "label",
-		Type: &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString},
+		Type: &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString},
 	}}}
-	payload := &model.Data{Pub: true, Name: "Payload", Members: []*model.DataMember{
-		{Name: "shared", Type: &model.Type{Kind: model.TypeKindData, Data: shared}},
-		{Name: "sharedAgain", Type: &model.Type{Kind: model.TypeKindData, Data: shared}},
+	payload := &schema.Data{Pub: true, Name: "Payload", Members: []*schema.DataMember{
+		{Name: "shared", Type: &schema.Type{Kind: schema.TypeKindData, Data: shared}},
+		{Name: "sharedAgain", Type: &schema.Type{Kind: schema.TypeKindData, Data: shared}},
 	}}
-	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo.user", Data: []*model.Data{payload, shared}})
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo.user", Data: []*schema.Data{payload, shared}})
 
 	view, err := BuildPublicView(domain)
 	if err != nil {

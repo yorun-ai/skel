@@ -8,29 +8,29 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestFacadeGoRendersActorAuthService(t *testing.T) {
-	credential := &model.Data{
+	credential := &schema.Data{
 		Name: "PublicActorCredential",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "token", Type: codegentest.StringType()},
 		},
 	}
-	info := &model.Data{
+	info := &schema.Data{
 		Name: "PublicActorInfo",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "userId", Type: codegentest.StringType()},
 		},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.auth",
-		Actors: []*model.Actor{
+		Actors: []*schema.Actor{
 			{
 				Pub:            true,
 				Name:           "PublicActor",
-				Vias:           []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)},
+				Vias:           []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 				AuthEnabled:    true,
 				AuthCredential: credential,
 				AuthInfo:       info,
@@ -70,13 +70,13 @@ func TestFacadeGoRendersActorAuthService(t *testing.T) {
 }
 
 func TestFacadeGoRendersResourcePermissions(t *testing.T) {
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.app",
-		Resources: []*model.Resource{
+		Resources: []*schema.Resource{
 			{
 				Pub:  true,
 				Name: "User",
-				Actions: []*model.ResourceAction{
+				Actions: []*schema.ResourceAction{
 					{Name: "read"},
 					{Name: "update"},
 					{Name: "manage"},

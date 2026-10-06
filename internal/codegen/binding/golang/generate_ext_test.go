@@ -77,11 +77,11 @@ func TestPublicServer(t *testing.T) {
  if reflect.TypeFor[storage.StorageServiceServer]() != reflect.TypeFor[pub.StorageServiceServer]() { t.Fatal("server types differ") }
  var server storage.StorageServiceServer = &implementation{}
  if server.Get("ok").Value != "ok" { t.Fatal("wrong result") }
- for _, domain := range skel.RegisteredDomainSchemas() {
+ for _, domain := range skel.RegisteredDomainDescriptors() {
   if domain.Domain != "demo.storage" { continue }
   for _, service := range domain.Services {
    if service.SkelName == "demo.storage.StorageService" {
-    if !service.Ext || service.ClientApi() { t.Fatalf("wrong runtime extension metadata: %+v", service) }
+    if !service.Ext || service.Api { t.Fatalf("wrong runtime extension metadata: %+v", service) }
     return
    }
   }
@@ -151,7 +151,7 @@ event PrivateEvent { payload {} }
 		}
 	}
 	for _, directory := range []string{pub, regular} {
-		if !strings.Contains(read(directory, "schema.go"), "Ext: true") {
+		if !strings.Contains(read(directory, "descriptor.go"), "Ext: true") {
 			t.Fatal("extension runtime flag missing")
 		}
 	}
@@ -176,7 +176,7 @@ func TestExtensionContract(t *testing.T) {
  handler := &listener{}
  handler.OnAuditRecorded(&pub.AuditRecordedEvent{Detail: pub.Detail{Message:"received"}})
  if handler.message != "received" { t.Fatal("wrong payload") }
- for _, domain := range skel.RegisteredDomainSchemas() {
+ for _, domain := range skel.RegisteredDomainDescriptors() {
   if domain.Domain != "demo.audit" { continue }
   for _, event := range domain.Events {
    if event.SkelName == "demo.audit.AuditRecordedEvent" {

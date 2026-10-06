@@ -184,7 +184,7 @@ TypeScript generation requires `--api` and rejects `--pub`. By default, API clie
 
 After declaring an `import` in `.skel`, generation commands use repeatable `--skel-import domain=PATH` options to provide the complete transitive dependency graph. skelc analyzes every dependency but generates code only for the `--skel-in` target. When generating a Go module or TypeScript, map the target's direct language-package dependencies with `--go-import`, `--go-module-prefix`, or `--ts-import`. `schema dep --api` accepts the same `--prune`, `--actor`, `--name` and `--skel-import` selection options and reports selected local declarations and external type dependencies as JSON. Query and generation share the same selection rules. `schema list --pub` and `schema list --api` also accept dependency mappings and list declarations from the corresponding generation view. Default `schema list` and other schema inspection commands do not accept dependency mappings; they preserve imported symbols as opaque, fully qualified references. See the [CLI reference](https://skel.yorun.ai/docs/cli) for complete examples.
 
-### Inspect, Snapshot, Diff, and Format
+### Inspect, Diff, and Format
 
 Go callers can use `api.ScanImports(api.ScanOption{SkelIn: "./skel"})` to inspect direct imports without loading dependencies. The result includes imports, explicit aliases, source positions and non-fatal diagnostics. `ScanImportsContext` supports cancellation; callers collect transitive imports themselves.
 
@@ -193,7 +193,6 @@ skelc scan imports --skel-in ./skel
 skelc schema list --skel-in ./skel
 skelc schema list data --skel-in ./skel
 skelc schema get data demo.user.User --skel-in ./skel
-skelc schema snapshot --skel-in ./skel > ./user.schema.json
 skelc schema diff --skel-in ./skel
 skelc schema diff --baseline-skel-in ./previous/skel --skel-in ./skel
 skelc format --skel-in ./skel
@@ -210,13 +209,6 @@ Use `--pub` or `--api` to list a generation view, with API selection via
 positional `TYPE` filters the result after selection. Each entry retains its original
 `pub` marker, including private types pulled into a view by references. Empty lists
 are `[]`; imported declarations are not included.
-
-Snapshot JSON is deterministically ordered and carries a versioned schema-format
-identifier. `schema snapshot` always writes that JSON to stdout, so redirect it
-to persist a snapshot. Source positions are used for live diff diagnostics but
-are not persisted in the artifact. Imported declarations remain opaque fully
-qualified references in the current domain's snapshot and are checked separately
-in their owning domain.
 
 `schema diff` returns a structured JSON report, classifies changes as
 `COMPATIBLE`, `DANGEROUS`, or `BREAKING`, and always includes every detected
@@ -287,7 +279,7 @@ or module replacement. See the [types example](types/example_test.go).
 
 Go programs can invoke generation through `go.yorun.ai/skel/api` without importing implementation packages:
 
-Import `go.yorun.ai/skel/api` and use the `api` package for source inspection, compilation, and generation. Move existing root-package toolchain imports to `go.yorun.ai/skel/api` and replace `skel.` references with `api.`; The CLI wire contract moves to `go.yorun.ai/skel/cmd/skelc/output`; `schema` and `model` keep their existing paths. The executable name and CLI commands remain `skelc`.
+Import `go.yorun.ai/skel/api` and use the `api` package for source inspection, compilation, and generation. Move existing root-package toolchain imports to `go.yorun.ai/skel/api` and replace `skel.` references with `api.`; The CLI wire contract moves to `go.yorun.ai/skel/cmd/skelc/output`; Semantic declarations now live in `go.yorun.ai/skel/schema`; runtime metadata lives in `go.yorun.ai/skel/descriptor`. The executable name and CLI commands remain `skelc`.
 
 ```go
 result, err := api.CompileGolang(
@@ -319,19 +311,17 @@ The API also provides `CompileTypeScript` and `CompileSkeleton`. Parser and load
 
 Generation marks ownership in every generated file, atomically replaces individual outputs, rolls back every affected target when a commit fails, removes stale marked files, and preserves unmarked files in a shared output directory.
 
-Go integrations consume schema command JSON through the public package
-`go.yorun.ai/skel/schema`. It provides the response and nested wire types,
-typed constants, and strict `schema.Decode`, `schema.Validate`, and
-`schema.Encode` functions, all implemented directly in this package. Strict
-decoding rejects unknown fields, trailing JSON values, unsupported format
-versions and malformed normalized structures. The `go.yorun.ai/skel/api`
-package also provides source inspection and schema query APIs.
+Go integrations decode schema list/get JSON into the types exposed by
+`go.yorun.ai/skel/cmd/skelc/output`, and diff JSON into
+`go.yorun.ai/skel/schema/diff.Report`, using `encoding/json`.
+For programmatic inspection, `go.yorun.ai/skel/api` returns semantic schemas
+directly; no JSON conversion is needed.
 
 Custom bindings written in Go use `go.yorun.ai/skel/codegen`. Call `api.Parse`,
 then `codegen.Prepare(domain, selection)` to validate and select a generation view.
-`model` is the shared semantic graph; `codegen.Input` provides selected declarations,
+`schema` is the shared semantic graph; `codegen.Input` provides selected declarations,
 fully qualified lookups, type roots and external dependencies without a second set
-of declaration types. Keep the model read-only after preparation and keep target
+of declaration types. Keep the schema read-only after preparation and keep target
 names and imports in your binding. `WalkTypeGraphs` handles recursive declarations;
 `InstantiateMembers` substitutes generic arguments without expanding named types.
 
@@ -358,11 +348,14 @@ Source tools can call `Check` (unresolved imports allowed), `ScanImports`,
 for invalid contracts. `FormatFiles` returns a validated, read-only replacement
 plan; it never writes files. Callers own any write transaction.
 
-`QuerySchema` produces a normalized `schema.Document`: its default view keeps
-imports unresolved, while `Pub`, `Api`, or `ResolveImports` resolves the complete
-import graph. Unresolved inspection rejects dependency mappings. Use
-`schema.Entries` and `schema.Find` for list/get, `api.ProjectSchema` for an existing
-model, and `schema.Diff` for snapshot comparisons. `DiffSchemaSources` accepts an
+`QuerySchema` returns a semantic `*schema.Domain` in `SchemaQueryResult.Domain`.
+Its default view retains unresolved imports, including their names and aliases;
+`Pub`, `Api`, or `ResolveImports` resolves the complete import graph. Unresolved
+inspection rejects dependency mappings. Use `domain.Declarations()` and
+`domain.Find(kind, skelName)` to inspect existing schemas, and
+`diff.Compare(baseline, candidate)` from `go.yorun.ai/skel/schema/diff` to compare
+them directly. Comparison uses named reference identities and ignores positions
+and derived hashes when determining equality. `DiffSchemaSources` accepts an
 explicit `Baseline` input or, when omitted, compares a filesystem candidate
 against Git HEAD. Historical baselines do not inherit candidate strict mode.
 Frozen candidates require an explicit baseline.
@@ -392,7 +385,7 @@ After upgrading skelc, regenerate the code and run type checks and tests in its 
 check          validate Skel definitions
 format         format Skel definitions in place
 lsp            run the Skel language server over stdio
-schema         list, inspect, snapshot, or diff semantic schemas
+schema         list, inspect, or diff semantic schemas
 gen skel       generate public Skel contracts
 gen go         generate code inside an existing Go module
 gen go-module  generate a standalone Go module

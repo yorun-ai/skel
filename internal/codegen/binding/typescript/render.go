@@ -1,5 +1,5 @@
 // Package typescript generates TypeScript source and module metadata from a
-// validated semantic model. Rendering payloads and import state stay local.
+// validated semantic schema. Rendering payloads and import state stay local.
 package typescript
 
 import (

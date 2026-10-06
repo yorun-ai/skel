@@ -3,17 +3,17 @@ package typescript
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastEnum(t *testing.T) {
-	enum := castEnum(&model.Enum{
+	enum := castEnum(&schema.Enum{
 		Name:        "UserStatus",
 		Description: "User status",
-		UnspecifiedItem: &model.EnumItem{
+		UnspecifiedItem: &schema.EnumItem{
 			Name: "UNSPECIFIED",
 		},
-		Items: []*model.EnumItem{
+		Items: []*schema.EnumItem{
 			{
 				Name:        "ACTIVE",
 				Description: "Active",

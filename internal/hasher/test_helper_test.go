@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/analyzer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
-func newHashTestDomain(t *testing.T, serviceDescription string) *model.Domain {
+func newHashTestDomain(t *testing.T, serviceDescription string) *schema.Domain {
 	return analyzeHashTestDomain(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
@@ -53,10 +53,10 @@ func newHashTestDomain(t *testing.T, serviceDescription string) *model.Domain {
 				},
 			},
 		},
-	}).Model()
+	}).Schema()
 }
 
-func newHashActorCredentialTestDomain(t *testing.T, credentialFieldName string) *model.Domain {
+func newHashActorCredentialTestDomain(t *testing.T, credentialFieldName string) *schema.Domain {
 	return analyzeHashTestDomain(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
@@ -75,10 +75,10 @@ func newHashActorCredentialTestDomain(t *testing.T, credentialFieldName string) 
 				},
 			},
 		},
-	}).Model()
+	}).Schema()
 }
 
-func newHashAllowViaTestDomain(t *testing.T, via string) *model.Domain {
+func newHashAllowViaTestDomain(t *testing.T, via string) *schema.Domain {
 	return analyzeHashTestDomain(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
@@ -107,10 +107,10 @@ func newHashAllowViaTestDomain(t *testing.T, via string) *model.Domain {
 				},
 			},
 		},
-	}).Model()
+	}).Schema()
 }
 
-func newHashTaskTestDomain(t *testing.T) *model.Domain {
+func newHashTaskTestDomain(t *testing.T) *schema.Domain {
 	return analyzeHashTestDomain(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{{
@@ -127,38 +127,38 @@ func newHashTaskTestDomain(t *testing.T) *model.Domain {
 				}},
 			},
 		}},
-	}).Model()
+	}).Schema()
 }
 
-func newHashDataKindTestDomain(kind model.DataKind) (*model.Domain, *model.Data) {
-	data := &model.Data{
+func newHashDataKindTestDomain(kind schema.DataKind) (*schema.Domain, *schema.Data) {
+	data := &schema.Data{
 		Name:     "Secret",
 		SkelName: "demo.user.Secret",
 		Kind:     kind,
-		Members: []*model.DataMember{{
+		Members: []*schema.DataMember{{
 			Name: "token",
-			Type: plainModelType(model.ScalarString),
+			Type: plainSchemaType(schema.ScalarString),
 		}},
 	}
-	spec := model.DomainSpec{Name: "demo.user"}
+	spec := schema.DomainSpec{Name: "demo.user"}
 	switch kind {
-	case model.DataKindConfig:
+	case schema.DataKindConfig:
 		data.Name = "SecretConfig"
 		data.SkelName = "demo.user.SecretConfig"
-		data.Lifecycle = model.ConfigLifecycleEternal
-		spec.Configs = []*model.Data{data}
-	case model.DataKindEvent:
+		data.Lifecycle = schema.ConfigLifecycleEternal
+		spec.Configs = []*schema.Data{data}
+	case schema.DataKindEvent:
 		data.Name = "SecretEvent"
 		data.SkelName = "demo.user.SecretEvent"
-		spec.Events = []*model.Data{data}
+		spec.Events = []*schema.Data{data}
 	default:
-		spec.Data = []*model.Data{data}
+		spec.Data = []*schema.Data{data}
 	}
-	return model.NewDomainFromSpec(spec), data
+	return schema.NewDomainFromSpec(spec), data
 }
 
-func plainModelType(scalar model.Scalar) *model.Type {
-	return &model.Type{Kind: model.TypeKindScalar, Scalar: scalar}
+func plainSchemaType(scalar schema.Scalar) *schema.Type {
+	return &schema.Type{Kind: schema.TypeKindScalar, Scalar: scalar}
 }
 
 func analyzeHashTestDomain(t *testing.T, content *grammar.SkelContent) *analyzer.Analysis {
@@ -170,7 +170,7 @@ func analyzeHashTestDomain(t *testing.T, content *grammar.SkelContent) *analyzer
 	return analysis
 }
 
-func fillHashes(t *testing.T, domains ...*model.Domain) {
+func fillHashes(t *testing.T, domains ...*schema.Domain) {
 	t.Helper()
 	for _, domain := range domains {
 		if err := FillHashes(domain); err != nil {

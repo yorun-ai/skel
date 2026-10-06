@@ -5,13 +5,13 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastTypeUsesDefaultExternalPubPackageNameWithoutImportAlias(t *testing.T) {
-	kindRef := &model.Type{
-		Kind:          model.TypeKindData,
-		Data:          &model.Data{Name: "UserSummary"},
+	kindRef := &schema.Type{
+		Kind:          schema.TypeKindData,
+		Data:          &schema.Data{Name: "UserSummary"},
 		ExternalAlias: "userpub",
 	}
 	got := (_Types{bindings: binding.TypeBindings{kindRef: {Domain: kindRef.ExternalDomain, Alias: "userpub", Path: "go.yorun.ai/app/vine/demo/user/userpub", Explicit: false}}}).castType(kindRef)
@@ -27,9 +27,9 @@ func TestCastTypeUsesDefaultExternalPubPackageNameWithoutImportAlias(t *testing.
 }
 
 func TestCastTypePreservesExplicitExternalImportAlias(t *testing.T) {
-	kindRef := &model.Type{
-		Kind:                  model.TypeKindData,
-		Data:                  &model.Data{Name: "UserSummary"},
+	kindRef := &schema.Type{
+		Kind:                  schema.TypeKindData,
+		Data:                  &schema.Data{Name: "UserSummary"},
 		ExternalAlias:         "account",
 		ExternalAliasExplicit: true,
 	}
@@ -46,9 +46,9 @@ func TestCastTypePreservesExplicitExternalImportAlias(t *testing.T) {
 }
 
 func TestCastEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) {
-	got := (_Types{}).castType(&model.Type{
-		Kind: model.TypeKindEnum,
-		Enum: &model.Enum{Name: "UserStatus", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}},
+	got := (_Types{}).castType(&schema.Type{
+		Kind: schema.TypeKindEnum,
+		Enum: &schema.Enum{Name: "UserStatus", UnspecifiedItem: &schema.EnumItem{Name: "UNSPECIFIED"}},
 	})
 	if got.DefaultValue != "UserStatusUnspecified" {
 		t.Fatalf("unexpected default value: %s", got.DefaultValue)
@@ -56,9 +56,9 @@ func TestCastEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) {
 }
 
 func TestCastExternalEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) {
-	kindRef := &model.Type{
-		Kind:          model.TypeKindEnum,
-		Enum:          &model.Enum{Name: "UserStatus", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}},
+	kindRef := &schema.Type{
+		Kind:          schema.TypeKindEnum,
+		Enum:          &schema.Enum{Name: "UserStatus", UnspecifiedItem: &schema.EnumItem{Name: "UNSPECIFIED"}},
 		ExternalAlias: "userpub",
 	}
 	got := (_Types{bindings: binding.TypeBindings{kindRef: {Domain: kindRef.ExternalDomain, Alias: "userpub", Path: "go.yorun.ai/app/vine/demo/user/userpub", Explicit: false}}}).castType(kindRef)
@@ -68,11 +68,11 @@ func TestCastExternalEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) 
 }
 
 func TestCastMapTypeMapsUUIDKeyToSkelUUID(t *testing.T) {
-	got := (_Types{}).castType(&model.Type{
-		Kind: model.TypeKindMap,
-		Map: &model.MapType{
-			Key:   &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarUUID},
-			Value: &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString},
+	got := (_Types{}).castType(&schema.Type{
+		Kind: schema.TypeKindMap,
+		Map: &schema.MapType{
+			Key:   &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarUUID},
+			Value: &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString},
 		},
 	})
 
@@ -87,7 +87,7 @@ func TestCastMapTypeMapsUUIDKeyToSkelUUID(t *testing.T) {
 func TestCastCollectionTypesUsePointersOnlyWhenNullable(t *testing.T) {
 	tests := []struct {
 		name        string
-		type_       *model.Type
+		type_       *schema.Type
 		wantPlain   string
 		wantDefault string
 	}{
@@ -108,8 +108,8 @@ func TestCastCollectionTypesUsePointersOnlyWhenNullable(t *testing.T) {
 }
 
 func TestCastTypeEmitsGeneratedCollisionAlias(t *testing.T) {
-	for _, kind := range []model.TypeKind{model.TypeKindData, model.TypeKindEnum} {
-		kindRef := &model.Type{Kind: kind, Data: &model.Data{Name: "Value"}, Enum: &model.Enum{Name: "Value", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}}, ExternalDomain: "first.user", ExternalAlias: "firstuser"}
+	for _, kind := range []schema.TypeKind{schema.TypeKindData, schema.TypeKindEnum} {
+		kindRef := &schema.Type{Kind: kind, Data: &schema.Data{Name: "Value"}, Enum: &schema.Enum{Name: "Value", UnspecifiedItem: &schema.EnumItem{Name: "UNSPECIFIED"}}, ExternalDomain: "first.user", ExternalAlias: "firstuser"}
 		got := (_Types{bindings: binding.TypeBindings{kindRef: {Domain: kindRef.ExternalDomain, Alias: "firstuser", Path: "example.com/first/userpub"}}}).castType(kindRef)
 		if len(got.Imports) != 1 || got.Imports[0].Alias != "firstuser" || got.Plain != "firstuser.Value" {
 			t.Fatalf("collision alias lost: %+v", got)
@@ -121,10 +121,10 @@ func TestCastNullableTypeParameterInCollectionsAndArguments(t *testing.T) {
 	parameter := codegentest.TypeParam("TValue")
 	plain := codegentest.TypeParamType(parameter)
 	nullable := codegentest.NullableType(codegentest.TypeParamType(parameter))
-	box := &model.Data{Name: "Box", TypeParameters: []*model.TypeParameter{parameter}}
+	box := &schema.Data{Name: "Box", TypeParameters: []*schema.TypeParameter{parameter}}
 	for _, test := range []struct {
 		name string
-		kind *model.Type
+		kind *schema.Type
 		want string
 	}{
 		{name: "parameter", kind: plain, want: "TValue"},

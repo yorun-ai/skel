@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/codegen"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 const facadeGoFilename = "pub.go"
@@ -79,8 +79,8 @@ func (g *_Gen) genFacadeGo() {
 				payload.AuthCredentialData = append(payload.AuthCredentialData, g.types.castData(actor.AuthCredential), g.types.castData(actor.AuthInfo))
 				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.AuthService))
 			}
-			if actor.PermService != nil {
-				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.PermService))
+			if actor.PermissionService != nil {
+				payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.PermissionService))
 			}
 		}
 	}
@@ -117,7 +117,7 @@ func (g *_Gen) hasPubSymbols() bool {
 		hasPubData(g.Domain.Events())
 }
 
-func hasPubEnum(enums []*model.Enum) bool {
+func hasPubEnum(enums []*schema.Enum) bool {
 	for _, enum := range enums {
 		if enum.Pub {
 			return true
@@ -126,7 +126,7 @@ func hasPubEnum(enums []*model.Enum) bool {
 	return false
 }
 
-func hasPubData(dataList []*model.Data) bool {
+func hasPubData(dataList []*schema.Data) bool {
 	for _, data := range dataList {
 		if data.Public() {
 			return true
@@ -135,7 +135,7 @@ func hasPubData(dataList []*model.Data) bool {
 	return false
 }
 
-func hasPubResource(resources []*model.Resource) bool {
+func hasPubResource(resources []*schema.Resource) bool {
 	for _, resource := range resources {
 		if resource.Pub {
 			return true
@@ -144,7 +144,7 @@ func hasPubResource(resources []*model.Resource) bool {
 	return false
 }
 
-func hasPubActor(actors []*model.Actor) bool {
+func hasPubActor(actors []*schema.Actor) bool {
 	for _, actor := range actors {
 		if actor.Pub {
 			return true
@@ -153,7 +153,7 @@ func hasPubActor(actors []*model.Actor) bool {
 	return false
 }
 
-func hasPubService(services []*model.Service) bool {
+func hasPubService(services []*schema.Service) bool {
 	for _, service := range services {
 		if service.Public() {
 			return true

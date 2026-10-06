@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skel/internal/codegen"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type Mode string
@@ -18,18 +18,18 @@ const (
 
 type Domain struct {
 	mode      Mode
-	Enums     []*model.Enum
-	Data      []*model.Data
-	Configs   []*model.Data
-	Actors    []*model.Actor
-	Resources []*model.Resource
-	Webs      []*model.Web
-	Events    []*model.Data
-	Services  []*model.Service
-	Tasks     []*model.Task
+	Enums     []*schema.Enum
+	Data      []*schema.Data
+	Configs   []*schema.Data
+	Actors    []*schema.Actor
+	Resources []*schema.Resource
+	Webs      []*schema.Web
+	Events    []*schema.Data
+	Services  []*schema.Service
+	Tasks     []*schema.Task
 }
 
-func Full(domain *model.Domain) *Domain {
+func Full(domain *schema.Domain) *Domain {
 	return &Domain{
 		mode:      ModeFull,
 		Enums:     domain.Enums(),
@@ -44,7 +44,7 @@ func Full(domain *model.Domain) *Domain {
 	}
 }
 
-func Build(mode Mode, domain *model.Domain, selection codegen.ApiFilter) (*Domain, error) {
+func Build(mode Mode, domain *schema.Domain, selection codegen.ApiFilter) (*Domain, error) {
 	input, err := codegen.Prepare(domain, codegen.Selection{})
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func Build(mode Mode, domain *model.Domain, selection codegen.ApiFilter) (*Domai
 }
 
 func FromInput(mode Mode, input codegen.Input, selection codegen.ApiFilter) (*Domain, error) {
-	domain := input.Model()
+	domain := input.Schema()
 	if mode == ModeApi {
 		api, err := selectedView(input, codegen.Selection{Surface: codegen.SurfaceAPI, API: selection})
 		if err != nil {
@@ -73,10 +73,10 @@ func FromInput(mode Mode, input codegen.Input, selection codegen.ApiFilter) (*Do
 			Configs:   public.Configs,
 			Actors:    public.Actors,
 			Resources: public.Resources,
-			Webs:      []*model.Web{},
+			Webs:      []*schema.Web{},
 			Events:    public.Events,
 			Services:  public.Services,
-			Tasks:     []*model.Task{},
+			Tasks:     []*schema.Task{},
 		}, nil
 	}
 	if mode == ModeFull {
@@ -104,7 +104,7 @@ func FromInput(mode Mode, input codegen.Input, selection codegen.ApiFilter) (*Do
 }
 
 // New constructs a generation view and reports invalid modes or public views.
-func New(mode Mode, domain *model.Domain) (*Domain, error) {
+func New(mode Mode, domain *schema.Domain) (*Domain, error) {
 	return Build(mode, domain, codegen.ApiFilter{})
 }
 

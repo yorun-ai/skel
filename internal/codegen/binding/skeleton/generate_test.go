@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	compiler "go.yorun.ai/skel/internal/compiler"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestGenWritesDomainDescriptionAndOnlyNeededImports(t *testing.T) {
@@ -295,16 +295,16 @@ pub resource User {
 }
 
 func TestGenDoesNotRenderBlankLineAfterServiceAudienceWithoutFollowingContent(t *testing.T) {
-	domain := model.NewDomainFromSpec(model.DomainSpec{
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: "demo",
-		Actors: []*model.Actor{
+		Actors: []*schema.Actor{
 			{Name: "ClientActor", Pub: true},
 		},
-		Services: []*model.Service{
+		Services: []*schema.Service{
 			{
 				Name:      "EmptyService",
 				Pub:       true,
-				Audiences: []*model.ActorAudience{{Actor: "ClientActor"}},
+				Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}},
 			},
 		},
 	})
@@ -318,7 +318,7 @@ func TestGenDoesNotRenderBlankLineAfterServiceAudienceWithoutFollowingContent(t 
 	}
 }
 
-func parseDomainForTest(t *testing.T, domainPath string, domainContent string, inputPath string, inputContent string, imports map[string]string) (*model.Domain, string) {
+func parseDomainForTest(t *testing.T, domainPath string, domainContent string, inputPath string, inputContent string, imports map[string]string) (*schema.Domain, string) {
 	t.Helper()
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, filepath.Base(domainPath)), []byte(domainContent), 0o644); err != nil {
@@ -334,7 +334,7 @@ func parseDomainForTest(t *testing.T, domainPath string, domainContent string, i
 	return parsed.Domain, dir
 }
 
-func mustGenerateForTest(t *testing.T, domain *model.Domain, option Option) {
+func mustGenerateForTest(t *testing.T, domain *schema.Domain, option Option) {
 	t.Helper()
 	if err := Generate(domain, option); err != nil {
 		t.Fatalf("generate skeleton: %v", err)

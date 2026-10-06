@@ -1,7 +1,7 @@
 package source
 
 import (
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 const configGoFilename = "config.go"
@@ -31,10 +31,10 @@ func (g *_Gen) buildConfigGoPayload() *DataGoPayload {
 		castedData.SkelName = dataType.SkelName
 		castedData.Hash = dataType.Hash
 		switch dataType.Lifecycle {
-		case model.ConfigLifecycleEternal:
+		case schema.ConfigLifecycleEternal:
 			castedData.Lifecycle = string(dataType.Lifecycle)
 			castedData.RegisterFunc = "LifecycleEternal"
-		case model.ConfigLifecycleInstant:
+		case schema.ConfigLifecycleInstant:
 			castedData.Lifecycle = string(dataType.Lifecycle)
 			castedData.RegisterFunc = "LifecycleInstant"
 		}

@@ -15,7 +15,7 @@ import (
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/codegen"
 	"go.yorun.ai/skel/internal/testutil"
-	"go.yorun.ai/skel/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestOptionalActorCredentialGeneration(t *testing.T) {
@@ -166,7 +166,7 @@ pub service UserService {
 			if _, err := api.CompileGolang(api.Input{SkelIn: input}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out}); err != nil {
 				t.Fatal(err)
 			}
-			generatedSchema := strings.Join(strings.Fields(readTestFile(t, filepath.Join(out, "schema.go"))), " ")
+			generatedSchema := strings.Join(strings.Fields(readTestFile(t, filepath.Join(out, "descriptor.go"))), " ")
 			for _, want := range []string{`CodeArgumentName: "code2"`, `CodeArgumentName: "code"`, `Name: "code", JsonPath: "code"`, `Name: "code1", JsonPath: "code1"`} {
 				if !strings.Contains(generatedSchema, want) {
 					t.Fatalf("missing %s in schema:\n%s", want, generatedSchema)
@@ -209,7 +209,7 @@ service ConsumerService {
 			if _, err := api.CompileGolang(api.Input{SkelIn: consumer, SkelImports: map[string]string{"demo": public}}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: consumerOut, Imports: map[string]string{"demo": "example.com/demo"}}); err != nil {
 				t.Fatal(err)
 			}
-			if got := strings.Join(strings.Fields(readTestFile(t, filepath.Join(consumerOut, "schema.go"))), " "); !strings.Contains(got, `CodeArgumentName: "code2"`) {
+			if got := strings.Join(strings.Fields(readTestFile(t, filepath.Join(consumerOut, "descriptor.go"))), " "); !strings.Contains(got, `CodeArgumentName: "code2"`) {
 				t.Fatalf("imported check lost injection name: %s", got)
 			}
 		})
@@ -253,7 +253,7 @@ func TestGenerateSensitiveFieldInOtherBindings(t *testing.T) {
 	}
 }
 
-func TestGenerationReusesSemanticModelAcrossTargetsAndGoroutines(t *testing.T) {
+func TestGenerationReusesSemanticSchemaAcrossTargetsAndGoroutines(t *testing.T) {
 	root := t.TempDir()
 	shared, consumer := filepath.Join(root, "shared.skel"), filepath.Join(root, "consumer.skel")
 	writeTestFile(t, shared, "domain shared.user\npub enum State { READY }\npub data Value { state: State }\n")
@@ -263,9 +263,9 @@ func TestGenerationReusesSemanticModelAcrossTargetsAndGoroutines(t *testing.T) {
 		t.Fatal(err)
 	}
 	domain := compiled.Domain
-	before := map[*model.Type]model.Type{}
+	before := map[*schema.Type]schema.Type{}
 	roots := (codegen.Declarations{Data: domain.Data(), Services: domain.Services()}).TypeRoots(true)
-	if err := codegen.WalkTypes(roots, func(kind *model.Type) error {
+	if err := codegen.WalkTypes(roots, func(kind *schema.Type) error {
 		before[kind] = *kind
 		return nil
 	}); err != nil {

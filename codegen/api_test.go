@@ -11,10 +11,10 @@ import (
 
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/codegen"
-	"go.yorun.ai/skel/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func parseDomain(t *testing.T) *model.Domain {
+func parseDomain(t *testing.T) *schema.Domain {
 	t.Helper()
 	root := t.TempDir()
 	main, dep := filepath.Join(root, "main.skel"), filepath.Join(root, "shared.skel")
@@ -52,10 +52,10 @@ func TestInputSelectionAndSemanticQueries(t *testing.T) {
 	if deps := input.ExternalDomains(); !reflect.DeepEqual(deps, []string{"shared"}) {
 		t.Fatalf("dependencies: %v", deps)
 	}
-	if input.Model() != domain || input.FindData("demo.Hidden") == nil || input.FindData("shared.User") == nil {
+	if input.Schema() != domain || input.FindData("demo.Hidden") == nil || input.FindData("shared.User") == nil {
 		t.Fatal("complete semantic graph unavailable")
 	}
-	// Output collections and selection options are defensive copies; model nodes
+	// Output collections and selection options are defensive copies; schema nodes
 	// intentionally retain their semantic identity across views.
 	declarations.Data[0] = nil
 	selection.API.Types[0] = "demo.Hidden"
@@ -86,7 +86,7 @@ func TestGenericInstantiationAndRecursiveTraversal(t *testing.T) {
 		t.Fatal(err)
 	}
 	result := input.FindData("demo.Result")
-	var page *model.Type
+	var page *schema.Type
 	for _, member := range result.Members {
 		if member.Name == "page" {
 			page = member.Type
@@ -96,27 +96,27 @@ func TestGenericInstantiationAndRecursiveTraversal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if members[0].Type.Scalar != model.ScalarString || !members[0].Type.Nullable || members[1].Type.List.Value.Scalar != model.ScalarString {
+	if members[0].Type.Scalar != schema.ScalarString || !members[0].Type.Nullable || members[1].Type.List.Value.Scalar != schema.ScalarString {
 		t.Fatalf("substitution failed: %+v", members)
 	}
-	if page.Data.Members[0].Type.Kind != model.TypeKindTypeParameter || page.TypeArguments[0].Nullable {
+	if page.Data.Members[0].Type.Kind != schema.TypeKindTypeParameter || page.TypeArguments[0].Nullable {
 		t.Fatal("substitution changed semantic data")
 	}
 	node := input.FindData("demo.Node")
 	visits := 0
-	if err := codegen.WalkTypeGraph(new(model.Type{Kind: model.TypeKindData, Data: node}), func(*model.Type) error { visits++; return nil }); err != nil || visits != 2 {
+	if err := codegen.WalkTypeGraph(new(schema.Type{Kind: schema.TypeKindData, Data: node}), func(*schema.Type) error { visits++; return nil }); err != nil || visits != 2 {
 		t.Fatalf("recursive visits=%d, error=%v", visits, err)
 	}
 	stop := errors.New("stop")
-	if err := codegen.WalkTypes(input.TypeRoots(), func(*model.Type) error { return stop }); !errors.Is(err, stop) {
+	if err := codegen.WalkTypes(input.TypeRoots(), func(*schema.Type) error { return stop }); !errors.Is(err, stop) {
 		t.Fatalf("walk error=%v", err)
 	}
 }
 
-func TestPrepareRejectsUnresolvedModels(t *testing.T) {
-	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{{Name: "Pending", Kind: model.DataKindData, Members: []*model.DataMember{{Name: "value", Type: new(model.Type{Kind: model.TypeKindUnresolvedReference, SkelName: "Missing"})}}}}})
+func TestPrepareRejectsUnresolvedSchemas(t *testing.T) {
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Data: []*schema.Data{{Name: "Pending", Kind: schema.DataKindData, Members: []*schema.DataMember{{Name: "value", Type: new(schema.Type{Kind: schema.TypeKindUnresolvedReference, SkelName: "Missing"})}}}}})
 	if _, err := codegen.Prepare(domain, codegen.Selection{}); err == nil {
-		t.Fatal("unresolved model accepted")
+		t.Fatal("unresolved schema accepted")
 	}
 	if _, err := codegen.Generate(t.Context(), codegen.Input{}, codegen.GeneratorFunc(func(context.Context, codegen.Input) ([]codegen.File, error) {
 		t.Fatal("invalid input reached generator")
@@ -236,7 +236,7 @@ func TestBuiltinGeneratorsUseSDKWithoutPublishing(t *testing.T) {
 	// The source qualifier is retained after Go and TS choose different imports.
 	for _, member := range input.FindData("demo.Result").Members {
 		if member.Type.ExternalDomain == "shared" && member.Type.ExternalAlias != "shared" {
-			t.Fatal("target qualifier leaked into model")
+			t.Fatal("target qualifier leaked into schema")
 		}
 	}
 }

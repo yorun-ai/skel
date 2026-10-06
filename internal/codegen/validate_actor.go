@@ -3,12 +3,12 @@ package codegen
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func validateActor(actor *model.Actor) error {
+func validateActor(actor *schema.Actor) error {
 	if actor == nil {
-		return fmt.Errorf("generated model contains nil actor")
+		return fmt.Errorf("generated schema contains nil actor")
 	}
 	for _, via := range actor.Vias {
 		if via == nil {
@@ -44,7 +44,7 @@ func validateActor(actor *model.Actor) error {
 			for _, member := range actor.AuthInfo.Members {
 				if member.Name == actor.IdentifierField {
 					kind := member.Type
-					valid = kind.Kind == model.TypeKindScalar && !kind.Nullable && (kind.Scalar == model.ScalarString || kind.Scalar == model.ScalarUUID || kind.Scalar == model.ScalarInt)
+					valid = kind.Kind == schema.TypeKindScalar && !kind.Nullable && (kind.Scalar == schema.ScalarString || kind.Scalar == schema.ScalarUUID || kind.Scalar == schema.ScalarInt)
 				}
 			}
 		}
@@ -52,28 +52,28 @@ func validateActor(actor *model.Actor) error {
 			return fmt.Errorf("actor %s identifier must name a non-nullable string, uuid, or int info field", actor.Name)
 		}
 	}
-	if actor.PermEnabled {
-		if actor.PermService == nil || actor.PermMethod == nil {
+	if actor.PermissionEnabled {
+		if actor.PermissionService == nil || actor.PermissionMethod == nil {
 			return fmt.Errorf("actor %s has incomplete permission support", actor.Name)
 		}
 	}
-	if actor.PermService != nil {
-		if actor.PermService.Api {
-			return fmt.Errorf("API service %s cannot be used as a framework callback", actor.PermService.Name)
+	if actor.PermissionService != nil {
+		if actor.PermissionService.Api {
+			return fmt.Errorf("API service %s cannot be used as a framework callback", actor.PermissionService.Name)
 		}
-		if err := validateService(actor.PermService); err != nil {
+		if err := validateService(actor.PermissionService); err != nil {
 			return fmt.Errorf("actor %s permission: %w", actor.Name, err)
 		}
 	}
-	if actor.PermMethod != nil {
-		if err := validateMethod("actor "+actor.Name+" permission method", actor.PermMethod); err != nil {
+	if actor.PermissionMethod != nil {
+		if err := validateMethod("actor "+actor.Name+" permission method", actor.PermissionMethod); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func validateAudiences(owner string, audiences []*model.ActorAudience) error {
+func validateAudiences(owner string, audiences []*schema.ActorAudience) error {
 	for _, audience := range audiences {
 		if audience == nil {
 			return fmt.Errorf("%s contains a nil audience", owner)
@@ -91,8 +91,8 @@ func validateAudiences(owner string, audiences []*model.ActorAudience) error {
 }
 
 func validateActorVia(via string) error {
-	switch model.ActorViaKind(via) {
-	case model.ActorViaClient, model.ActorViaAgent, model.ActorViaOpenAPI:
+	switch schema.ActorViaKind(via) {
+	case schema.ActorViaClient, schema.ActorViaAgent, schema.ActorViaOpenAPI:
 		return nil
 	default:
 		return fmt.Errorf("unsupported actor via %q", via)

@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -58,7 +58,7 @@ event UserCreatedEvent {
 	if event.Name != "UserCreatedEvent" {
 		t.Fatalf("unexpected event: %+v", event)
 	}
-	if event.Kind != model.DataKindEvent {
+	if event.Kind != schema.DataKindEvent {
 		t.Fatalf("unexpected event kind: %v", event.Kind)
 	}
 	if len(event.Members) != 2 {

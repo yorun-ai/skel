@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type _DecoratorView struct {
@@ -53,32 +53,32 @@ func deprecatedView(deprecated bool, reason string, indent int) *_DecoratorView 
 	return descriptionView(reason, indent)
 }
 
-func emptyMethod(method *model.Method, service *model.Service) bool {
+func emptyMethod(method *schema.Method, service *schema.Service) bool {
 	return methodAuthMarker(method) == "" && len(method.Arguments) == 0 && method.ResultType == nil
 }
 
-func authMarker(mode model.AuthMode) string {
-	if mode == model.AuthModeAuth || mode == model.AuthModeNoAuth {
+func authMarker(mode schema.AuthMode) string {
+	if mode == schema.AuthModeAuth || mode == schema.AuthModeNoAuth {
 		return string(mode)
 	}
-	if mode == model.AuthModeRequired || mode == model.AuthModeOptional || mode == model.AuthModeAnonymous || mode == model.AuthModeOff {
+	if mode == schema.AuthModeRequired || mode == schema.AuthModeOptional || mode == schema.AuthModeAnonymous || mode == schema.AuthModeOff {
 		return "auth " + string(mode)
 	}
 	return ""
 }
 
-func methodAuthMarker(method *model.Method) string {
+func methodAuthMarker(method *schema.Method) string {
 	return authMarker(method.Auth)
 }
 
-func importAlias(import_ *model.Import) string {
+func importAlias(import_ *schema.Import) string {
 	if !import_.ExplicitAlias {
 		return ""
 	}
 	return import_.Alias
 }
 
-func typeParameterNames(params []*model.TypeParameter) []string {
+func typeParameterNames(params []*schema.TypeParameter) []string {
 	names := make([]string, 0, len(params))
 	for _, param := range params {
 		names = append(names, param.Name)
@@ -86,6 +86,6 @@ func typeParameterNames(params []*model.TypeParameter) []string {
 	return names
 }
 
-func configLifecycle(config *model.Data) string {
+func configLifecycle(config *schema.Data) string {
 	return string(config.Lifecycle)
 }

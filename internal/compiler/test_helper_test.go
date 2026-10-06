@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/loader"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 // describedUserDomain is the domain fixture shared by the compiler tests.
@@ -24,7 +24,7 @@ func mustMkdirAll(t *testing.T, dirs ...string) {
 	}
 }
 
-func parseDomain(t *testing.T, files map[string]string) *model.Domain {
+func parseDomain(t *testing.T, files map[string]string) *schema.Domain {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -42,7 +42,7 @@ func parseDomain(t *testing.T, files map[string]string) *model.Domain {
 	return result.Domain
 }
 
-func findDataByName(t *testing.T, domain *model.Domain, name string) *model.Data {
+func findDataByName(t *testing.T, domain *schema.Domain, name string) *schema.Data {
 	t.Helper()
 
 	for _, data := range domain.Data() {

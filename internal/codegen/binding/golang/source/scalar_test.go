@@ -3,11 +3,11 @@ package source
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastTypeMapsBinaryToBytes(t *testing.T) {
-	got := (_Types{}).castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarBinary})
+	got := (_Types{}).castType(&schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarBinary})
 	if got.Plain != "types.Binary" {
 		t.Fatalf("unexpected binary type mapping: %s", got.Plain)
 	}
@@ -17,14 +17,14 @@ func TestCastTypeMapsBinaryToBytes(t *testing.T) {
 }
 
 func TestCastTypeMapsUUIDToSkelUUID(t *testing.T) {
-	got := (_Types{}).castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarUUID})
+	got := (_Types{}).castType(&schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarUUID})
 	if got.Plain != "types.UUID" {
 		t.Fatalf("unexpected uuid type mapping: %s", got.Plain)
 	}
 }
 
 func TestCastTypeMapsJSONToSkelJSON(t *testing.T) {
-	got := (_Types{}).castType(&model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarJSON})
+	got := (_Types{}).castType(&schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarJSON})
 	if got.Plain != "types.JSON" {
 		t.Fatalf("unexpected json type mapping: %s", got.Plain)
 	}

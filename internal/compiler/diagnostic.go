@@ -7,8 +7,8 @@ import (
 
 	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/analyzer"
-	"go.yorun.ai/skel/internal/model"
 	textsource "go.yorun.ai/skel/internal/source"
+	"go.yorun.ai/skel/schema"
 )
 
 const (
@@ -47,7 +47,7 @@ type Diagnostics = diagnostic.Diagnostics
 func diagnosticFromError(path, fallbackCode string, err error) Diagnostic {
 	diagnostic := Diagnostic{
 		Code: fallbackCode, Severity: DiagnosticSeverityError,
-		Position: model.Position{File: path, Line: 1, Column: 1}, Message: err.Error(),
+		Position: schema.Position{File: path, Line: 1, Column: 1}, Message: err.Error(),
 	}
 	if sourcePosition, ok := analyzer.Position(err); ok {
 		diagnostic.Position = sourcePosition

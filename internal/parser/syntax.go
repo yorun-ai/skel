@@ -8,8 +8,8 @@ import (
 
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 var sourceParser = participle.MustBuild[grammar.SkelContent](grammar.Options...)
@@ -23,7 +23,7 @@ type SourceParseResult struct {
 // SyntaxError normalizes parser-library failures for compiler recovery without
 // exposing Participle error types outside the parser package.
 type SyntaxError struct {
-	Position      model.Position
+	Position      schema.Position
 	Message       string
 	UnexpectedEOF bool
 	Finalize      bool
@@ -141,8 +141,8 @@ func normalizeSyntaxError(err error, finalize bool) error {
 
 // SourcePosition converts the grammar's lexer position to skelc's public
 // parser-independent source position.
-func SourcePosition(position lexer.Position) model.Position {
-	return model.Position{File: position.Filename, Line: position.Line, Column: position.Column}
+func SourcePosition(position lexer.Position) schema.Position {
+	return schema.Position{File: position.Filename, Line: position.Line, Column: position.Column}
 }
 
 type _OffsetLexer struct {

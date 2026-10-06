@@ -1,12 +1,11 @@
 // Package sourcediff coordinates compilation and cached source baselines for
-// schema comparisons. Canonical projection and diff rules remain in schema.
+// schema comparisons. Semantic comparison rules live in schema/diff.
 package sourcediff
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"go.yorun.ai/skel/internal/projection"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +14,7 @@ import (
 
 	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/schema"
+	"go.yorun.ai/skel/schema/diff"
 )
 
 // ErrSourceCompilation identifies a source input that could not be compiled
@@ -34,7 +34,7 @@ type Option struct {
 type _CachedSourceBaseline struct {
 	head           string
 	repositoryRoot string
-	document       *schema.Document
+	domain         *schema.Domain
 	err            error
 }
 
@@ -63,13 +63,13 @@ func New() *Differ {
 
 // DiffWorkspaceDomain compares one successfully analyzed in-memory domain with
 // either an explicit source baseline or the same source directory at Git HEAD.
-func DiffWorkspaceDomain(ctx context.Context, candidate compiler.WorkspaceDomain, option Option) (*schema.Report, error) {
+func DiffWorkspaceDomain(ctx context.Context, candidate compiler.WorkspaceDomain, option Option) (*diff.Report, error) {
 	return New().DiffWorkspaceDomain(ctx, candidate, option)
 }
 
 // DiffSource compares a candidate file or directory with either an explicit
 // source baseline or the same path at Git HEAD.
-func DiffSource(ctx context.Context, candidateSkelIn string, option Option) (*schema.Report, error) {
+func DiffSource(ctx context.Context, candidateSkelIn string, option Option) (*diff.Report, error) {
 	compiled, err := compiler.CompileImportContext(ctx, compiler.Option{SkelIn: candidateSkelIn, Strict: option.Strict})
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
@@ -85,7 +85,7 @@ func DiffSource(ctx context.Context, candidateSkelIn string, option Option) (*sc
 	if err != nil {
 		return nil, err
 	}
-	candidate := compiler.WorkspaceDomain{Name: compiled.Domain.Name(), Root: root, Model: compiled.Domain, ImportAliases: compiled.ImportAliases}
+	candidate := compiler.WorkspaceDomain{Name: compiled.Domain.Name(), Root: root, Schema: compiled.Domain}
 	if !info.IsDir() {
 		candidate.Sources = []compiler.Source{{Path: root, Root: root}}
 	} else {
@@ -103,23 +103,21 @@ func DiffSource(ctx context.Context, candidateSkelIn string, option Option) (*sc
 
 // DiffWorkspaceDomain compares a domain while reusing its unchanged Git
 // baseline across calls to the same differ.
-func (d *Differ) DiffWorkspaceDomain(ctx context.Context, candidate compiler.WorkspaceDomain, option Option) (*schema.Report, error) {
+func (d *Differ) DiffWorkspaceDomain(ctx context.Context, candidate compiler.WorkspaceDomain, option Option) (*diff.Report, error) {
 	if option.Strict {
-		diagnostics := compiler.MigrationDiagnostics(candidate.Model)
+		diagnostics := compiler.MigrationDiagnostics(candidate.Schema)
 		compiler.ApplyStrictMode(diagnostics)
 		if diagnostics.HasErrors() {
 			return nil, fmt.Errorf("%w: %w", ErrSourceCompilation, diagnostics)
 		}
 	}
-	candidateSchema, err := projection.Project(candidate.Model, candidate.ImportAliases)
-	if err != nil {
-		return nil, err
-	}
+	candidateSchema := candidate.Schema
+	var err error
 	baselineSkelIn := strings.TrimSpace(option.BaselineSkelIn)
-	var baselineSchema *schema.Document
+	var baselineSchema *schema.Domain
 	gitRepositoryRoot := ""
 	if baselineSkelIn == "" {
-		baselineSchema, gitRepositoryRoot, err = projectGitBaseline(ctx, d, candidate)
+		baselineSchema, gitRepositoryRoot, err = compileGitBaseline(ctx, d, candidate)
 	} else {
 		if !filepath.IsAbs(baselineSkelIn) {
 			directory := candidate.Root
@@ -135,12 +133,12 @@ func (d *Differ) DiffWorkspaceDomain(ctx context.Context, candidate compiler.Wor
 			}
 			return nil, fmt.Errorf("%w: compile schema compatibility baseline %s: %w", ErrSourceCompilation, baselineSkelIn, compileErr)
 		}
-		baselineSchema, err = projection.Project(baseline.Domain, baseline.ImportAliases)
+		baselineSchema = baseline.Domain
 	}
 	if err != nil {
 		return nil, err
 	}
-	report, err := schema.Diff(baselineSchema, candidateSchema)
+	report, err := diff.Compare(baselineSchema, candidateSchema)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +148,7 @@ func (d *Differ) DiffWorkspaceDomain(ctx context.Context, candidate compiler.Wor
 	return report, nil
 }
 
-func (d *Differ) cachedBaseline(key, head string) (*schema.Document, string, error, bool) {
+func (d *Differ) cachedBaseline(key, head string) (*schema.Domain, string, error, bool) {
 	if d == nil {
 		return nil, "", nil, false
 	}
@@ -160,11 +158,11 @@ func (d *Differ) cachedBaseline(key, head string) (*schema.Document, string, err
 	if baseline.head != head {
 		return nil, "", nil, false
 	}
-	return baseline.document, baseline.repositoryRoot, baseline.err, true
+	return baseline.domain, baseline.repositoryRoot, baseline.err, true
 }
 
-func (d *Differ) storeBaseline(key, head, repositoryRoot string, document *schema.Document, err error) {
-	if d == nil || (document == nil && err == nil) {
+func (d *Differ) storeBaseline(key, head, repositoryRoot string, domain *schema.Domain, err error) {
+	if d == nil || (domain == nil && err == nil) {
 		return
 	}
 	d.mu.Lock()
@@ -172,7 +170,7 @@ func (d *Differ) storeBaseline(key, head, repositoryRoot string, document *schem
 		d.baselines = map[string]_CachedSourceBaseline{}
 	}
 	d.baselines[key] = _CachedSourceBaseline{
-		head: head, repositoryRoot: repositoryRoot, document: document, err: err,
+		head: head, repositoryRoot: repositoryRoot, domain: domain, err: err,
 	}
 	d.mu.Unlock()
 }
@@ -222,7 +220,7 @@ func (d *Differ) currentTime() time.Time {
 	return time.Now()
 }
 
-func remapReportBaselinePositions(report *schema.Report, repositoryRoot string) {
+func remapReportBaselinePositions(report *diff.Report, repositoryRoot string) {
 	for _, change := range report.Changes {
 		if change.Baseline == nil || change.Baseline.File == "" {
 			continue

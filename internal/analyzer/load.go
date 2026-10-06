@@ -67,7 +67,7 @@ func (p *Analysis) loadEntry(entry *grammar.SkelEntry) bool {
 			actor.AuthInfo.SkelName = p.skelName(actor.AuthInfo.Name)
 		}
 		actor.AuthService = buildActorAuthService(actor)
-		actor.PermService = buildActorPermissionService(actor)
+		actor.PermissionService = buildActorPermissionService(actor)
 		p.actorsMap[actor.Name] = actor
 	case entry.Resource != nil:
 		resource, valid := parseResource(p.reporter, entry.Resource, entry.Pub)

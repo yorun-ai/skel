@@ -69,7 +69,7 @@ func TestCompletedAnalysisOutlivesRequestCancellation(t *testing.T) {
 		t.Fatalf("unexpected result: %v %v", diagnostics, err)
 	}
 	cancel()
-	if len(analysis.ImportNames()) != 1 || analysis.ImportAliases()["external"] != "external.demo" {
+	if len(analysis.ImportNames()) != 1 || analysis.Schema().ReferenceName("external.User") != "external.demo.User" {
 		t.Fatal("completed analysis retained the cancelled request context")
 	}
 }

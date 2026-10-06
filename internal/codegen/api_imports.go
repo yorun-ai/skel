@@ -1,11 +1,11 @@
 package codegen
 
 import (
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 // ApiImportDomains identifies foreign domains required by the selected API view.
-func ApiImportDomains(domain *model.Domain, selection ApiFilter) (map[string]bool, error) {
+func ApiImportDomains(domain *schema.Domain, selection ApiFilter) (map[string]bool, error) {
 	if err := ValidateDomain(domain); err != nil {
 		return nil, err
 	}
@@ -14,7 +14,7 @@ func ApiImportDomains(domain *model.Domain, selection ApiFilter) (map[string]boo
 		return nil, err
 	}
 	domains := map[string]bool{}
-	VisitTypes(ApiTypeRoots(view.Data, view.Services), func(kind *model.Type) {
+	VisitTypes(ApiTypeRoots(view.Data, view.Services), func(kind *schema.Type) {
 		if kind.ExternalDomain != "" {
 			domains[kind.ExternalDomain] = true
 		}

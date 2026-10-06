@@ -8,18 +8,18 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestGeneratorSkipsGoModuleFilesByDefault(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "skeled")
 
-	pkg := newModelDomainForTest(t, model.DomainSpec{
+	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{
+		Data: []*schema.Data{
 			{
 				Name: "User",
-				Members: []*model.DataMember{
+				Members: []*schema.DataMember{
 					{Name: "id", Type: codegentest.StringType()},
 				},
 			},
@@ -44,12 +44,12 @@ func TestGeneratorSkipsGoModuleFilesByDefault(t *testing.T) {
 func TestGeneratorRendersGoModuleFiles(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "golang")
 
-	pkg := newModelDomainForTest(t, model.DomainSpec{
+	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{
+		Data: []*schema.Data{
 			{
 				Name: "User",
-				Members: []*model.DataMember{
+				Members: []*schema.DataMember{
 					{Name: "id", Type: codegentest.StringType()},
 				},
 			},
@@ -85,13 +85,13 @@ func TestGeneratorRendersDefaultGoPubModulePrefix(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "golang")
 	goPubOutDir := filepath.Join(t.TempDir(), "golangpub")
 
-	pkg := newModelDomainForTest(t, model.DomainSpec{
+	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "user",
-		Data: []*model.Data{
+		Data: []*schema.Data{
 			{
 				Pub:  true,
 				Name: "User",
-				Members: []*model.DataMember{
+				Members: []*schema.DataMember{
 					{Name: "id", Type: codegentest.StringType()},
 				},
 			},
@@ -122,30 +122,30 @@ func TestGeneratorRendersGoPubAndRegularModules(t *testing.T) {
 	goOutDir := filepath.Join(tmpDir, "user")
 	goPubOutDir := filepath.Join(tmpDir, "userpub")
 
-	user := &model.Data{
+	user := &schema.Data{
 		Pub:  true,
 		Name: "User",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "id", Type: codegentest.StringType()},
 		},
 	}
-	pkg := newModelDomainForTest(t, model.DomainSpec{
+	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{user},
-		Services: []*model.Service{
+		Data: []*schema.Data{user},
+		Services: []*schema.Service{
 			{
 				Pub:  true,
 				Name: "UserService",
-				Methods: []*model.Method{
-					methodForTest("UserService", &model.Method{Name: "getUser", ResultType: codegentest.DataType(user)}),
+				Methods: []*schema.Method{
+					methodForTest("UserService", &schema.Method{Name: "getUser", ResultType: codegentest.DataType(user)}),
 				},
 			},
 		},
-		Events: []*model.Data{
+		Events: []*schema.Data{
 			{
 				Pub:  true,
 				Name: "UserChangedEvent",
-				Members: []*model.DataMember{
+				Members: []*schema.DataMember{
 					{Name: "user", Type: codegentest.DataType(user)},
 				},
 			},
@@ -192,12 +192,12 @@ func TestGeneratorRendersGoPubAndRegularModules(t *testing.T) {
 		t.Fatalf("did not expect regular pub event listener, got:\n%s", regularEventContent)
 	}
 
-	pubSchemaContent := readFileForTest(t, filepath.Join(goPubOutDir, "schema.go"))
+	pubSchemaContent := readFileForTest(t, filepath.Join(goPubOutDir, "descriptor.go"))
 	for _, name := range []string{"User", "UserService", "UserChangedEvent"} {
 		codegentest.AssertGoSourceContains(t, pubSchemaContent, `Name: "`+name+`"`)
 	}
 	codegentest.AssertGoSourceContains(t, pubSchemaContent, "Full: false")
-	regularSchemaContent := readFileForTest(t, filepath.Join(goOutDir, "schema.go"))
+	regularSchemaContent := readFileForTest(t, filepath.Join(goOutDir, "descriptor.go"))
 	codegentest.AssertGoSourceContains(t, regularSchemaContent, "Full: true")
 	for _, name := range []string{"User", "UserService", "UserChangedEvent"} {
 		codegentest.AssertGoSourceContains(t, regularSchemaContent, `Name: "`+name+`"`)

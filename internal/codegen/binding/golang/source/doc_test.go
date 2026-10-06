@@ -10,7 +10,7 @@ import (
 )
 
 func TestBuildDocGoPayloadUsesDomainDescription(t *testing.T) {
-	pkg := buildModelDomainForTest(t, codegentest.DomainModelWithDescription("demo.user", "User domain"))
+	pkg := buildSchemaDomainForTest(t, codegentest.DomainSchemaWithDescription("demo.user", "User domain"))
 	gen := newGen(Option{
 		Domain:      pkg,
 		View:        mustView(t, view.ModeFull, pkg),
@@ -43,7 +43,7 @@ func TestDeprecatedGoDocLinesSupportsMultilineReason(t *testing.T) {
 }
 
 func TestBuildDocGoPayloadFallsBackToPackageName(t *testing.T) {
-	pkg := buildModelDomainForTest(t, codegentest.DomainModel("demo.user"))
+	pkg := buildSchemaDomainForTest(t, codegentest.DomainSchema("demo.user"))
 	gen := newGen(Option{
 		Domain:      pkg,
 		View:        mustView(t, view.ModeFull, pkg),

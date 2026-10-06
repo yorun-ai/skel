@@ -38,13 +38,13 @@ func newDependencyReport(domain string) *DependencyReport {
 	})
 }
 
-// Dependencies consumes a normalized projection without loading or compiling inputs.
-func Dependencies(document *Document) *DependencyReport {
-	result := newDependencyReport(document.Domain)
+// Dependencies inspects semantic declarations without loading or compiling inputs.
+func Dependencies(domain *Domain) *DependencyReport {
+	result := newDependencyReport(domain.Name())
 	seen := map[Dependency]bool{}
 	add := func(name, kind string) {
 		i := strings.LastIndex(name, ".")
-		if i < 0 || name[:i] == document.Domain {
+		if i < 0 || name[:i] == domain.Name() {
 			return
 		}
 		dependency := Dependency{Domain: name[:i], Name: name[i+1:], Kind: kind}
@@ -56,17 +56,27 @@ func Dependencies(document *Document) *DependencyReport {
 			return
 		}
 		switch value.Kind {
-		case TypeKindData, TypeKindEnum, TypeKindConfig, TypeKindEvent:
-			add(value.Name, string(value.Kind))
+		case TypeKindData:
+			if value.Data != nil {
+				add(domain.TypeReferenceName(value), string(value.Data.Kind))
+			}
+		case TypeKindEnum:
+			add(domain.TypeReferenceName(value), "enum")
+		case TypeKindUnresolvedReference:
+			add(domain.TypeReferenceName(value), "importedReference")
 		}
-		for _, arg := range value.Arguments {
+		for _, arg := range value.TypeArguments {
 			visitType(arg)
 		}
-		visitType(value.Element)
-		visitType(value.Key)
-		visitType(value.Value)
+		if value.List != nil {
+			visitType(value.List.Value)
+		}
+		if value.Map != nil {
+			visitType(value.Map.Key)
+			visitType(value.Map.Value)
+		}
 	}
-	data := func(value *DataSchema) {
+	data := func(value *Data) {
 		if value != nil {
 			for _, member := range value.Members {
 				visitType(member.Type)
@@ -78,34 +88,34 @@ func Dependencies(document *Document) *DependencyReport {
 			visitType(arg.Type)
 		}
 	}
-	var requirement func(*Requirement)
-	requirement = func(value *Requirement) {
+	var requirement func(*PermissionExpression)
+	requirement = func(value *PermissionExpression) {
 		if value == nil {
 			return
 		}
 		if value.Check != nil {
-			add(value.Check.Resource, "resource")
+			add(domain.ReferenceName(value.Check.ResourceSkelName), "resource")
 			for _, arg := range value.Check.Arguments {
 				visitType(arg.Type)
 			}
 		}
-		if value.Mode == RequirementModeCode {
+		if value.Mode == PermissionRequireModeCode {
 			if resource, _, ok := strings.Cut(value.Code, ":"); ok {
-				add(resource, "resource")
+				add(domain.ReferenceName(resource), "resource")
 			}
 		}
 		for _, child := range value.Children {
 			requirement(child)
 		}
 	}
-	audiences := func(values []*Audience) {
+	audiences := func(values []*ActorAudience) {
 		for _, audience := range values {
-			add(audience.Actor, "actor")
+			add(domain.ReferenceName(audience.Actor), "actor")
 		}
 	}
 	checks := func(values []*ResourceCheck) {
 		for _, check := range values {
-			arguments(check.Arguments)
+			arguments(check.Method.Arguments)
 		}
 	}
 	lists := map[DeclarationType]*[]string{
@@ -115,7 +125,7 @@ func Dependencies(document *Document) *DependencyReport {
 		DeclarationTypeResource: &result.Resources, DeclarationTypeWeb: &result.Webs,
 		DeclarationTypeTask: &result.Tasks,
 	}
-	for _, declaration := range document.Declarations {
+	for _, declaration := range domain.Declarations() {
 		list := lists[declaration.Kind]
 		if list != nil {
 			*list = append(*list, declaration.SkelName)
@@ -133,11 +143,15 @@ func Dependencies(document *Document) *DependencyReport {
 		}
 		if declaration.Service != nil {
 			audiences(declaration.Service.Audiences)
-			requirement(declaration.Service.Require)
+			if declaration.Service.Require != nil {
+				requirement(declaration.Service.Require.Expression)
+			}
 			for _, method := range declaration.Service.Methods {
 				arguments(method.Arguments)
-				visitType(method.Result)
-				requirement(method.Require)
+				visitType(method.ResultType)
+				if method.Require != nil {
+					requirement(method.Require.Expression)
+				}
 			}
 		}
 		if declaration.Web != nil {

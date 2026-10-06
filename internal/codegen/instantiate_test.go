@@ -3,28 +3,28 @@ package codegen
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestInstantiateMembersCopiesArgumentsAndPreservesRecursiveIdentity(t *testing.T) {
-	parameter := new(model.TypeParameter{Name: "TItem"})
-	parameterRef := new(model.Type{Kind: model.TypeKindTypeParameter, TypeParameter: parameter})
-	data := new(model.Data{Name: "Node", Kind: model.DataKindData, TypeParameters: []*model.TypeParameter{parameter}})
-	data.Members = []*model.DataMember{
+	parameter := new(schema.TypeParameter{Name: "TItem"})
+	parameterRef := new(schema.Type{Kind: schema.TypeKindTypeParameter, TypeParameter: parameter})
+	data := new(schema.Data{Name: "Node", Kind: schema.DataKindData, TypeParameters: []*schema.TypeParameter{parameter}})
+	data.Members = []*schema.DataMember{
 		{Name: "value", Type: parameterRef},
-		{Name: "next", Type: new(model.Type{Kind: model.TypeKindData, Data: data, Nullable: true, TypeArguments: []*model.Type{parameterRef}})},
+		{Name: "next", Type: new(schema.Type{Kind: schema.TypeKindData, Data: data, Nullable: true, TypeArguments: []*schema.Type{parameterRef}})},
 	}
-	arg := new(model.Type{Kind: model.TypeKindList, List: new(model.ListType{Value: new(model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString})})})
-	input := new(model.Type{Kind: model.TypeKindData, Data: data, TypeArguments: []*model.Type{arg}})
+	arg := new(schema.Type{Kind: schema.TypeKindList, List: new(schema.ListType{Value: new(schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString})})})
+	input := new(schema.Type{Kind: schema.TypeKindData, Data: data, TypeArguments: []*schema.Type{arg}})
 	members, err := InstantiateMembers(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if members[1].Type.Data != data || members[1].Type.TypeArguments[0].Kind != model.TypeKindList || !members[1].Type.Nullable {
+	if members[1].Type.Data != data || members[1].Type.TypeArguments[0].Kind != schema.TypeKindList || !members[1].Type.Nullable {
 		t.Fatal("recursive instantiation lost semantic identity")
 	}
-	members[0].Type.List.Value.Scalar = model.ScalarInt
-	if arg.List.Value.Scalar != model.ScalarString || data.Members[0].Type.Kind != model.TypeKindTypeParameter {
+	members[0].Type.List.Value.Scalar = schema.ScalarInt
+	if arg.List.Value.Scalar != schema.ScalarString || data.Members[0].Type.Kind != schema.TypeKindTypeParameter {
 		t.Fatal("returned expressions alias input")
 	}
 	// Open recursive Node<TItem> must preserve TItem from the caller's scope.

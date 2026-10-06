@@ -9,39 +9,39 @@ import (
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/testutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestGeneratorRendersNullableMapAndServiceHooks(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "skeled")
 
-	profile := &model.Data{
+	profile := &schema.Data{
 		Name: "Profile",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "aliases", Type: codegentest.ListType(codegentest.StringType())},
 		},
 	}
-	user := &model.Data{
+	user := &schema.Data{
 		Name: "User",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "profile", Type: codegentest.DataType(profile)},
 			{Name: "labels", Type: codegentest.NullableType(codegentest.MapType(codegentest.StringType(), codegentest.StringType()))},
 			{Name: "friends", Type: codegentest.ListType(codegentest.NullableType(codegentest.DataType(profile)))},
 			{Name: "profilesByName", Type: codegentest.MapType(codegentest.StringType(), codegentest.NullableType(codegentest.DataType(profile)))},
 		},
 	}
-	pkg := newModelDomainForTest(t, model.DomainSpec{
+	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{profile, user},
-		Services: []*model.Service{
+		Data: []*schema.Data{profile, user},
+		Services: []*schema.Service{
 			{
 				Name: "UserService",
-				Methods: []*model.Method{
-					methodForTest("UserService", &model.Method{
+				Methods: []*schema.Method{
+					methodForTest("UserService", &schema.Method{
 						Name:       "listUsers",
 						ResultType: codegentest.ListType(codegentest.DataType(user)),
-						Arguments: []*model.Argument{
+						Arguments: []*schema.Argument{
 							{Name: "friends", Type: codegentest.ListType(codegentest.NullableType(codegentest.DataType(profile)))},
 							{
 								Name: "profilesByName",

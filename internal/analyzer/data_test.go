@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestParseData(t *testing.T) {
@@ -56,7 +56,7 @@ func TestParseData(t *testing.T) {
 	if len(data.Members) != 2 {
 		t.Fatalf("unexpected member count: %d", len(data.Members))
 	}
-	if data.Members[0].Type.Kind != model.TypeKindList {
+	if data.Members[0].Type.Kind != schema.TypeKindList {
 		t.Fatalf("unexpected first member type kind: %v", data.Members[0].Type.Kind)
 	}
 	if data.Members[0].Description != "Data item" {
@@ -246,7 +246,7 @@ func TestParseConfig(t *testing.T) {
 			},
 		},
 	})
-	if config.Kind != model.DataKindConfig {
+	if config.Kind != schema.DataKindConfig {
 		t.Fatalf("unexpected config kind: %v", config.Kind)
 	}
 	if config.Name != "DatabaseConfig" {
@@ -255,7 +255,7 @@ func TestParseConfig(t *testing.T) {
 	if config.IsGeneric() {
 		t.Fatal("config should not be generic")
 	}
-	if config.Lifecycle != model.ConfigLifecycleEternal {
+	if config.Lifecycle != schema.ConfigLifecycleEternal {
 		t.Fatalf("unexpected config lifecycle: %v", config.Lifecycle)
 	}
 }
@@ -317,7 +317,7 @@ func TestParseEvent(t *testing.T) {
 			},
 		},
 	})
-	if event.Kind != model.DataKindEvent {
+	if event.Kind != schema.DataKindEvent {
 		t.Fatalf("unexpected event kind: %v", event.Kind)
 	}
 	if !event.Pub {

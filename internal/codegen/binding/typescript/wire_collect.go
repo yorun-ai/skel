@@ -4,11 +4,11 @@ import (
 	"sort"
 
 	"go.yorun.ai/skel/internal/codegen"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
-func (b *_WireSchemaBuilder) collectMethod(method *model.Method) {
+func (b *_WireSchemaBuilder) collectMethod(method *schema.Method) {
 	if methodArgumentsContainBinary(method) {
 		for _, argument := range method.Arguments {
 			b.types = append(b.types, argument.Type)
@@ -20,8 +20,8 @@ func (b *_WireSchemaBuilder) collectMethod(method *model.Method) {
 }
 
 func (b *_WireSchemaBuilder) prepareFactoryNames() {
-	codegen.VisitTypeGraphs(b.types, func(current *model.Type) {
-		if current.Kind == model.TypeKindData {
+	codegen.VisitTypeGraphs(b.types, func(current *schema.Type) {
+		if current.Kind == schema.TypeKindData {
 			b.data[current.Data] = true
 		}
 	})
@@ -43,8 +43,8 @@ func (b *_WireSchemaBuilder) prepareFactoryNames() {
 	}
 }
 
-func (b *_WireSchemaBuilder) sortedData() []*model.Data {
-	dataList := make([]*model.Data, 0, len(b.data))
+func (b *_WireSchemaBuilder) sortedData() []*schema.Data {
+	dataList := make([]*schema.Data, 0, len(b.data))
 	for dataType := range b.data {
 		dataList = append(dataList, dataType)
 	}

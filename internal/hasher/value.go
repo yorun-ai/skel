@@ -1,6 +1,6 @@
 package hasher
 
-import "go.yorun.ai/skel/internal/model"
+import "go.yorun.ai/skel/schema"
 
 type _ActorRefHashValue struct {
 	Name     string `json:"name"`
@@ -54,7 +54,7 @@ type _DataHashValue struct {
 	Description      string              `json:"description,omitempty"`
 	Deprecated       bool                `json:"deprecated,omitempty"`
 	DeprecatedReason string              `json:"deprecatedReason,omitempty"`
-	Kind             model.DataKind      `json:"kind,omitempty"`
+	Kind             schema.DataKind     `json:"kind,omitempty"`
 	Ext              bool                `json:"ext,omitempty"`
 	Pub              bool                `json:"pub,omitempty"`
 	Sensitive        bool                `json:"sensitive,omitempty"`
@@ -64,7 +64,7 @@ type _DataHashValue struct {
 }
 
 type _WebHashValue struct {
-	Auth             model.AuthMode        `json:"auth,omitempty"`
+	Auth             schema.AuthMode       `json:"auth,omitempty"`
 	MountPath        string                `json:"mountPath,omitempty"`
 	Name             string                `json:"name"`
 	SkelName         string                `json:"skelName"`
@@ -89,8 +89,8 @@ type _ActorHashValue struct {
 	AuthInfoHash       string   `json:"authInfoHash,omitempty"`
 	AuthMethod         string   `json:"authMethod,omitempty"`
 	AuthMethodHash     string   `json:"authMethodHash,omitempty"`
-	PermEnabled        bool     `json:"permEnabled,omitempty"`
-	PermMethod         string   `json:"permMethod,omitempty"`
+	PermissionEnabled  bool     `json:"permEnabled,omitempty"`
+	PermissionMethod   string   `json:"permMethod,omitempty"`
 	PermMethodHash     string   `json:"permMethodHash,omitempty"`
 }
 
@@ -141,7 +141,7 @@ type _ServiceHashValue struct {
 }
 
 type _RequireHashValue struct {
-	Expr *_RequireExprHashValue `json:"expr"`
+	Expression *_RequireExprHashValue `json:"expr"`
 }
 
 type _RequireExprHashValue struct {

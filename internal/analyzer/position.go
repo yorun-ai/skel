@@ -2,9 +2,9 @@ package analyzer
 
 import (
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func position(pos lexer.Position) model.Position {
-	return model.Position{File: pos.Filename, Line: pos.Line, Column: pos.Column}
+func position(pos lexer.Position) schema.Position {
+	return schema.Position{File: pos.Filename, Line: pos.Line, Column: pos.Column}
 }

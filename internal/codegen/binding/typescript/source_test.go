@@ -9,12 +9,12 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/internal/codegen/output"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestNewGenDerivesPackageNameForApp(t *testing.T) {
-	pkg := buildModelDomainForTest(t, codegentest.DomainModel("app"))
+	pkg := buildSchemaDomainForTest(t, codegentest.DomainSchema("app"))
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"))
 
@@ -24,7 +24,7 @@ func TestNewGenDerivesPackageNameForApp(t *testing.T) {
 }
 
 func TestNewGenDerivesPackageNameForAppDomain(t *testing.T) {
-	pkg := buildModelDomainForTest(t, codegentest.DomainModel("sales.order"))
+	pkg := buildSchemaDomainForTest(t, codegentest.DomainSchema("sales.order"))
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"))
 
@@ -34,7 +34,7 @@ func TestNewGenDerivesPackageNameForAppDomain(t *testing.T) {
 }
 
 func TestNewGenUsesTypeScriptModule(t *testing.T) {
-	pkg := buildModelDomainForTest(t, codegentest.DomainModel("sales.order"))
+	pkg := buildSchemaDomainForTest(t, codegentest.DomainSchema("sales.order"))
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"), Option{
 		Module: "@acme/orders",
@@ -46,7 +46,7 @@ func TestNewGenUsesTypeScriptModule(t *testing.T) {
 }
 
 func TestNewGenDerivesPackageNameFromTypeScriptModuleScope(t *testing.T) {
-	pkg := buildModelDomainForTest(t, codegentest.DomainModel("sales.order"))
+	pkg := buildSchemaDomainForTest(t, codegentest.DomainSchema("sales.order"))
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"), Option{
 		ModuleScope: "@acme/skeled",
@@ -58,7 +58,7 @@ func TestNewGenDerivesPackageNameFromTypeScriptModuleScope(t *testing.T) {
 }
 
 func TestNewGenDerivesPackageNameFromNpmScope(t *testing.T) {
-	pkg := buildModelDomainForTest(t, codegentest.DomainModel("sales.order"))
+	pkg := buildSchemaDomainForTest(t, codegentest.DomainSchema("sales.order"))
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"), Option{
 		ModuleScope: "@acme",
@@ -70,28 +70,28 @@ func TestNewGenDerivesPackageNameFromNpmScope(t *testing.T) {
 }
 
 func TestNewGenDerivesExternalTypeImportsFromTypeScriptModuleScope(t *testing.T) {
-	userSummary := &model.Data{Name: "UserSummary", Pub: true}
-	userDomain := buildModelDomainForTest(t, model.DomainSpec{
+	userSummary := &schema.Data{Name: "UserSummary", Pub: true}
+	userDomain := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{userSummary},
+		Data: []*schema.Data{userSummary},
 	})
-	order := &model.Data{
+	order := &schema.Data{
 		Name: "Order",
-		Members: []*model.DataMember{{
+		Members: []*schema.DataMember{{
 			Name: "buyer",
 			Type: externalDataTypeForTest(userSummary, "demo.user", "user", true),
 		}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "sales.order",
-		Imports: []*model.Import{{
+		Imports: []*schema.Import{{
 			Domain:        userDomain,
 			Name:          "demo.user",
 			Alias:         "user",
 			ExplicitAlias: true,
 		}},
-		Data:     []*model.Data{order},
-		Services: []*model.Service{{Name: "OrderService", Api: true, Audiences: []*model.ActorAudience{{Actor: "ClientActor"}}, Methods: []*model.Method{{Name: "get", ResultType: codegentest.DataType(order)}}}},
+		Data:     []*schema.Data{order},
+		Services: []*schema.Service{{Name: "OrderService", Api: true, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "get", ResultType: codegentest.DataType(order)}}}},
 	})
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"), Option{
@@ -103,7 +103,7 @@ func TestNewGenDerivesExternalTypeImportsFromTypeScriptModuleScope(t *testing.T)
 	}
 	original := pkg.Data()[0].Members[0].Type
 	if original.ExternalAlias != "user" {
-		t.Fatal("generation mutated semantic model")
+		t.Fatal("generation mutated semantic schema")
 	}
 	memberType := gen.bindings[original]
 	if memberType.Path != "@acme/skeled-demo-userapi" {
@@ -115,28 +115,28 @@ func TestNewGenDerivesExternalTypeImportsFromTypeScriptModuleScope(t *testing.T)
 }
 
 func TestNewGenDerivesPublicTypeImportsFromTypeScriptModuleScope(t *testing.T) {
-	userSummary := &model.Data{Name: "UserSummary", Pub: true}
-	userDomain := buildModelDomainForTest(t, model.DomainSpec{
+	userSummary := &schema.Data{Name: "UserSummary", Pub: true}
+	userDomain := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{userSummary},
+		Data: []*schema.Data{userSummary},
 	})
-	order := &model.Data{
+	order := &schema.Data{
 		Name: "Order",
 		Pub:  true,
-		Members: []*model.DataMember{{
+		Members: []*schema.DataMember{{
 			Name: "buyer",
 			Type: externalDataTypeForTest(userSummary, "demo.user", "user", true),
 		}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "sales.order",
-		Imports: []*model.Import{{
+		Imports: []*schema.Import{{
 			Domain:        userDomain,
 			Name:          "demo.user",
 			Alias:         "user",
 			ExplicitAlias: true,
 		}},
-		Data: []*model.Data{order},
+		Data: []*schema.Data{order},
 	})
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"), Option{
@@ -148,7 +148,7 @@ func TestNewGenDerivesPublicTypeImportsFromTypeScriptModuleScope(t *testing.T) {
 	}
 	original := pkg.Data()[0].Members[0].Type
 	if original.ExternalAlias != "user" {
-		t.Fatal("generation mutated semantic model")
+		t.Fatal("generation mutated semantic schema")
 	}
 	memberType := gen.bindings[original]
 	if memberType.Path != "@acme/skeled-demo-userapi" {
@@ -160,27 +160,27 @@ func TestNewGenDerivesPublicTypeImportsFromTypeScriptModuleScope(t *testing.T) {
 }
 
 func TestNewGenIgnoresUnusedBackendTypeImports(t *testing.T) {
-	userSummary := &model.Data{Name: "UserSummary", Pub: true}
-	userDomain := buildModelDomainForTest(t, model.DomainSpec{
+	userSummary := &schema.Data{Name: "UserSummary", Pub: true}
+	userDomain := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{userSummary},
+		Data: []*schema.Data{userSummary},
 	})
-	internalOrder := &model.Data{
+	internalOrder := &schema.Data{
 		Name: "InternalOrder",
-		Members: []*model.DataMember{{
+		Members: []*schema.DataMember{{
 			Name: "buyer",
 			Type: externalDataTypeForTest(userSummary, "demo.user", "user", true),
 		}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "sales.order",
-		Imports: []*model.Import{{
+		Imports: []*schema.Import{{
 			Domain:        userDomain,
 			Name:          "demo.user",
 			Alias:         "user",
 			ExplicitAlias: true,
 		}},
-		Data: []*model.Data{internalOrder},
+		Data: []*schema.Data{internalOrder},
 	})
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"))
@@ -192,7 +192,7 @@ func TestNewGenIgnoresUnusedBackendTypeImports(t *testing.T) {
 
 func TestRenderTsTrimsTrailingWhitespace(t *testing.T) {
 	outDir := filepath.Join(t.TempDir(), "ts")
-	pkg := buildModelDomainForTest(t, codegentest.DomainModel("demo.user"))
+	pkg := buildSchemaDomainForTest(t, codegentest.DomainSchema("demo.user"))
 	gen := newTestGen(pkg, outDir)
 
 	gen.renderTs("sample.ts", "const value = 1;  \n\t\nconst next = 2;\t", nil)
@@ -207,52 +207,52 @@ func TestRenderTsTrimsTrailingWhitespace(t *testing.T) {
 }
 
 func TestApiViewIncludesLegacyAdmissionRulesAcrossTransports(t *testing.T) {
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Actors: []*model.Actor{
-			{Name: "ClientActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)}},
-			{Name: "AgentActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaAgent)}},
-			{Name: "OpenAPIActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaOpenAPI)}},
+		Actors: []*schema.Actor{
+			{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
+			{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
+			{Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaOpenAPI)}},
 		},
-		Services: []*model.Service{
-			{Name: "ClientOnlyService", Audiences: []*model.ActorAudience{{Actor: "ClientActor"}}, Methods: []*model.Method{{Name: "ping"}}},
-			{Name: "HybridService", Audiences: []*model.ActorAudience{{Actor: "AgentActor"}, {Actor: "ClientActor"}}, Methods: []*model.Method{{Name: "ping"}}},
-			{Name: "AgentOnlyService", Audiences: []*model.ActorAudience{{Actor: "AgentActor"}}, Methods: []*model.Method{{Name: "ping"}}},
-			{Name: "OpenAPIOnlyService", Audiences: []*model.ActorAudience{{Actor: "OpenAPIActor"}}, Methods: []*model.Method{{Name: "ping"}}},
-			{Name: "ClientActorOpenAPIOnlyService", Audiences: []*model.ActorAudience{{Actor: "ClientActor", Via: string(model.ActorViaOpenAPI)}}, Methods: []*model.Method{{Name: "ping"}}},
-			{Name: "ClientActorClientViaService", Audiences: []*model.ActorAudience{{Actor: "ClientActor", Via: string(model.ActorViaClient)}}, Methods: []*model.Method{{Name: "ping"}}},
-			{Name: "InternalService", Methods: []*model.Method{{Name: "ping"}}},
+		Services: []*schema.Service{
+			{Name: "ClientOnlyService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "HybridService", Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}, {Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "AgentOnlyService", Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "OpenAPIOnlyService", Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "ClientActorOpenAPIOnlyService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaOpenAPI)}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "ClientActorClientViaService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "InternalService", Methods: []*schema.Method{{Name: "ping"}}},
 		},
 	})
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"))
 	services := gen.apiView.Services
-	got := sliceutil.Map(services, func(service *model.Service) string { return service.Name })
+	got := sliceutil.Map(services, func(service *schema.Service) string { return service.Name })
 	if want := []string{"AgentOnlyService", "ClientActorClientViaService", "ClientActorOpenAPIOnlyService", "ClientOnlyService", "HybridService", "OpenAPIOnlyService"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected client services: got=%v want=%v", got, want)
 	}
 }
 
 func TestClientServicesIncludesImportedClientActors(t *testing.T) {
-	appDomain := buildModelDomainForTest(t, model.DomainSpec{
+	appDomain := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name:   "app",
-		Actors: []*model.Actor{{Name: "UserActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)}}},
+		Actors: []*schema.Actor{{Name: "UserActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}}},
 	})
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Imports: []*model.Import{{
+		Imports: []*schema.Import{{
 			Domain: appDomain,
 			Name:   "app",
 			Alias:  "app",
 		}},
-		Services: []*model.Service{{
-			Name: "ImportedActorService", Audiences: []*model.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*model.Method{{Name: "ping"}},
+		Services: []*schema.Service{{
+			Name: "ImportedActorService", Audiences: []*schema.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*schema.Method{{Name: "ping"}},
 		}},
 	})
 
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"))
 	services := gen.apiView.Services
-	got := sliceutil.Map(services, func(service *model.Service) string { return service.Name })
+	got := sliceutil.Map(services, func(service *schema.Service) string { return service.Name })
 	if want := []string{"ImportedActorService"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected client services: got=%v want=%v", got, want)
 	}
@@ -260,14 +260,14 @@ func TestClientServicesIncludesImportedClientActors(t *testing.T) {
 
 func TestGenRendersTypesWithoutClientServices(t *testing.T) {
 	outDir := filepath.Join(t.TempDir(), "ts")
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{{
+		Data: []*schema.Data{{
 			Name: "User", Pub: true,
-			Members: []*model.DataMember{{Name: "id", Type: codegentest.IntType()}},
+			Members: []*schema.DataMember{{Name: "id", Type: codegentest.IntType()}},
 		}},
-		Services: []*model.Service{{
-			Name: "BackendService", Pub: true, Methods: []*model.Method{{Name: "ping"}},
+		Services: []*schema.Service{{
+			Name: "BackendService", Pub: true, Methods: []*schema.Method{{Name: "ping"}},
 		}},
 	})
 

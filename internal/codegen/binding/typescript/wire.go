@@ -3,7 +3,7 @@ package typescript
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type _WireMethod struct {
@@ -17,9 +17,9 @@ type _WireFactory struct {
 }
 
 type _WireSchemaBuilder struct {
-	data         map[*model.Data]bool
-	factoryNames map[*model.Data]string
-	types        []*model.Type
+	data         map[*schema.Data]bool
+	factoryNames map[*schema.Data]string
+	types        []*schema.Type
 	err          error
 }
 
@@ -31,13 +31,13 @@ func (b *_WireSchemaBuilder) fail(format string, args ...any) {
 
 func newWireSchemaBuilder() *_WireSchemaBuilder {
 	return &_WireSchemaBuilder{
-		data:         map[*model.Data]bool{},
-		factoryNames: map[*model.Data]string{},
-		types:        make([]*model.Type, 0),
+		data:         map[*schema.Data]bool{},
+		factoryNames: map[*schema.Data]string{},
+		types:        make([]*schema.Type, 0),
 	}
 }
 
-func methodArgumentsContainBinary(method *model.Method) bool {
+func methodArgumentsContainBinary(method *schema.Method) bool {
 	for _, argument := range method.Arguments {
 		if argument.Type.ContainsBinaryType() {
 			return true
@@ -46,6 +46,6 @@ func methodArgumentsContainBinary(method *model.Method) bool {
 	return false
 }
 
-func methodResultContainsBinary(method *model.Method) bool {
+func methodResultContainsBinary(method *schema.Method) bool {
 	return method.ResultType.ContainsBinaryType()
 }

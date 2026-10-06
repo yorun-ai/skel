@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestBuildServiceNames(t *testing.T) {
@@ -29,44 +29,44 @@ func TestBuildServiceNames(t *testing.T) {
 }
 
 func TestCastService(t *testing.T) {
-	service := new(_Gen).castService(&model.Service{
+	service := new(_Gen).castService(&schema.Service{
 		Name:        "UserService",
 		SkelName:    "demo.user.UserService",
 		Description: "User service",
-		Methods: []*model.Method{
+		Methods: []*schema.Method{
 			{
 				Name:               "getUser",
 				Description:        "Get a user by ID",
 				ArgumentsSensitive: true,
 				ResultSensitive:    true,
-				Arguments: []*model.Argument{
+				Arguments: []*schema.Argument{
 					{
 						Name:        "userId",
 						Description: "User ID",
 						Example:     `"10001"`,
-						Type: &model.Type{
-							Kind:   model.TypeKindScalar,
-							Scalar: model.ScalarInt,
+						Type: &schema.Type{
+							Kind:   schema.TypeKindScalar,
+							Scalar: schema.ScalarInt,
 						},
 					},
 				},
-				ResultType: &model.Type{
-					Kind: model.TypeKindData,
-					Data: &model.Data{
+				ResultType: &schema.Type{
+					Kind: schema.TypeKindData,
+					Data: &schema.Data{
 						Name: "User",
 					},
 					Nullable: true,
 				},
 				OutputDescription: "User information",
 				OutputExample:     `{ id:10001, name:"zhangsan" }`,
-				ArgumentsData: &model.Data{
+				ArgumentsData: &schema.Data{
 					Name: "UserServiceGetUserArguments",
-					Members: []*model.DataMember{
+					Members: []*schema.DataMember{
 						{
 							Name: "userId",
-							Type: &model.Type{
-								Kind:   model.TypeKindScalar,
-								Scalar: model.ScalarInt,
+							Type: &schema.Type{
+								Kind:   schema.TypeKindScalar,
+								Scalar: schema.ScalarInt,
 							},
 						},
 					},
@@ -106,23 +106,23 @@ func TestCastService(t *testing.T) {
 }
 
 func TestGeneratedGoParsesWithMultilineDeprecatedReasons(t *testing.T) {
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Services: []*model.Service{{
+		Services: []*schema.Service{{
 			Name:             "UserService",
 			Deprecated:       true,
 			DeprecatedReason: "Use ProfileService instead\nComplete migration first",
-			Methods: []*model.Method{{
+			Methods: []*schema.Method{{
 				Name:             "getUser",
 				Deprecated:       true,
 				DeprecatedReason: "Use getProfile instead\nThe old response will be removed",
 			}},
 		}},
-		Tasks: []*model.Task{{
+		Tasks: []*schema.Task{{
 			Name:             "RefreshTask",
 			Deprecated:       true,
 			DeprecatedReason: "Use RebuildTask instead\nThe old schedule will be removed",
-			Triggers: []*model.TaskTrigger{{
+			Triggers: []*schema.TaskTrigger{{
 				Name:             "legacy",
 				Deprecated:       true,
 				DeprecatedReason: "Use manually instead\nLegacy scheduling is disabled",
@@ -150,29 +150,29 @@ func TestGeneratedGoParsesWithMultilineDeprecatedReasons(t *testing.T) {
 }
 
 func TestCastServiceMarksMethodBinaryFlags(t *testing.T) {
-	service := new(_Gen).castService(&model.Service{
+	service := new(_Gen).castService(&schema.Service{
 		Name:     "AssetService",
 		SkelName: "demo.asset.AssetService",
-		Methods: []*model.Method{
+		Methods: []*schema.Method{
 			{
 				Name: "upload",
-				Arguments: []*model.Argument{
+				Arguments: []*schema.Argument{
 					{
 						Name: "payload",
-						Type: &model.Type{
-							Kind:   model.TypeKindScalar,
-							Scalar: model.ScalarBinary,
+						Type: &schema.Type{
+							Kind:   schema.TypeKindScalar,
+							Scalar: schema.ScalarBinary,
 						},
 					},
 				},
-				ArgumentsData: &model.Data{
+				ArgumentsData: &schema.Data{
 					Name: "AssetServiceUploadArguments",
-					Members: []*model.DataMember{
+					Members: []*schema.DataMember{
 						{
 							Name: "payload",
-							Type: &model.Type{
-								Kind:   model.TypeKindScalar,
-								Scalar: model.ScalarBinary,
+							Type: &schema.Type{
+								Kind:   schema.TypeKindScalar,
+								Scalar: schema.ScalarBinary,
 							},
 						},
 					},
@@ -180,9 +180,9 @@ func TestCastServiceMarksMethodBinaryFlags(t *testing.T) {
 			},
 			{
 				Name: "download",
-				ResultType: &model.Type{
-					Kind:   model.TypeKindScalar,
-					Scalar: model.ScalarBinary,
+				ResultType: &schema.Type{
+					Kind:   schema.TypeKindScalar,
+					Scalar: schema.ScalarBinary,
 				},
 			},
 		},

@@ -3,8 +3,8 @@ package source
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const webGoFilename = "web.go"
@@ -56,7 +56,7 @@ func (g *_Gen) buildWebGoPayload() *WebGoPayload {
 	return payload
 }
 
-func (g *_Gen) castWeb(p *model.Web) *Web {
+func (g *_Gen) castWeb(p *schema.Web) *Web {
 	name := nameutil.ToCamel(p.Name)
 	serverName := fmt.Sprintf("%sServer", name)
 	return &Web{

@@ -1,30 +1,30 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/symbol"
+	"go.yorun.ai/skel/schema"
 )
 
-const typeKindNone model.TypeKind = 0
+const typeKindNone schema.TypeKind = 0
 
-const scalarNone model.Scalar = 0
+const scalarNone schema.Scalar = 0
 
 var (
-	mapKeyTypes       = []model.TypeKind{model.TypeKindScalar, model.TypeKindEnum}
-	mapKeyScalarTypes = []model.Scalar{model.ScalarInt, model.ScalarString, model.ScalarUUID}
+	mapKeyTypes       = []schema.TypeKind{schema.TypeKindScalar, schema.TypeKindEnum}
+	mapKeyScalarTypes = []schema.Scalar{schema.ScalarInt, schema.ScalarString, schema.ScalarUUID}
 )
 
 type _RefContext struct {
-	enums                  map[string]*model.Enum
-	dataList               map[string]*model.Data
-	typeParameters         map[string]*model.TypeParameter
+	enums                  map[string]*schema.Enum
+	dataList               map[string]*schema.Data
+	typeParameters         map[string]*schema.TypeParameter
 	imports                map[string]*_DomainImport
-	invalidData            map[*model.Data]bool
+	invalidData            map[*schema.Data]bool
 	unavailable            map[string]bool
 	allowUnresolvedImports bool
 }
 
-func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContext) bool {
+func fixTypeRef(reporter *_DiagnosticReporter, t *schema.Type, refCtx *_RefContext) bool {
 	// 1. fix Enum/Data/TypeParameter type references
 	// 2. check map key type (int/string/uuid/Enum)
 
@@ -36,7 +36,7 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 	}
 
 	switch t.Kind {
-	case model.TypeKindUnresolvedReference:
+	case schema.TypeKindUnresolvedReference:
 		resolved := refCtx.bindType(t)
 		refName := t.SkelName
 		refQualifier := t.ExternalAlias
@@ -61,29 +61,29 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 				return false
 			}
 			if resolved.Kind == symbol.Enum {
-				if !reporter.check(enum.Pub, "%s imported enum %s.%s is not public", t.Pos, import_.Model.Alias, refName) {
+				if !reporter.check(enum.Pub, "%s imported enum %s.%s is not public", t.Pos, import_.Schema.Alias, refName) {
 					return false
 				}
-				t.Kind = model.TypeKindEnum
+				t.Kind = schema.TypeKindEnum
 				t.Enum = enum
 				t.SkelName = enum.SkelName
 				t.ExternalDomain = import_.Domain.name
-				t.ExternalAlias = import_.Model.Alias
-				t.ExternalAliasExplicit = import_.Model.ExplicitAlias
+				t.ExternalAlias = import_.Schema.Alias
+				t.ExternalAliasExplicit = import_.Schema.ExplicitAlias
 				return true
 			}
 			if !checkDataValueType(reporter, t, dataType) {
 				return false
 			}
-			if !reporter.check(dataType.Pub, "%s imported data %s.%s is not public", t.Pos, import_.Model.Alias, refName) {
+			if !reporter.check(dataType.Pub, "%s imported data %s.%s is not public", t.Pos, import_.Schema.Alias, refName) {
 				return false
 			}
-			t.Kind = model.TypeKindData
+			t.Kind = schema.TypeKindData
 			t.Data = dataType
 			t.SkelName = dataType.SkelName
-			t.ExternalAlias = import_.Model.Alias
+			t.ExternalAlias = import_.Schema.Alias
 			t.ExternalDomain = import_.Domain.name
-			t.ExternalAliasExplicit = import_.Model.ExplicitAlias
+			t.ExternalAliasExplicit = import_.Schema.ExplicitAlias
 			valid := true
 			for _, typeArg := range t.TypeArguments {
 				if reporter.cancelled() {
@@ -106,7 +106,7 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			return false
 		}
 		if resolved.Kind == symbol.Enum {
-			t.Kind = model.TypeKindEnum
+			t.Kind = schema.TypeKindEnum
 			t.Enum = enum
 			t.SkelName = enum.SkelName
 			return true
@@ -115,7 +115,7 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			if !checkDataValueType(reporter, t, dataType) {
 				return false
 			}
-			t.Kind = model.TypeKindData
+			t.Kind = schema.TypeKindData
 			t.Data = dataType
 			t.SkelName = dataType.SkelName
 			valid := true
@@ -127,16 +127,16 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 			}
 			return checkTypeArguments(reporter, t, refName) && valid
 		}
-		t.Kind = model.TypeKindTypeParameter
+		t.Kind = schema.TypeKindTypeParameter
 		t.TypeParameter = param
 		return true
 
-	case model.TypeKindList:
+	case schema.TypeKindList:
 		return fixTypeRef(reporter, t.List.Value, refCtx)
 
-	case model.TypeKindMap:
+	case schema.TypeKindMap:
 		keyValid := fixTypeRef(reporter, t.Map.Key, refCtx)
-		if keyValid && !(refCtx.allowUnresolvedImports && t.Map.Key.Kind == model.TypeKindUnresolvedReference) {
+		if keyValid && !(refCtx.allowUnresolvedImports && t.Map.Key.Kind == schema.TypeKindUnresolvedReference) {
 			keyValid = checkTypeCanBeMapKey(reporter, t.Map.Key)
 		}
 		return fixTypeRef(reporter, t.Map.Value, refCtx) && keyValid
@@ -144,9 +144,9 @@ func fixTypeRef(reporter *_DiagnosticReporter, t *model.Type, refCtx *_RefContex
 	return true
 }
 
-func checkTypeArguments(reporter *_DiagnosticReporter, t *model.Type, refName string) bool {
+func checkTypeArguments(reporter *_DiagnosticReporter, t *schema.Type, refName string) bool {
 	referencePos := t.ReferencePos
-	if referencePos == (model.Position{}) {
+	if referencePos == (schema.Position{}) {
 		referencePos = t.Pos
 	}
 	if len(t.Data.TypeParameters) == 0 {
@@ -161,7 +161,7 @@ func checkTypeArguments(reporter *_DiagnosticReporter, t *model.Type, refName st
 	return valid
 }
 
-func checkDataValueType(reporter *_DiagnosticReporter, kind *model.Type, data *model.Data) bool {
-	return reporter.check(data.Kind == model.DataKindData,
+func checkDataValueType(reporter *_DiagnosticReporter, kind *schema.Type, data *schema.Data) bool {
+	return reporter.check(data.Kind == schema.DataKindData,
 		"%s %s %s cannot be used as a value type", kind.Pos, data.Kind, data.Name)
 }

@@ -4,8 +4,7 @@ import (
 	"context"
 
 	internalapi "go.yorun.ai/skel/internal/api"
-	"go.yorun.ai/skel/model"
-	"go.yorun.ai/skel/schema"
+	"go.yorun.ai/skel/schema/diff"
 )
 
 // ApiTypeDependency identifies an external data or enum required by an API view.
@@ -54,11 +53,11 @@ func QuerySchemaDependenciesContext(ctx context.Context, input Input, selection 
 // SchemaQueryOption selects a complete, public, or API schema view.
 type SchemaQueryOption = internalapi.SchemaQueryOption
 
-// SchemaQueryResult includes the normalized document and non-fatal diagnostics.
+// SchemaQueryResult includes the semantic domain and non-fatal diagnostics.
 type SchemaQueryResult = internalapi.SchemaQueryResult
 
-// QuerySchema creates a snapshot for inspection, encoding, listing or lookup.
-// The default view keeps unresolved imports, matching schema snapshot/list/get.
+// QuerySchema creates a semantic domain for inspection, listing or lookup.
+// The default view keeps unresolved imports, matching schema list/get.
 func QuerySchema(input Input, selection SchemaQueryOption) (SchemaQueryResult, error) {
 	return internalapi.QuerySchema(input, selection)
 }
@@ -78,17 +77,11 @@ var ErrSchemaSourceCompilation = internalapi.ErrSchemaSourceCompilation
 type SchemaDiffOption = internalapi.SchemaDiffOption
 
 // DiffSchemaSources compares candidate source with an explicit baseline or Git HEAD.
-func DiffSchemaSources(candidate Input, option SchemaDiffOption) (*schema.Report, error) {
+func DiffSchemaSources(candidate Input, option SchemaDiffOption) (*diff.Report, error) {
 	return internalapi.DiffSchemaSources(candidate, option)
 }
 
 // DiffSchemaSourcesContext is DiffSchemaSources with cancellation support.
-func DiffSchemaSourcesContext(ctx context.Context, candidate Input, option SchemaDiffOption) (*schema.Report, error) {
+func DiffSchemaSourcesContext(ctx context.Context, candidate Input, option SchemaDiffOption) (*diff.Report, error) {
 	return internalapi.DiffSchemaSourcesContext(ctx, candidate, option)
-}
-
-// ProjectSchema converts a semantic domain into a canonical schema snapshot.
-// Optional aliases normalize unresolved imported references.
-func ProjectSchema(domain *model.Domain, aliases map[string]string) (*schema.Document, error) {
-	return internalapi.ProjectSchema(domain, aliases)
 }

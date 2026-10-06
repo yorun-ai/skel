@@ -23,3 +23,15 @@ func ValidateKind(kind string) error {
 func DeclarationTypes() []DeclarationType {
 	return append([]DeclarationType{}, declarationKinds...)
 }
+
+var declarationKinds = []DeclarationType{
+	DeclarationTypeActor,
+	DeclarationTypeConfig,
+	DeclarationTypeData,
+	DeclarationTypeEnum,
+	DeclarationTypeEvent,
+	DeclarationTypeResource,
+	DeclarationTypeService,
+	DeclarationTypeTask,
+	DeclarationTypeWeb,
+}

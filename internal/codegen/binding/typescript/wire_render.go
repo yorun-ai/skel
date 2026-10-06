@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func (b *_WireSchemaBuilder) renderFactories() []*_WireFactory {
@@ -34,12 +34,12 @@ func (b *_WireSchemaBuilder) renderFactories() []*_WireFactory {
 	return factories
 }
 
-func (b *_WireSchemaBuilder) renderMethod(method *model.Method) *_WireMethod {
+func (b *_WireSchemaBuilder) renderMethod(method *schema.Method) *_WireMethod {
 	wireMethod := &_WireMethod{Name: nameutil.ToLowerCamel(method.Name)}
 	if methodArgumentsContainBinary(method) {
-		members := make([]*model.DataMember, 0, len(method.Arguments))
+		members := make([]*schema.DataMember, 0, len(method.Arguments))
 		for _, argument := range method.Arguments {
-			members = append(members, &model.DataMember{Name: nameutil.ToLowerCamel(argument.Name), Type: argument.Type})
+			members = append(members, &schema.DataMember{Name: nameutil.ToLowerCamel(argument.Name), Type: argument.Type})
 		}
 		wireMethod.ArgumentsSchema = b.renderObjectSchema(members, 3)
 	}
@@ -49,7 +49,7 @@ func (b *_WireSchemaBuilder) renderMethod(method *model.Method) *_WireMethod {
 	return wireMethod
 }
 
-func (b *_WireSchemaBuilder) renderObjectSchema(members []*model.DataMember, depth int) string {
+func (b *_WireSchemaBuilder) renderObjectSchema(members []*schema.DataMember, depth int) string {
 	var rendered strings.Builder
 	rendered.WriteString("{\n")
 	rendered.WriteString(indentWire(depth + 1))
@@ -73,7 +73,7 @@ func (b *_WireSchemaBuilder) renderObjectSchema(members []*model.DataMember, dep
 	return rendered.String()
 }
 
-func (b *_WireSchemaBuilder) renderType(type_ *model.Type, depth int) string {
+func (b *_WireSchemaBuilder) renderType(type_ *schema.Type, depth int) string {
 	if type_ == nil {
 		b.fail("cannot render nil TypeScript wire schema")
 		return ""
@@ -81,29 +81,29 @@ func (b *_WireSchemaBuilder) renderType(type_ *model.Type, depth int) string {
 
 	var rendered string
 	switch type_.Kind {
-	case model.TypeKindScalar:
+	case schema.TypeKindScalar:
 		kind := "value"
-		if type_.Scalar == model.ScalarBinary {
+		if type_.Scalar == schema.ScalarBinary {
 			kind = "binary"
 		}
 		rendered = renderSimpleWireSchema(kind, type_.Nullable)
-	case model.TypeKindEnum:
+	case schema.TypeKindEnum:
 		rendered = renderSimpleWireSchema("value", type_.Nullable)
-	case model.TypeKindTypeParameter:
+	case schema.TypeKindTypeParameter:
 		rendered = wireTypeParameterName(type_.TypeParameter)
 		if type_.Nullable {
 			rendered = "{ ..." + rendered + ", nullable: true }"
 		}
-	case model.TypeKindList:
+	case schema.TypeKindList:
 		rendered = b.renderContainerSchema(
 			"list",
 			[]string{"value: " + b.renderType(type_.List.Value, depth+1)},
 			type_.Nullable,
 			depth,
 		)
-	case model.TypeKindMap:
+	case schema.TypeKindMap:
 		key := "string"
-		if type_.Map.Key.Kind == model.TypeKindScalar && type_.Map.Key.Scalar == model.ScalarInt {
+		if type_.Map.Key.Kind == schema.TypeKindScalar && type_.Map.Key.Scalar == schema.ScalarInt {
 			key = "int"
 		}
 		rendered = b.renderContainerSchema(
@@ -115,7 +115,7 @@ func (b *_WireSchemaBuilder) renderType(type_ *model.Type, depth int) string {
 			type_.Nullable,
 			depth,
 		)
-	case model.TypeKindData:
+	case schema.TypeKindData:
 		arguments := make([]string, 0, len(type_.TypeArguments))
 		for _, argument := range type_.TypeArguments {
 			arguments = append(arguments, b.renderType(argument, depth))
@@ -166,7 +166,7 @@ func renderSimpleWireSchema(kind string, nullable bool) string {
 	return fmt.Sprintf("{ kind: '%s' }", kind)
 }
 
-func wireTypeParameterName(parameter *model.TypeParameter) string {
+func wireTypeParameterName(parameter *schema.TypeParameter) string {
 	return nameutil.ToLowerCamel(parameter.Name) + "WireSchema"
 }
 

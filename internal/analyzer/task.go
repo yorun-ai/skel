@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
-func parseTask(reporter *_DiagnosticReporter, gt *grammar.Task) (*model.Task, bool) {
+func parseTask(reporter *_DiagnosticReporter, gt *grammar.Task) (*schema.Task, bool) {
 	valid := checkCaseAdvanced(reporter, "Task", "", "Task", caseTypeCamel, gt.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, gt.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -19,7 +19,7 @@ func parseTask(reporter *_DiagnosticReporter, gt *grammar.Task) (*model.Task, bo
 	valid = reporter.checkNot(meta.HasExample, "%s task does not support decorator @example", gt.Name.Pos) && valid
 	triggers, triggersValid := parseTaskTriggers(reporter, gt.Name, gt.Triggers)
 	valid = triggersValid && valid
-	return &model.Task{
+	return &schema.Task{
 		Pos:              position(gt.Name.Pos),
 		Name:             gt.Name.Value,
 		Description:      meta.Description,
@@ -29,8 +29,8 @@ func parseTask(reporter *_DiagnosticReporter, gt *grammar.Task) (*model.Task, bo
 	}, valid
 }
 
-func parseTaskTriggers(reporter *_DiagnosticReporter, owner *grammar.Identifier, triggers []*grammar.TaskTrigger) ([]*model.TaskTrigger, bool) {
-	parsedTriggers := make([]*model.TaskTrigger, 0, len(triggers))
+func parseTaskTriggers(reporter *_DiagnosticReporter, owner *grammar.Identifier, triggers []*grammar.TaskTrigger) ([]*schema.TaskTrigger, bool) {
+	parsedTriggers := make([]*schema.TaskTrigger, 0, len(triggers))
 	triggerPos := map[string]lexer.Position{}
 	valid := true
 
@@ -58,7 +58,7 @@ func parseTaskTriggers(reporter *_DiagnosticReporter, owner *grammar.Identifier,
 	return parsedTriggers, valid
 }
 
-func parseTaskTrigger(reporter *_DiagnosticReporter, gt *grammar.TaskTrigger) (*model.TaskTrigger, bool) {
+func parseTaskTrigger(reporter *_DiagnosticReporter, gt *grammar.TaskTrigger) (*schema.TaskTrigger, bool) {
 	valid := checkCase(reporter, "TaskTrigger", caseTypeLowerCamel, gt.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, gt.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -66,14 +66,14 @@ func parseTaskTrigger(reporter *_DiagnosticReporter, gt *grammar.TaskTrigger) (*
 	})
 	valid = metaValid && valid
 
-	trigger := &model.TaskTrigger{
+	trigger := &schema.TaskTrigger{
 		Pos:              position(gt.Name.Pos),
 		Name:             gt.Name.Value,
 		SkelName:         gt.Name.Value,
 		Description:      meta.Description,
 		Deprecated:       meta.Deprecated,
 		DeprecatedReason: meta.DeprecatedReason,
-		Arguments:        []*model.Argument{},
+		Arguments:        []*schema.Argument{},
 	}
 	if gt.Input == nil {
 		return trigger, valid
@@ -104,7 +104,7 @@ func parseTaskTrigger(reporter *_DiagnosticReporter, gt *grammar.TaskTrigger) (*
 	}
 
 	if len(trigger.Arguments) > 0 {
-		trigger.ArgumentsData = &model.Data{
+		trigger.ArgumentsData = &schema.Data{
 			Name:    fmt.Sprintf("%sArguments", nameutil.ToCamel(trigger.Name)),
 			Members: buildArgumentMembers(trigger.Arguments),
 		}

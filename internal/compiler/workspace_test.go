@@ -44,7 +44,7 @@ func TestAnalyzeDomainsContextReturnsSuccessfulInMemoryDomains(t *testing.T) {
 	require.Len(t, domains, 1)
 	assert.Equal(t, "demo.user", domains[0].Name)
 	assert.Equal(t, "/workspace/skel", domains[0].Root)
-	assert.Equal(t, "demo.user", domains[0].Model.Name())
+	assert.Equal(t, "demo.user", domains[0].Schema.Name())
 	require.Len(t, domains[0].Sources, 1)
 }
 

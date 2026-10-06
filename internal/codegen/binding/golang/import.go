@@ -8,13 +8,13 @@ import (
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func (g *_Gen) resolveExternalTypeImports() error {
 	types := []*binding.ImportBinding{}
 	g.bindings = binding.TypeBindings{}
-	err := g.visitDomainTypes(func(type_ *model.Type) error {
+	err := g.visitDomainTypes(func(type_ *schema.Type) error {
 		if type_.ExternalDomain == "" {
 			return nil
 		}
@@ -37,7 +37,7 @@ func (g *_Gen) resolveExternalTypeImports() error {
 	if err != nil {
 		return err
 	}
-	reserved := []string{"context", "fmt", "errors", "reflect", "sync", "time", "json", "http", "url", "strings", "strconv", "vine", "vrpc", "skel", "types", "meta", "ex", "rpc", "web", "task", "_", "any", "bool", "byte", "error", "int", "string", "float64", "nil", "true", "false"}
+	reserved := []string{"context", "fmt", "errors", "reflect", "sync", "time", "json", "http", "url", "strings", "strconv", "vine", "vrpc", "skel", "types", "descriptor", "meta", "ex", "rpc", "web", "task", "_", "any", "bool", "byte", "error", "int", "string", "float64", "nil", "true", "false"}
 	for keyword := token.BREAK; keyword <= token.VAR; keyword++ {
 		if keyword.IsKeyword() {
 			reserved = append(reserved, keyword.String())

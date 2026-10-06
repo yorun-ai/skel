@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	compiler "go.yorun.ai/skel/internal/compiler"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestExtensionEventRoundTrip(t *testing.T) {
@@ -286,7 +286,7 @@ func parseDomainHash(t *testing.T, name string, source []byte) string {
 	return compileTestDomain(t, name, source).Hash()
 }
 
-func compileTestDomain(t *testing.T, name string, source []byte) *model.Domain {
+func compileTestDomain(t *testing.T, name string, source []byte) *schema.Domain {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), name)
 	if err := os.WriteFile(path, source, 0o600); err != nil {

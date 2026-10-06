@@ -13,7 +13,7 @@ import (
 	"go.yorun.ai/skel/internal/lsp/features"
 	"go.yorun.ai/skel/internal/lsp/workspace"
 	"go.yorun.ai/skel/internal/sourcediff"
-	"go.yorun.ai/skel/schema"
+	"go.yorun.ai/skel/schema/diff"
 )
 
 const (
@@ -76,7 +76,7 @@ func diffDocument(
 	snapshot workspace.Snapshot,
 	documentURI uri.URI,
 	option analysis.Options,
-) (*schema.Report, error) {
+) (*diff.Report, error) {
 	document := snapshot.Document(documentURI)
 	if document == nil {
 		return nil, fmt.Errorf("Skel document is not part of the workspace: %s", documentURI)

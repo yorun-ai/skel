@@ -9,8 +9,8 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func writeFileForTest(t *testing.T, path string, content string) {
@@ -32,50 +32,51 @@ func readFileForTest(t *testing.T, path string) string {
 	return string(content)
 }
 
-func newModelDomainForTest(t *testing.T, spec model.DomainSpec) *model.Domain {
+func newSchemaDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.Domain {
 	t.Helper()
 
-	prepareModelSpecForTest(&spec)
-	domain := model.NewDomainFromSpec(spec)
-	fillModelHashesForTest(domain)
+	prepareSchemaSpecForTest(&spec)
+	spec.Hash = "domain-hash"
+	domain := schema.NewDomainFromSpec(spec)
+	fillSchemaHashesForTest(domain)
 	return domain
 }
 
-func prepareModelSpecForTest(spec *model.DomainSpec) {
+func prepareSchemaSpecForTest(spec *schema.DomainSpec) {
 	for _, enum := range spec.Enums {
 		enum.Domain = spec.Name
-		setModelSkelNameForTest(spec.Name, enum.Name, &enum.SkelName)
+		setSchemaSkelNameForTest(spec.Name, enum.Name, &enum.SkelName)
 		if enum.UnspecifiedItem == nil {
-			enum.UnspecifiedItem = &model.EnumItem{Name: "UNSPECIFIED"}
+			enum.UnspecifiedItem = &schema.EnumItem{Name: "UNSPECIFIED"}
 		}
 	}
-	prepareModelDataForTest(spec.Name, spec.Data, model.DataKindData)
-	prepareModelDataForTest(spec.Name, spec.Configs, model.DataKindConfig)
-	prepareModelDataForTest(spec.Name, spec.Events, model.DataKindEvent)
+	prepareSchemaDataForTest(spec.Name, spec.Data, schema.DataKindData)
+	prepareSchemaDataForTest(spec.Name, spec.Configs, schema.DataKindConfig)
+	prepareSchemaDataForTest(spec.Name, spec.Events, schema.DataKindEvent)
 	for _, actor := range spec.Actors {
-		setModelSkelNameForTest(spec.Name, actor.Name, &actor.SkelName)
+		setSchemaSkelNameForTest(spec.Name, actor.Name, &actor.SkelName)
 		if actor.AuthEnabled && actor.AuthService == nil {
-			prepareModelDataForTest(spec.Name, []*model.Data{actor.AuthCredential, actor.AuthInfo}, model.DataKindData)
-			method := &model.Method{
+			prepareSchemaDataForTest(spec.Name, []*schema.Data{actor.AuthCredential, actor.AuthInfo}, schema.DataKindData)
+			method := &schema.Method{
 				Name:       "auth",
 				SkelName:   "auth",
-				Auth:       model.AuthModeNoAuth,
+				Auth:       schema.AuthModeNoAuth,
 				ResultType: codegentest.DataType(actor.AuthInfo),
-				Arguments: []*model.Argument{
+				Arguments: []*schema.Argument{
 					{Name: "credential", Type: codegentest.DataType(actor.AuthCredential)},
 				},
 			}
 			actor.AuthMethod = method
-			actor.AuthService = &model.Service{
+			actor.AuthService = &schema.Service{
 				Name:     actor.Name + "AuthService",
 				SkelName: spec.Name + "." + actor.Name + "AuthService",
-				Auth:     model.AuthModeNoAuth,
-				Methods:  []*model.Method{method},
+				Auth:     schema.AuthModeNoAuth,
+				Methods:  []*schema.Method{method},
 			}
 		}
 	}
 	for _, service := range spec.Services {
-		setModelSkelNameForTest(spec.Name, service.Name, &service.SkelName)
+		setSchemaSkelNameForTest(spec.Name, service.Name, &service.SkelName)
 		for _, method := range service.Methods {
 			if method.SkelName == "" {
 				method.SkelName = method.Name
@@ -90,41 +91,41 @@ func prepareModelSpecForTest(spec *model.DomainSpec) {
 	sort.Slice(spec.Services, func(i, j int) bool { return spec.Services[i].Name < spec.Services[j].Name })
 }
 
-func prepareModelDataForTest(domain string, values []*model.Data, kind model.DataKind) {
+func prepareSchemaDataForTest(domain string, values []*schema.Data, kind schema.DataKind) {
 	for _, value := range values {
 		if value == nil {
 			continue
 		}
 		value.Domain = domain
 		value.Kind = kind
-		setModelSkelNameForTest(domain, value.Name, &value.SkelName)
+		setSchemaSkelNameForTest(domain, value.Name, &value.SkelName)
 	}
 }
 
-func setModelSkelNameForTest(domain string, name string, target *string) {
+func setSchemaSkelNameForTest(domain string, name string, target *string) {
 	if *target == "" {
 		*target = strings.TrimSuffix(domain, ".") + "." + name
 	}
 }
 
-func methodForTest(serviceName string, method *model.Method) *model.Method {
+func methodForTest(serviceName string, method *schema.Method) *schema.Method {
 	if len(method.Arguments) > 0 && method.ArgumentsData == nil {
 		method.ArgumentsData = argumentsDataForTest(serviceName+nameutil.ToCamel(method.Name), method.Arguments)
 	}
 	return method
 }
 
-func triggerForTest(taskName string, trigger *model.TaskTrigger) *model.TaskTrigger {
+func triggerForTest(taskName string, trigger *schema.TaskTrigger) *schema.TaskTrigger {
 	if len(trigger.Arguments) > 0 && trigger.ArgumentsData == nil {
 		trigger.ArgumentsData = argumentsDataForTest(taskName+nameutil.ToCamel(trigger.Name), trigger.Arguments)
 	}
 	return trigger
 }
 
-func argumentsDataForTest(owner string, args []*model.Argument) *model.Data {
-	members := make([]*model.DataMember, 0, len(args))
+func argumentsDataForTest(owner string, args []*schema.Argument) *schema.Data {
+	members := make([]*schema.DataMember, 0, len(args))
 	for _, arg := range args {
-		members = append(members, &model.DataMember{
+		members = append(members, &schema.DataMember{
 			Name:        arg.Name,
 			Description: arg.Description,
 			Example:     arg.Example,
@@ -132,14 +133,13 @@ func argumentsDataForTest(owner string, args []*model.Argument) *model.Data {
 			Type:        arg.Type,
 		})
 	}
-	return &model.Data{
+	return &schema.Data{
 		Name:    owner + "Arguments",
 		Members: members,
 	}
 }
 
-func fillModelHashesForTest(domain *model.Domain) {
-	model.SetDomainHash(domain, "domain-hash")
+func fillSchemaHashesForTest(domain *schema.Domain) {
 	for _, enum := range domain.Enums() {
 		enum.Hash = "enum-hash"
 	}
@@ -173,7 +173,7 @@ func assertFileMissing(t *testing.T, path string) {
 	}
 }
 
-func generateFixture(domain *model.Domain, option golang.Option) error {
+func generateFixture(domain *schema.Domain, option golang.Option) error {
 	if option.CompilerVersion == "" {
 		option.CompilerVersion = "v0.0.0-dev"
 	}

@@ -8,38 +8,36 @@ import (
 )
 
 func TestDependenciesCoverAllDeclarationReferences(t *testing.T) {
-	// Each traversal path uses a distinct foreign name so another path cannot
-	// hide a missing dependency.
-	value := func(name string) *Type { return &Type{Kind: TypeKindData, Name: "foreign." + name} }
-	members := func(name string) *DataSchema { return &DataSchema{Members: []*Member{{Type: value(name)}}} }
-	arguments := func(name string) []*Argument { return []*Argument{{Type: value(name)}} }
-	check := func(name string) *Requirement {
-		return &Requirement{Check: &RequirementCheck{Resource: "foreign." + name, Arguments: []*RequirementCheckArgument{{Type: value(name + "Argument")}}}}
+	value := func(name string) *Type {
+		return new(Type{Kind: TypeKindData, SkelName: "foreign." + name, Data: new(Data{Kind: DataKindData})})
 	}
-	doc := &Document{Domain: "demo", Declarations: []*Declaration{
-		{Kind: DeclarationTypeActor, SkelName: "demo.Caller", Actor: &ActorSchema{AuthCredential: members("Credential"), AuthInfo: members("AuthInfo")}},
-		{Kind: DeclarationTypeConfig, SkelName: "demo.Settings", Data: members("ConfigValue")},
-		{Kind: DeclarationTypeEvent, SkelName: "demo.Changed", Data: members("EventValue")},
-		{Kind: DeclarationTypeResource, SkelName: "demo.Record", Resource: &ResourceSchema{
-			Checks:  []*ResourceCheck{{Arguments: arguments("ResourceArgument")}},
-			Actions: []*ResourceAction{{Checks: []*ResourceCheck{{Arguments: arguments("ActionArgument")}}}},
+	members := func(name string) *Data { return new(Data{Members: []*DataMember{{Type: value(name)}}}) }
+	arguments := func(name string) []*Argument { return []*Argument{{Type: value(name)}} }
+	check := func(name string) *PermissionExpression {
+		return new(PermissionExpression{Check: new(PermissionCheckInvocation{ResourceSkelName: "foreign." + name, Arguments: []*PermissionCheckArgument{{Type: value(name + "Argument")}}})})
+	}
+	container := value("Container")
+	container.TypeArguments = []*Type{{Kind: TypeKindEnum, SkelName: "foreign.Status"}}
+	event, config := value("Changed"), value("Settings")
+	event.Data.Kind, config.Data.Kind = DataKindEvent, DataKindConfig
+	doc := NewDomainFromSpec(DomainSpec{Name: "demo",
+		Actors:  []*Actor{{SkelName: "demo.Caller", AuthCredential: members("Credential"), AuthInfo: members("AuthInfo")}},
+		Configs: []*Data{members("ConfigValue")}, Events: []*Data{members("EventValue")},
+		Resources: []*Resource{{SkelName: "demo.Record", Checks: []*ResourceCheck{{Method: new(Method{Arguments: arguments("ResourceArgument")})}}, Actions: []*ResourceAction{{Checks: []*ResourceCheck{{Method: new(Method{Arguments: arguments("ActionArgument")})}}}}}},
+		Services: []*Service{{SkelName: "demo.ReadService", Audiences: []*ActorAudience{{Actor: "foreign.ServiceCaller"}},
+			Require: new(PermissionRequire{Expression: new(PermissionExpression{Mode: PermissionRequireModeAll, Children: []*PermissionExpression{check("ServiceCheck"), {Mode: PermissionRequireModeCode, Code: "foreign.CodeResource:read"}}})}),
+			Methods: []*Method{{Arguments: arguments("MethodArgument"), ResultType: value("MethodResult"), Require: new(PermissionRequire{Expression: check("MethodCheck")})}},
 		}},
-		{Kind: DeclarationTypeService, SkelName: "demo.ReadService", Service: &ServiceSchema{
-			Audiences: []*Audience{{Actor: "foreign.ServiceCaller"}},
-			Require:   &Requirement{Mode: RequirementModeAll, Children: []*Requirement{check("ServiceCheck"), {Mode: RequirementModeCode, Code: "foreign.CodeResource:read"}}},
-			Methods:   []*Method{{Arguments: arguments("MethodArgument"), Result: value("MethodResult"), Require: check("MethodCheck")}},
-		}},
-		{Kind: DeclarationTypeTask, SkelName: "demo.Job", Task: &TaskSchema{Triggers: []*Trigger{{Arguments: arguments("TaskArgument")}}}},
-		{Kind: DeclarationTypeWeb, SkelName: "demo.Web", Web: &WebSchema{Audiences: []*Audience{{Actor: "foreign.WebCaller"}}}},
-		{Kind: DeclarationTypeData, SkelName: "demo.Value", Data: &DataSchema{Members: []*Member{
-			{Type: &Type{Kind: TypeKindData, Name: "demo.Value"}},
-			{Type: &Type{Kind: TypeKindEvent, Name: "foreign.Changed"}},
-			{Type: &Type{Kind: TypeKindConfig, Name: "foreign.Settings"}},
-			{Type: &Type{Kind: TypeKindMap, Key: &Type{Kind: TypeKindEnum, Name: "foreign.MapKey"}, Value: &Type{Kind: TypeKindList, Element: &Type{Kind: TypeKindData, Name: "foreign.Container", Arguments: []*Type{{Kind: TypeKindEnum, Name: "foreign.Status"}}}}}},
-			{Type: value("Container")}, // Repeated references must be deduplicated.
+		Tasks: []*Task{{SkelName: "demo.Job", Triggers: []*TaskTrigger{{Arguments: arguments("TaskArgument")}}}},
+		Webs:  []*Web{{SkelName: "demo.Web", Audiences: []*ActorAudience{{Actor: "foreign.WebCaller"}}}},
+		Data: []*Data{{SkelName: "demo.Value", Members: []*DataMember{
+			{Type: new(Type{Kind: TypeKindData, SkelName: "demo.Value", Data: new(Data{Kind: DataKindData})})},
+			{Type: event}, {Type: config},
+			{Type: new(Type{Kind: TypeKindMap, Map: new(MapType{Key: new(Type{Kind: TypeKindEnum, SkelName: "foreign.MapKey"}), Value: new(Type{Kind: TypeKindList, List: new(ListType{Value: container})})})})},
+			{Type: value("Container")},
 		}}},
-		{Kind: DeclarationTypeEnum, SkelName: "demo.Status"},
-	}}
+		Enums: []*Enum{{SkelName: "demo.Status"}},
+	})
 	report := Dependencies(doc)
 	want := []Dependency{
 		{Domain: "foreign", Name: "ActionArgument", Kind: "data"},

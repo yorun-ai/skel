@@ -8,10 +8,9 @@ import (
 	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/optionvalidation"
-	"go.yorun.ai/skel/internal/projection"
 	"go.yorun.ai/skel/internal/sourcediff"
-	"go.yorun.ai/skel/model"
 	"go.yorun.ai/skel/schema"
+	"go.yorun.ai/skel/schema/diff"
 )
 
 // ApiTypeDependency identifies an external data or enum required by an API view.
@@ -98,7 +97,7 @@ func QuerySchemaDependenciesContext(ctx context.Context, input Input, selection 
 	if err != nil {
 		return SchemaDependencyResult{}, err
 	}
-	return SchemaDependencyResult{Report: schema.Dependencies(result.Document), Diagnostics: result.Diagnostics}, nil
+	return SchemaDependencyResult{Report: schema.Dependencies(result.Domain), Diagnostics: result.Diagnostics}, nil
 }
 
 // SchemaQueryOption selects a complete, public, or API schema view.
@@ -111,14 +110,14 @@ type SchemaQueryOption struct {
 	ResolveImports bool
 }
 
-// SchemaQueryResult includes the normalized document and non-fatal diagnostics.
+// SchemaQueryResult includes the semantic domain and non-fatal diagnostics.
 type SchemaQueryResult struct {
-	Document    *schema.Document
+	Domain      *schema.Domain
 	Diagnostics []diagnostic.Diagnostic
 }
 
-// QuerySchema creates a snapshot for inspection, encoding, listing or lookup.
-// The default view keeps unresolved imports, matching schema snapshot/list/get.
+// QuerySchema creates a semantic domain for inspection, listing or lookup.
+// The default view keeps unresolved imports, matching schema list/get.
 func QuerySchema(input Input, selection SchemaQueryOption) (SchemaQueryResult, error) {
 	return QuerySchemaContext(context.Background(), input, selection)
 }
@@ -146,7 +145,7 @@ func QuerySchemaContext(ctx context.Context, input Input, selection SchemaQueryO
 	if err != nil {
 		return SchemaQueryResult{}, err
 	}
-	var document *schema.Document
+	domain := compiled.Domain
 	if selection.Pub || selection.Api {
 		var view *codegen.PublicView
 		if selection.Api {
@@ -157,14 +156,9 @@ func QuerySchemaContext(ctx context.Context, input Input, selection SchemaQueryO
 		if err != nil {
 			return SchemaQueryResult{}, err
 		}
-		document, err = view.ProjectSchema(compiled.Domain)
-	} else {
-		document, err = projection.Project(compiled.Domain, compiled.ImportAliases)
+		domain = view.Schema(compiled.Domain)
 	}
-	if err != nil {
-		return SchemaQueryResult{}, err
-	}
-	return SchemaQueryResult{Document: document, Diagnostics: compiled.Diagnostics}, nil
+	return SchemaQueryResult{Domain: domain, Diagnostics: compiled.Diagnostics}, nil
 }
 
 // ErrGitHistoryUnavailable identifies an unavailable implicit Git baseline.
@@ -182,12 +176,12 @@ type SchemaDiffOption struct {
 }
 
 // DiffSchemaSources compares candidate source with an explicit baseline or Git HEAD.
-func DiffSchemaSources(candidate Input, option SchemaDiffOption) (*schema.Report, error) {
+func DiffSchemaSources(candidate Input, option SchemaDiffOption) (*diff.Report, error) {
 	return DiffSchemaSourcesContext(context.Background(), candidate, option)
 }
 
 // DiffSchemaSourcesContext is DiffSchemaSources with cancellation support.
-func DiffSchemaSourcesContext(ctx context.Context, candidate Input, option SchemaDiffOption) (*schema.Report, error) {
+func DiffSchemaSourcesContext(ctx context.Context, candidate Input, option SchemaDiffOption) (*diff.Report, error) {
 	if option.Baseline == nil {
 		normalized, err := normalizeInput(candidate)
 		if err != nil {
@@ -211,7 +205,7 @@ func DiffSchemaSourcesContext(ctx context.Context, candidate Input, option Schem
 	if err != nil {
 		return nil, schemaSourceError(err)
 	}
-	return schema.Diff(previous.Document, selected.Document)
+	return diff.Compare(previous.Domain, selected.Domain)
 }
 
 func schemaSourceError(err error) error {
@@ -220,10 +214,4 @@ func schemaSourceError(err error) error {
 		return err
 	}
 	return fmt.Errorf("%w: %w", ErrSchemaSourceCompilation, err)
-}
-
-// ProjectSchema converts a semantic domain into a canonical schema snapshot.
-// Optional aliases normalize unresolved imported references.
-func ProjectSchema(domain *model.Domain, aliases map[string]string) (*schema.Document, error) {
-	return projection.Project(domain, aliases)
 }

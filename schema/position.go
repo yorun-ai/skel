@@ -2,5 +2,5 @@ package schema
 
 import "go.yorun.ai/skel/internal/location"
 
-// Position identifies a one-based source location attached to a contract.
+// Position identifies a one-based location in a Skel source file.
 type Position = location.Position

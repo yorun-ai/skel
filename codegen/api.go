@@ -1,13 +1,13 @@
 // Package codegen is the Go SDK for implementing Skel language bindings.
-// Input selects output declarations from a validated semantic model. Generators
+// Input selects output declarations from a validated semantic schema. Generators
 // return files, keeping target names and imports separate from semantic data.
-// Model values borrowed from Input are read-only for its lifetime.
+// Schema values borrowed from Input are read-only for its lifetime.
 package codegen
 
 import (
 	"context"
 	internal "go.yorun.ai/skel/internal/codegen"
-	"go.yorun.ai/skel/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type Input = internal.Input
@@ -28,8 +28,8 @@ const (
 )
 
 // Prepare validates renderer invariants and selects declarations from a resolved
-// semantic domain. The model is borrowed read-only; declaration types are not copied.
-func Prepare(domain *model.Domain, selection Selection) (Input, error) {
+// semantic domain. The schema is borrowed read-only; declaration types are not copied.
+func Prepare(domain *schema.Domain, selection Selection) (Input, error) {
 	return internal.Prepare(domain, selection)
 }
 
@@ -51,23 +51,25 @@ func WriteFiles(ctx context.Context, files []File, targets map[string]string) er
 }
 
 // WalkType visits structural children without following named declarations.
-func WalkType(kind *model.Type, visit TypeVisitor) error { return internal.WalkType(kind, visit) }
+func WalkType(kind *schema.Type, visit TypeVisitor) error { return internal.WalkType(kind, visit) }
 
 // WalkTypes visits several structural roots, deduplicating shared type nodes.
-func WalkTypes(kinds []*model.Type, visit TypeVisitor) error { return internal.WalkTypes(kinds, visit) }
+func WalkTypes(kinds []*schema.Type, visit TypeVisitor) error {
+	return internal.WalkTypes(kinds, visit)
+}
 
 // WalkTypeGraph also follows named data members and terminates on recursive types.
-func WalkTypeGraph(kind *model.Type, visit TypeVisitor) error {
+func WalkTypeGraph(kind *schema.Type, visit TypeVisitor) error {
 	return internal.WalkTypeGraph(kind, visit)
 }
 
 // WalkTypeGraphs follows named data members from several roots.
-func WalkTypeGraphs(kinds []*model.Type, visit TypeVisitor) error {
+func WalkTypeGraphs(kinds []*schema.Type, visit TypeVisitor) error {
 	return internal.WalkTypeGraphs(kinds, visit)
 }
 
 // InstantiateMembers substitutes generic arguments in a data reference
-// without recursively expanding named declarations or changing the model.
-func InstantiateMembers(kind *model.Type) ([]*model.DataMember, error) {
+// without recursively expanding named declarations or changing the schema.
+func InstantiateMembers(kind *schema.Type) ([]*schema.DataMember, error) {
 	return internal.InstantiateMembers(kind)
 }

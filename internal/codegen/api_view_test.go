@@ -3,10 +3,10 @@ package codegen
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func containsData(data []*model.Data, want *model.Data) bool {
+func containsData(data []*schema.Data, want *schema.Data) bool {
 	for _, item := range data {
 		if item == want {
 			return true
@@ -16,26 +16,26 @@ func containsData(data []*model.Data, want *model.Data) bool {
 }
 
 func TestBuildApiViewCollectsClientDataAndDependencies(t *testing.T) {
-	dependency := &model.Data{Name: "Secret"}
-	status := &model.Enum{Name: "Status"}
-	payload := &model.Data{Name: "Payload", Members: []*model.DataMember{
-		{Name: "secret", Type: &model.Type{Kind: model.TypeKindData, Data: dependency}},
-		{Name: "status", Type: &model.Type{Kind: model.TypeKindEnum, Enum: status}},
+	dependency := &schema.Data{Name: "Secret"}
+	status := &schema.Enum{Name: "Status"}
+	payload := &schema.Data{Name: "Payload", Members: []*schema.DataMember{
+		{Name: "secret", Type: &schema.Type{Kind: schema.TypeKindData, Data: dependency}},
+		{Name: "status", Type: &schema.Type{Kind: schema.TypeKindEnum, Enum: status}},
 	}}
-	unused := &model.Data{Name: "Unused"}
-	domain := model.NewDomainFromSpec(model.DomainSpec{
+	unused := &schema.Data{Name: "Unused"}
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name:  "demo.user",
-		Data:  []*model.Data{payload, dependency, unused},
-		Enums: []*model.Enum{status, {Name: "UnusedStatus"}},
-		Services: []*model.Service{{
+		Data:  []*schema.Data{payload, dependency, unused},
+		Enums: []*schema.Enum{status, {Name: "UnusedStatus"}},
+		Services: []*schema.Service{{
 			Name:      "UserService",
 			SkelName:  "demo.user.UserService",
 			Api:       true,
-			Audiences: []*model.ActorAudience{{Actor: "UserActor"}},
-			Methods: []*model.Method{{
+			Audiences: []*schema.ActorAudience{{Actor: "UserActor"}},
+			Methods: []*schema.Method{{
 				Name:       "get",
 				SkelName:   "get",
-				ResultType: &model.Type{Kind: model.TypeKindData, Data: payload},
+				ResultType: &schema.Type{Kind: schema.TypeKindData, Data: payload},
 			}},
 		}},
 	})
@@ -60,17 +60,17 @@ func TestBuildApiViewCollectsClientDataAndDependencies(t *testing.T) {
 }
 
 func TestBuildApiViewKeepsPublicTypesAndSkipsExternalDependencies(t *testing.T) {
-	external := &model.Data{Name: "Remote", Domain: "identity.user"}
-	externalType := &model.Type{
-		Kind:           model.TypeKindData,
+	external := &schema.Data{Name: "Remote", Domain: "identity.user"}
+	externalType := &schema.Type{
+		Kind:           schema.TypeKindData,
 		Data:           external,
 		ExternalDomain: "identity.user",
 	}
-	pubData := &model.Data{Pub: true, Name: "PublicPayload"}
-	local := &model.Data{Name: "LocalPayload", Members: []*model.DataMember{{Name: "remote", Type: externalType}}}
-	domain := model.NewDomainFromSpec(model.DomainSpec{
+	pubData := &schema.Data{Pub: true, Name: "PublicPayload"}
+	local := &schema.Data{Name: "LocalPayload", Members: []*schema.DataMember{{Name: "remote", Type: externalType}}}
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{pubData, local},
+		Data: []*schema.Data{pubData, local},
 	})
 
 	view, err := BuildApiView(domain, ApiFilter{})
@@ -87,27 +87,27 @@ func TestBuildApiViewKeepsPublicTypesAndSkipsExternalDependencies(t *testing.T) 
 }
 
 func TestApiTypeRootsCollectsDeclaredTypes(t *testing.T) {
-	payload := &model.Data{Name: "Payload"}
-	memberType := &model.Type{Kind: model.TypeKindData, Data: payload}
-	data := &model.Data{Name: "Envelope", Members: []*model.DataMember{{Name: "payload", Type: memberType}}}
-	resultType := &model.Type{Kind: model.TypeKindData, Data: payload}
-	declaredArgument := &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString}
-	runtimeArgument := &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString}
-	service := &model.Service{
+	payload := &schema.Data{Name: "Payload"}
+	memberType := &schema.Type{Kind: schema.TypeKindData, Data: payload}
+	data := &schema.Data{Name: "Envelope", Members: []*schema.DataMember{{Name: "payload", Type: memberType}}}
+	resultType := &schema.Type{Kind: schema.TypeKindData, Data: payload}
+	declaredArgument := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}
+	runtimeArgument := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}
+	service := &schema.Service{
 		Name:     "UserService",
 		SkelName: "demo.user.UserService",
-		Methods: []*model.Method{{
+		Methods: []*schema.Method{{
 			Name:       "get",
 			SkelName:   "get",
 			ResultType: resultType,
-			Arguments: []*model.Argument{
-				{Name: "id", Source: model.ArgumentSourceDeclared, Type: declaredArgument},
-				{Name: "code", Source: model.ArgumentSourcePermissionCode, Type: runtimeArgument},
+			Arguments: []*schema.Argument{
+				{Name: "id", Source: schema.ArgumentSourceDeclared, Type: declaredArgument},
+				{Name: "code", Source: schema.ArgumentSourcePermissionCode, Type: runtimeArgument},
 			},
 		}},
 	}
 
-	roots := ApiTypeRoots([]*model.Data{data}, []*model.Service{service})
+	roots := ApiTypeRoots([]*schema.Data{data}, []*schema.Service{service})
 
 	if len(roots) != 3 {
 		t.Fatalf("expected member, result and declared argument types: %+v", roots)

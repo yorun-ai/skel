@@ -7,7 +7,7 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestBuildServiceNames(t *testing.T) {
@@ -25,42 +25,42 @@ func TestBuildServiceNames(t *testing.T) {
 }
 
 func TestCastService(t *testing.T) {
-	service := (_Types{}).castService(&model.Service{
+	service := (_Types{}).castService(&schema.Service{
 		Name:        "UserService",
 		SkelName:    "demo.user.UserService",
 		Description: "User service",
-		Methods: []*model.Method{
+		Methods: []*schema.Method{
 			{
 				Name:        "getUser",
 				Description: "Get a user by ID",
-				Arguments: []*model.Argument{
+				Arguments: []*schema.Argument{
 					{
 						Name:        "userId",
 						Description: "User ID",
 						Example:     `"10001"`,
-						Type: &model.Type{
-							Kind:   model.TypeKindScalar,
-							Scalar: model.ScalarInt,
+						Type: &schema.Type{
+							Kind:   schema.TypeKindScalar,
+							Scalar: schema.ScalarInt,
 						},
 					},
 				},
-				ResultType: &model.Type{
-					Kind: model.TypeKindData,
-					Data: &model.Data{
+				ResultType: &schema.Type{
+					Kind: schema.TypeKindData,
+					Data: &schema.Data{
 						Name: "User",
 					},
 					Nullable: true,
 				},
 				OutputDescription: "User information",
 				OutputExample:     `{ id:10001, name:"zhangsan" }`,
-				ArgumentsData: &model.Data{
+				ArgumentsData: &schema.Data{
 					Name: "UserServiceGetUserArguments",
-					Members: []*model.DataMember{
+					Members: []*schema.DataMember{
 						{
 							Name: "userId",
-							Type: &model.Type{
-								Kind:   model.TypeKindScalar,
-								Scalar: model.ScalarInt,
+							Type: &schema.Type{
+								Kind:   schema.TypeKindScalar,
+								Scalar: schema.ScalarInt,
 							},
 						},
 					},
@@ -99,15 +99,15 @@ func TestCastService(t *testing.T) {
 }
 
 func TestServiceTemplateRendersDeprecatedDocs(t *testing.T) {
-	service := (_Types{}).castService(&model.Service{
+	service := (_Types{}).castService(&schema.Service{
 		Name:             "UserService",
 		Deprecated:       true,
 		DeprecatedReason: "Use ProfileService instead\nComplete migration first",
-		Methods: []*model.Method{{
+		Methods: []*schema.Method{{
 			Name:             "getUser",
 			Deprecated:       true,
 			DeprecatedReason: "Use getProfile instead",
-			Arguments: []*model.Argument{{
+			Arguments: []*schema.Argument{{
 				Name:             "legacyId",
 				Type:             codegentest.IntType(),
 				Deprecated:       true,
@@ -130,25 +130,25 @@ func TestServiceTemplateRendersDeprecatedDocs(t *testing.T) {
 }
 
 func TestBuildServiceTypeImports(t *testing.T) {
-	imports := (_Types{}).buildServiceTypeImports([]*model.Service{{
-		Methods: []*model.Method{{
-			Arguments: []*model.Argument{{
-				Type: &model.Type{
-					Kind: model.TypeKindData,
-					Data: &model.Data{
+	imports := (_Types{}).buildServiceTypeImports([]*schema.Service{{
+		Methods: []*schema.Method{{
+			Arguments: []*schema.Argument{{
+				Type: &schema.Type{
+					Kind: schema.TypeKindData,
+					Data: &schema.Data{
 						Name: "Page",
 					},
-					TypeArguments: []*model.Type{{
-						Kind: model.TypeKindEnum,
-						Enum: &model.Enum{Name: "UserStatus"},
+					TypeArguments: []*schema.Type{{
+						Kind: schema.TypeKindEnum,
+						Enum: &schema.Enum{Name: "UserStatus"},
 					}},
 				},
 			}},
-			ResultType: &model.Type{
-				Kind: model.TypeKindList,
-				List: &model.ListType{Value: &model.Type{
-					Kind: model.TypeKindData,
-					Data: &model.Data{
+			ResultType: &schema.Type{
+				Kind: schema.TypeKindList,
+				List: &schema.ListType{Value: &schema.Type{
+					Kind: schema.TypeKindData,
+					Data: &schema.Data{
 						Name: "User",
 					},
 				}},
@@ -162,12 +162,12 @@ func TestBuildServiceTypeImports(t *testing.T) {
 }
 
 func TestBuildServiceImportsSkipsExternalTypes(t *testing.T) {
-	services := []*model.Service{{
-		Methods: []*model.Method{{
-			Arguments: []*model.Argument{{
-				Type: &model.Type{
-					Kind:          model.TypeKindData,
-					Data:          &model.Data{Name: "UserSummary"},
+	services := []*schema.Service{{
+		Methods: []*schema.Method{{
+			Arguments: []*schema.Argument{{
+				Type: &schema.Type{
+					Kind:          schema.TypeKindData,
+					Data:          &schema.Data{Name: "UserSummary"},
 					ExternalAlias: "userpub",
 				},
 			}},
@@ -208,26 +208,26 @@ func TestTypesTemplateRendersExternalImports(t *testing.T) {
 }
 
 func TestBuildServiceTsPayloadIncludesLegacyAdmissionRules(t *testing.T) {
-	user := &model.Data{
+	user := &schema.Data{
 		Name: "User",
-		Members: []*model.DataMember{{
+		Members: []*schema.DataMember{{
 			Name: "id",
 			Type: codegentest.IntType(),
 		}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Actors: []*model.Actor{
-			{Name: "ClientActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)}},
-			{Name: "AgentActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaAgent)}},
+		Actors: []*schema.Actor{
+			{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
+			{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
 		},
-		Data: []*model.Data{user},
-		Services: []*model.Service{
-			{Name: "ClientService", Audiences: []*model.ActorAudience{{Actor: "ClientActor"}}, Methods: []*model.Method{{
+		Data: []*schema.Data{user},
+		Services: []*schema.Service{
+			{Name: "ClientService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(user),
 			}}},
-			{Name: "AgentService", Audiences: []*model.ActorAudience{{Actor: "AgentActor"}}, Methods: []*model.Method{{
+			{Name: "AgentService", Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(user),
 			}}},
@@ -248,28 +248,28 @@ func TestBuildServiceTsPayloadIncludesLegacyAdmissionRules(t *testing.T) {
 }
 
 func TestBuildServiceTsPayloadExcludesBackendServices(t *testing.T) {
-	user := &model.Data{
+	user := &schema.Data{
 		Pub:  true,
 		Name: "User",
-		Members: []*model.DataMember{{
+		Members: []*schema.DataMember{{
 			Name: "id",
 			Type: codegentest.IntType(),
 		}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Actors: []*model.Actor{{
+		Actors: []*schema.Actor{{
 			Pub:  true,
 			Name: "ClientActor",
-			Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)},
+			Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 		}},
-		Data: []*model.Data{user},
-		Services: []*model.Service{
-			{Name: "PublicClientService", Api: true, Audiences: []*model.ActorAudience{{Actor: "ClientActor"}}, Methods: []*model.Method{{
+		Data: []*schema.Data{user},
+		Services: []*schema.Service{
+			{Name: "PublicClientService", Api: true, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(user),
 			}}},
-			{Name: "InternalClientService", Pub: true, Methods: []*model.Method{{
+			{Name: "InternalClientService", Pub: true, Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(user),
 			}}},

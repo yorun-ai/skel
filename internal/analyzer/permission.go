@@ -1,22 +1,22 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
-func parseRequire(reporter *_DiagnosticReporter, gr *grammar.Require) (*model.PermissionRequire, bool) {
+func parseRequire(reporter *_DiagnosticReporter, gr *grammar.Require) (*schema.PermissionRequire, bool) {
 	if gr == nil {
 		return nil, true
 	}
 	expr, valid := parseRequireExpr(reporter, gr.Expr)
-	return &model.PermissionRequire{
-		Expr: expr,
+	return &schema.PermissionRequire{
+		Expression: expr,
 	}, valid
 }
 
-func parseRequireExpr(reporter *_DiagnosticReporter, expr *grammar.RequireExpr) (*model.PermissionExpr, bool) {
+func parseRequireExpr(reporter *_DiagnosticReporter, expr *grammar.RequireExpr) (*schema.PermissionExpression, bool) {
 	if reporter.cancelled() {
 		return nil, false
 	}
@@ -24,13 +24,13 @@ func parseRequireExpr(reporter *_DiagnosticReporter, expr *grammar.RequireExpr) 
 		return nil, false
 	}
 	if expr.Term != nil {
-		return &model.PermissionExpr{Check: parseRequireTerm(expr.Term)}, true
+		return &schema.PermissionExpression{Check: parseRequireTerm(expr.Term)}, true
 	}
 
-	mode := model.PermissionRequireMode(expr.Mode)
-	valid := reporter.check(mode == model.PermissionRequireModeAll || mode == model.PermissionRequireModeAny,
+	mode := schema.PermissionRequireMode(expr.Mode)
+	valid := reporter.check(mode == schema.PermissionRequireModeAll || mode == schema.PermissionRequireModeAny,
 		"unsupported require mode %s", expr.Mode)
-	children := make([]*model.PermissionExpr, 0, len(expr.Children))
+	children := make([]*schema.PermissionExpression, 0, len(expr.Children))
 	for _, child := range expr.Children {
 		if reporter.cancelled() {
 			break
@@ -41,16 +41,16 @@ func parseRequireExpr(reporter *_DiagnosticReporter, expr *grammar.RequireExpr) 
 			children = append(children, parsed)
 		}
 	}
-	return &model.PermissionExpr{
+	return &schema.PermissionExpression{
 		Mode:     mode,
 		Children: children,
 	}, valid
 }
 
-func parseRequireTerm(term *grammar.RequireTerm) *model.PermissionCheckInvocation {
+func parseRequireTerm(term *grammar.RequireTerm) *schema.PermissionCheckInvocation {
 	resourceRef := term.Target.Resource.String()
 	action := term.Target.Action.Value
-	item := &model.PermissionCheckInvocation{
+	item := &schema.PermissionCheckInvocation{
 		ResourceSkelName: resourceRef,
 		ActionName:       action,
 	}
@@ -58,16 +58,16 @@ func parseRequireTerm(term *grammar.RequireTerm) *model.PermissionCheckInvocatio
 		return item
 	}
 	item.CheckName = term.Call.Name.Value
-	item.Arguments = make([]*model.PermissionCheckArgument, 0, len(term.Call.Arguments))
+	item.Arguments = make([]*schema.PermissionCheckArgument, 0, len(term.Call.Arguments))
 	for _, arg := range term.Call.Arguments {
-		item.Arguments = append(item.Arguments, &model.PermissionCheckArgument{
+		item.Arguments = append(item.Arguments, &schema.PermissionCheckArgument{
 			JsonPath: arg.String(),
 		})
 	}
 	return item
 }
 
-func (p *Analysis) normalizeServiceTypes(service *model.Service, refs *_RefContext) bool {
+func (p *Analysis) normalizeServiceTypes(service *schema.Service, refs *_RefContext) bool {
 	valid := true
 	for _, method := range service.Methods {
 		if p.reporter.cancelled() {
@@ -84,7 +84,7 @@ func (p *Analysis) normalizeServiceTypes(service *model.Service, refs *_RefConte
 	return valid
 }
 
-func (p *Analysis) normalizeServiceRequire(service *model.Service) bool {
+func (p *Analysis) normalizeServiceRequire(service *schema.Service) bool {
 	valid := p.normalizeRequire(service.Require, false, nil, service.Pos)
 	for _, method := range service.Methods {
 		if p.reporter.cancelled() {
@@ -95,18 +95,18 @@ func (p *Analysis) normalizeServiceRequire(service *model.Service) bool {
 	return valid
 }
 
-func (p *Analysis) normalizeRequire(require *model.PermissionRequire, allowChecks bool, method *model.Method, ownerPos model.Position) bool {
+func (p *Analysis) normalizeRequire(require *schema.PermissionRequire, allowChecks bool, method *schema.Method, ownerPos schema.Position) bool {
 	if require == nil {
 		return true
 	}
-	expr, valid := p.normalizeRequireExpr(require.Expr, allowChecks, method, ownerPos)
+	expr, valid := p.normalizeRequireExpr(require.Expression, allowChecks, method, ownerPos)
 	if valid {
-		require.Expr = expr
+		require.Expression = expr
 	}
 	return valid
 }
 
-func (p *Analysis) normalizeRequireExpr(expr *model.PermissionExpr, allowChecks bool, method *model.Method, ownerPos model.Position) (*model.PermissionExpr, bool) {
+func (p *Analysis) normalizeRequireExpr(expr *schema.PermissionExpression, allowChecks bool, method *schema.Method, ownerPos schema.Position) (*schema.PermissionExpression, bool) {
 	if p.reporter.cancelled() {
 		return nil, false
 	}
@@ -115,7 +115,7 @@ func (p *Analysis) normalizeRequireExpr(expr *model.PermissionExpr, allowChecks 
 	}
 
 	valid := p.reporter.check(len(expr.Children) > 0, "%s require %s must have at least one item", ownerPos, expr.Mode)
-	children := make([]*model.PermissionExpr, 0, len(expr.Children))
+	children := make([]*schema.PermissionExpression, 0, len(expr.Children))
 	for _, child := range expr.Children {
 		if p.reporter.cancelled() {
 			break
@@ -130,7 +130,7 @@ func (p *Analysis) normalizeRequireExpr(expr *model.PermissionExpr, allowChecks 
 	return expr, valid
 }
 
-func (p *Analysis) normalizeRequireItem(item *model.PermissionCheckInvocation, allowChecks bool, method *model.Method, ownerPos model.Position) (*model.PermissionExpr, bool) {
+func (p *Analysis) normalizeRequireItem(item *schema.PermissionCheckInvocation, allowChecks bool, method *schema.Method, ownerPos schema.Position) (*schema.PermissionExpression, bool) {
 	resourceRef := item.ResourceSkelName
 	resource, action := p.findResourceAction(resourceRef, item.ActionName)
 	if !p.reporter.checkReference(resource != nil, `%s require references undefined resource "%s"`, ownerPos, resourceRef) {
@@ -143,8 +143,8 @@ func (p *Analysis) normalizeRequireItem(item *model.PermissionCheckInvocation, a
 		`%s require references non-pub resource "%s"`, ownerPos, resourceRef) {
 		return nil, false
 	}
-	codeExpr := &model.PermissionExpr{
-		Mode: model.PermissionRequireModeCode,
+	codeExpr := &schema.PermissionExpression{
+		Mode: schema.PermissionRequireModeCode,
 		Code: action.PermissionCode,
 	}
 	if item.CheckName == "" {
@@ -181,13 +181,13 @@ func (p *Analysis) normalizeRequireItem(item *model.PermissionCheckInvocation, a
 			"%s require check argument %s expects %s, got %s from %s",
 			ownerPos, checkArgument.Name, checkArgument.Type.Name(), valueType.Name(), argument.JsonPath) && valid
 	}
-	return &model.PermissionExpr{
-		Mode: model.PermissionRequireModeAll,
-		Children: []*model.PermissionExpr{
+	return &schema.PermissionExpression{
+		Mode: schema.PermissionRequireModeAll,
+		Children: []*schema.PermissionExpression{
 			codeExpr,
 			{
-				Mode: model.PermissionRequireModeCheck,
-				Check: &model.PermissionCheckInvocation{
+				Mode: schema.PermissionRequireModeCheck,
+				Check: &schema.PermissionCheckInvocation{
 					ResourceSkelName: resource.SkelName,
 					ActionName:       item.ActionName,
 					CheckName:        item.CheckName,
@@ -201,8 +201,8 @@ func (p *Analysis) normalizeRequireItem(item *model.PermissionCheckInvocation, a
 	}, valid
 }
 
-func resourceCheckArguments(check *model.ResourceCheck) []*model.Argument {
-	if len(check.Method.Arguments) > 0 && check.Method.Arguments[0].Source == model.ArgumentSourcePermissionCode {
+func resourceCheckArguments(check *schema.ResourceCheck) []*schema.Argument {
+	if len(check.Method.Arguments) > 0 && check.Method.Arguments[0].Source == schema.ArgumentSourcePermissionCode {
 		return check.Method.Arguments[1:]
 	}
 	return check.Method.Arguments
@@ -213,7 +213,7 @@ func (p *Analysis) isImportedResourceRef(resourceRef string) bool {
 	return ok && p.importsMap[qualifier] != nil
 }
 
-func (p *Analysis) findResourceAction(resourceRef string, actionName string) (*model.Resource, *model.ResourceAction) {
+func (p *Analysis) findResourceAction(resourceRef string, actionName string) (*schema.Resource, *schema.ResourceAction) {
 	resource := p.resourceByRef(resourceRef)
 	if resource == nil {
 		return nil, nil
@@ -229,7 +229,7 @@ func (p *Analysis) findResourceAction(resourceRef string, actionName string) (*m
 	return resource, nil
 }
 
-func findResourceCheck(resource *model.Resource, action *model.ResourceAction, checkName string) *model.ResourceCheck {
+func findResourceCheck(resource *schema.Resource, action *schema.ResourceAction, checkName string) *schema.ResourceCheck {
 	for _, check := range resource.Checks {
 		if check.Name == checkName {
 			return check

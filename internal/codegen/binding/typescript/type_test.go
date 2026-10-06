@@ -5,13 +5,13 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastTypeMapsBinaryToUint8Array(t *testing.T) {
-	got := (_Types{}).castType(&model.Type{
-		Kind:   model.TypeKindScalar,
-		Scalar: model.ScalarBinary,
+	got := (_Types{}).castType(&schema.Type{
+		Kind:   schema.TypeKindScalar,
+		Scalar: schema.ScalarBinary,
 	})
 	if got.Plain != "Uint8Array" {
 		t.Fatalf("unexpected binary type mapping: %s", got.Plain)
@@ -19,9 +19,9 @@ func TestCastTypeMapsBinaryToUint8Array(t *testing.T) {
 }
 
 func TestCastTypeMapsUUIDToString(t *testing.T) {
-	got := (_Types{}).castType(&model.Type{
-		Kind:   model.TypeKindScalar,
-		Scalar: model.ScalarUUID,
+	got := (_Types{}).castType(&schema.Type{
+		Kind:   schema.TypeKindScalar,
+		Scalar: schema.ScalarUUID,
 	})
 	if got.Plain != "string" {
 		t.Fatalf("unexpected uuid type mapping: %s", got.Plain)
@@ -29,9 +29,9 @@ func TestCastTypeMapsUUIDToString(t *testing.T) {
 }
 
 func TestCastTypeMapsJSONToString(t *testing.T) {
-	got := (_Types{}).castType(&model.Type{
-		Kind:   model.TypeKindScalar,
-		Scalar: model.ScalarJSON,
+	got := (_Types{}).castType(&schema.Type{
+		Kind:   schema.TypeKindScalar,
+		Scalar: schema.ScalarJSON,
 	})
 	if got.Plain != "string" {
 		t.Fatalf("unexpected json type mapping: %s", got.Plain)
@@ -46,9 +46,9 @@ func TestCastMapTypeMapsUUIDKeyToString(t *testing.T) {
 }
 
 func TestCastTypeQualifiesExternalDataWithAlias(t *testing.T) {
-	kind := &model.Type{
-		Kind: model.TypeKindData,
-		Data: &model.Data{
+	kind := &schema.Type{
+		Kind: schema.TypeKindData,
+		Data: &schema.Data{
 			Name: "UserSummary",
 		},
 		ExternalAlias: "userpub",
@@ -60,9 +60,9 @@ func TestCastTypeQualifiesExternalDataWithAlias(t *testing.T) {
 }
 
 func TestCastTypeQualifiesExternalEnumWithAlias(t *testing.T) {
-	kind := &model.Type{
-		Kind: model.TypeKindEnum,
-		Enum: &model.Enum{
+	kind := &schema.Type{
+		Kind: schema.TypeKindEnum,
+		Enum: &schema.Enum{
 			Name: "UserStatus",
 		},
 		ExternalAlias: "userpub",
@@ -77,10 +77,10 @@ func TestCastNullableTypeParameterInCollectionsAndArguments(t *testing.T) {
 	parameter := codegentest.TypeParam("TValue")
 	plain := codegentest.TypeParamType(parameter)
 	nullable := codegentest.NullableType(codegentest.TypeParamType(parameter))
-	box := &model.Data{Name: "Box", TypeParameters: []*model.TypeParameter{parameter}}
+	box := &schema.Data{Name: "Box", TypeParameters: []*schema.TypeParameter{parameter}}
 	for _, test := range []struct {
 		name string
-		kind *model.Type
+		kind *schema.Type
 		want string
 	}{
 		{name: "parameter", kind: plain, want: "TValue"},

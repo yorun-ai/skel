@@ -6,32 +6,32 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastData(t *testing.T) {
-	data := (_Types{}).castData(&model.Data{
+	data := (_Types{}).castData(&schema.Data{
 		Name:        "Page",
 		Description: "Paginated result",
-		TypeParameters: []*model.TypeParameter{
+		TypeParameters: []*schema.TypeParameter{
 			{Name: "TItem"},
 		},
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name:        "generatedAt",
 				Description: "Generated at",
-				Type: &model.Type{
-					Kind:   model.TypeKindScalar,
-					Scalar: model.ScalarTimestamp,
+				Type: &schema.Type{
+					Kind:   schema.TypeKindScalar,
+					Scalar: schema.ScalarTimestamp,
 				},
 			},
 			{
 				Name:        "avatarUrl",
 				Description: "Avatar URL",
 				Example:     `"https://xxx.com/a.png"`,
-				Type: &model.Type{
-					Kind:     model.TypeKindScalar,
-					Scalar:   model.ScalarString,
+				Type: &schema.Type{
+					Kind:     schema.TypeKindScalar,
+					Scalar:   schema.ScalarString,
 					Nullable: true,
 				},
 			},
@@ -56,11 +56,11 @@ func TestCastData(t *testing.T) {
 }
 
 func TestCastDataRendersDeprecatedDocs(t *testing.T) {
-	data := (_Types{}).castData(&model.Data{
+	data := (_Types{}).castData(&schema.Data{
 		Name:             "User",
 		Deprecated:       true,
 		DeprecatedReason: "Use Profile instead",
-		Members: []*model.DataMember{{
+		Members: []*schema.DataMember{{
 			Name:             "legacyId",
 			Type:             codegentest.IntType(),
 			Deprecated:       true,
@@ -77,14 +77,14 @@ func TestCastDataRendersDeprecatedDocs(t *testing.T) {
 }
 
 func TestCastDataMapsDurationToString(t *testing.T) {
-	data := (_Types{}).castData(&model.Data{
+	data := (_Types{}).castData(&schema.Data{
 		Name: "TimeoutConfig",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name: "timeout",
-				Type: &model.Type{
-					Kind:   model.TypeKindScalar,
-					Scalar: model.ScalarDuration,
+				Type: &schema.Type{
+					Kind:   schema.TypeKindScalar,
+					Scalar: schema.ScalarDuration,
 				},
 			},
 		},
@@ -95,14 +95,14 @@ func TestCastDataMapsDurationToString(t *testing.T) {
 }
 
 func TestCastDataMapsLocalDateToString(t *testing.T) {
-	data := (_Types{}).castData(&model.Data{
+	data := (_Types{}).castData(&schema.Data{
 		Name: "Profile",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name: "birthday",
-				Type: &model.Type{
-					Kind:   model.TypeKindScalar,
-					Scalar: model.ScalarLocalDate,
+				Type: &schema.Type{
+					Kind:   schema.TypeKindScalar,
+					Scalar: schema.ScalarLocalDate,
 				},
 			},
 		},
@@ -120,32 +120,32 @@ func TestTypesTemplateKeepsModuleSemanticsWhenEmpty(t *testing.T) {
 }
 
 func TestBuildDataTsPayloadKeepsLegacyServiceDependencies(t *testing.T) {
-	userStatus := &model.Enum{Name: "UserStatus", Items: []*model.EnumItem{{Name: "ACTIVE"}}}
-	unusedStatus := &model.Enum{Name: "UnusedStatus", Items: []*model.EnumItem{{Name: "ACTIVE"}}}
-	userProfile := &model.Data{Name: "UserProfile"}
-	user := &model.Data{
+	userStatus := &schema.Enum{Name: "UserStatus", Items: []*schema.EnumItem{{Name: "ACTIVE"}}}
+	unusedStatus := &schema.Enum{Name: "UnusedStatus", Items: []*schema.EnumItem{{Name: "ACTIVE"}}}
+	userProfile := &schema.Data{Name: "UserProfile"}
+	user := &schema.Data{
 		Name: "User",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "id", Type: codegentest.IntType()},
 			{Name: "profile", Type: codegentest.DataType(userProfile)},
 		},
 	}
-	userProfile.Members = []*model.DataMember{{Name: "status", Type: codegentest.EnumType(userStatus)}}
-	internalOnly := &model.Data{
+	userProfile.Members = []*schema.DataMember{{Name: "status", Type: codegentest.EnumType(userStatus)}}
+	internalOnly := &schema.Data{
 		Name:    "InternalOnly",
-		Members: []*model.DataMember{{Name: "status", Type: codegentest.EnumType(unusedStatus)}},
+		Members: []*schema.DataMember{{Name: "status", Type: codegentest.EnumType(unusedStatus)}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name:  "demo.user",
-		Enums: []*model.Enum{userStatus, unusedStatus},
-		Actors: []*model.Actor{
-			{Name: "ClientActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)}},
-			{Name: "AgentActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaAgent)}},
+		Enums: []*schema.Enum{userStatus, unusedStatus},
+		Actors: []*schema.Actor{
+			{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
+			{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
 		},
-		Data: []*model.Data{user, userProfile, internalOnly},
-		Services: []*model.Service{
-			{Name: "ClientService", Audiences: []*model.ActorAudience{{Actor: "ClientActor"}}, Methods: []*model.Method{{Name: "getUser", ResultType: codegentest.DataType(user)}}},
-			{Name: "AgentService", Audiences: []*model.ActorAudience{{Actor: "AgentActor"}}, Methods: []*model.Method{{Name: "getInternal", ResultType: codegentest.DataType(internalOnly)}}},
+		Data: []*schema.Data{user, userProfile, internalOnly},
+		Services: []*schema.Service{
+			{Name: "ClientService", Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "getUser", ResultType: codegentest.DataType(user)}}},
+			{Name: "AgentService", Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{Name: "getInternal", ResultType: codegentest.DataType(internalOnly)}}},
 		},
 	})
 
@@ -169,26 +169,26 @@ func TestBuildDataTsPayloadKeepsLegacyServiceDependencies(t *testing.T) {
 }
 
 func TestBuildDataTsPayloadKeepsExplicitPubTypes(t *testing.T) {
-	userStatus := &model.Enum{Pub: true, Name: "UserStatus", Items: []*model.EnumItem{{Name: "ACTIVE"}}}
-	internalStatus := &model.Enum{Name: "InternalStatus", Items: []*model.EnumItem{{Name: "ACTIVE"}}}
-	user := &model.Data{
+	userStatus := &schema.Enum{Pub: true, Name: "UserStatus", Items: []*schema.EnumItem{{Name: "ACTIVE"}}}
+	internalStatus := &schema.Enum{Name: "InternalStatus", Items: []*schema.EnumItem{{Name: "ACTIVE"}}}
+	user := &schema.Data{
 		Pub:     true,
 		Name:    "User",
-		Members: []*model.DataMember{{Name: "status", Type: codegentest.EnumType(userStatus)}},
+		Members: []*schema.DataMember{{Name: "status", Type: codegentest.EnumType(userStatus)}},
 	}
-	unusedPublic := &model.Data{
+	unusedPublic := &schema.Data{
 		Pub:     true,
 		Name:    "UnusedPublic",
-		Members: []*model.DataMember{{Name: "id", Type: codegentest.IntType()}},
+		Members: []*schema.DataMember{{Name: "id", Type: codegentest.IntType()}},
 	}
-	internalOnly := &model.Data{
+	internalOnly := &schema.Data{
 		Name:    "InternalOnly",
-		Members: []*model.DataMember{{Name: "status", Type: codegentest.EnumType(internalStatus)}},
+		Members: []*schema.DataMember{{Name: "status", Type: codegentest.EnumType(internalStatus)}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name:  "demo.user",
-		Enums: []*model.Enum{userStatus, internalStatus},
-		Data:  []*model.Data{user, unusedPublic, internalOnly},
+		Enums: []*schema.Enum{userStatus, internalStatus},
+		Data:  []*schema.Data{user, unusedPublic, internalOnly},
 	})
 
 	gen := newTestGen(pkg, ".")
@@ -212,29 +212,29 @@ func TestBuildDataTsPayloadKeepsExplicitPubTypes(t *testing.T) {
 
 func TestBuildDataTsPayloadKeepsGenericTypeArguments(t *testing.T) {
 	tItem := codegentest.TypeParam("TItem")
-	page := &model.Data{
+	page := &schema.Data{
 		Name:           "Page",
-		TypeParameters: []*model.TypeParameter{tItem},
-		Members: []*model.DataMember{{
+		TypeParameters: []*schema.TypeParameter{tItem},
+		Members: []*schema.DataMember{{
 			Name: "items",
 			Type: codegentest.ListType(codegentest.TypeParamType(tItem)),
 		}},
 	}
-	user := &model.Data{
+	user := &schema.Data{
 		Name:    "User",
-		Members: []*model.DataMember{{Name: "id", Type: codegentest.IntType()}},
+		Members: []*schema.DataMember{{Name: "id", Type: codegentest.IntType()}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Actors: []*model.Actor{{
+		Actors: []*schema.Actor{{
 			Name: "ClientActor",
-			Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)},
+			Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 		}},
-		Data: []*model.Data{page, user},
-		Services: []*model.Service{{
+		Data: []*schema.Data{page, user},
+		Services: []*schema.Service{{
 			Name:      "ClientService",
-			Audiences: []*model.ActorAudience{{Actor: "ClientActor"}},
-			Methods: []*model.Method{{
+			Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}},
+			Methods: []*schema.Method{{
 				Name:       "listUsers",
 				ResultType: codegentest.DataType(page, codegentest.DataType(user)),
 			}},

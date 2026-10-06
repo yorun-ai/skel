@@ -3,9 +3,9 @@ package source
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const taskGoFilename = "task.go"
@@ -83,7 +83,7 @@ func (g *_Gen) buildTaskGoPayload() *TaskGoPayload {
 	return payload
 }
 
-func (g *_Gen) castTask(p *model.Task) *Task {
+func (g *_Gen) castTask(p *schema.Task) *Task {
 	taskName := nameutil.ToCamel(p.Name)
 	task_ := &Task{
 		Name:     taskName,
@@ -117,7 +117,7 @@ func (g *_Gen) castTask(p *model.Task) *Task {
 	return task_
 }
 
-func (r _Types) castTaskTrigger(task_ *model.Task, p *model.TaskTrigger) *TaskTrigger {
+func (r _Types) castTaskTrigger(task_ *schema.Task, p *schema.TaskTrigger) *TaskTrigger {
 	arguments := make([]*MethodArgument, 0, len(p.Arguments))
 	for _, argument := range p.Arguments {
 		castedArgument := r.castMethodArgument(argument)

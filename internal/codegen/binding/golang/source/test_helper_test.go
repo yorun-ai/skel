@@ -5,43 +5,43 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func buildModelDomainForTest(t *testing.T, spec model.DomainSpec) *model.Domain {
+func buildSchemaDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.Domain {
 	t.Helper()
 	for _, data := range spec.Data {
-		data.Kind = model.DataKindData
+		data.Kind = schema.DataKindData
 		data.Domain = spec.Name
 	}
 	for _, actor := range spec.Actors {
-		for _, data := range []*model.Data{actor.AuthInfo, actor.AuthCredential} {
+		for _, data := range []*schema.Data{actor.AuthInfo, actor.AuthCredential} {
 			if data != nil {
-				data.Kind = model.DataKindData
+				data.Kind = schema.DataKindData
 				data.Domain = spec.Name
 			}
 		}
 		if actor.AuthEnabled && actor.AuthService == nil {
-			method := &model.Method{
+			method := &schema.Method{
 				Name:       "auth",
 				SkelName:   "auth",
-				Auth:       model.AuthModeNoAuth,
+				Auth:       schema.AuthModeNoAuth,
 				ResultType: codegentest.DataType(actor.AuthInfo),
-				Arguments: []*model.Argument{
+				Arguments: []*schema.Argument{
 					{Name: "credential", Type: codegentest.DataType(actor.AuthCredential)},
 				},
 			}
 			actor.AuthMethod = method
-			actor.AuthService = &model.Service{
+			actor.AuthService = &schema.Service{
 				Name:     actor.Name + "AuthService",
 				SkelName: spec.Name + "." + actor.Name + "AuthService",
-				Auth:     model.AuthModeNoAuth,
-				Methods:  []*model.Method{method},
+				Auth:     schema.AuthModeNoAuth,
+				Methods:  []*schema.Method{method},
 			}
 		}
 	}
 
-	return model.NewDomainFromSpec(spec)
+	return schema.NewDomainFromSpec(spec)
 }
 
 func importPaths(imports []*Import) []string {
@@ -52,7 +52,7 @@ func importPaths(imports []*Import) []string {
 	return paths
 }
 
-func mustView(t *testing.T, mode view.Mode, domain *model.Domain) *view.Domain {
+func mustView(t *testing.T, mode view.Mode, domain *schema.Domain) *view.Domain {
 	t.Helper()
 	result, err := view.New(mode, domain)
 	if err != nil {

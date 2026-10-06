@@ -10,15 +10,15 @@ import (
 	"go.lsp.dev/uri"
 	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/lsp/source"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/sourcediff"
 	"go.yorun.ai/skel/schema"
+	"go.yorun.ai/skel/schema/diff"
 )
 
 type _CompatibilityDiagnosticData struct {
-	Impact schema.ImpactLevel `json:"impact"`
-	Change schema.ChangeType  `json:"change"`
-	Symbol string             `json:"symbol"`
+	Impact diff.ImpactLevel `json:"impact"`
+	Change diff.ChangeType  `json:"change"`
+	Symbol string           `json:"symbol"`
 }
 
 func appendCompatibilityDiagnostics(
@@ -53,7 +53,7 @@ func appendCompatibilityDiagnostics(
 			continue
 		}
 		for _, change := range report.Changes {
-			if change.Impact == schema.ImpactCompatible && !option.IncludeCompatible {
+			if change.Impact == diff.ImpactCompatible && !option.IncludeCompatible {
 				continue
 			}
 			documentURI, range_ := compatibilityLocation(change.Candidate, paths, contentByPath, fallback)
@@ -79,7 +79,7 @@ func domainFallback(domain compiler.WorkspaceDomain, paths map[string]uri.URI, c
 	for _, candidate := range domain.Sources {
 		path := filepath.Clean(candidate.Path)
 		if documentURI, ok := paths[path]; ok {
-			position := model.Position{Line: 1, Column: 1}
+			position := schema.Position{Line: 1, Column: 1}
 			if candidate.Parsed != nil && candidate.Parsed.Domain != nil && candidate.Parsed.Domain.Name != nil {
 				position.Line = candidate.Parsed.Domain.Name.Pos.Line
 				position.Column = candidate.Parsed.Domain.Name.Pos.Column
@@ -91,7 +91,7 @@ func domainFallback(domain compiler.WorkspaceDomain, paths map[string]uri.URI, c
 }
 
 func compatibilityLocation(
-	position *model.Position,
+	position *schema.Position,
 	paths map[string]uri.URI,
 	contents *_SourceBuffers,
 	fallback _CompatibilityLocation,
@@ -107,17 +107,17 @@ func compatibilityLocation(
 	return documentURI, positionRange(contents.get(path), *position)
 }
 
-func positionRange(content source.Buffer, position model.Position) protocol.Range {
+func positionRange(content source.Buffer, position schema.Position) protocol.Range {
 	range_ := content.IdentifierRange(position.Line, position.Column, "")
 	range_.End.Character++
 	return range_
 }
 
-func compatibilitySeverity(impact schema.ImpactLevel) protocol.DiagnosticSeverity {
+func compatibilitySeverity(impact diff.ImpactLevel) protocol.DiagnosticSeverity {
 	switch impact {
-	case schema.ImpactBreaking:
+	case diff.ImpactBreaking:
 		return protocol.DiagnosticSeverityWarning
-	case schema.ImpactDangerous:
+	case diff.ImpactDangerous:
 		return protocol.DiagnosticSeverityInformation
 	default:
 		return protocol.DiagnosticSeverityHint

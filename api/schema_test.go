@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"os/exec"
@@ -13,7 +12,7 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func TestQuerySchemaViewsAndSnapshotRoundTrip(t *testing.T) {
+func TestQuerySchemaViews(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "source.skel")
 	input := api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(`domain demo
 actor UserActor { via client {} }
@@ -33,26 +32,14 @@ api service ReadApiService { for UserActor via client auth optional method read 
 		if err != nil {
 			t.Fatal(err)
 		}
-		if (schema.Find(result.Document, schema.DeclarationTypeData, "demo.Hidden") != nil) != tc.hidden {
+		if (result.Domain.Find(schema.DeclarationTypeData, "demo.Hidden") != nil) != tc.hidden {
 			t.Fatal("wrong hidden selection")
 		}
-		if (schema.Find(result.Document, schema.DeclarationTypeService, "demo.ReadApiService") != nil) != tc.service {
+		if (result.Domain.Find(schema.DeclarationTypeService, "demo.ReadApiService") != nil) != tc.service {
 			t.Fatal("wrong service selection")
 		}
-		if len(schema.Entries(result.Document)) == 0 {
+		if len(result.Domain.Declarations()) == 0 {
 			t.Fatal("empty entries")
-		}
-		var encoded bytes.Buffer
-		if err := schema.Encode(&encoded, result.Document); err != nil {
-			t.Fatal(err)
-		}
-		decoded, err := schema.Decode(&encoded)
-		if err != nil {
-			t.Fatal(err)
-		}
-		report, err := schema.Diff(result.Document, decoded)
-		if err != nil || len(report.Changes) != 0 {
-			t.Fatalf("snapshot roundtrip changed schema: %+v, %v", report, err)
 		}
 	}
 	for _, option := range []api.SchemaQueryOption{{Api: true, Pub: true}, {ApiFilter: api.ApiFilter{Actors: []string{"demo.UserActor"}}}} {
@@ -64,8 +51,8 @@ api service ReadApiService { for UserActor via client auth optional method read 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := api.ProjectSchema(parsed.Domain, nil); err != nil {
-		t.Fatal(err)
+	if parsed.Domain.Find(schema.DeclarationTypeData, "demo.Visible") == nil {
+		t.Fatal("parsed schema cannot be queried")
 	}
 }
 

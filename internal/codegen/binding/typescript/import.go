@@ -5,14 +5,14 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func (g *_Gen) resolveExternalTypeImports() {
 	types := []*binding.ImportBinding{}
 	g.bindings = binding.TypeBindings{}
-	codegen.VisitTypes(codegen.ApiTypeRoots(g.apiView.Data, g.apiView.Services), func(type_ *model.Type) {
+	codegen.VisitTypes(codegen.ApiTypeRoots(g.apiView.Data, g.apiView.Services), func(type_ *schema.Type) {
 		if type_ == nil || type_.ExternalDomain == "" {
 			return
 		}

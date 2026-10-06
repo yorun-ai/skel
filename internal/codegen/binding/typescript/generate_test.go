@@ -8,19 +8,19 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/codegen/output"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestGenerateModule(t *testing.T) {
 	outDir := filepath.Join(t.TempDir(), "ts")
-	domain := model.NewDomainFromSpec(model.DomainSpec{
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: "demo.user",
-		Data: []*model.Data{{
+		Data: []*schema.Data{{
 			Name: "User",
 			Pub:  true,
-			Members: []*model.DataMember{{
+			Members: []*schema.DataMember{{
 				Name: "id",
-				Type: &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString},
+				Type: &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString},
 			}},
 		}},
 	})

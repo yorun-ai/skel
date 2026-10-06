@@ -30,7 +30,7 @@ import {{ $import.Name }}{{ with importAlias $import }} as {{ . }}{{ end }}
 {{- end }}
     }
 {{- end }}
-{{- if $actor.PermEnabled }}
+{{- if $actor.PermissionEnabled }}
     permission {}
 {{- end }}
 }

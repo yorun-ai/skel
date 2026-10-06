@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"slices"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -22,7 +21,7 @@ type ApiDependencyReport struct {
 }
 
 // ApiDependencies expands local types and reports foreign type boundaries.
-func ApiDependencies(domain *model.Domain, selection ApiFilter) (*ApiDependencyReport, error) {
+func ApiDependencies(domain *schema.Domain, selection ApiFilter) (*ApiDependencyReport, error) {
 	view, err := BuildApiView(domain, selection)
 	if err != nil {
 		return nil, err
@@ -38,16 +37,16 @@ func ApiDependencies(domain *model.Domain, selection ApiFilter) (*ApiDependencyR
 		result.Enums = append(result.Enums, domain.Name()+"."+enum.Name)
 	}
 	seen := map[ApiTypeDependency]bool{}
-	VisitTypes(ApiTypeRoots(view.Data, view.Services), func(kind *model.Type) {
+	VisitTypes(ApiTypeRoots(view.Data, view.Services), func(kind *schema.Type) {
 		if kind.ExternalDomain == "" {
 			return
 		}
 		dependency := ApiTypeDependency{Domain: kind.ExternalDomain}
 		switch kind.Kind {
-		case model.TypeKindData:
+		case schema.TypeKindData:
 			dependency.Name = kind.Data.Name
 			dependency.Kind = "data"
-		case model.TypeKindEnum:
+		case schema.TypeKindEnum:
 			dependency.Name = kind.Enum.Name
 			dependency.Kind = "enum"
 		default:

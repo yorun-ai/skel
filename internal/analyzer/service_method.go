@@ -4,15 +4,15 @@ import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
-func buildArgumentMembers(args []*model.Argument) []*model.DataMember {
-	return sliceutil.Map(args, func(arg *model.Argument) *model.DataMember {
-		return &model.DataMember{
+func buildArgumentMembers(args []*schema.Argument) []*schema.DataMember {
+	return sliceutil.Map(args, func(arg *schema.Argument) *schema.DataMember {
+		return &schema.DataMember{
 			Name:             arg.Name,
 			Description:      arg.Description,
 			Deprecated:       arg.Deprecated,
@@ -24,8 +24,8 @@ func buildArgumentMembers(args []*model.Argument) []*model.DataMember {
 	})
 }
 
-func parseMethods(reporter *_DiagnosticReporter, owner *grammar.Identifier, methods []*grammar.Method) ([]*model.Method, bool) {
-	parsedMethods := make([]*model.Method, 0, len(methods))
+func parseMethods(reporter *_DiagnosticReporter, owner *grammar.Identifier, methods []*grammar.Method) ([]*schema.Method, bool) {
+	parsedMethods := make([]*schema.Method, 0, len(methods))
 	methodPos := map[string]lexer.Position{}
 	valid := true
 
@@ -52,7 +52,7 @@ func parseMethods(reporter *_DiagnosticReporter, owner *grammar.Identifier, meth
 	return parsedMethods, valid
 }
 
-func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*model.Method, bool) {
+func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*schema.Method, bool) {
 	valid := checkCase(reporter, "Method", caseTypeLowerCamel, gm.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, gm.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -61,9 +61,9 @@ func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*model.Meth
 	valid = metaValid && valid
 	require, requireValid := parseRequire(reporter, gm.Require)
 	valid = requireValid && valid
-	authMode, authModeValid := parseAuthMode(reporter, methodAuthMarker(gm), model.AuthModeUnset)
+	authMode, authModeValid := parseAuthMode(reporter, methodAuthMarker(gm), schema.AuthModeUnset)
 	valid = authModeValid && valid
-	method := &model.Method{
+	method := &schema.Method{
 		Pos:              position(gm.Name.Pos),
 		Name:             gm.Name.Value,
 		SkelName:         gm.Name.Value,
@@ -73,7 +73,7 @@ func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*model.Meth
 		Auth:             authMode,
 		AuthPos:          authMarkerPosition(methodAuthMarker(gm)),
 		Require:          require,
-		Arguments:        []*model.Argument{},
+		Arguments:        []*schema.Argument{},
 	}
 	input := methodInput(gm)
 	output := methodOutput(gm)
@@ -121,7 +121,7 @@ func parseMethod(reporter *_DiagnosticReporter, gm *grammar.Method) (*model.Meth
 	}
 
 	if len(method.Arguments) > 0 {
-		method.ArgumentsData = &model.Data{
+		method.ArgumentsData = &schema.Data{
 			Name:    fmt.Sprintf("%sArguments", nameutil.ToCamel(method.Name)),
 			Members: buildArgumentMembers(method.Arguments),
 		}
@@ -142,7 +142,7 @@ func methodOutput(gm *grammar.Method) *grammar.MethodOutput {
 	return gm.Output
 }
 
-func parseArgument(reporter *_DiagnosticReporter, ga *grammar.Argument) (*model.Argument, bool) {
+func parseArgument(reporter *_DiagnosticReporter, ga *grammar.Argument) (*schema.Argument, bool) {
 	valid := checkCase(reporter, "Argument", caseTypeLowerCamel, ga.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, ga.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -154,7 +154,7 @@ func parseArgument(reporter *_DiagnosticReporter, ga *grammar.Argument) (*model.
 	valid = metaValid && valid
 	argType, typeValid := parseType(reporter, ga.Type)
 	valid = typeValid && valid
-	arg := &model.Argument{
+	arg := &schema.Argument{
 		Pos:              position(ga.Name.Pos),
 		Name:             ga.Name.Value,
 		Description:      meta.Description,

@@ -8,125 +8,125 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestGeneratorRendersPubGoView(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "skeled")
 	goPubOutDir := filepath.Join(t.TempDir(), "skeledpub")
 
-	userStatus := &model.Enum{Pub: true, Name: "UserStatus", Items: []*model.EnumItem{{Name: "ACTIVE"}}}
-	unusedStatus := &model.Enum{Pub: true, Name: "UnusedStatus", Items: []*model.EnumItem{{Name: "IDLE"}}}
-	publicStatus := &model.Enum{Pub: true, Name: "PublicStatus", Items: []*model.EnumItem{{Name: "READY"}}}
-	address := &model.Data{
+	userStatus := &schema.Enum{Pub: true, Name: "UserStatus", Items: []*schema.EnumItem{{Name: "ACTIVE"}}}
+	unusedStatus := &schema.Enum{Pub: true, Name: "UnusedStatus", Items: []*schema.EnumItem{{Name: "IDLE"}}}
+	publicStatus := &schema.Enum{Pub: true, Name: "PublicStatus", Items: []*schema.EnumItem{{Name: "READY"}}}
+	address := &schema.Data{
 		Pub:  true,
 		Name: "Address",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "city", Type: codegentest.StringType()},
 		},
 	}
-	user := &model.Data{
+	user := &schema.Data{
 		Pub:  true,
 		Name: "User",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "status", Type: codegentest.EnumType(userStatus)},
 			{Name: "address", Type: codegentest.DataType(address)},
 		},
 	}
-	unusedData := &model.Data{
+	unusedData := &schema.Data{
 		Pub:  true,
 		Name: "UnusedData",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "idle", Type: codegentest.EnumType(unusedStatus)},
 		},
 	}
-	partnerCredential := &model.Data{
+	partnerCredential := &schema.Data{
 		Name: "PartnerActorCredential",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "subject", Type: codegentest.StringType()},
 		},
 	}
-	partnerInfo := &model.Data{
+	partnerInfo := &schema.Data{
 		Name: "PartnerActorInfo",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "userId", Type: codegentest.StringType()},
 		},
 	}
-	publicCredential := &model.Data{
+	publicCredential := &schema.Data{
 		Name:      "PublicOnlyActorCredential",
 		Sensitive: true,
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "subject", Type: codegentest.StringType()},
 		},
 	}
-	publicInfo := &model.Data{
+	publicInfo := &schema.Data{
 		Name:      "PublicOnlyActorInfo",
 		Sensitive: true,
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "userId", Type: codegentest.StringType()},
 		},
 	}
-	pkg := newModelDomainForTest(t, model.DomainSpec{
+	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Actors: []*model.Actor{
-			{Pub: true, Name: "OpenAPIActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaAgent)}},
-			{Name: "PartnerActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)}, AuthEnabled: true, AuthCredential: partnerCredential, AuthInfo: partnerInfo},
-			{Pub: true, Name: "PublicOnlyActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)}, AuthEnabled: true, AuthCredential: publicCredential, AuthInfo: publicInfo},
+		Actors: []*schema.Actor{
+			{Pub: true, Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
+			{Name: "PartnerActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}, AuthEnabled: true, AuthCredential: partnerCredential, AuthInfo: partnerInfo},
+			{Pub: true, Name: "PublicOnlyActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}, AuthEnabled: true, AuthCredential: publicCredential, AuthInfo: publicInfo},
 		},
-		Enums: []*model.Enum{userStatus, unusedStatus, publicStatus},
-		Data:  []*model.Data{address, user, unusedData},
-		Configs: []*model.Data{
+		Enums: []*schema.Enum{userStatus, unusedStatus, publicStatus},
+		Data:  []*schema.Data{address, user, unusedData},
+		Configs: []*schema.Data{
 			{
 				Pub:       true,
 				Name:      "DemoConfig",
-				Lifecycle: model.ConfigLifecycleEternal,
-				Members: []*model.DataMember{
+				Lifecycle: schema.ConfigLifecycleEternal,
+				Members: []*schema.DataMember{
 					{Name: "status", Type: codegentest.EnumType(publicStatus)},
 				},
 			},
 		},
-		Services: []*model.Service{
+		Services: []*schema.Service{
 			{
 				Pub:       true,
 				Name:      "UserService",
-				Audiences: []*model.ActorAudience{{Actor: "OpenAPIActor"}},
-				Methods: []*model.Method{
-					methodForTest("UserService", &model.Method{Name: "getUser", ResultType: codegentest.DataType(user)}),
+				Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}},
+				Methods: []*schema.Method{
+					methodForTest("UserService", &schema.Method{Name: "getUser", ResultType: codegentest.DataType(user)}),
 				},
 			},
 			{
 				Name:      "PartnerService",
-				Audiences: []*model.ActorAudience{{Actor: "PartnerActor"}},
-				Methods: []*model.Method{
-					methodForTest("PartnerService", &model.Method{Name: "ping", ResultType: codegentest.StringType()}),
+				Audiences: []*schema.ActorAudience{{Actor: "PartnerActor"}},
+				Methods: []*schema.Method{
+					methodForTest("PartnerService", &schema.Method{Name: "ping", ResultType: codegentest.StringType()}),
 				},
 			},
 		},
-		Events: []*model.Data{
+		Events: []*schema.Data{
 			{
 				Pub:  true,
 				Name: "UserCreatedEvent",
-				Members: []*model.DataMember{
+				Members: []*schema.DataMember{
 					{Name: "user", Type: codegentest.DataType(user)},
 				},
 			},
 			{
 				Name: "PartnerEvent",
-				Members: []*model.DataMember{
+				Members: []*schema.DataMember{
 					{Name: "message", Type: codegentest.StringType()},
 				},
 			},
 		},
-		Webs: []*model.Web{
-			{Name: "UserPortalWeb", Audiences: []*model.ActorAudience{{Actor: "OpenAPIActor"}}},
+		Webs: []*schema.Web{
+			{Name: "UserPortalWeb", Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}}},
 		},
-		Tasks: []*model.Task{
+		Tasks: []*schema.Task{
 			{
 				Name: "RebuildUserIndexTask",
-				Triggers: []*model.TaskTrigger{
-					triggerForTest("RebuildUserIndexTask", &model.TaskTrigger{
+				Triggers: []*schema.TaskTrigger{
+					triggerForTest("RebuildUserIndexTask", &schema.TaskTrigger{
 						Name: "atTime",
-						Arguments: []*model.Argument{
+						Arguments: []*schema.Argument{
 							{Name: "startAt", Type: codegentest.LocalDateTimeType()},
 						},
 					}),
@@ -258,7 +258,7 @@ func TestGeneratorRendersPubGoView(t *testing.T) {
 	if !strings.Contains(string(configContent), "type DemoConfig struct") {
 		t.Fatalf("expected explicitly pub config, got:\n%s", string(configContent))
 	}
-	schemaContent, err := os.ReadFile(filepath.Join(goPubOutDir, "schema.go"))
+	schemaContent, err := os.ReadFile(filepath.Join(goPubOutDir, "descriptor.go"))
 	if err != nil {
 		t.Fatalf("read go schema file: %v", err)
 	}
@@ -270,25 +270,25 @@ func TestGeneratorIncludesImplicitPubDependencies(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "skeled")
 	goPubOutDir := filepath.Join(t.TempDir(), "skeledpub")
 
-	user := &model.Data{
+	user := &schema.Data{
 		Name: "User",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{Name: "name", Type: codegentest.StringType()},
 		},
 	}
-	pkg := newModelDomainForTest(t, model.DomainSpec{
+	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Actors: []*model.Actor{
-			{Pub: true, Name: "OpenAPIActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaAgent)}},
+		Actors: []*schema.Actor{
+			{Pub: true, Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
 		},
-		Data: []*model.Data{user},
-		Services: []*model.Service{
+		Data: []*schema.Data{user},
+		Services: []*schema.Service{
 			{
 				Pub:       true,
 				Name:      "UserService",
-				Audiences: []*model.ActorAudience{{Actor: "OpenAPIActor"}},
-				Methods: []*model.Method{
-					methodForTest("UserService", &model.Method{Name: "getUser", ResultType: codegentest.DataType(user)}),
+				Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}},
+				Methods: []*schema.Method{
+					methodForTest("UserService", &schema.Method{Name: "getUser", ResultType: codegentest.DataType(user)}),
 				},
 			},
 		},

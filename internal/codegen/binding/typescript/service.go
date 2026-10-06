@@ -7,8 +7,8 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const serviceTsFilename = "service.ts"
@@ -66,7 +66,7 @@ func buildServiceNames(serviceName string) *_ServiceNames {
 	}
 }
 
-func (r _Types) castService(p *model.Service) *_Service {
+func (r _Types) castService(p *schema.Service) *_Service {
 	names := buildServiceNames(p.Name)
 	service := &_Service{
 		Name:         names.Name,
@@ -83,7 +83,7 @@ func (r _Types) castService(p *model.Service) *_Service {
 	return service
 }
 
-func (r _Types) castServices(services []*model.Service) []*_Service {
+func (r _Types) castServices(services []*schema.Service) []*_Service {
 	castedServices := make([]*_Service, 0, len(services))
 	for _, serviceToken := range services {
 		castedService := r.castService(serviceToken)
@@ -105,7 +105,7 @@ type _ServiceMethod struct {
 	HasWire      bool
 }
 
-func (r _Types) castServiceMethod(p *model.Method) *_ServiceMethod {
+func (r _Types) castServiceMethod(p *schema.Method) *_ServiceMethod {
 	resultType := r.castType(p.ResultType)
 	method := &_ServiceMethod{
 		Name:         nameutil.ToLowerCamel(p.Name),
@@ -155,7 +155,7 @@ type _MethodReturnDoc struct {
 	Description string
 }
 
-func (r _Types) castMethodArgument(p *model.Argument) *_MethodArgument {
+func (r _Types) castMethodArgument(p *schema.Argument) *_MethodArgument {
 	argType := r.castType(p.Type)
 	return &_MethodArgument{
 		Name:            nameutil.ToLowerCamel(p.Name),
@@ -166,18 +166,18 @@ func (r _Types) castMethodArgument(p *model.Argument) *_MethodArgument {
 	}
 }
 
-func (r _Types) buildServiceTypeImports(services []*model.Service) []string {
+func (r _Types) buildServiceTypeImports(services []*schema.Service) []string {
 	imports := make([]string, 0)
 	seen := make(map[string]struct{})
 	types := serviceTypeRoots(services)
-	codegen.VisitTypes(types, func(current *model.Type) {
+	codegen.VisitTypes(types, func(current *schema.Type) {
 		binding := r.bindings[current]
 		switch current.Kind {
-		case model.TypeKindEnum:
+		case schema.TypeKindEnum:
 			if binding == nil || binding.Path == "" {
 				imports = appendUniqueServiceTypeImport(imports, seen, transEnumName(current.Enum))
 			}
-		case model.TypeKindData:
+		case schema.TypeKindData:
 			if binding == nil || binding.Path == "" {
 				imports = appendUniqueServiceTypeImport(imports, seen, transDataName(current.Data))
 			}
@@ -186,8 +186,8 @@ func (r _Types) buildServiceTypeImports(services []*model.Service) []string {
 	return imports
 }
 
-func serviceTypeRoots(services []*model.Service) []*model.Type {
-	types := make([]*model.Type, 0)
+func serviceTypeRoots(services []*schema.Service) []*schema.Type {
+	types := make([]*schema.Type, 0)
 	for _, service := range services {
 		for _, method := range service.Methods {
 			types = append(types, method.ResultType)
@@ -207,7 +207,7 @@ func appendUniqueServiceTypeImport(imports []string, seen map[string]struct{}, n
 	return append(imports, name)
 }
 
-func (r _Types) buildServiceExternalTypeImports(services []*model.Service) []*_TypeImport {
+func (r _Types) buildServiceExternalTypeImports(services []*schema.Service) []*_TypeImport {
 	return r.buildExternalTypeImports(serviceTypeRoots(services))
 }
 

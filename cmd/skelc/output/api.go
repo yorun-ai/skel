@@ -43,3 +43,72 @@ type VersionGolangCodeGenResult = internaloutput.VersionGolangCodeGenResult
 
 // ScanImport is one direct import returned by skelc scan imports.
 type ScanImport = internaloutput.ScanImport
+
+// SchemaMetadata is part of the schema inspection JSON output.
+type SchemaMetadata = internaloutput.SchemaMetadata
+
+// SchemaDeclaration is part of the schema inspection JSON output.
+type SchemaDeclaration = internaloutput.SchemaDeclaration
+
+// SchemaEntry is part of the schema inspection JSON output.
+type SchemaEntry = internaloutput.SchemaEntry
+
+// SchemaEnum is part of the schema inspection JSON output.
+type SchemaEnum = internaloutput.SchemaEnum
+
+// SchemaEnumItem is part of the schema inspection JSON output.
+type SchemaEnumItem = internaloutput.SchemaEnumItem
+
+// SchemaData is part of the schema inspection JSON output.
+type SchemaData = internaloutput.SchemaData
+
+// SchemaMember is part of the schema inspection JSON output.
+type SchemaMember = internaloutput.SchemaMember
+
+// SchemaType is part of the schema inspection JSON output.
+type SchemaType = internaloutput.SchemaType
+
+// SchemaActor is part of the schema inspection JSON output.
+type SchemaActor = internaloutput.SchemaActor
+
+// SchemaActorVia is part of the schema inspection JSON output.
+type SchemaActorVia = internaloutput.SchemaActorVia
+
+// SchemaResource is part of the schema inspection JSON output.
+type SchemaResource = internaloutput.SchemaResource
+
+// SchemaResourceAction is part of the schema inspection JSON output.
+type SchemaResourceAction = internaloutput.SchemaResourceAction
+
+// SchemaResourceCheck is part of the schema inspection JSON output.
+type SchemaResourceCheck = internaloutput.SchemaResourceCheck
+
+// SchemaService is part of the schema inspection JSON output.
+type SchemaService = internaloutput.SchemaService
+
+// SchemaAudience is part of the schema inspection JSON output.
+type SchemaAudience = internaloutput.SchemaAudience
+
+// SchemaMethod is part of the schema inspection JSON output.
+type SchemaMethod = internaloutput.SchemaMethod
+
+// SchemaArgument is part of the schema inspection JSON output.
+type SchemaArgument = internaloutput.SchemaArgument
+
+// SchemaRequirement is part of the schema inspection JSON output.
+type SchemaRequirement = internaloutput.SchemaRequirement
+
+// SchemaRequirementCheck is part of the schema inspection JSON output.
+type SchemaRequirementCheck = internaloutput.SchemaRequirementCheck
+
+// SchemaRequirementCheckArgument is part of the schema inspection JSON output.
+type SchemaRequirementCheckArgument = internaloutput.SchemaRequirementCheckArgument
+
+// SchemaWeb is part of the schema inspection JSON output.
+type SchemaWeb = internaloutput.SchemaWeb
+
+// SchemaTask is part of the schema inspection JSON output.
+type SchemaTask = internaloutput.SchemaTask
+
+// SchemaTrigger is part of the schema inspection JSON output.
+type SchemaTrigger = internaloutput.SchemaTrigger

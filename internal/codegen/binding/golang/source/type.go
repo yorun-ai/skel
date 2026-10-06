@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type _Types struct{ bindings binding.TypeBindings }
@@ -22,30 +22,30 @@ const (
 	typesImport = "go.yorun.ai/skel/types"
 )
 
-func (r _Types) castType(p *model.Type) *Type {
+func (r _Types) castType(p *schema.Type) *Type {
 	if p == nil {
 		return nil
 	}
 
 	switch p.Kind {
-	case model.TypeKindScalar:
+	case schema.TypeKindScalar:
 		return castScalarType(p)
-	case model.TypeKindList:
+	case schema.TypeKindList:
 		return r.castListType(p)
-	case model.TypeKindMap:
+	case schema.TypeKindMap:
 		return r.castMapType(p)
-	case model.TypeKindEnum:
+	case schema.TypeKindEnum:
 		return r.castEnumType(p)
-	case model.TypeKindData:
+	case schema.TypeKindData:
 		return r.castDataType(p)
-	case model.TypeKindTypeParameter:
+	case schema.TypeKindTypeParameter:
 		return r.castTypeParameter(p)
 	}
 
 	return nil
 }
 
-func (r _Types) castListType(p *model.Type) *Type {
+func (r _Types) castListType(p *schema.Type) *Type {
 	valueType := r.castType(p.List.Value)
 	plain := fmt.Sprintf("[]%s", valueType.Plain)
 	return &Type{
@@ -55,7 +55,7 @@ func (r _Types) castListType(p *model.Type) *Type {
 	}
 }
 
-func (r _Types) castMapType(p *model.Type) *Type {
+func (r _Types) castMapType(p *schema.Type) *Type {
 	keyType := r.castType(p.Map.Key)
 	valueType := r.castType(p.Map.Value)
 	plain := fmt.Sprintf("map[%s]%s", keyType.Plain, valueType.Plain)
@@ -66,7 +66,7 @@ func (r _Types) castMapType(p *model.Type) *Type {
 	}
 }
 
-func (r _Types) castEnumType(p *model.Type) *Type {
+func (r _Types) castEnumType(p *schema.Type) *Type {
 	importBinding := r.bindings[p]
 	enumName := transEnumName(p.Enum)
 	unspecifiedItemName := transUnspecifiedItemName(p.Enum)
@@ -83,7 +83,7 @@ func (r _Types) castEnumType(p *model.Type) *Type {
 	}
 }
 
-func (r _Types) castDataType(p *model.Type) *Type {
+func (r _Types) castDataType(p *schema.Type) *Type {
 	importBinding := r.bindings[p]
 	structName := transDataName(p.Data)
 	imports := []*Import(nil)
@@ -118,7 +118,7 @@ func goImportAlias(importBinding *binding.ImportBinding) string {
 	return ""
 }
 
-func (r _Types) castTypeParameter(p *model.Type) *Type {
+func (r _Types) castTypeParameter(p *schema.Type) *Type {
 	return &Type{
 		Plain:        binding.ChooseString(p.Nullable, "*"+p.TypeParameter.Name, p.TypeParameter.Name),
 		DefaultValue: binding.ChooseString(p.Nullable, "nil", ""),

@@ -31,8 +31,8 @@ func ({{ $actor.Name }}) SkelName() string {
 	return "{{ $actor.SkelName }}"
 }
 
-func ({{ $actor.Name }}) Vias() []skel.ActorVia {
-	return []skel.ActorVia{
+func ({{ $actor.Name }}) Vias() []descriptor.ActorVia {
+	return []descriptor.ActorVia{
 		{{- range $via := $actor.Vias }}
 		{{ $via }},
 		{{- end }}

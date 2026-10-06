@@ -8,11 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	textsource "go.yorun.ai/skel/internal/source"
 	"go.yorun.ai/skel/internal/symbol"
+	"go.yorun.ai/skel/schema"
 )
 
 // Source is an in-memory Skel document used by workspace analysis. Domain is a
@@ -65,14 +65,13 @@ type WorkspaceAnalysisStats struct {
 }
 
 // WorkspaceDomain is one successfully analyzed semantic domain in a workspace
-// snapshot. Model and its reachable declarations are immutable after publication.
-// Sources contains the exact input revisions used to build Model.
+// snapshot. Schema and its reachable declarations are immutable after publication.
+// Sources contains the exact input revisions used to build Schema.
 type WorkspaceDomain struct {
-	Name          string
-	Root          string
-	Model         *model.Domain
-	Sources       []Source
-	ImportAliases map[string]string
+	Name    string
+	Root    string
+	Schema  *schema.Domain
+	Sources []Source
 }
 
 // NewWorkspaceAnalyzer creates an incremental workspace analyzer.
@@ -188,7 +187,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 			continue
 		}
 		if content.Domain == nil || content.Domain.Name == nil || content.Domain.Name.String() == "" {
-			position := model.Position{File: source.Path, Line: 1, Column: 1}
+			position := schema.Position{File: source.Path, Line: 1, Column: 1}
 			diagnostics = append(diagnostics, Diagnostic{
 				Code: DiagnosticCodeDomainMissing, Severity: DiagnosticSeverityError, Position: position, Range: sourceRangeAtDocument(position, source.Document),
 				Message: "missing domain declaration",
@@ -265,7 +264,7 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 			if w.options.IncludeWarnings {
 				diagnostics = appendAnalysisWarnings(diagnostics, domain.analysis.Warnings())
 			}
-			diagnostics = append(diagnostics, MigrationDiagnostics(domain.analysis.Model())...)
+			diagnostics = append(diagnostics, MigrationDiagnostics(domain.analysis.Schema())...)
 		}
 	}
 	contentByPath := make(map[string]*textsource.Document, len(ordered))
@@ -290,21 +289,21 @@ func (w *WorkspaceAnalyzer) analyze(ctx context.Context, sources []Source, allow
 			delete(w.domains, key)
 		}
 	}
-	models := make([]WorkspaceDomain, 0, len(keys))
+	schemas := make([]WorkspaceDomain, 0, len(keys))
 	for _, key := range keys {
 		domain := domains[key]
 		if domain.state != workspaceDomainComplete || domain.analysis == nil || domain.syntaxInvalid {
 			continue
 		}
-		models = append(models, WorkspaceDomain{
-			Name: domain.name, Root: domain.root, Model: domain.analysis.Model(), Sources: append([]Source{}, domain.sources...), ImportAliases: domain.analysis.ImportAliases(),
+		schemas = append(schemas, WorkspaceDomain{
+			Name: domain.name, Root: domain.root, Schema: domain.analysis.Schema(), Sources: append([]Source{}, domain.sources...),
 		})
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, nil, err
 	}
-	w.result = _CachedWorkspaceResult{fingerprint: fingerprint, diagnostics: cloneDiagnostics(diagnostics), domains: cloneWorkspaceDomains(models), domainCount: len(domains)}
-	return diagnostics, models, nil
+	w.result = _CachedWorkspaceResult{fingerprint: fingerprint, diagnostics: cloneDiagnostics(diagnostics), domains: cloneWorkspaceDomains(schemas), domainCount: len(domains)}
+	return diagnostics, schemas, nil
 }
 
 func (w *WorkspaceAnalyzer) parseWorkspaceSource(ctx context.Context, source Source) (*grammar.SkelContent, Diagnostics) {

@@ -1,10 +1,11 @@
 package source
 
-import "go.yorun.ai/skel/internal/model"
+import "go.yorun.ai/skel/schema"
 
 const actorGoFilename = "actor.go"
 
 var actorImports = []*Import{
+	{Path: "go.yorun.ai/skel/descriptor"},
 	{Path: "go.yorun.ai/vine/core/meta"},
 	{Path: "go.yorun.ai/vine/core/skel"},
 }
@@ -70,8 +71,8 @@ func (g *_Gen) genActorGo() {
 			)
 			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.AuthService))
 		}
-		if tokenActor.PermService != nil {
-			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.PermService))
+		if tokenActor.PermissionService != nil {
+			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.PermissionService))
 		}
 	}
 	if len(payload.Actors) == 0 && len(payload.AuthServices) == 0 {
@@ -94,14 +95,14 @@ func (g *_Gen) genActorGo() {
 	g.renderGo(actorGoFilename, actorGoTemplate, payload)
 }
 
-func (g *_Gen) authServiceActors() []*model.Actor {
+func (g *_Gen) authServiceActors() []*schema.Actor {
 	if g.isSplitPub() || g.isSplitRegular() {
 		return g.view.Actors
 	}
 	return g.Domain.Actors()
 }
 
-func castActor(p *model.Actor) *Actor {
+func castActor(p *schema.Actor) *Actor {
 	actor := &Actor{
 		Name:         p.Name,
 		SkelName:     p.SkelName,
@@ -121,13 +122,13 @@ func castActor(p *model.Actor) *Actor {
 }
 
 func castActorVia(via string) string {
-	switch model.ActorViaKind(via) {
-	case model.ActorViaClient:
-		return "skel.ActorViaClient"
-	case model.ActorViaAgent:
-		return "skel.ActorViaAgent"
-	case model.ActorViaOpenAPI:
-		return "skel.ActorViaOpenAPI"
+	switch schema.ActorViaKind(via) {
+	case schema.ActorViaClient:
+		return "descriptor.ActorViaClient"
+	case schema.ActorViaAgent:
+		return "descriptor.ActorViaAgent"
+	case schema.ActorViaOpenAPI:
+		return "descriptor.ActorViaOpenAPI"
 	}
 	return ""
 }

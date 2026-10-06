@@ -1,21 +1,21 @@
 package codegen
 
-import "go.yorun.ai/skel/internal/model"
+import "go.yorun.ai/skel/schema"
 
 // TypeRoots returns the types used by these declarations.
-func (v Declarations) TypeRoots(api bool) []*model.Type {
+func (v Declarations) TypeRoots(api bool) []*schema.Type {
 	if api {
 		return ApiTypeRoots(v.Data, v.Services)
 	}
-	var roots []*model.Type
-	addData := func(data *model.Data) {
+	var roots []*schema.Type
+	addData := func(data *schema.Data) {
 		if data != nil {
 			for _, member := range data.Members {
 				roots = append(roots, member.Type)
 			}
 		}
 	}
-	addService := func(service *model.Service) {
+	addService := func(service *schema.Service) {
 		if service != nil {
 			for _, method := range service.Methods {
 				roots = append(roots, method.ResultType)
@@ -43,7 +43,7 @@ func (v Declarations) TypeRoots(api bool) []*model.Type {
 			addData(actor.AuthInfo)
 			addService(actor.AuthService)
 		}
-		addService(actor.PermService)
+		addService(actor.PermissionService)
 	}
 	for _, resource := range v.Resources {
 		addService(resource.CheckService)

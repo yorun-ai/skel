@@ -3,8 +3,8 @@ package analyzer
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestAnalyze(t *testing.T) {
@@ -96,7 +96,7 @@ func TestAnalyze(t *testing.T) {
 				},
 			},
 		},
-	}).Model()
+	}).Schema()
 
 	if domain.Name() != "demo.user" {
 		t.Fatalf("unexpected domain name: %s", domain.Name())
@@ -160,16 +160,16 @@ func TestAnalyze(t *testing.T) {
 	if len(credentialMethod.Arguments) != 1 || credentialMethod.Arguments[0].Name != "credential" {
 		t.Fatalf("unexpected actor credential method arguments: %+v", credentialMethod.Arguments)
 	}
-	if credentialMethod.Arguments[0].Type.Kind != model.TypeKindData || credentialMethod.Arguments[0].Type.Data != domain.Actors()[0].AuthCredential {
+	if credentialMethod.Arguments[0].Type.Kind != schema.TypeKindData || credentialMethod.Arguments[0].Type.Data != domain.Actors()[0].AuthCredential {
 		t.Fatalf("unexpected actor credential method argument type: %+v", credentialMethod.Arguments[0].Type)
 	}
-	if credentialMethod.ResultType.Kind != model.TypeKindData || credentialMethod.ResultType.Data != domain.Actors()[0].AuthInfo {
+	if credentialMethod.ResultType.Kind != schema.TypeKindData || credentialMethod.ResultType.Data != domain.Actors()[0].AuthInfo {
 		t.Fatalf("unexpected actor credential method result type: %+v", credentialMethod.ResultType)
 	}
 	if credentialMethod.ArgumentsData == nil || credentialMethod.ArgumentsData.Name != "PortalAdminActorAuthServiceAuthArguments" {
 		t.Fatalf("unexpected actor credential method arguments data: %+v", credentialMethod.ArgumentsData)
 	}
-	if domain.Services()[0].Methods[0].ResultType.Kind != model.TypeKindData {
+	if domain.Services()[0].Methods[0].ResultType.Kind != schema.TypeKindData {
 		t.Fatalf("unexpected service result type: %+v", domain.Services()[0].Methods[0].ResultType)
 	}
 	if domain.Services()[0].Methods[0].ResultType.SkelName != "demo.user.User" {
@@ -178,7 +178,7 @@ func TestAnalyze(t *testing.T) {
 	if len(domain.Tasks()) != 1 || domain.Tasks()[0].SkelName != "demo.user.RebuildUserIndexTask" {
 		t.Fatalf("unexpected tasks: %+v", domain.Tasks())
 	}
-	if len(domain.Tasks()[0].Triggers) != 1 || domain.Tasks()[0].Triggers[0].Arguments[0].Type.Kind != model.TypeKindScalar {
+	if len(domain.Tasks()[0].Triggers) != 1 || domain.Tasks()[0].Triggers[0].Arguments[0].Type.Kind != schema.TypeKindScalar {
 		t.Fatalf("unexpected task triggers: %+v", domain.Tasks()[0].Triggers)
 	}
 }
@@ -186,7 +186,7 @@ func TestAnalyze(t *testing.T) {
 func TestAnalyzeKeepsDomainDescription(t *testing.T) {
 	domain := mustAnalyze(t, &grammar.SkelContent{
 		Domain: domainContentWithDescription("demo.user", "User domain"),
-	}).Model()
+	}).Schema()
 
 	if domain.Description() != "User domain" {
 		t.Fatalf("unexpected domain description: %q", domain.Description())

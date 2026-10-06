@@ -6,7 +6,7 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 // NewGenerator constructs a generator without rendering or writing files.
@@ -29,7 +29,7 @@ func generator(option ResolvedOption) codegen.Generator {
 			return nil, fmt.Errorf("codegen input is uninitialized")
 		}
 		settings := option.Options()
-		if err := validateGolangImports(input.Model(), settings); err != nil {
+		if err := validateGolangImports(input.Schema(), settings); err != nil {
 			return nil, err
 		}
 		files := new(binding.FileCollector{Context: ctx})
@@ -44,7 +44,7 @@ func generator(option ResolvedOption) codegen.Generator {
 }
 
 // Generate uses the shared SDK preparation and output transaction.
-func Generate(domain *model.Domain, option ResolvedOption) error {
+func Generate(domain *schema.Domain, option ResolvedOption) error {
 	input, err := codegen.Prepare(domain, codegen.Selection{})
 	if err != nil {
 		return err

@@ -1,9 +1,9 @@
 package view
 
-import "go.yorun.ai/skel/internal/model"
+import "go.yorun.ai/skel/schema"
 
-func filterNonPubData(dataList []*model.Data) []*model.Data {
-	filtered := make([]*model.Data, 0, len(dataList))
+func filterNonPubData(dataList []*schema.Data) []*schema.Data {
+	filtered := make([]*schema.Data, 0, len(dataList))
 	for _, data := range dataList {
 		if !data.Pub {
 			filtered = append(filtered, data)
@@ -12,8 +12,8 @@ func filterNonPubData(dataList []*model.Data) []*model.Data {
 	return filtered
 }
 
-func filterNonPubActors(actors []*model.Actor) []*model.Actor {
-	filtered := make([]*model.Actor, 0, len(actors))
+func filterNonPubActors(actors []*schema.Actor) []*schema.Actor {
+	filtered := make([]*schema.Actor, 0, len(actors))
 	for _, actor := range actors {
 		if !actor.Pub {
 			filtered = append(filtered, actor)
@@ -22,8 +22,8 @@ func filterNonPubActors(actors []*model.Actor) []*model.Actor {
 	return filtered
 }
 
-func filterNonPubResources(resources []*model.Resource) []*model.Resource {
-	filtered := make([]*model.Resource, 0, len(resources))
+func filterNonPubResources(resources []*schema.Resource) []*schema.Resource {
+	filtered := make([]*schema.Resource, 0, len(resources))
 	for _, resource := range resources {
 		if !resource.Pub {
 			filtered = append(filtered, resource)

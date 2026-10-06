@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestSpecTemplateRendersServiceSpecs(t *testing.T) {
@@ -40,21 +40,21 @@ func TestSpecTemplateKeepsModuleSemanticsWhenEmpty(t *testing.T) {
 }
 
 func TestBuildSpecTsPayloadUsesFinalClientServiceSet(t *testing.T) {
-	userActorDomain := buildModelDomainForTest(t, model.DomainSpec{
+	userActorDomain := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name:   "app",
-		Actors: []*model.Actor{{Name: "UserActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaClient)}}},
+		Actors: []*schema.Actor{{Name: "UserActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}}},
 	})
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
-		Imports: []*model.Import{{
+		Imports: []*schema.Import{{
 			Domain: userActorDomain,
 			Name:   "app",
 			Alias:  "app",
 		}},
-		Actors: []*model.Actor{{Name: "AgentActor", Vias: []*model.ActorVia{codegentest.ActorVia(model.ActorViaAgent)}}},
-		Services: []*model.Service{
-			{Name: "ExternalClientService", Audiences: []*model.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*model.Method{{Name: "ping"}}},
-			{Name: "BackendService", Pub: true, Methods: []*model.Method{{Name: "ping"}}},
+		Actors: []*schema.Actor{{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}}},
+		Services: []*schema.Service{
+			{Name: "ExternalClientService", Audiences: []*schema.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
+			{Name: "BackendService", Pub: true, Methods: []*schema.Method{{Name: "ping"}}},
 		},
 	})
 
@@ -69,16 +69,16 @@ func TestBuildSpecTsPayloadUsesFinalClientServiceSet(t *testing.T) {
 }
 
 func TestBuildSpecTsPayloadRendersSparseWireForBinaryMethods(t *testing.T) {
-	chunk := &model.Data{
+	chunk := &schema.Data{
 		Name: "Chunk",
-		Members: []*model.DataMember{{
+		Members: []*schema.DataMember{{
 			Name: "content",
 			Type: codegentest.BinaryType(),
 		}},
 	}
-	fileResult := &model.Data{
+	fileResult := &schema.Data{
 		Name: "FileResult",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name: "content",
 				Type: codegentest.NullableType(codegentest.BinaryType()),
@@ -93,17 +93,17 @@ func TestBuildSpecTsPayloadRendersSparseWireForBinaryMethods(t *testing.T) {
 			},
 		},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.file",
-		Data: []*model.Data{chunk, fileResult},
-		Services: []*model.Service{{
+		Data: []*schema.Data{chunk, fileResult},
+		Services: []*schema.Service{{
 			Name:      "FileService",
-			Audiences: []*model.ActorAudience{{Actor: "ClientActor", Via: string(model.ActorViaClient)}},
-			Methods: []*model.Method{
+			Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}},
+			Methods: []*schema.Method{
 				{Name: "ping"},
 				{
 					Name: "upload",
-					Arguments: []*model.Argument{{
+					Arguments: []*schema.Argument{{
 						Name: "content",
 						Type: codegentest.BinaryType(),
 					}},
@@ -141,27 +141,27 @@ func TestBuildSpecTsPayloadRendersSparseWireForBinaryMethods(t *testing.T) {
 
 func TestWireSchemaSupportsGenericAndRecursiveData(t *testing.T) {
 	tItem := codegentest.TypeParam("TItem")
-	wrapper := &model.Data{
+	wrapper := &schema.Data{
 		Name:           "Wrapper",
 		SkelName:       "demo.file.Wrapper",
-		TypeParameters: []*model.TypeParameter{tItem},
-		Members: []*model.DataMember{{
+		TypeParameters: []*schema.TypeParameter{tItem},
+		Members: []*schema.DataMember{{
 			Name: "value",
 			Type: codegentest.TypeParamType(tItem),
 		}},
 	}
-	node := &model.Data{
+	node := &schema.Data{
 		Name:     "Node",
 		SkelName: "demo.file.Node",
 	}
-	node.Members = []*model.DataMember{
+	node.Members = []*schema.DataMember{
 		{Name: "content", Type: codegentest.BinaryType()},
 		{Name: "next", Type: codegentest.NullableType(codegentest.DataType(node))},
 	}
 
-	method := &model.Method{
+	method := &schema.Method{
 		Name: "store",
-		Arguments: []*model.Argument{
+		Arguments: []*schema.Argument{
 			{Name: "wrapped", Type: codegentest.DataType(wrapper, codegentest.BinaryType())},
 			{Name: "node", Type: codegentest.DataType(node)},
 		},
@@ -201,12 +201,12 @@ func TestWireSchemaSupportsGenericAndRecursiveData(t *testing.T) {
 
 func TestWireSchemaPreservesNullableTypeParameter(t *testing.T) {
 	parameter := codegentest.TypeParam("TValue")
-	wrapper := &model.Data{Name: "Wrapper", TypeParameters: []*model.TypeParameter{parameter}, Members: []*model.DataMember{
+	wrapper := &schema.Data{Name: "Wrapper", TypeParameters: []*schema.TypeParameter{parameter}, Members: []*schema.DataMember{
 		{Name: "required", Type: codegentest.TypeParamType(parameter)},
 		{Name: "optional", Type: codegentest.NullableType(codegentest.TypeParamType(parameter))},
 		{Name: "items", Type: codegentest.ListType(codegentest.NullableType(codegentest.TypeParamType(parameter)))},
 	}}
-	method := &model.Method{Name: "read", ResultType: codegentest.DataType(wrapper, codegentest.BinaryType())}
+	method := &schema.Method{Name: "read", ResultType: codegentest.DataType(wrapper, codegentest.BinaryType())}
 	builder := newWireSchemaBuilder()
 	builder.collectMethod(method)
 	builder.prepareFactoryNames()
@@ -220,7 +220,7 @@ func TestWireSchemaPreservesNullableTypeParameter(t *testing.T) {
 			t.Fatalf("missing %q in:\n%s", check, code)
 		}
 	}
-	nullableArgument := &model.Method{Name: "read", ResultType: codegentest.DataType(wrapper, codegentest.NullableType(codegentest.BinaryType()))}
+	nullableArgument := &schema.Method{Name: "read", ResultType: codegentest.DataType(wrapper, codegentest.NullableType(codegentest.BinaryType()))}
 	if rendered := builder.renderMethod(nullableArgument).ResultSchema; !strings.Contains(rendered, "kind: 'binary', nullable: true") {
 		t.Fatalf("nullable argument lost: %s", rendered)
 	}

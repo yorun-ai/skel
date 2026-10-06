@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/optionvalidation"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 // ApiFilter selects API service/type roots and optionally prunes public types.
@@ -23,7 +23,7 @@ type ApiFilter struct {
 
 // BuildApiView selects client services and all locally owned API data dependencies.
 // Without pruning, explicitly public types remain available for other domains.
-func BuildApiView(domain *model.Domain, selection ApiFilter) (*PublicView, error) {
+func BuildApiView(domain *schema.Domain, selection ApiFilter) (*PublicView, error) {
 	var err error
 	selection, err = NormalizeApiFilter(selection)
 	if err != nil {
@@ -60,9 +60,9 @@ func BuildApiView(domain *model.Domain, selection ApiFilter) (*PublicView, error
 		selected[name] = true
 	}
 	result := &PublicView{
-		Data:  filter(domain.Data(), func(d *model.Data) bool { return (!selection.Prune && d.Pub) || types[domain.Name()+"."+d.Name] }),
-		Enums: filter(domain.Enums(), func(e *model.Enum) bool { return (!selection.Prune && e.Pub) || types[domain.Name()+"."+e.Name] }),
-		Services: filter(domain.Services(), func(s *model.Service) bool {
+		Data:  filter(domain.Data(), func(d *schema.Data) bool { return (!selection.Prune && d.Pub) || types[domain.Name()+"."+d.Name] }),
+		Enums: filter(domain.Enums(), func(e *schema.Enum) bool { return (!selection.Prune && e.Pub) || types[domain.Name()+"."+e.Name] }),
+		Services: filter(domain.Services(), func(s *schema.Service) bool {
 			return s.ClientApi() && ((!selection.Prune && len(selected) == 0) || matchesApiActors(domain, s, selected))
 		}),
 	}
@@ -70,7 +70,7 @@ func BuildApiView(domain *model.Domain, selection ApiFilter) (*PublicView, error
 	return result, nil
 }
 
-func matchesApiActors(domain *model.Domain, service *model.Service, selected map[string]bool) bool {
+func matchesApiActors(domain *schema.Domain, service *schema.Service, selected map[string]bool) bool {
 	for _, audience := range service.Audiences {
 		qualifier, name, qualified := nameutil.SplitQualified(audience.Actor)
 		if !qualified {
@@ -133,11 +133,11 @@ func ValidateApiFilterMode(selection ApiFilter, api bool) error {
 	return nil
 }
 
-func collectViewData(domain *model.Domain, view *PublicView) {
-	data := map[*model.Data]bool{}
-	enums := map[*model.Enum]bool{}
-	var visitType func(*model.Type)
-	visitData := func(d *model.Data) {
+func collectViewData(domain *schema.Domain, view *PublicView) {
+	data := map[*schema.Data]bool{}
+	enums := map[*schema.Enum]bool{}
+	var visitType func(*schema.Type)
+	visitData := func(d *schema.Data) {
 		if d == nil || data[d] {
 			return
 		}
@@ -146,7 +146,7 @@ func collectViewData(domain *model.Domain, view *PublicView) {
 			visitType(member.Type)
 		}
 	}
-	visitType = func(t *model.Type) {
+	visitType = func(t *schema.Type) {
 		if t == nil {
 			return
 		}
@@ -158,15 +158,15 @@ func collectViewData(domain *model.Domain, view *PublicView) {
 			return
 		}
 		switch t.Kind {
-		case model.TypeKindData:
+		case schema.TypeKindData:
 			visitData(t.Data)
-		case model.TypeKindEnum:
+		case schema.TypeKindEnum:
 			enums[t.Enum] = true
-		case model.TypeKindList:
+		case schema.TypeKindList:
 			if t.List != nil {
 				visitType(t.List.Value)
 			}
-		case model.TypeKindMap:
+		case schema.TypeKindMap:
 			if t.Map != nil {
 				visitType(t.Map.Key)
 				visitType(t.Map.Value)
@@ -189,9 +189,9 @@ func collectViewData(domain *model.Domain, view *PublicView) {
 		visitData(a.AuthCredential)
 		visitData(a.AuthInfo)
 	}
-	services := append([]*model.Service{}, view.Services...)
+	services := append([]*schema.Service{}, view.Services...)
 	for _, a := range view.Actors {
-		services = append(services, a.AuthService, a.PermService)
+		services = append(services, a.AuthService, a.PermissionService)
 	}
 	for _, r := range view.Resources {
 		services = append(services, r.CheckService)
@@ -208,13 +208,13 @@ func collectViewData(domain *model.Domain, view *PublicView) {
 		}
 	}
 	// Preserve declaration order and exclude generated argument/actor data.
-	view.Data = filter(domain.Data(), func(d *model.Data) bool { return data[d] })
-	view.Enums = filter(domain.Enums(), func(e *model.Enum) bool { return enums[e] })
+	view.Data = filter(domain.Data(), func(d *schema.Data) bool { return data[d] })
+	view.Enums = filter(domain.Enums(), func(e *schema.Enum) bool { return enums[e] })
 }
 
 // ApiTypeRoots returns the types sent by API callers and returned to them.
-func ApiTypeRoots(data []*model.Data, services []*model.Service) []*model.Type {
-	var roots []*model.Type
+func ApiTypeRoots(data []*schema.Data, services []*schema.Service) []*schema.Type {
+	var roots []*schema.Type
 	for _, item := range data {
 		for _, member := range item.Members {
 			roots = append(roots, member.Type)
@@ -224,7 +224,7 @@ func ApiTypeRoots(data []*model.Data, services []*model.Service) []*model.Type {
 		for _, method := range service.Methods {
 			roots = append(roots, method.ResultType)
 			for _, arg := range method.Arguments {
-				if arg.Source == model.ArgumentSourceDeclared {
+				if arg.Source == schema.ArgumentSourceDeclared {
 					roots = append(roots, arg.Type)
 				}
 			}

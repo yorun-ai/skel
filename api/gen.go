@@ -2,7 +2,7 @@ package api
 
 import (
 	internalapi "go.yorun.ai/skel/internal/api"
-	"go.yorun.ai/skel/model"
+	"go.yorun.ai/skel/schema"
 )
 
 // MinimumGolangVineVersion is the minimum Vine module version supported by
@@ -30,7 +30,7 @@ type SkeletonOption = internalapi.SkeletonOption
 
 // GenerateGolang generates Go source or a standalone Go module from a parsed
 // domain. Stale files carrying the skelc generated marker may be removed.
-func GenerateGolang(domain *model.Domain, option GolangOption) error {
+func GenerateGolang(domain *schema.Domain, option GolangOption) error {
 	return internalapi.GenerateGolang(domain, option)
 }
 
@@ -42,7 +42,7 @@ func CompileGolang(input Input, option GolangOption) (CompileResult, error) {
 
 // GenerateTypeScript generates TypeScript source from a parsed domain. Stale
 // files carrying the skelc generated marker may be removed.
-func GenerateTypeScript(domain *model.Domain, option TypeScriptOption) error {
+func GenerateTypeScript(domain *schema.Domain, option TypeScriptOption) error {
 	return internalapi.GenerateTypeScript(domain, option)
 }
 
@@ -54,7 +54,7 @@ func CompileTypeScript(input Input, option TypeScriptOption) (CompileResult, err
 
 // GenerateSkeleton generates a Skel contract from a parsed domain. Stale files
 // carrying the skelc generated marker may be removed.
-func GenerateSkeleton(domain *model.Domain, option SkeletonOption) error {
+func GenerateSkeleton(domain *schema.Domain, option SkeletonOption) error {
 	return internalapi.GenerateSkeleton(domain, option)
 }
 

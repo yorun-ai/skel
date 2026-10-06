@@ -5,14 +5,14 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 const packageScope = "@yorun-ai/skeled"
 
 type _Gen struct {
 	types    _Types
-	domain   *model.Domain
+	domain   *schema.Domain
 	bindings binding.TypeBindings
 
 	moduleScope string
@@ -52,7 +52,7 @@ func generateSource(domain codegen.Input, outputDir string, option Option, sink 
 }
 
 func newGen(input codegen.Input, outputDir string, option Option, sink binding.FileSink) *_Gen {
-	domain := input.Model()
+	domain := input.Schema()
 	g := &_Gen{
 		domain:      domain,
 		moduleScope: strings.TrimRight(option.ModuleScope, "/"),

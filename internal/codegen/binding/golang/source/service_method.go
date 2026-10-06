@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
 type ServiceMethod struct {
@@ -24,7 +24,7 @@ type ServiceMethod struct {
 	ResultContainsBinaryType    bool
 }
 
-func (r _Types) castServiceMethod(ps *model.Service, pm *model.Method) *ServiceMethod {
+func (r _Types) castServiceMethod(ps *schema.Service, pm *schema.Method) *ServiceMethod {
 	methodArgs := make([]*MethodArgument, 0, len(pm.Arguments))
 	for _, argument := range pm.Arguments {
 		castedArgument := r.castMethodArgument(argument)
@@ -68,7 +68,7 @@ func (r _Types) castServiceMethod(ps *model.Service, pm *model.Method) *ServiceM
 	return method
 }
 
-func methodArgumentsContainBinaryType(method *model.Method) bool {
+func methodArgumentsContainBinaryType(method *schema.Method) bool {
 	for _, argument := range method.Arguments {
 		if argument.Type.ContainsBinaryType() {
 			return true
@@ -77,7 +77,7 @@ func methodArgumentsContainBinaryType(method *model.Method) bool {
 	return false
 }
 
-func methodResultContainsBinaryType(method *model.Method) bool {
+func methodResultContainsBinaryType(method *schema.Method) bool {
 	return method.ResultType.ContainsBinaryType()
 }
 
@@ -89,7 +89,7 @@ type MethodArgument struct {
 	Type        *Type
 }
 
-func (r _Types) castMethodArgument(p *model.Argument) *MethodArgument {
+func (r _Types) castMethodArgument(p *schema.Argument) *MethodArgument {
 	argType := r.castType(p.Type)
 	name := nameutil.ToLowerCamel(p.Name)
 	// Generated method bodies may refer to the scalar package, including when

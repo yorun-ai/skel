@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const enumGoFilename = "enum.go"
@@ -47,7 +47,7 @@ type Enum struct {
 	Items           []*EnumItem
 }
 
-func castEnum(p *model.Enum) *Enum {
+func castEnum(p *schema.Enum) *Enum {
 	enum := &Enum{
 		Name:            transEnumName(p),
 		VarName:         nameutil.ToLowerCamel(p.Name),
@@ -76,11 +76,11 @@ func castEnum(p *model.Enum) *Enum {
 	return enum
 }
 
-func transEnumName(p *model.Enum) string {
+func transEnumName(p *schema.Enum) string {
 	return nameutil.ToCamel(p.Name)
 }
 
-func transUnspecifiedItemName(p *model.Enum) string {
+func transUnspecifiedItemName(p *schema.Enum) string {
 	return transEnumName(p) + castEnumItem(p.UnspecifiedItem).Name
 }
 
@@ -92,7 +92,7 @@ type EnumItem struct {
 	CommentLines     []string
 }
 
-func castEnumItem(p *model.EnumItem) *EnumItem {
+func castEnumItem(p *schema.EnumItem) *EnumItem {
 	name := nameutil.ToCamel(strings.ToLower(p.Name))
 	return &EnumItem{
 		Name:             name,

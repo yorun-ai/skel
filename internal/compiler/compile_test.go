@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCompileDirectory(t *testing.T) {
@@ -193,7 +193,7 @@ data AppItem {
 		t.Fatalf("Compile() error = %v", err)
 	}
 	baseDomain := result.Domain.Imports()[0].Domain
-	var box, item *model.Data
+	var box, item *schema.Data
 	for _, dataType := range baseDomain.Data() {
 		switch dataType.Name {
 		case "Box":
@@ -205,36 +205,36 @@ data AppItem {
 	if box == nil || item == nil {
 		t.Fatalf("expected imported Box and Item data: %+v", baseDomain.Data())
 	}
-	if got := box.Members[0].Type.Kind; got != model.TypeKindTypeParameter {
-		t.Fatalf("generic member kind = %d, want %d", got, model.TypeKindTypeParameter)
+	if got := box.Members[0].Type.Kind; got != schema.TypeKindTypeParameter {
+		t.Fatalf("generic member kind = %d, want %d", got, schema.TypeKindTypeParameter)
 	}
-	members := make(map[string]*model.Type, len(item.Members))
+	members := make(map[string]*schema.Type, len(item.Members))
 	for _, member := range item.Members {
 		members[member.Name] = member.Type
 	}
-	if got := members["type"].Kind; got != model.TypeKindEnum {
-		t.Fatalf("enum member kind = %d, want %d", got, model.TypeKindEnum)
+	if got := members["type"].Kind; got != schema.TypeKindEnum {
+		t.Fatalf("enum member kind = %d, want %d", got, schema.TypeKindEnum)
 	}
-	if got := members["detail"].Kind; got != model.TypeKindData {
-		t.Fatalf("data member kind = %d, want %d", got, model.TypeKindData)
+	if got := members["detail"].Kind; got != schema.TypeKindData {
+		t.Fatalf("data member kind = %d, want %d", got, schema.TypeKindData)
 	}
-	if got := members["boxedType"].TypeArguments[0].Kind; got != model.TypeKindEnum {
-		t.Fatalf("generic type argument kind = %d, want %d", got, model.TypeKindEnum)
+	if got := members["boxedType"].TypeArguments[0].Kind; got != schema.TypeKindEnum {
+		t.Fatalf("generic type argument kind = %d, want %d", got, schema.TypeKindEnum)
 	}
-	if got := members["types"].List.Value.Kind; got != model.TypeKindEnum {
-		t.Fatalf("list element kind = %d, want %d", got, model.TypeKindEnum)
+	if got := members["types"].List.Value.Kind; got != schema.TypeKindEnum {
+		t.Fatalf("list element kind = %d, want %d", got, schema.TypeKindEnum)
 	}
-	if got := members["detailsByType"].Map.Key.Kind; got != model.TypeKindEnum {
-		t.Fatalf("map key kind = %d, want %d", got, model.TypeKindEnum)
+	if got := members["detailsByType"].Map.Key.Kind; got != schema.TypeKindEnum {
+		t.Fatalf("map key kind = %d, want %d", got, schema.TypeKindEnum)
 	}
-	if got := members["detailsByType"].Map.Value.Kind; got != model.TypeKindData {
-		t.Fatalf("map value kind = %d, want %d", got, model.TypeKindData)
+	if got := members["detailsByType"].Map.Value.Kind; got != schema.TypeKindData {
+		t.Fatalf("map value kind = %d, want %d", got, schema.TypeKindData)
 	}
-	if got := members["boxedDetails"].TypeArguments[0].List.Value.Kind; got != model.TypeKindData {
-		t.Fatalf("nested generic list element kind = %d, want %d", got, model.TypeKindData)
+	if got := members["boxedDetails"].TypeArguments[0].List.Value.Kind; got != schema.TypeKindData {
+		t.Fatalf("nested generic list element kind = %d, want %d", got, schema.TypeKindData)
 	}
 	authInfo := baseDomain.Actors()[0].AuthInfo
-	wantKinds := []model.TypeKind{model.TypeKindEnum, model.TypeKindData}
+	wantKinds := []schema.TypeKind{schema.TypeKindEnum, schema.TypeKindData}
 	for index, member := range authInfo.Members {
 		if member.Type.Kind != wantKinds[index] {
 			t.Fatalf("actor info member %s kind = %d, want %d", member.Name, member.Type.Kind, wantKinds[index])
@@ -289,8 +289,8 @@ data AppUser {
 		t.Fatalf("Compile() error = %v", err)
 	}
 	userDomain := result.Domain.Imports()[0].Domain
-	if got := userDomain.Data()[0].Members[0].Type.Kind; got != model.TypeKindEnum {
-		t.Fatalf("transitive imported enum kind = %d, want %d", got, model.TypeKindEnum)
+	if got := userDomain.Data()[0].Members[0].Type.Kind; got != schema.TypeKindEnum {
+		t.Fatalf("transitive imported enum kind = %d, want %d", got, schema.TypeKindEnum)
 	}
 }
 
@@ -469,8 +469,8 @@ data Booking {
 	if result.Domain.Name() != "demo.booker" {
 		t.Fatalf("unexpected domain name: %s", result.Domain.Name())
 	}
-	if result.ImportAliases["user"] != "demo.user" {
-		t.Fatalf("unexpected import aliases: %#v", result.ImportAliases)
+	if result.Domain.ReferenceName("user.User") != "demo.user.User" {
+		t.Fatalf("unexpected import aliases: %#v", result.Domain.Imports())
 	}
 }
 
@@ -566,8 +566,8 @@ pub service ProxyService { for REF.SandboxActor method ping { require REF.Docume
 			if err != nil {
 				t.Fatal(err)
 			}
-			if result.ImportAliases[test.qualifier] != "ws.sandbox" {
-				t.Fatalf("unexpected imports: %v", result.ImportAliases)
+			if result.Domain.ReferenceName(test.qualifier+".User") != "ws.sandbox.User" {
+				t.Fatalf("unexpected imports: %v", result.Domain.Imports())
 			}
 			if webHash == "" {
 				webHash = result.Domain.Webs()[0].Hash

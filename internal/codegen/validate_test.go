@@ -4,37 +4,37 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func TestValidateDomainRejectsMalformedNestedModels(t *testing.T) {
+func TestValidateDomainRejectsMalformedNestedSchemas(t *testing.T) {
 	tests := []struct {
 		name     string
-		spec     model.DomainSpec
+		spec     schema.DomainSpec
 		expected string
 	}{
-		{name: "api permission callback", spec: model.DomainSpec{Actors: []*model.Actor{{Name: "Client", PermService: &model.Service{Name: "Permission", Api: true}}}}, expected: "cannot be used as a framework callback"},
-		{name: "api resource callback", spec: model.DomainSpec{Resources: []*model.Resource{{Name: "Document", CheckService: &model.Service{Name: "Check", Api: true}}}}, expected: "cannot be used as a framework callback"},
-		{name: "api missing actor", spec: model.DomainSpec{Services: []*model.Service{{Name: "OrderApiService", Api: true}}}, expected: "at least one for Actor"},
-		{name: "ext and pub", spec: model.DomainSpec{Services: []*model.Service{{Name: "StorageService", Ext: true, Pub: true}}}, expected: "ext, api and pub are mutually exclusive"},
-		{name: "ext and api", spec: model.DomainSpec{Services: []*model.Service{{Name: "StorageApiService", Ext: true, Api: true}}}, expected: "ext, api and pub are mutually exclusive"},
-		{name: "api and pub", spec: model.DomainSpec{Services: []*model.Service{{Name: "OrderService", Api: true, Pub: true}}}, expected: "cannot combine api and pub"},
-		{name: "nil import", spec: model.DomainSpec{Imports: []*model.Import{nil}}, expected: "nil import"},
-		{name: "missing imported domain", spec: model.DomainSpec{Imports: []*model.Import{{Name: "shared"}}}, expected: "has no domain model"},
-		{name: "malformed imported domain", spec: model.DomainSpec{Imports: []*model.Import{{Name: "shared", Domain: model.NewDomainFromSpec(model.DomainSpec{Webs: []*model.Web{nil}})}}}, expected: "import shared"},
-		{name: "incomplete actor auth", spec: model.DomainSpec{Actors: []*model.Actor{{Name: "Client", AuthEnabled: true}}}, expected: "incomplete auth support"},
-		{name: "incomplete actor permission", spec: model.DomainSpec{Actors: []*model.Actor{{Name: "Client", PermEnabled: true}}}, expected: "incomplete permission support"},
-		{name: "malformed optional permission service", spec: model.DomainSpec{Actors: []*model.Actor{{Name: "Client", PermService: &model.Service{Name: "Permission", Methods: []*model.Method{nil}}}}}, expected: "nil method"},
-		{name: "nil resource action", spec: model.DomainSpec{Resources: []*model.Resource{{Name: "Document", Actions: []*model.ResourceAction{nil}}}}, expected: "nil action"},
-		{name: "nil resource check", spec: model.DomainSpec{Resources: []*model.Resource{{Name: "Document", Checks: []*model.ResourceCheck{nil}}}}, expected: "nil check"},
-		{name: "resource check without method", spec: model.DomainSpec{Resources: []*model.Resource{{Name: "Document", Checks: []*model.ResourceCheck{{Name: "owner"}}}}}, expected: "check owner is nil"},
-		{name: "nil web", spec: model.DomainSpec{Webs: []*model.Web{nil}}, expected: "nil web"},
-		{name: "nil web audience", spec: model.DomainSpec{Webs: []*model.Web{{Name: "Portal", Audiences: []*model.ActorAudience{nil}}}}, expected: "nil audience"},
-		{name: "nil service audience", spec: model.DomainSpec{Services: []*model.Service{{Name: "Documents", Audiences: []*model.ActorAudience{nil}}}}, expected: "nil audience"},
+		{name: "api permission callback", spec: schema.DomainSpec{Actors: []*schema.Actor{{Name: "Client", PermissionService: &schema.Service{Name: "Permission", Api: true}}}}, expected: "cannot be used as a framework callback"},
+		{name: "api resource callback", spec: schema.DomainSpec{Resources: []*schema.Resource{{Name: "Document", CheckService: &schema.Service{Name: "Check", Api: true}}}}, expected: "cannot be used as a framework callback"},
+		{name: "api missing actor", spec: schema.DomainSpec{Services: []*schema.Service{{Name: "OrderApiService", Api: true}}}, expected: "at least one for Actor"},
+		{name: "ext and pub", spec: schema.DomainSpec{Services: []*schema.Service{{Name: "StorageService", Ext: true, Pub: true}}}, expected: "ext, api and pub are mutually exclusive"},
+		{name: "ext and api", spec: schema.DomainSpec{Services: []*schema.Service{{Name: "StorageApiService", Ext: true, Api: true}}}, expected: "ext, api and pub are mutually exclusive"},
+		{name: "api and pub", spec: schema.DomainSpec{Services: []*schema.Service{{Name: "OrderService", Api: true, Pub: true}}}, expected: "cannot combine api and pub"},
+		{name: "nil import", spec: schema.DomainSpec{Imports: []*schema.Import{nil}}, expected: "nil import"},
+		{name: "missing imported domain", spec: schema.DomainSpec{Imports: []*schema.Import{{Name: "shared"}}}, expected: "has no domain schema"},
+		{name: "malformed imported domain", spec: schema.DomainSpec{Imports: []*schema.Import{{Name: "shared", Domain: schema.NewDomainFromSpec(schema.DomainSpec{Webs: []*schema.Web{nil}})}}}, expected: "import shared"},
+		{name: "incomplete actor auth", spec: schema.DomainSpec{Actors: []*schema.Actor{{Name: "Client", AuthEnabled: true}}}, expected: "incomplete auth support"},
+		{name: "incomplete actor permission", spec: schema.DomainSpec{Actors: []*schema.Actor{{Name: "Client", PermissionEnabled: true}}}, expected: "incomplete permission support"},
+		{name: "malformed optional permission service", spec: schema.DomainSpec{Actors: []*schema.Actor{{Name: "Client", PermissionService: &schema.Service{Name: "Permission", Methods: []*schema.Method{nil}}}}}, expected: "nil method"},
+		{name: "nil resource action", spec: schema.DomainSpec{Resources: []*schema.Resource{{Name: "Document", Actions: []*schema.ResourceAction{nil}}}}, expected: "nil action"},
+		{name: "nil resource check", spec: schema.DomainSpec{Resources: []*schema.Resource{{Name: "Document", Checks: []*schema.ResourceCheck{nil}}}}, expected: "nil check"},
+		{name: "resource check without method", spec: schema.DomainSpec{Resources: []*schema.Resource{{Name: "Document", Checks: []*schema.ResourceCheck{{Name: "owner"}}}}}, expected: "check owner is nil"},
+		{name: "nil web", spec: schema.DomainSpec{Webs: []*schema.Web{nil}}, expected: "nil web"},
+		{name: "nil web audience", spec: schema.DomainSpec{Webs: []*schema.Web{{Name: "Portal", Audiences: []*schema.ActorAudience{nil}}}}, expected: "nil audience"},
+		{name: "nil service audience", spec: schema.DomainSpec{Services: []*schema.Service{{Name: "Documents", Audiences: []*schema.ActorAudience{nil}}}}, expected: "nil audience"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			domain := model.NewDomainFromSpec(test.spec)
+			domain := schema.NewDomainFromSpec(test.spec)
 			err := ValidateDomain(domain)
 			if err == nil || !strings.Contains(err.Error(), test.expected) {
 				t.Fatalf("expected error containing %q, got %v", test.expected, err)
@@ -44,66 +44,66 @@ func TestValidateDomainRejectsMalformedNestedModels(t *testing.T) {
 }
 
 func TestValidateDomainRejectsCyclicStructuralTypes(t *testing.T) {
-	kind := new(model.Type{Kind: model.TypeKindList})
-	kind.List = new(model.ListType{Value: kind})
-	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{{Name: "Node", Kind: model.DataKindData, Members: []*model.DataMember{{Name: "value", Type: kind}}}}})
+	kind := new(schema.Type{Kind: schema.TypeKindList})
+	kind.List = new(schema.ListType{Value: kind})
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Data: []*schema.Data{{Name: "Node", Kind: schema.DataKindData, Members: []*schema.DataMember{{Name: "value", Type: kind}}}}})
 	if err := ValidateDomain(domain); err == nil || !strings.Contains(err.Error(), "cyclic type") {
 		t.Fatalf("expected cyclic type error, got %v", err)
 	}
 }
 
 func TestValidateDomainRejectsMalformedGenerics(t *testing.T) {
-	box := new(model.Data{Name: "Box", Kind: model.DataKindData, TypeParameters: []*model.TypeParameter{{Name: "T"}}})
-	for _, kind := range []*model.Type{
-		{Kind: model.TypeKindData, Data: box},
-		{Kind: model.TypeKindData, Data: box, TypeArguments: []*model.Type{nil}},
-		{Kind: model.TypeKindData, Data: box, TypeArguments: []*model.Type{{Kind: model.TypeKindScalar, Scalar: model.ScalarString}, {Kind: model.TypeKindScalar, Scalar: model.ScalarBinary}}},
+	box := new(schema.Data{Name: "Box", Kind: schema.DataKindData, TypeParameters: []*schema.TypeParameter{{Name: "T"}}})
+	for _, kind := range []*schema.Type{
+		{Kind: schema.TypeKindData, Data: box},
+		{Kind: schema.TypeKindData, Data: box, TypeArguments: []*schema.Type{nil}},
+		{Kind: schema.TypeKindData, Data: box, TypeArguments: []*schema.Type{{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}, {Kind: schema.TypeKindScalar, Scalar: schema.ScalarBinary}}},
 	} {
-		domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{{Name: "Value", Kind: model.DataKindData, Members: []*model.DataMember{{Name: "box", Type: kind}}}}})
+		domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Data: []*schema.Data{{Name: "Value", Kind: schema.DataKindData, Members: []*schema.DataMember{{Name: "box", Type: kind}}}}})
 		if err := ValidateDomain(domain); err == nil {
-			t.Fatal("expected invalid generic model to be rejected")
+			t.Fatal("expected invalid generic schema to be rejected")
 		}
 	}
 }
 
 func TestValidateDomainRejectsCyclicPermissionExpressions(t *testing.T) {
-	expression := new(model.PermissionExpr{Mode: model.PermissionRequireModeAll})
-	expression.Children = []*model.PermissionExpr{expression}
-	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Services: []*model.Service{{Name: "Service", Require: new(model.PermissionRequire{Expr: expression})}}})
+	expression := new(schema.PermissionExpression{Mode: schema.PermissionRequireModeAll})
+	expression.Children = []*schema.PermissionExpression{expression}
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Services: []*schema.Service{{Name: "Service", Require: new(schema.PermissionRequire{Expression: expression})}}})
 	if err := ValidateDomain(domain); err == nil || !strings.Contains(err.Error(), "cyclic permission") {
 		t.Fatalf("expected cyclic permission error, got %v", err)
 	}
 }
 
 func TestValidateDomainAllowsRecursiveDataAndSharedTypes(t *testing.T) {
-	data := new(model.Data{Name: "Node", Kind: model.DataKindData})
-	reference := new(model.Type{Kind: model.TypeKindData, Data: data, Nullable: true})
-	kind := new(model.Type{Kind: model.TypeKindMap, Map: new(model.MapType{Key: new(model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString}), Value: reference})})
-	data.Members = []*model.DataMember{{Name: "next", Type: reference}, {Name: "children", Type: kind}, {Name: "otherChildren", Type: kind}}
-	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{data}})
+	data := new(schema.Data{Name: "Node", Kind: schema.DataKindData})
+	reference := new(schema.Type{Kind: schema.TypeKindData, Data: data, Nullable: true})
+	kind := new(schema.Type{Kind: schema.TypeKindMap, Map: new(schema.MapType{Key: new(schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}), Value: reference})})
+	data.Members = []*schema.DataMember{{Name: "next", Type: reference}, {Name: "children", Type: kind}, {Name: "otherChildren", Type: kind}}
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Data: []*schema.Data{data}})
 	if err := ValidateDomain(domain); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestValidateExtensionEventModifier(t *testing.T) {
-	for _, data := range []*model.Data{
-		{Name: "Invalid", Kind: model.DataKindData, Ext: true},
-		{Name: "InvalidConfig", Kind: model.DataKindConfig, Ext: true},
-		{Name: "InvalidEvent", Kind: model.DataKindEvent, Pub: true, Ext: true},
+	for _, data := range []*schema.Data{
+		{Name: "Invalid", Kind: schema.DataKindData, Ext: true},
+		{Name: "InvalidConfig", Kind: schema.DataKindConfig, Ext: true},
+		{Name: "InvalidEvent", Kind: schema.DataKindEvent, Pub: true, Ext: true},
 	} {
 		if err := validateData(data); err == nil {
 			t.Fatalf("accepted invalid extension: %+v", data)
 		}
 	}
-	if err := validateData(&model.Data{Name: "AuditRecordedEvent", Kind: model.DataKindEvent, Ext: true}); err != nil {
+	if err := validateData(&schema.Data{Name: "AuditRecordedEvent", Kind: schema.DataKindEvent, Ext: true}); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestValidateDomainRejectsMalformedReferencedData(t *testing.T) {
-	referenced := new(model.Data{Name: "Nested", Kind: model.DataKindData, Members: []*model.DataMember{nil}})
-	domain := model.NewDomainFromSpec(model.DomainSpec{Name: "demo", Data: []*model.Data{{Name: "Value", Kind: model.DataKindData, Members: []*model.DataMember{{Name: "nested", Type: new(model.Type{Kind: model.TypeKindData, Data: referenced})}}}}})
+	referenced := new(schema.Data{Name: "Nested", Kind: schema.DataKindData, Members: []*schema.DataMember{nil}})
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo", Data: []*schema.Data{{Name: "Value", Kind: schema.DataKindData, Members: []*schema.DataMember{{Name: "nested", Type: new(schema.Type{Kind: schema.TypeKindData, Data: referenced})}}}}})
 	if err := ValidateDomain(domain); err == nil || !strings.Contains(err.Error(), "nil member") {
 		t.Fatalf("expected referenced data error, got %v", err)
 	}

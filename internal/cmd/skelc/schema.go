@@ -11,15 +11,14 @@ import (
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
 	"go.yorun.ai/skel/internal/codegen"
 	internalcompiler "go.yorun.ai/skel/internal/compiler"
-	schemas "go.yorun.ai/skel/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 const (
-	commandSchema         = "schema"
-	commandSchemaList     = "list"
-	commandSchemaGet      = "get"
-	commandSchemaSnapshot = "snapshot"
-	commandSchemaDiff     = "diff"
+	commandSchema     = "schema"
+	commandSchemaList = "list"
+	commandSchemaGet  = "get"
+	commandSchemaDiff = "diff"
 
 	flagSchemaSkelIn         = "skel-in"
 	flagSchemaBaselineSkelIn = "baseline-skel-in"
@@ -28,14 +27,13 @@ const (
 func newSchemaCommand() *ucli.Command {
 	return &ucli.Command{
 		Name:               commandSchema,
-		Usage:              "inspect, snapshot, and diff skel schemas",
+		Usage:              "inspect and diff skel schemas",
 		HideHelpCommand:    true,
 		CustomHelpTemplate: groupCommandHelpTemplate,
 		Commands: []*ucli.Command{
 			newSchemaListCommand(),
 			newSchemaDepCommand(),
 			newSchemaGetCommand(),
-			newSchemaSnapshotCommand(),
 			newSchemaDiffCommand(),
 		},
 	}
@@ -56,7 +54,7 @@ func newSchemaListCommand() *ucli.Command {
 			if err != nil {
 				return err
 			}
-			entries := filterSchemaEntries(schemas.Entries(document), kind)
+			entries := filterSchemaEntries(output.SchemaEntries(document), kind)
 			return writeSchemaResult(cmd, entries, "schema declarations")
 		},
 	}
@@ -77,32 +75,8 @@ func newSchemaGetCommand() *ucli.Command {
 			if err != nil {
 				return err
 			}
-			declaration := schemas.Find(document, schemas.DeclarationType(kind), skelName)
+			declaration := output.DescribeSchemaDeclaration(document, document.Find(schema.DeclarationType(kind), skelName))
 			return writeSchemaResult(cmd, declaration, "schema declaration")
-		},
-	}
-}
-
-func newSchemaSnapshotCommand() *ucli.Command {
-	return &ucli.Command{
-		Name:  commandSchemaSnapshot,
-		Usage: "output a normalized schema snapshot",
-		Flags: []ucli.Flag{
-			&ucli.StringFlag{Name: flagSchemaSkelIn, Usage: "skeleton input file or directory"},
-		},
-		Action: func(_ context.Context, cmd *ucli.Command) error {
-			if cmd.Args().Len() != 0 {
-				return commandFailure(output.ErrorCodeInvalidArgument,
-					fmt.Errorf("unexpected args for %s %s", commandSchema, commandSchemaSnapshot))
-			}
-			document, err := loadSourceSchema(cmd, flagSchemaSkelIn, cmd.String(flagSchemaSkelIn))
-			if err != nil {
-				return err
-			}
-			if err := schemas.Validate(document); err != nil {
-				return commandFailure(output.ErrorCodeCommandFailed, err)
-			}
-			return writeSchemaResult(cmd, document, "schema snapshot")
 		},
 	}
 }
@@ -165,7 +139,7 @@ func newSchemaListFlags() []ucli.Flag {
 	}
 }
 
-func loadSchemaList(cmd *ucli.Command) (*schemas.Document, error) {
+func loadSchemaList(cmd *ucli.Command) (*schema.Domain, error) {
 	api, pub := cmd.Bool(flagGenApi), cmd.Bool(flagGenPub)
 	if api && pub {
 		return nil, commandFailure(output.ErrorCodeInvalidArgument, fmt.Errorf("flags api and pub are mutually exclusive"))
@@ -189,7 +163,7 @@ func loadSchemaList(cmd *ucli.Command) (*schemas.Document, error) {
 		return nil, generationCommandFailure(err)
 	}
 	writeWarningLogs(cmd, result.Diagnostics)
-	return result.Document, nil
+	return result.Domain, nil
 }
 
 func newSchemaGetFlags() []ucli.Flag {
@@ -206,7 +180,7 @@ func parseSchemaListKind(cmd *ucli.Command) (string, error) {
 		return "", nil
 	}
 	kind := strings.TrimSpace(cmd.Args().First())
-	if err := schemas.ValidateKind(kind); err != nil {
+	if err := schema.ValidateKind(kind); err != nil {
 		return "", err
 	}
 	return kind, nil
@@ -220,7 +194,7 @@ func parseSchemaGetArguments(cmd *ucli.Command) (string, string, error) {
 		return "", "", fmt.Errorf("missing schema declaration type or skel name; expected TYPE SKEL_NAME")
 	}
 	kind := strings.TrimSpace(cmd.Args().Get(0))
-	if err := schemas.ValidateKind(kind); err != nil {
+	if err := schema.ValidateKind(kind); err != nil {
 		return "", "", err
 	}
 	skelName := strings.TrimSpace(cmd.Args().Get(1))
@@ -230,38 +204,26 @@ func parseSchemaGetArguments(cmd *ucli.Command) (string, string, error) {
 	return kind, skelName, nil
 }
 
-func filterSchemaEntries(entries []*schemas.Entry, kind string) []*schemas.Entry {
+func filterSchemaEntries(entries []*output.SchemaEntry, kind string) []*output.SchemaEntry {
 	if kind == "" {
 		return entries
 	}
-	filtered := make([]*schemas.Entry, 0, len(entries))
+	filtered := make([]*output.SchemaEntry, 0, len(entries))
 	for _, entry := range entries {
-		if entry.Kind == schemas.DeclarationType(kind) {
+		if entry.Kind == schema.DeclarationType(kind) {
 			filtered = append(filtered, entry)
 		}
 	}
 	return filtered
 }
 
-func loadQuerySchema(cmd *ucli.Command) (*schemas.Document, error) {
+func loadQuerySchema(cmd *ucli.Command) (*schema.Domain, error) {
 	result, err := skelapi.QuerySchema(skelapi.Input{SkelIn: cmd.String(flagSchemaSkelIn), Strict: cmd.Bool(flagStrict)}, skelapi.SchemaQueryOption{})
 	if err != nil {
 		return nil, generationCommandFailure(err)
 	}
 	writeWarningLogs(cmd, result.Diagnostics)
-	return result.Document, nil
-}
-
-func loadSourceSchema(cmd *ucli.Command, flagName, skelIn string) (*schemas.Document, error) {
-	if strings.TrimSpace(skelIn) == "" {
-		return nil, commandFailure(output.ErrorCodeInvalidArgument, fmt.Errorf("missing flag %s", flagName))
-	}
-	result, err := skelapi.QuerySchema(skelapi.Input{SkelIn: skelIn, Strict: cmd.Bool(flagStrict)}, skelapi.SchemaQueryOption{})
-	if err != nil {
-		return nil, generationCommandFailure(err)
-	}
-	writeWarningLogs(cmd, result.Diagnostics)
-	return result.Document, nil
+	return result.Domain, nil
 }
 
 func writeSchemaResult(cmd *ucli.Command, value any, context string) error {

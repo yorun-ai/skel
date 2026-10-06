@@ -3,7 +3,7 @@
 // TypeScript, and public Skel output.
 //
 // Use [Parse] when several generators or a custom generator need to share one
-// validated model. The Compile functions combine parsing and one generation
+// validated schema. The Compile functions combine parsing and one generation
 // step. [Check] and [ScanImports] inspect sources without loading dependencies.
 // [QuerySchema] returns normalized schema documents for inspection or comparison.
 //

@@ -181,7 +181,7 @@ TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含
 
 在 `.skel` 中声明 `import` 后，生成命令通过可重复使用的 `--skel-import domain=PATH` 指定完整的传递依赖图。skelc 会分析全部依赖，但只为 `--skel-in` 指定的目标生成代码。生成 Go module 或 TypeScript 时，再使用对应的 `--go-import`、`--go-module-prefix` 或 `--ts-import` 映射目标语言的 package。`schema dep --api` 接受相同的 `--prune`、`--actor`、`--name` 和 `--skel-import` 选择参数，以 JSON 返回选中的本领域声明与外部类型依赖；查询和生成共用选择规则。`schema list --pub` 和 `schema list --api` 也接受依赖映射，列出对应生成视图中的声明。默认 `schema list` 及其他 schema 检查命令不接受依赖映射，而是把 import 符号保留为不透明的完整名称。完整示例见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli)。
 
-### 查询、生成快照、查看差异和格式化
+### 查询、查看差异和格式化
 
 Go 调用方可使用 `api.ScanImports(api.ScanOption{SkelIn: "./skel"})`，无需加载依赖即可扫描直接导入。结果包含导入、显式别名、源码位置和非致命诊断。`ScanImportsContext` 支持取消；传递导入由调用方递归收集。
 
@@ -190,7 +190,6 @@ skelc scan imports --skel-in ./skel
 skelc schema list --skel-in ./skel
 skelc schema list data --skel-in ./skel
 skelc schema get data demo.user.User --skel-in ./skel
-skelc schema snapshot --skel-in ./skel > ./user.schema.json
 skelc schema diff --skel-in ./skel
 skelc schema diff --baseline-skel-in ./previous/skel --skel-in ./skel
 skelc format --skel-in ./skel
@@ -203,11 +202,6 @@ JSON-RPC。`schema list` 返回声明摘要 JSON 数组，`schema get TYPE SKEL_
 `schema list` 查询完整 domain；传 `--pub` 或 `--api` 查询对应生成视图。API 选择通过
 `--actor`、`--prune`、`--name` 使用与生成相同的规则。可选位置参数 `TYPE` 在选择完成后过滤结果。
 每项保留原本的 `pub` 标记，包括因引用进入视图的私有类型。空列表为 `[]`，不包含外部领域声明。
-
-快照 JSON 按确定顺序排列，并带有带版本的 schema 格式标识。`schema snapshot` 始终把
-JSON 写到标准输出，需要保存快照时使用重定向。源码位置可用于实时 diff 时的定位，但
-不会写入制品。import 声明在当前 domain 的快照中保留为不透明的完整引用，并由所属
-domain 单独检查。
 
 `schema diff` 返回包含全部变化的结构化 JSON 报告，并将变化分为 `COMPATIBLE`、
 `DANGEROUS` 和 `BREAKING`。每项变化还带有独立的 `change` 维度，值为 `ADDED`、
@@ -263,7 +257,7 @@ Go 值类型、构造函数及 JSON/CBOR 编解码。服务端和 API 客户端�
 
 Go 程序可以通过 `go.yorun.ai/skel/api` 调用生成能力，无需导入实现 package：
 
-导入 `go.yorun.ai/skel/api`，使用 `api` package 调用源码检查、编译和生成能力。原先使用根包编译 API 的程序需要将导入改为 `go.yorun.ai/skel/api`，并将 `skel.` 引用改为 `api.`；CLI wire 契约移到 `go.yorun.ai/skel/cmd/skelc/output`；`schema` 和 `model` 保持现有路径。可执行文件名和 CLI 命令仍为 `skelc`。
+导入 `go.yorun.ai/skel/api`，使用 `api` package 调用源码检查、编译和生成能力。原先使用根包编译 API 的程序需要将导入改为 `go.yorun.ai/skel/api`，并将 `skel.` 引用改为 `api.`；CLI wire 契约移到 `go.yorun.ai/skel/cmd/skelc/output`；语义声明迁到 `go.yorun.ai/skel/schema`，运行时元数据位于 `go.yorun.ai/skel/descriptor`。可执行文件名和 CLI 命令仍为 `skelc`。
 
 ```go
 result, err := api.CompileGolang(
@@ -295,15 +289,14 @@ API 同时提供 `CompileTypeScript` 和 `CompileSkeleton`。parser 与 loader w
 
 生成过程在每个文件中标记所有权，以原子方式逐个替换输出；提交失败时回滚所有受影响的目标，删除带标记的过期生成文件，并保留共享输出目录中的无标记文件。
 
-Go 集成通过公开 package `go.yorun.ai/skel/schema` 消费 schema 命令 JSON，
-无需复制 wire 结构。该 package 直接定义并实现响应类型、
-嵌套 wire 类型、带类型的常量，以及严格的 `schema.Decode`、`schema.Validate` 和
-`schema.Encode`，用于拒绝未知字段、尾随 JSON、不支持的格式版本以及不完整的
-规范化结构。`go.yorun.ai/skel/api` package 同时提供源码检查和 schema 查询 API。
+Go 集成使用 `encoding/json`，将 schema list/get 输出解码为
+`go.yorun.ai/skel/cmd/skelc/output` 的类型，将 diff 输出解码为
+`go.yorun.ai/skel/schema/diff.Report`。程序化检查可以直接使用
+`go.yorun.ai/skel/api` 返回的语义 schema，无需经过 JSON 转换。
 
 使用 Go 编写的自定义 binding 通过 `go.yorun.ai/skel/codegen` 接入。调用
 `api.Parse` 后，使用 `codegen.Prepare(domain, selection)` 校验并选择生成视图。
-`model` 是共享语义图；`codegen.Input` 提供选中的声明、完整名称查询、类型根和外部依赖，
+`schema` 是共享语义图；`codegen.Input` 提供选中的声明、完整名称查询、类型根和外部依赖，
 不另建一套声明类型。准备完成后应只读使用模型，目标语言名称和导入信息由 binding 自己保存。
 `WalkTypeGraphs` 可安全遍历递归声明，`InstantiateMembers` 替换泛型参数但不展开命名类型。
 
@@ -325,12 +318,14 @@ Go 集成通过公开 package `go.yorun.ai/skel/schema` 消费 schema 命令 JSO
 `Parse` 和 schema 查询对无效契约返回 error。`FormatFiles` 返回全部输入校验通过后的
 只读修改计划，不写入文件；调用方负责后续写入事务。
 
-`QuerySchema` 返回规范化的 `schema.Document`：默认视图保留未解析导入，`Pub`、
-`Api` 或 `ResolveImports` 则解析完整导入图。未解析视图拒绝依赖映射。
-使用 `schema.Entries`、`schema.Find` 完成 list/get，`api.ProjectSchema` 投影已有模型，
-`schema.Diff` 比较快照。`DiffSchemaSources` 接受显式 `Baseline` 输入；未设置时，
-将磁盘候选源码与 Git HEAD 比较。历史基线不继承候选输入的严格模式。
-内存候选输入必须指定显式基线。
+`QuerySchema` 在 `SchemaQueryResult.Domain` 中返回语义 `*schema.Domain`。
+默认视图保留未解析导入及其名称、别名；`Pub`、`Api` 或 `ResolveImports` 会解析
+完整导入图，未解析模式拒绝依赖映射。使用 `domain.Declarations()` 和
+`domain.Find(kind, skelName)` 检查已有 schema，通过
+`go.yorun.ai/skel/schema/diff` 的 `diff.Compare(baseline, candidate)` 直接比较。
+比较按名称识别引用，不将位置和派生哈希的变化视为契约变化。
+`DiffSchemaSources` 接受显式 `Baseline` 输入；未设置时，将磁盘候选输入与
+Git HEAD 比较。历史基线不继承候选输入的严格模式，内存候选输入必须显式指定基线。
 
 设置 `Input.Sources`（或检查选项的 `Sources`）可提供完整的 `map[string][]byte`
 内存快照。键为逻辑文件路径，相对路径基于当前工作目录解析，目录遵循与磁盘相同的
@@ -355,7 +350,7 @@ skelc 负责读取契约并生成代码，本身不是应用运行时：
 check          校验 Skel 定义
 format         原地格式化 Skel 定义
 lsp            通过标准输入输出运行 Skel 语言服务器
-schema         列出、查询、生成快照或查看语义 schema 差异
+schema         列出、查询或查看语义 schema 差异
 gen skel       生成公开 Skel 契约
 gen go         在现有 Go module 中生成代码
 gen go-module  生成独立 Go module

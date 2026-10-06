@@ -3,17 +3,17 @@ package hasher
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestFillHashesPropagatesDataChangesToService(t *testing.T) {
 	oldDomain := newHashTestDomain(t, "User service")
 	newDomain := newHashTestDomain(t, "User service")
-	newDomain.Data()[0].Members = append(newDomain.Data()[0].Members, &model.DataMember{
+	newDomain.Data()[0].Members = append(newDomain.Data()[0].Members, &schema.DataMember{
 		Name: "nickname",
-		Type: &model.Type{
-			Kind:   model.TypeKindScalar,
-			Scalar: model.ScalarString,
+		Type: &schema.Type{
+			Kind:   schema.TypeKindScalar,
+			Scalar: schema.ScalarString,
 		},
 	})
 
@@ -53,24 +53,24 @@ func TestFillHashesIncludesAllowVia(t *testing.T) {
 func TestFillHashesIncludesMetadataIndependently(t *testing.T) {
 	for _, test := range []struct {
 		name        string
-		mutate      func(*model.Domain)
+		mutate      func(*schema.Domain)
 		changesData bool
 	}{
-		{"member sensitive", func(d *model.Domain) { d.Data()[0].Members[0].Sensitive = true }, true},
-		{"argument sensitive", func(d *model.Domain) { d.Services()[0].Methods[0].Arguments[0].Sensitive = true }, false},
-		{"member deprecated", func(d *model.Domain) { d.Data()[0].Members[0].Deprecated = false }, true},
-		{"member deprecated reason", func(d *model.Domain) { d.Data()[0].Members[0].DeprecatedReason = "New member reason" }, true},
-		{"method deprecated", func(d *model.Domain) { d.Services()[0].Methods[0].Deprecated = false }, false},
-		{"method deprecated reason", func(d *model.Domain) { d.Services()[0].Methods[0].DeprecatedReason = "New method reason" }, false},
-		{"argument deprecated", func(d *model.Domain) { d.Services()[0].Methods[0].Arguments[0].Deprecated = false }, false},
-		{"argument deprecated reason", func(d *model.Domain) {
+		{"member sensitive", func(d *schema.Domain) { d.Data()[0].Members[0].Sensitive = true }, true},
+		{"argument sensitive", func(d *schema.Domain) { d.Services()[0].Methods[0].Arguments[0].Sensitive = true }, false},
+		{"member deprecated", func(d *schema.Domain) { d.Data()[0].Members[0].Deprecated = false }, true},
+		{"member deprecated reason", func(d *schema.Domain) { d.Data()[0].Members[0].DeprecatedReason = "New member reason" }, true},
+		{"method deprecated", func(d *schema.Domain) { d.Services()[0].Methods[0].Deprecated = false }, false},
+		{"method deprecated reason", func(d *schema.Domain) { d.Services()[0].Methods[0].DeprecatedReason = "New method reason" }, false},
+		{"argument deprecated", func(d *schema.Domain) { d.Services()[0].Methods[0].Arguments[0].Deprecated = false }, false},
+		{"argument deprecated reason", func(d *schema.Domain) {
 			d.Services()[0].Methods[0].Arguments[0].DeprecatedReason = "New argument reason"
 		}, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			baseline := newHashTestDomain(t, "User service")
 			candidate := newHashTestDomain(t, "User service")
-			for _, domain := range []*model.Domain{baseline, candidate} {
+			for _, domain := range []*schema.Domain{baseline, candidate} {
 				member := domain.Data()[0].Members[0]
 				member.Deprecated, member.DeprecatedReason = true, "Original member reason"
 				method := domain.Services()[0].Methods[0]
@@ -113,18 +113,18 @@ func TestFillHashesIncludesWholeSensitiveMetadata(t *testing.T) {
 
 	for _, test := range []struct {
 		name  string
-		build func() (*model.Domain, *model.Data)
+		build func() (*schema.Domain, *schema.Data)
 	}{
 		{
 			name: "config",
-			build: func() (*model.Domain, *model.Data) {
-				return newHashDataKindTestDomain(model.DataKindConfig)
+			build: func() (*schema.Domain, *schema.Data) {
+				return newHashDataKindTestDomain(schema.DataKindConfig)
 			},
 		},
 		{
 			name: "event payload",
-			build: func() (*model.Domain, *model.Data) {
-				return newHashDataKindTestDomain(model.DataKindEvent)
+			build: func() (*schema.Domain, *schema.Data) {
+				return newHashDataKindTestDomain(schema.DataKindEvent)
 			},
 		},
 	} {
@@ -146,10 +146,10 @@ func TestFillHashesIncludesWholeSensitiveMetadata(t *testing.T) {
 
 	for _, test := range []struct {
 		name       string
-		selectData func(*model.Actor) *model.Data
+		selectData func(*schema.Actor) *schema.Data
 	}{
-		{name: "actor credential", selectData: func(actor *model.Actor) *model.Data { return actor.AuthCredential }},
-		{name: "actor info", selectData: func(actor *model.Actor) *model.Data { return actor.AuthInfo }},
+		{name: "actor credential", selectData: func(actor *schema.Actor) *schema.Data { return actor.AuthCredential }},
+		{name: "actor info", selectData: func(actor *schema.Actor) *schema.Data { return actor.AuthInfo }},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			oldDomain := newHashActorCredentialTestDomain(t, "token")
@@ -172,9 +172,9 @@ func TestFillHashesIncludesWholeSensitiveMetadata(t *testing.T) {
 		})
 	}
 
-	for name, mutate := range map[string]func(*model.Method){
-		"input":  func(method *model.Method) { method.ArgumentsSensitive = true },
-		"output": func(method *model.Method) { method.ResultSensitive = true },
+	for name, mutate := range map[string]func(*schema.Method){
+		"input":  func(method *schema.Method) { method.ArgumentsSensitive = true },
+		"output": func(method *schema.Method) { method.ResultSensitive = true },
 	} {
 		t.Run(name, func(t *testing.T) {
 			oldDomain := newHashTestDomain(t, "User service")

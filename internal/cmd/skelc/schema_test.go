@@ -9,7 +9,7 @@ import (
 
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
 	"go.yorun.ai/skel/internal/testutil"
-	schemas "go.yorun.ai/skel/schema"
+	schemadiff "go.yorun.ai/skel/schema/diff"
 )
 
 func TestRunSkelcStrictSchemaCommands(t *testing.T) {
@@ -20,7 +20,6 @@ func TestRunSkelcStrictSchemaCommands(t *testing.T) {
 	for _, args := range [][]string{
 		{"schema", "list"},
 		{"schema", "get", "service", "demo.order.OrderService"},
-		{"schema", "snapshot"},
 		{"schema", "diff", "--baseline-skel-in", baseline},
 	} {
 		args = append(args, "--skel-in", entry)
@@ -58,7 +57,7 @@ pub resource User {
 	if listResult.ExitCode != ExitCodeSuccess {
 		t.Fatalf("unexpected list result: %+v", listResult)
 	}
-	var entries []*schemas.Entry
+	var entries []*output.SchemaEntry
 	if err := json.Unmarshal([]byte(listResult.Stdout), &entries); err != nil {
 		t.Fatalf("decode list result: %v\n%s", err, listResult.Stdout)
 	}
@@ -85,7 +84,7 @@ pub resource User {
 	if getResult.ExitCode != ExitCodeSuccess {
 		t.Fatalf("unexpected get result: %+v", getResult)
 	}
-	var declaration schemas.Declaration
+	var declaration output.SchemaDeclaration
 	if err := json.Unmarshal([]byte(getResult.Stdout), &declaration); err != nil {
 		t.Fatalf("decode declaration: %v\n%s", err, getResult.Stdout)
 	}
@@ -122,7 +121,7 @@ func TestRunSkelcSchemaKeepsWarningsOnStderr(t *testing.T) {
 	writeCLIFile(t, filepath.Join(dir, ".hidden.skel"), `domain demo.user`)
 
 	result := Run([]string{"schema", "list", "--skel-in", dir})
-	var entries []*schemas.Entry
+	var entries []*output.SchemaEntry
 	if err := json.Unmarshal([]byte(result.Stdout), &entries); err != nil {
 		t.Fatalf("decode schema result: %v\n%s", err, result.Stdout)
 	}
@@ -149,7 +148,6 @@ func TestRunSkelcSchemaErrorsUseStdoutResult(t *testing.T) {
 		args []string
 		code output.ErrorCode
 	}{
-		{name: "snapshot argument", args: []string{"schema", "snapshot"}, code: output.ErrorCodeInvalidArgument},
 		{name: "diff argument", args: []string{"schema", "diff"}, code: output.ErrorCodeInvalidArgument},
 		{name: "compilation", args: []string{"schema", "list", "--skel-in", invalidSource}, code: output.ErrorCodeCompilationFailed},
 		{name: "diff candidate compilation", args: []string{"schema", "diff", "--baseline-skel-in", validSource, "--skel-in", invalidSource}, code: output.ErrorCodeCompilationFailed},
@@ -171,6 +169,7 @@ func TestRunSkelcSchemaErrorsUseStdoutResult(t *testing.T) {
 func TestRunSkelcSchemaParserErrorsUseStdoutResult(t *testing.T) {
 	for _, args := range [][]string{
 		{"schema", "unknown"},
+		{"schema", "snapshot"},
 		{"schema", "list", "--unknown"},
 		{"--log-format", "unknown", "schema", "list"},
 	} {
@@ -183,38 +182,7 @@ func TestRunSkelcSchemaParserErrorsUseStdoutResult(t *testing.T) {
 	}
 }
 
-func TestRunSkelcSchemaSnapshotFullDocument(t *testing.T) {
-	dir := t.TempDir()
-	writeCLIFile(t, filepath.Join(dir, "domain.skel"), `domain demo.user`)
-	writeCLIFile(t, filepath.Join(dir, "data.skel"), `domain demo.user
-
-pub data User {
-    id: string
-}
-
-data InternalUser {
-    id: string
-}
-`)
-
-	result := Run([]string{"schema", "snapshot", "--skel-in", dir})
-	if result.ExitCode != ExitCodeSuccess || result.Stdout == "" || result.Stderr != "" {
-		t.Fatalf("unexpected snapshot result: %+v", result)
-	}
-	document, err := schemas.Decode(strings.NewReader(result.Stdout))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(document.Declarations) != 2 || schemas.Find(document, "data", "demo.user.User") == nil {
-		t.Fatalf("unexpected schema: %+v", document)
-	}
-	internal := schemas.Find(document, "data", "demo.user.InternalUser")
-	if internal == nil || internal.Pub {
-		t.Fatalf("expected private declaration in full schema: %+v", internal)
-	}
-}
-
-func TestRunSkelcSchemaSnapshotKeepsImportsOpaque(t *testing.T) {
+func TestRunSkelcSchemaGetKeepsImportsOpaque(t *testing.T) {
 	source := t.TempDir()
 	aliasSource := t.TempDir()
 	writeCLIFile(t, filepath.Join(source, "domain.skel"), `domain demo.order`)
@@ -238,34 +206,35 @@ pub service OrderService {
 	writeCLIFile(t, filepath.Join(source, "schema.skel"), sourceSchema)
 	writeCLIFile(t, filepath.Join(aliasSource, "schema.skel"), strings.ReplaceAll(sourceSchema, "identity", "account"))
 
-	shallow := Run([]string{"schema", "snapshot", "--skel-in", source})
-	if shallow.ExitCode != ExitCodeSuccess {
-		t.Fatalf("export with opaque imports failed: %+v", shallow)
+	get := func(kind, name string) *output.SchemaDeclaration {
+		t.Helper()
+		result := Run([]string{"schema", "get", kind, name, "--skel-in", source})
+		aliasResult := Run([]string{"schema", "get", kind, name, "--skel-in", aliasSource})
+		if result.ExitCode != ExitCodeSuccess || aliasResult.ExitCode != ExitCodeSuccess {
+			t.Fatalf("query with opaque imports failed: %+v; %+v", result, aliasResult)
+		}
+		if result.Stdout != aliasResult.Stdout {
+			t.Fatalf("import alias changed schema output: %s vs %s", result.Stdout, aliasResult.Stdout)
+		}
+		var declaration output.SchemaDeclaration
+		if err := json.Unmarshal([]byte(result.Stdout), &declaration); err != nil {
+			t.Fatal(err)
+		}
+		return &declaration
 	}
-	aliasSnapshot := Run([]string{"schema", "snapshot", "--skel-in", aliasSource})
-	if aliasSnapshot.ExitCode != ExitCodeSuccess {
-		t.Fatalf("snapshot with alternate import alias failed: %+v", aliasSnapshot)
-	}
-	if shallow.Stdout != aliasSnapshot.Stdout {
-		t.Fatalf("import alias changed schema output:\nidentity alias:\n%s\naccount alias:\n%s", shallow.Stdout, aliasSnapshot.Stdout)
-	}
-	document, err := schemas.Decode(strings.NewReader(shallow.Stdout))
-	if err != nil {
-		t.Fatal(err)
-	}
-	order := schemas.Find(document, "data", "demo.order.Order")
-	if order == nil || order.Data.Members[0].Type.Kind != "importedReference" || order.Data.Members[0].Type.Name != "demo.user.User" {
+	order := get("data", "demo.order.Order")
+	if order.Data.Members[0].Type.Kind != "importedReference" || order.Data.Members[0].Type.Name != "demo.user.User" {
 		t.Fatalf("unexpected imported data reference: %+v", order)
 	}
-	service := schemas.Find(document, "service", "demo.order.OrderService")
-	if service == nil || service.Service.Require == nil || service.Service.Require.Mode != "reference" ||
+	service := get("service", "demo.order.OrderService")
+	if service.Service.Require == nil || service.Service.Require.Mode != "reference" ||
 		service.Service.Require.Check.Resource != "demo.user.User" {
 		t.Fatalf("unexpected imported permission reference: %+v", service)
 	}
 	diff := Run([]string{
 		"schema", "diff", "--baseline-skel-in", source, "--skel-in", aliasSource,
 	})
-	var diffReport schemas.Report
+	var diffReport schemadiff.Report
 	if err := json.Unmarshal([]byte(diff.Stdout), &diffReport); err != nil {
 		t.Fatalf("decode diff report: %v\n%s", err, diff.Stdout)
 	}
@@ -297,7 +266,7 @@ pub data User {
 	if result.ExitCode != ExitCodeSuccess {
 		t.Fatalf("expected completed diff, got %+v", result)
 	}
-	var report schemas.Report
+	var report schemadiff.Report
 	if err := json.Unmarshal([]byte(result.Stdout), &report); err != nil {
 		t.Fatalf("decode diff report: %v\n%s", err, result.Stdout)
 	}
@@ -360,7 +329,7 @@ pub enum UserStatus {
 	if result.ExitCode != ExitCodeSuccess || result.Stderr != "" {
 		t.Fatalf("unexpected diff result: %+v", result)
 	}
-	var report schemas.Report
+	var report schemadiff.Report
 	if err := json.Unmarshal([]byte(result.Stdout), &report); err != nil {
 		t.Fatalf("decode report: %v\n%s", err, result.Stdout)
 	}
@@ -404,7 +373,7 @@ pub data User {
 			if result.ExitCode != ExitCodeSuccess || result.Stderr != "" {
 				t.Fatalf("unexpected Git diff result: %+v", result)
 			}
-			var report schemas.Report
+			var report schemadiff.Report
 			if err := json.Unmarshal([]byte(result.Stdout), &report); err != nil {
 				t.Fatalf("decode Git diff report: %v\n%s", err, result.Stdout)
 			}
@@ -496,7 +465,7 @@ api service WriteApiService { for WriterActor via client auth anonymous method w
 		t.Run(test.name, func(t *testing.T) {
 			args := append([]string{"schema", "list", "--skel-in", source}, test.flags...)
 			result := Run(args)
-			var entries []*schemas.Entry
+			var entries []*output.SchemaEntry
 			if result.ExitCode != ExitCodeSuccess || json.Unmarshal([]byte(result.Stdout), &entries) != nil {
 				t.Fatalf("%+v", result)
 			}
@@ -529,7 +498,7 @@ func TestSchemaListViewImportsAndErrors(t *testing.T) {
 	base := []string{"schema", "list", "--skel-in", source}
 	for _, mode := range []string{"--pub", "--api"} {
 		result := Run(append(append([]string{}, base...), mode, "--skel-import", "shared="+shared))
-		var entries []*schemas.Entry
+		var entries []*output.SchemaEntry
 		if result.ExitCode != ExitCodeSuccess || json.Unmarshal([]byte(result.Stdout), &entries) != nil || len(entries) != 1 || entries[0].SkelName != "demo.Value" {
 			t.Fatalf("foreign declarations leaked into %s: %+v", mode, result)
 		}

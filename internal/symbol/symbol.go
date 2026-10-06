@@ -1,6 +1,6 @@
 // Package symbol provides declaration identities, lexical scopes and reference
 // resolution shared by semantic analysis and language tooling. It accepts
-// recovered syntax and does not require a valid semantic model.
+// recovered syntax and does not require a valid semantic schema.
 package symbol
 
 import (

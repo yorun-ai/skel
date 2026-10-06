@@ -102,11 +102,6 @@ func cloneWorkspaceDomains(input []WorkspaceDomain) []WorkspaceDomain {
 	result := slices.Clone(input)
 	for i := range result {
 		result[i].Sources = slices.Clone(input[i].Sources)
-		aliases := map[string]string{}
-		for name, domain := range input[i].ImportAliases {
-			aliases[name] = domain
-		}
-		result[i].ImportAliases = aliases
 	}
 	return result
 }

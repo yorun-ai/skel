@@ -4,38 +4,38 @@ import (
 	"reflect"
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastTask(t *testing.T) {
-	task_ := new(_Gen).castTask(&model.Task{
+	task_ := new(_Gen).castTask(&schema.Task{
 		Name:        "RebuildUserIndexTask",
 		SkelName:    "demo.user.RebuildUserIndexTask",
 		Description: "Rebuild the user index",
-		Triggers: []*model.TaskTrigger{
+		Triggers: []*schema.TaskTrigger{
 			{
 				Name:               "atTime",
 				Description:        "Scheduled trigger",
 				ArgumentsSensitive: true,
-				Arguments: []*model.Argument{
+				Arguments: []*schema.Argument{
 					{
 						Name:        "startAt",
 						Description: "Start time",
 						Example:     `"2026-05-04T12:00:00"`,
-						Type: &model.Type{
-							Kind:   model.TypeKindScalar,
-							Scalar: model.ScalarLocalDateTime,
+						Type: &schema.Type{
+							Kind:   schema.TypeKindScalar,
+							Scalar: schema.ScalarLocalDateTime,
 						},
 					},
 				},
-				ArgumentsData: &model.Data{
+				ArgumentsData: &schema.Data{
 					Name: "RebuildUserIndexTaskAtTimeArguments",
-					Members: []*model.DataMember{
+					Members: []*schema.DataMember{
 						{
 							Name: "startAt",
-							Type: &model.Type{
-								Kind:   model.TypeKindScalar,
-								Scalar: model.ScalarLocalDateTime,
+							Type: &schema.Type{
+								Kind:   schema.TypeKindScalar,
+								Scalar: schema.ScalarLocalDateTime,
 							},
 						},
 					},

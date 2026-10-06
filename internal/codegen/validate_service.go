@@ -3,12 +3,12 @@ package codegen
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func validateService(service *model.Service) error {
+func validateService(service *schema.Service) error {
 	if service == nil {
-		return fmt.Errorf("generated model contains nil service")
+		return fmt.Errorf("generated schema contains nil service")
 	}
 	if service.Ext && (service.Pub || service.Api) {
 		return fmt.Errorf("ext, api and pub are mutually exclusive")
@@ -22,7 +22,7 @@ func validateService(service *model.Service) error {
 	if err := validateAuthMode(service.Auth); err != nil {
 		return fmt.Errorf("service %s: %w", service.Name, err)
 	}
-	if err := validatePermissionExpr(service.Require); err != nil {
+	if err := validatePermissionExpression(service.Require); err != nil {
 		return fmt.Errorf("service %s: %w", service.Name, err)
 	}
 	if err := validateAudiences("service "+service.Name, service.Audiences); err != nil {
@@ -39,28 +39,28 @@ func validateService(service *model.Service) error {
 	return nil
 }
 
-func validateMethod(owner string, method *model.Method) error {
+func validateMethod(owner string, method *schema.Method) error {
 	if method == nil {
 		return fmt.Errorf("%s is nil", owner)
 	}
 	if err := validateAuthMode(method.Auth); err != nil {
 		return fmt.Errorf("%s: %w", owner, err)
 	}
-	if err := validatePermissionExpr(method.Require); err != nil {
+	if err := validatePermissionExpression(method.Require); err != nil {
 		return fmt.Errorf("%s: %w", owner, err)
 	}
 	if err := validateArguments(owner, method.Arguments, method.ArgumentsData); err != nil {
 		return err
 	}
 	if method.ResultType != nil {
-		if err := validateModelType(method.ResultType); err != nil {
+		if err := validateSchemaType(method.ResultType); err != nil {
 			return fmt.Errorf("%s result: %w", owner, err)
 		}
 	}
 	return nil
 }
 
-func validateArguments(owner string, arguments []*model.Argument, data *model.Data) error {
+func validateArguments(owner string, arguments []*schema.Argument, data *schema.Data) error {
 	members := map[string]bool{}
 	if data != nil {
 		if err := validateData(data); err != nil {
@@ -74,7 +74,7 @@ func validateArguments(owner string, arguments []*model.Argument, data *model.Da
 		if argument == nil {
 			return fmt.Errorf("%s contains a nil argument", owner)
 		}
-		if err := validateModelType(argument.Type); err != nil {
+		if err := validateSchemaType(argument.Type); err != nil {
 			return fmt.Errorf("%s argument %s: %w", owner, argument.Name, err)
 		}
 		if data != nil && !members[argument.Name] {
@@ -84,9 +84,9 @@ func validateArguments(owner string, arguments []*model.Argument, data *model.Da
 	return nil
 }
 
-func validateAuthMode(mode model.AuthMode) error {
+func validateAuthMode(mode schema.AuthMode) error {
 	switch mode {
-	case "", model.AuthModeUnset, model.AuthModeAuth, model.AuthModeNoAuth, model.AuthModeRequired, model.AuthModeOptional, model.AuthModeAnonymous:
+	case "", schema.AuthModeUnset, schema.AuthModeAuth, schema.AuthModeNoAuth, schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous:
 		return nil
 	default:
 		return fmt.Errorf("unsupported auth mode %q", mode)

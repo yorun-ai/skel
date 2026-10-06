@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const sensitiveMarkerMethodName = "SkelSensitive"
@@ -38,7 +38,7 @@ func (g *_Gen) validateSensitiveMembers() error {
 		if !actor.AuthEnabled {
 			continue
 		}
-		for _, data := range []*model.Data{actor.AuthCredential, actor.AuthInfo} {
+		for _, data := range []*schema.Data{actor.AuthCredential, actor.AuthInfo} {
 			if err := validateSensitiveData(data); err != nil {
 				return err
 			}
@@ -47,7 +47,7 @@ func (g *_Gen) validateSensitiveMembers() error {
 	return nil
 }
 
-func validateSensitiveData(data *model.Data) error {
+func validateSensitiveData(data *schema.Data) error {
 	if !data.Sensitive {
 		return nil
 	}

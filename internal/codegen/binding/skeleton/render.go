@@ -6,11 +6,11 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type _Gen struct {
-	domain *model.Domain
+	domain *schema.Domain
 	input  codegen.Input
 
 	renderer *binding.Renderer
@@ -42,7 +42,7 @@ func newGen(input codegen.Input, outputDir string, sink binding.FileSink) (*_Gen
 		return nil, err
 	}
 	return &_Gen{
-		domain:   input.Model(),
+		domain:   input.Schema(),
 		input:    input,
 		renderer: binding.NewRendererWithSink(outputDir, sink),
 		template: tpl,

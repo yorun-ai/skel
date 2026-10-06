@@ -78,7 +78,7 @@ func TestExtServiceIncrementalAnalysis(t *testing.T) {
 		if err != nil || len(diagnostics) != 0 {
 			t.Fatalf("%s: %v %v", modifier, diagnostics, err)
 		}
-		if len(domains) != 1 || domains[0].Model.Services()[0].Ext != (modifier == "ext") {
+		if len(domains) != 1 || domains[0].Schema.Services()[0].Ext != (modifier == "ext") {
 			t.Fatalf("stale ext modifier after %s", modifier)
 		}
 	}

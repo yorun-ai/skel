@@ -3,8 +3,8 @@ package analyzer
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestAnalyzeReturnsErrorWhenDataReferencesConfig(t *testing.T) {
@@ -79,8 +79,8 @@ func TestAnalyzeAllowsConfigReferencesEnum(t *testing.T) {
 				},
 			},
 		},
-	}).Model()
-	if domain.Configs()[0].Members[0].Type.Kind != model.TypeKindEnum {
+	}).Schema()
+	if domain.Configs()[0].Members[0].Type.Kind != schema.TypeKindEnum {
 		t.Fatalf("unexpected config member type: %v", domain.Configs()[0].Members[0].Type.Kind)
 	}
 }
@@ -107,8 +107,8 @@ func TestAnalyzeAllowsConfigListValueEnum(t *testing.T) {
 				},
 			},
 		},
-	}).Model()
-	if domain.Configs()[0].Members[0].Type.List.Value.Kind != model.TypeKindEnum {
+	}).Schema()
+	if domain.Configs()[0].Members[0].Type.List.Value.Kind != schema.TypeKindEnum {
 		t.Fatalf("unexpected list value type: %v", domain.Configs()[0].Members[0].Type.List.Value.Kind)
 	}
 }
@@ -236,8 +236,8 @@ func TestAnalyzeAllowsConfigMapEnumKey(t *testing.T) {
 				},
 			},
 		},
-	}).Model()
-	if domain.Configs()[0].Members[0].Type.Map.Key.Kind != model.TypeKindEnum {
+	}).Schema()
+	if domain.Configs()[0].Members[0].Type.Map.Key.Kind != schema.TypeKindEnum {
 		t.Fatalf("expected config map key enum")
 	}
 }
@@ -256,9 +256,9 @@ func TestAnalyzeAllowsConfigMapUUIDKey(t *testing.T) {
 				},
 			},
 		},
-	}).Model()
+	}).Schema()
 	key := domain.Configs()[0].Members[0].Type.Map.Key
-	if key.Kind != model.TypeKindScalar || key.Scalar != model.ScalarUUID {
+	if key.Kind != schema.TypeKindScalar || key.Scalar != schema.ScalarUUID {
 		t.Fatalf("unexpected config map key: %+v", key)
 	}
 }

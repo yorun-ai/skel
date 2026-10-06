@@ -3,12 +3,12 @@ package codegen
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func validateResource(resource *model.Resource) error {
+func validateResource(resource *schema.Resource) error {
 	if resource == nil {
-		return fmt.Errorf("generated model contains nil resource")
+		return fmt.Errorf("generated schema contains nil resource")
 	}
 	if err := validateResourceChecks("resource "+resource.Name, resource.Checks); err != nil {
 		return err
@@ -32,7 +32,7 @@ func validateResource(resource *model.Resource) error {
 	return nil
 }
 
-func validateResourceChecks(owner string, checks []*model.ResourceCheck) error {
+func validateResourceChecks(owner string, checks []*schema.ResourceCheck) error {
 	for _, check := range checks {
 		if check == nil {
 			return fmt.Errorf("%s contains a nil check", owner)

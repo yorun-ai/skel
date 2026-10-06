@@ -1,8 +1,8 @@
 package hasher
 
-import "go.yorun.ai/skel/internal/model"
+import "go.yorun.ai/skel/schema"
 
-func FillHashes(domain *model.Domain) error {
+func FillHashes(domain *schema.Domain) error {
 	state := newHashState(domain)
 
 	for _, enum := range domain.Enums() {
@@ -26,8 +26,8 @@ func FillHashes(domain *model.Domain) error {
 			actor.AuthInfo.Hash = state.dataHash(actor.AuthInfo)
 			actor.AuthService.Hash = state.serviceHash(actor.AuthService)
 		}
-		if actor.PermService != nil {
-			actor.PermService.Hash = state.serviceHash(actor.PermService)
+		if actor.PermissionService != nil {
+			actor.PermissionService.Hash = state.serviceHash(actor.PermissionService)
 		}
 		actor.Hash = state.actorHash(actor)
 	}
@@ -48,36 +48,42 @@ func FillHashes(domain *model.Domain) error {
 		Domain:      domain.Name(),
 		Description: domain.Description(),
 		Enums: buildNamedValues(domain.Enums(),
-			func(enum *model.Enum) string { return enum.SkelName },
-			func(enum *model.Enum) string { return enum.Hash }),
+			func(enum *schema.Enum) string { return enum.SkelName },
+			func(enum *schema.Enum) string { return enum.Hash }),
 		Data: buildNamedValues(domain.Data(),
-			func(data *model.Data) string { return data.SkelName },
-			func(data *model.Data) string { return data.Hash }),
+			func(data *schema.Data) string { return data.SkelName },
+			func(data *schema.Data) string { return data.Hash }),
 		Configs: buildNamedValues(domain.Configs(),
-			func(config *model.Data) string { return config.SkelName },
-			func(config *model.Data) string { return config.Hash }),
+			func(config *schema.Data) string { return config.SkelName },
+			func(config *schema.Data) string { return config.Hash }),
 		Webs: buildNamedValues(domain.Webs(),
-			func(web *model.Web) string { return web.SkelName },
-			func(web *model.Web) string { return web.Hash }),
+			func(web *schema.Web) string { return web.SkelName },
+			func(web *schema.Web) string { return web.Hash }),
 		Events: buildNamedValues(domain.Events(),
-			func(event *model.Data) string { return event.SkelName },
-			func(event *model.Data) string { return event.Hash }),
+			func(event *schema.Data) string { return event.SkelName },
+			func(event *schema.Data) string { return event.Hash }),
 		Actors: buildNamedValues(domain.Actors(),
-			func(actor *model.Actor) string { return actor.SkelName },
-			func(actor *model.Actor) string { return actor.Hash }),
+			func(actor *schema.Actor) string { return actor.SkelName },
+			func(actor *schema.Actor) string { return actor.Hash }),
 		Resources: buildNamedValues(domain.Resources(),
-			func(resource *model.Resource) string { return resource.SkelName },
-			func(resource *model.Resource) string { return resource.Hash }),
+			func(resource *schema.Resource) string { return resource.SkelName },
+			func(resource *schema.Resource) string { return resource.Hash }),
 		Services: buildNamedValues(domain.Services(),
-			func(service *model.Service) string { return service.SkelName },
-			func(service *model.Service) string { return service.Hash }),
+			func(service *schema.Service) string { return service.SkelName },
+			func(service *schema.Service) string { return service.Hash }),
 		Tasks: buildNamedValues(domain.Tasks(),
-			func(task *model.Task) string { return task.SkelName },
-			func(task *model.Task) string { return task.Hash }),
+			func(task *schema.Task) string { return task.SkelName },
+			func(task *schema.Task) string { return task.Hash }),
 	})
 	if state.err != nil {
 		return state.err
 	}
-	model.SetDomainHash(domain, domainHash)
+	*domain = *schema.NewDomainFromSpec(schema.DomainSpec{
+		Name: domain.Name(), Description: domain.Description(), Hash: domainHash,
+		Imports: domain.Imports(), Enums: domain.Enums(), Data: domain.Data(),
+		Configs: domain.Configs(), Events: domain.Events(), Actors: domain.Actors(),
+		Resources: domain.Resources(), Webs: domain.Webs(), Services: domain.Services(),
+		Tasks: domain.Tasks(),
+	})
 	return nil
 }

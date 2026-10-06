@@ -12,7 +12,7 @@ import (
 	"go.yorun.ai/skel/internal/loader"
 	"go.yorun.ai/skel/internal/optionvalidation"
 	"go.yorun.ai/skel/internal/source"
-	"go.yorun.ai/skel/model"
+	"go.yorun.ai/skel/schema"
 )
 
 // Input identifies the primary Skel source and any imported domains.
@@ -30,10 +30,10 @@ type Input struct {
 	Strict bool
 }
 
-// ParseResult contains a validated semantic model and non-fatal diagnostics.
+// ParseResult contains a validated semantic schema and non-fatal diagnostics.
 type ParseResult struct {
-	// Domain is the validated semantic model, including compatibility hashes.
-	Domain *model.Domain
+	// Domain is the validated semantic schema, including compatibility hashes.
+	Domain *schema.Domain
 	// Diagnostics contains structured non-fatal diagnostics produced while parsing.
 	Diagnostics []diagnostic.Diagnostic
 }

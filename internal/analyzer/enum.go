@@ -2,24 +2,24 @@ package analyzer
 
 import (
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 const unspecifiedEnumName = "UNSPECIFIED"
 
-func parseEnum(reporter *_DiagnosticReporter, ge *grammar.Enum) (*model.Enum, bool) {
+func parseEnum(reporter *_DiagnosticReporter, ge *grammar.Enum) (*schema.Enum, bool) {
 	valid := checkCase(reporter, "Enum", caseTypeCamel, ge.Name)
 	valid = checkNotReservedKindSuffix(reporter, "Enum", ge.Name) && valid
 
-	enum := &model.Enum{
+	enum := &schema.Enum{
 		Pos:  position(ge.Name.Pos),
 		Name: ge.Name.Value,
 		Pub:  ge.Pub,
-		UnspecifiedItem: &model.EnumItem{
+		UnspecifiedItem: &schema.EnumItem{
 			Name: unspecifiedEnumName,
 		},
-		Items: []*model.EnumItem{},
+		Items: []*schema.EnumItem{},
 	}
 	meta, metaValid := parseDecoratorMeta(reporter, ge.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -51,7 +51,7 @@ func parseEnum(reporter *_DiagnosticReporter, ge *grammar.Enum) (*model.Enum, bo
 	return enum, valid
 }
 
-func parseEnumItem(reporter *_DiagnosticReporter, gei *grammar.EnumItem) (*model.EnumItem, bool) {
+func parseEnumItem(reporter *_DiagnosticReporter, gei *grammar.EnumItem) (*schema.EnumItem, bool) {
 	valid := checkCase(reporter, "EnumItem", caseTypeScreamingSnake, gei.Name)
 	valid = reporter.check(gei.Name.Value != unspecifiedEnumName, "%s reversed EnumItem value %s", gei.Name.Pos, gei.Name.Value) && valid
 	meta, metaValid := parseDecoratorMeta(reporter, gei.Decorators, _DecoratorContext{
@@ -60,7 +60,7 @@ func parseEnumItem(reporter *_DiagnosticReporter, gei *grammar.EnumItem) (*model
 	})
 	valid = metaValid && valid
 
-	return &model.EnumItem{
+	return &schema.EnumItem{
 		Pos:              position(gei.Name.Pos),
 		Name:             gei.Name.Value,
 		Description:      meta.Description,

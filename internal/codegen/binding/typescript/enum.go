@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
 type _Enum struct {
@@ -15,7 +15,7 @@ type _Enum struct {
 	Items        []*_EnumItem
 }
 
-func castEnum(p *model.Enum) *_Enum {
+func castEnum(p *schema.Enum) *_Enum {
 	enum := &_Enum{
 		Name:         nameutil.ToCamel(p.Name),
 		CommentLines: deprecatedTsDocLines(tsCommentLines(p.Description, ""), p.Deprecated, p.DeprecatedReason),
@@ -34,7 +34,7 @@ func castEnum(p *model.Enum) *_Enum {
 	return enum
 }
 
-func transEnumName(p *model.Enum) string {
+func transEnumName(p *schema.Enum) string {
 	return nameutil.ToCamel(p.Name)
 }
 
@@ -45,7 +45,7 @@ type _EnumItem struct {
 	CommentLines []string
 }
 
-func castEnumItem(p *model.EnumItem) *_EnumItem {
+func castEnumItem(p *schema.EnumItem) *_EnumItem {
 	return &_EnumItem{
 		Literal:      fmt.Sprintf(`"%s"`, nameutil.ToScreamingSnake(p.Name)),
 		Value:        nameutil.ToScreamingSnake(p.Name),

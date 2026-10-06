@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 const CodeValidation = "validation"
@@ -15,7 +15,7 @@ const CodeValidation = "validation"
 // Code let tool integrations avoid parsing that message.
 type Failure struct {
 	Code       string
-	Position   model.Position
+	Position   schema.Position
 	Message    string
 	Cause      error
 	Related    []RelatedLocation
@@ -24,7 +24,7 @@ type Failure struct {
 
 // RelatedLocation points to another source location relevant to a failure.
 type RelatedLocation struct {
-	Position model.Position
+	Position schema.Position
 	Message  string
 }
 
@@ -40,7 +40,7 @@ func (f *Failure) Error() string { return f.Message }
 func (f *Failure) Unwrap() error { return f.Cause }
 
 // SourcePosition returns the source position associated with the failure.
-func (f *Failure) SourcePosition() model.Position { return f.Position }
+func (f *Failure) SourcePosition() schema.Position { return f.Position }
 
 // NewFailuref constructs a structured validation failure.
 func NewFailuref(message string, args ...any) *Failure {
@@ -57,31 +57,31 @@ func NewFailureWithCause(cause error, message string, args ...any) *Failure {
 }
 
 // Position returns the structured source position carried by err.
-func Position(err error) (model.Position, bool) {
-	var positioned interface{ SourcePosition() model.Position }
+func Position(err error) (schema.Position, bool) {
+	var positioned interface{ SourcePosition() schema.Position }
 	if !errors.As(err, &positioned) {
-		return model.Position{}, false
+		return schema.Position{}, false
 	}
 	position := positioned.SourcePosition()
 	return position, position.Line > 0
 }
 
-func positionFromArgs(args []any) model.Position {
+func positionFromArgs(args []any) schema.Position {
 	for _, arg := range args {
 		switch position := arg.(type) {
-		case model.Position:
+		case schema.Position:
 			return position
-		case *model.Position:
+		case *schema.Position:
 			if position != nil {
 				return *position
 			}
 		case lexer.Position:
-			return model.Position{File: position.Filename, Line: position.Line, Column: position.Column}
+			return schema.Position{File: position.Filename, Line: position.Line, Column: position.Column}
 		case *lexer.Position:
 			if position != nil {
-				return model.Position{File: position.Filename, Line: position.Line, Column: position.Column}
+				return schema.Position{File: position.Filename, Line: position.Line, Column: position.Column}
 			}
 		}
 	}
-	return model.Position{}
+	return schema.Position{}
 }

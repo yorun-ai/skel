@@ -4,19 +4,19 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"go.yorun.ai/skel/internal/model"
 	textsource "go.yorun.ai/skel/internal/source"
+	"go.yorun.ai/skel/schema"
 )
 
 func sourceLineOffsets(source []byte, line int) (int, int, bool) {
 	return textsource.New("", "", 0, string(source)).LineOffsets(line - 1)
 }
 
-func sourceRangeAt(start model.Position, source []byte) SourceRange {
+func sourceRangeAt(start schema.Position, source []byte) SourceRange {
 	return sourceRangeAtDocument(start, textsource.New("", "", 0, string(source)))
 }
 
-func sourceRangeAtDocument(start model.Position, document *textsource.Document) SourceRange {
+func sourceRangeAtDocument(start schema.Position, document *textsource.Document) SourceRange {
 	end := start
 	if document == nil || start.Line <= 0 || start.Column <= 0 {
 		return SourceRange{Start: start, End: end}

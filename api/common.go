@@ -9,7 +9,7 @@ import (
 // Input identifies the primary Skel source and any imported domains.
 type Input = internalapi.Input
 
-// ParseResult contains a validated semantic model and non-fatal diagnostics.
+// ParseResult contains a validated semantic schema and non-fatal diagnostics.
 type ParseResult = internalapi.ParseResult
 
 // Parse loads and validates a Skel contract for use by custom generators and

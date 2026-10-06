@@ -8,23 +8,23 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestResourceCheckServiceUsesResourceGoPayload(t *testing.T) {
-	checkService := &model.Service{
+	checkService := &schema.Service{
 		Name:     "UserCheckService",
 		SkelName: "demo.user.UserCheckService",
-		Methods: []*model.Method{{
+		Methods: []*schema.Method{{
 			Name:     "checkById",
 			SkelName: "checkById",
-			Arguments: []*model.Argument{{
+			Arguments: []*schema.Argument{{
 				Name: "id",
 				Type: codegentest.IntType(),
 			}},
-			ArgumentsData: &model.Data{
+			ArgumentsData: &schema.Data{
 				Name: "UserCheckServiceCheckByIdArguments",
-				Members: []*model.DataMember{{
+				Members: []*schema.DataMember{{
 					Name: "id",
 					Type: codegentest.IntType(),
 				}},
@@ -34,7 +34,7 @@ func TestResourceCheckServiceUsesResourceGoPayload(t *testing.T) {
 	gen := &_Gen{
 		pkgName: "user",
 		view: &view.Domain{
-			Resources: []*model.Resource{{
+			Resources: []*schema.Resource{{
 				Name:         "User",
 				CheckService: checkService,
 			}},
@@ -53,19 +53,19 @@ func TestResourceCheckServiceUsesResourceGoPayload(t *testing.T) {
 }
 
 func TestResourceGoRegistersCheckServices(t *testing.T) {
-	checkService := &model.Service{
+	checkService := &schema.Service{
 		Name:     "UserCheckService",
 		SkelName: "demo.user.UserCheckService",
-		Methods: []*model.Method{{
+		Methods: []*schema.Method{{
 			Name:     "checkById",
 			SkelName: "checkById",
-			Arguments: []*model.Argument{{
+			Arguments: []*schema.Argument{{
 				Name: "id",
 				Type: codegentest.IntType(),
 			}},
-			ArgumentsData: &model.Data{
+			ArgumentsData: &schema.Data{
 				Name: "UserCheckServiceCheckByIdArguments",
-				Members: []*model.DataMember{{
+				Members: []*schema.DataMember{{
 					Name:      "id",
 					Sensitive: true,
 					Type:      codegentest.IntType(),
@@ -73,9 +73,9 @@ func TestResourceGoRegistersCheckServices(t *testing.T) {
 			},
 		}},
 	}
-	pkg := buildModelDomainForTest(t, model.DomainSpec{
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "user",
-		Resources: []*model.Resource{{
+		Resources: []*schema.Resource{{
 			Name:         "User",
 			CheckService: checkService,
 		}},
@@ -107,9 +107,9 @@ func TestResourceGoPayloadIncludesPermissionCodes(t *testing.T) {
 	gen := &_Gen{
 		pkgName: "user",
 		view: &view.Domain{
-			Resources: []*model.Resource{{
+			Resources: []*schema.Resource{{
 				Name: "User",
-				Actions: []*model.ResourceAction{
+				Actions: []*schema.ResourceAction{
 					{Name: "read", PermissionCode: "app.User:read"},
 					{Name: "update", PermissionCode: "app.User:update"},
 				},

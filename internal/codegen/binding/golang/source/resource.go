@@ -3,8 +3,8 @@ package source
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const resourceGoFilename = "resource.go"
@@ -66,7 +66,7 @@ func (g *_Gen) buildResourceGoPayload() *ResourceGoPayload {
 	return payload
 }
 
-func castResource(resource *model.Resource) *Resource {
+func castResource(resource *schema.Resource) *Resource {
 	casted := &Resource{
 		Name:    nameutil.ToCamel(resource.Name),
 		Actions: make([]*ResourceAction, 0, len(resource.Actions)),

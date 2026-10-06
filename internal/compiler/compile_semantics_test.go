@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCompileServiceAndData(t *testing.T) {
@@ -145,7 +145,7 @@ service UserService {
 	}
 
 	result := method.ResultType
-	if result.Kind != model.TypeKindData {
+	if result.Kind != schema.TypeKindData {
 		t.Fatalf("unexpected result kind: %v", result.Kind)
 	}
 	if result.Data == nil || result.Data.Name != "Page" {
@@ -154,7 +154,7 @@ service UserService {
 	if len(result.TypeArguments) != 1 {
 		t.Fatalf("unexpected type arg count: %d", len(result.TypeArguments))
 	}
-	if result.TypeArguments[0].Kind != model.TypeKindData || result.TypeArguments[0].Data.Name != "User" {
+	if result.TypeArguments[0].Kind != schema.TypeKindData || result.TypeArguments[0].Data.Name != "User" {
 		t.Fatalf("unexpected type argument: %+v", result.TypeArguments[0])
 	}
 	if result.Name() != "PageOfUser" {
@@ -165,10 +165,10 @@ service UserService {
 	if len(pageData.TypeParameters) != 1 || pageData.TypeParameters[0].Name != "TItem" {
 		t.Fatalf("unexpected type parameters: %+v", pageData.TypeParameters)
 	}
-	if pageData.Members[0].Type.Kind != model.TypeKindList {
+	if pageData.Members[0].Type.Kind != schema.TypeKindList {
 		t.Fatalf("unexpected items member kind: %v", pageData.Members[0].Type.Kind)
 	}
-	if pageData.Members[0].Type.List.Value.Kind != model.TypeKindTypeParameter {
+	if pageData.Members[0].Type.List.Value.Kind != schema.TypeKindTypeParameter {
 		t.Fatalf("unexpected list value kind: %v", pageData.Members[0].Type.List.Value.Kind)
 	}
 	if pageData.Members[0].Type.List.Value.TypeParameter.Name != "TItem" {
@@ -179,7 +179,7 @@ service UserService {
 	}
 
 	userData := findDataByName(t, domain, "User")
-	if userData.Members[1].Type.Kind != model.TypeKindEnum {
+	if userData.Members[1].Type.Kind != schema.TypeKindEnum {
 		t.Fatalf("unexpected user status kind: %v", userData.Members[1].Type.Kind)
 	}
 	if userData.Members[1].Type.Enum.Name != "UserStatus" {

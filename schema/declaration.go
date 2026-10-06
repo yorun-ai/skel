@@ -1,173 +1,135 @@
 package schema
 
-// EnumSchema is the normalized body of an enum declaration.
-type EnumSchema struct {
-	Items []*EnumItem `json:"items"`
+import (
+	"cmp"
+	"slices"
+)
+
+// DeclarationType identifies the kind of a top-level Skel declaration.
+type DeclarationType string
+
+const (
+	// DeclarationTypeActor identifies an actor declaration.
+	DeclarationTypeActor DeclarationType = "actor"
+	// DeclarationTypeConfig identifies a config declaration.
+	DeclarationTypeConfig DeclarationType = "config"
+	// DeclarationTypeData identifies a data declaration.
+	DeclarationTypeData DeclarationType = "data"
+	// DeclarationTypeEnum identifies an enum declaration.
+	DeclarationTypeEnum DeclarationType = "enum"
+	// DeclarationTypeEvent identifies an event declaration.
+	DeclarationTypeEvent DeclarationType = "event"
+	// DeclarationTypeResource identifies a resource declaration.
+	DeclarationTypeResource DeclarationType = "resource"
+	// DeclarationTypeService identifies a service declaration.
+	DeclarationTypeService DeclarationType = "service"
+	// DeclarationTypeTask identifies a task declaration.
+	DeclarationTypeTask DeclarationType = "task"
+	// DeclarationTypeWeb identifies a web declaration.
+	DeclarationTypeWeb DeclarationType = "web"
+)
+
+// Declaration is a lookup view of one top-level semantic declaration.
+// Exactly one payload is set; it points to the original declaration in Domain.
+// The common fields describe that declaration at the time the view is created.
+type Declaration struct {
+	Kind             DeclarationType
+	Name             string
+	SkelName         string
+	Pub              bool
+	Description      string
+	Deprecated       bool
+	DeprecatedReason string
+	Pos              Position
+	Enum             *Enum
+	Data             *Data
+	Actor            *Actor
+	Resource         *Resource
+	Service          *Service
+	Web              *Web
+	Task             *Task
 }
 
-// EnumItem is one normalized enum item.
-type EnumItem struct {
-	Metadata
-	Name string   `json:"name"`
-	Pos  Position `json:"-"`
+// Declarations returns lookup views sorted by kind and fully qualified name.
+// Imported and generated declarations are not included.
+func (d *Domain) Declarations() []*Declaration {
+	result := make([]*Declaration, 0)
+	for _, value := range d.Enums() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeEnum, Name: value.Name, SkelName: value.SkelName, Pub: value.Pub,
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Enum: value,
+		}))
+	}
+	for _, value := range d.Data() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeData, Name: value.Name, SkelName: value.SkelName, Pub: value.Public(),
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Data: value,
+		}))
+	}
+	for _, value := range d.Configs() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeConfig, Name: value.Name, SkelName: value.SkelName, Pub: value.Public(),
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Data: value,
+		}))
+	}
+	for _, value := range d.Events() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeEvent, Name: value.Name, SkelName: value.SkelName, Pub: value.Public(),
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Data: value,
+		}))
+	}
+	for _, value := range d.Actors() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeActor, Name: value.Name, SkelName: value.SkelName, Pub: value.Pub,
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Actor: value,
+		}))
+	}
+	for _, value := range d.Resources() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeResource, Name: value.Name, SkelName: value.SkelName, Pub: value.Pub,
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Resource: value,
+		}))
+	}
+	for _, value := range d.Services() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeService, Name: value.Name, SkelName: value.SkelName, Pub: value.Public(),
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Service: value,
+		}))
+	}
+	for _, value := range d.Webs() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeWeb, Name: value.Name, SkelName: value.SkelName, Pub: false,
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Web: value,
+		}))
+	}
+	for _, value := range d.Tasks() {
+		result = append(result, new(Declaration{
+			Kind: DeclarationTypeTask, Name: value.Name, SkelName: value.SkelName, Pub: false,
+			Description: value.Description, Deprecated: value.Deprecated, DeprecatedReason: value.DeprecatedReason, Pos: value.Pos,
+			Task: value,
+		}))
+	}
+
+	slices.SortFunc(result, func(a, b *Declaration) int {
+		return cmp.Or(cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.SkelName, b.SkelName))
+	})
+	return result
 }
 
-// DataSchema is the normalized body shared by data, config, and event declarations.
-type DataSchema struct {
-	Ext            bool            `json:"ext,omitempty"`
-	Lifecycle      ConfigLifecycle `json:"lifecycle,omitempty"`
-	Sensitive      bool            `json:"sensitive,omitempty"`
-	TypeParameters []string        `json:"typeParameters,omitempty"`
-	Members        []*Member       `json:"members"`
-}
-
-// Member is one normalized structured-data member.
-type Member struct {
-	Metadata
-	Name      string   `json:"name"`
-	Example   string   `json:"example,omitempty"`
-	Sensitive bool     `json:"sensitive,omitempty"`
-	Type      *Type    `json:"type"`
-	Pos       Position `json:"-"`
-}
-
-// Type is a normalized type expression.
-type Type struct {
-	Kind      TypeKind `json:"kind"`
-	Nullable  bool     `json:"nullable,omitempty"`
-	Name      string   `json:"name,omitempty"`
-	Arguments []*Type  `json:"arguments,omitempty"`
-	Element   *Type    `json:"element,omitempty"`
-	Key       *Type    `json:"key,omitempty"`
-	Value     *Type    `json:"value,omitempty"`
-}
-
-// ActorSchema is the normalized body of an actor declaration.
-type ActorSchema struct {
-	IdentifierField string      `json:"identifierField,omitempty"`
-	Vias            []*ActorVia `json:"vias"`
-	AuthEnabled     bool        `json:"authEnabled,omitempty"`
-	AuthCredential  *DataSchema `json:"authCredential,omitempty"`
-	AuthInfo        *DataSchema `json:"authInfo,omitempty"`
-	PermEnabled     bool        `json:"permEnabled,omitempty"`
-}
-
-// ActorVia is one actor transport capability.
-type ActorVia struct {
-	Name string   `json:"name"`
-	Pos  Position `json:"-"`
-}
-
-// ResourceSchema is the normalized body of a resource declaration.
-type ResourceSchema struct {
-	Checks  []*ResourceCheck  `json:"checks,omitempty"`
-	Actions []*ResourceAction `json:"actions"`
-}
-
-// ResourceAction is one normalized resource action.
-type ResourceAction struct {
-	Metadata
-	Name           string           `json:"name"`
-	PermissionCode string           `json:"permissionCode"`
-	Checks         []*ResourceCheck `json:"checks,omitempty"`
-	Pos            Position         `json:"-"`
-}
-
-// ResourceCheck is one normalized resource permission check.
-type ResourceCheck struct {
-	Metadata
-	Name      string      `json:"name"`
-	Arguments []*Argument `json:"arguments"`
-	Pos       Position    `json:"-"`
-}
-
-// ServiceSchema is the normalized body of a service declaration.
-type ServiceSchema struct {
-	Audiences []*Audience  `json:"audiences"`
-	Api       bool         `json:"api,omitempty"`
-	Ext       bool         `json:"ext,omitempty"`
-	Auth      AuthMode     `json:"auth"`
-	Require   *Requirement `json:"require,omitempty"`
-	Methods   []*Method    `json:"methods"`
-}
-
-// Audience is one normalized actor audience.
-type Audience struct {
-	Actor string   `json:"actor"`
-	Via   string   `json:"via,omitempty"`
-	Pos   Position `json:"-"`
-}
-
-// Method is one normalized service method.
-type Method struct {
-	Metadata
-	Name               string       `json:"name"`
-	SkelName           string       `json:"skelName"`
-	Example            string       `json:"example,omitempty"`
-	Auth               AuthMode     `json:"auth"`
-	Require            *Requirement `json:"require,omitempty"`
-	InputDescription   string       `json:"inputDescription,omitempty"`
-	ArgumentsSensitive bool         `json:"argumentsSensitive,omitempty"`
-	OutputDescription  string       `json:"outputDescription,omitempty"`
-	OutputExample      string       `json:"outputExample,omitempty"`
-	ResultSensitive    bool         `json:"resultSensitive,omitempty"`
-	Arguments          []*Argument  `json:"arguments"`
-	Result             *Type        `json:"result,omitempty"`
-	Pos                Position     `json:"-"`
-}
-
-// Argument is one normalized method, check, or trigger argument.
-type Argument struct {
-	Metadata
-	Name      string   `json:"name"`
-	Example   string   `json:"example,omitempty"`
-	Sensitive bool     `json:"sensitive,omitempty"`
-	Type      *Type    `json:"type"`
-	Pos       Position `json:"-"`
-}
-
-// Requirement is one node in a normalized permission expression.
-type Requirement struct {
-	Mode     RequirementMode   `json:"mode"`
-	Code     string            `json:"code,omitempty"`
-	Check    *RequirementCheck `json:"check,omitempty"`
-	Children []*Requirement    `json:"children,omitempty"`
-}
-
-// RequirementCheck is one normalized permission check invocation.
-type RequirementCheck struct {
-	Resource  string                      `json:"resource"`
-	Action    string                      `json:"action,omitempty"`
-	Check     string                      `json:"check"`
-	Arguments []*RequirementCheckArgument `json:"arguments,omitempty"`
-}
-
-// RequirementCheckArgument binds one permission-check argument.
-type RequirementCheckArgument struct {
-	Name     string `json:"name"`
-	JSONPath string `json:"jsonPath"`
-	Type     *Type  `json:"type"`
-}
-
-// WebSchema is the normalized body of a web declaration.
-type WebSchema struct {
-	Audiences []*Audience `json:"audiences"`
-	Auth      AuthMode    `json:"auth,omitempty"`
-	MountPath string      `json:"mountPath,omitempty"`
-}
-
-// TaskSchema is the normalized body of a task declaration.
-type TaskSchema struct {
-	Triggers []*Trigger `json:"triggers"`
-}
-
-// Trigger is one normalized task trigger.
-type Trigger struct {
-	Metadata
-	Name               string      `json:"name"`
-	SkelName           string      `json:"skelName"`
-	InputDescription   string      `json:"inputDescription,omitempty"`
-	ArgumentsSensitive bool        `json:"argumentsSensitive,omitempty"`
-	Arguments          []*Argument `json:"arguments"`
-	Pos                Position    `json:"-"`
+// Find returns a lookup view or nil when the kind and name are absent.
+func (d *Domain) Find(kind DeclarationType, skelName string) *Declaration {
+	for _, declaration := range d.Declarations() {
+		if declaration.Kind == kind && declaration.SkelName == skelName {
+			return declaration
+		}
+	}
+	return nil
 }

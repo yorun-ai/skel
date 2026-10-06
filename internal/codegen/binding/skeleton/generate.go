@@ -6,7 +6,7 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 // NewGenerator constructs a generator without rendering or writing files.
@@ -41,7 +41,7 @@ func generator(option Option) codegen.Generator {
 }
 
 // Generate uses the shared SDK preparation and output transaction.
-func Generate(domain *model.Domain, option Option) error {
+func Generate(domain *schema.Domain, option Option) error {
 	input, err := codegen.Prepare(domain, codegen.Selection{})
 	if err != nil {
 		return err

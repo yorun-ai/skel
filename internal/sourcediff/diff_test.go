@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/testutil"
-	"go.yorun.ai/skel/schema"
+	"go.yorun.ai/skel/schema/diff"
 )
 
 func TestDiffWorkspaceDomainUsesInMemoryCandidateAndGitHeadBaseline(t *testing.T) {
@@ -29,7 +29,7 @@ func TestDiffWorkspaceDomainUsesInMemoryCandidateAndGitHeadBaseline(t *testing.T
 	report, err := differ.DiffWorkspaceDomain(t.Context(), candidate, Option{})
 	require.NoError(t, err)
 	require.Len(t, report.Changes, 1)
-	assert.Equal(t, schema.ImpactBreaking, report.Changes[0].Impact)
+	assert.Equal(t, diff.ImpactBreaking, report.Changes[0].Impact)
 	assert.Equal(t, "data.member.type.changed", report.Changes[0].Code)
 	require.NotNil(t, report.Changes[0].Baseline)
 	assert.Equal(t, "HEAD:contract.skel", report.Changes[0].Baseline.File)
@@ -129,7 +129,7 @@ func TestDiffWorkspaceDomainSelectsDomainAcrossMultipleFiles(t *testing.T) {
 			candidate = domain
 		}
 	}
-	require.NotNil(t, candidate.Model)
+	require.NotNil(t, candidate.Schema)
 
 	report, err := DiffWorkspaceDomain(t.Context(), candidate, Option{})
 	require.NoError(t, err)
@@ -203,7 +203,7 @@ func TestGitBaselinePreservesQuotedFileNames(t *testing.T) {
 			report, err := New().DiffWorkspaceDomain(t.Context(), candidate, Option{})
 			require.NoError(t, err)
 			require.Len(t, report.Changes, 1)
-			assert.Equal(t, schema.ImpactBreaking, report.Changes[0].Impact)
+			assert.Equal(t, diff.ImpactBreaking, report.Changes[0].Impact)
 		})
 	}
 }

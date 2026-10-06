@@ -9,7 +9,7 @@ import (
 )
 
 // AnalysisOptions makes entry-point differences explicit. Recovery happens in
-// the syntax stage; a recovered domain is never returned as a complete model.
+// the syntax stage; a recovered domain is never returned as a complete schema.
 type AnalysisOptions struct {
 	AllowUnresolvedImports bool
 	ResolveIsolatedImports bool

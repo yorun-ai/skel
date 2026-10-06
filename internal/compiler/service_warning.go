@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"go.yorun.ai/skel/diagnostic"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 // MigrationDiagnostics reports declarations accepted only for compatibility.
-func MigrationDiagnostics(domain *model.Domain) Diagnostics {
+func MigrationDiagnostics(domain *schema.Domain) Diagnostics {
 	var result Diagnostics
 	for _, service := range domain.Services() {
 		end := service.Pos
@@ -18,7 +18,7 @@ func MigrationDiagnostics(domain *model.Domain) Diagnostics {
 		for _, method := range service.Methods {
 			result = append(result, authMigrationDiagnostic(method.Auth, method.AuthPos, service.Name+"/"+method.Name, false)...)
 		}
-		if service.Api && (service.Auth == "" || service.Auth == model.AuthModeUnset) {
+		if service.Api && (service.Auth == "" || service.Auth == schema.AuthModeUnset) {
 			result = append(result, Diagnostic{Code: diagnostic.CodeApiAuthMissing, Severity: DiagnosticSeverityWarning, Position: service.Pos, Range: span,
 				Message: fmt.Sprintf("API service %s must explicitly declare auth required, auth optional, or auth anonymous; defaults to required", service.Name)})
 		}
@@ -42,7 +42,7 @@ func MigrationDiagnostics(domain *model.Domain) Diagnostics {
 	}
 	for _, web := range domain.Webs() {
 		result = append(result, authMigrationDiagnostic(web.Auth, web.AuthPos, web.Name, true)...)
-		if web.Auth == "" || web.Auth == model.AuthModeUnset {
+		if web.Auth == "" || web.Auth == schema.AuthModeUnset {
 			end := web.Pos
 			end.Column += len(web.Name)
 			result = append(result, Diagnostic{Code: diagnostic.CodeWebAuthMissing, Severity: DiagnosticSeverityWarning, Position: web.Pos,
@@ -53,12 +53,12 @@ func MigrationDiagnostics(domain *model.Domain) Diagnostics {
 	return result
 }
 
-func authMigrationDiagnostic(mode model.AuthMode, pos model.Position, name string, web bool) Diagnostics {
-	if mode != model.AuthModeAuth && mode != model.AuthModeNoAuth {
+func authMigrationDiagnostic(mode schema.AuthMode, pos schema.Position, name string, web bool) Diagnostics {
+	if mode != schema.AuthModeAuth && mode != schema.AuthModeNoAuth {
 		return nil
 	}
 	replacement := "auth required"
-	if mode == model.AuthModeNoAuth {
+	if mode == schema.AuthModeNoAuth {
 		replacement = "auth optional"
 		if web {
 			replacement = "auth off"

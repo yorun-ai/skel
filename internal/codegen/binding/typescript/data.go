@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/codegen"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const dataTsFilename = "data.ts"
@@ -42,8 +42,8 @@ func (g *_Gen) buildDataTsPayload() *_DataTsPayload {
 	return payload
 }
 
-func (r _Types) buildDataExternalImports(dataList []*model.Data) []*_TypeImport {
-	types := make([]*model.Type, 0)
+func (r _Types) buildDataExternalImports(dataList []*schema.Data) []*_TypeImport {
+	types := make([]*schema.Type, 0)
 	for _, dataType := range dataList {
 		for _, member := range dataType.Members {
 			types = append(types, member.Type)
@@ -52,10 +52,10 @@ func (r _Types) buildDataExternalImports(dataList []*model.Data) []*_TypeImport 
 	return r.buildExternalTypeImports(types)
 }
 
-func (r _Types) buildExternalTypeImports(types []*model.Type) []*_TypeImport {
+func (r _Types) buildExternalTypeImports(types []*schema.Type) []*_TypeImport {
 	imports := make([]*_TypeImport, 0)
 	seen := make(map[string]struct{})
-	codegen.VisitTypes(types, func(current *model.Type) {
+	codegen.VisitTypes(types, func(current *schema.Type) {
 		binding := r.bindings[current]
 		if binding != nil && binding.Path != "" {
 			key := binding.Alias + "\x00" + binding.Path
@@ -81,7 +81,7 @@ type _Data struct {
 	Members      []*_DataMember
 }
 
-func (r _Types) castData(p *model.Data) *_Data {
+func (r _Types) castData(p *schema.Data) *_Data {
 	data := &_Data{
 		Name:         transDataName(p),
 		CommentLines: deprecatedTsDocLines(tsCommentLines(p.Description, ""), p.Deprecated, p.DeprecatedReason),
@@ -94,7 +94,7 @@ func (r _Types) castData(p *model.Data) *_Data {
 
 	data.FullName = data.Name
 	if p.TypeParameters != nil {
-		tpNames := sliceutil.Map(p.TypeParameters, func(tp *model.TypeParameter) string {
+		tpNames := sliceutil.Map(p.TypeParameters, func(tp *schema.TypeParameter) string {
 			return tp.Name
 		})
 		data.FullName = fmt.Sprintf("%s<%s>", data.Name, strings.Join(tpNames, ", "))
@@ -111,7 +111,7 @@ func (r _Types) castData(p *model.Data) *_Data {
 	return data
 }
 
-func transDataName(p *model.Data) string {
+func transDataName(p *schema.Data) string {
 	return nameutil.ToCamel(p.Name)
 }
 
@@ -122,7 +122,7 @@ type _DataMember struct {
 	Type         *_Type
 }
 
-func (r _Types) castDataMember(p *model.DataMember) *_DataMember {
+func (r _Types) castDataMember(p *schema.DataMember) *_DataMember {
 	memberType := r.castType(p.Type)
 	return &_DataMember{
 		Name:         p.Name,

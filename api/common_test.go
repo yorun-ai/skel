@@ -16,7 +16,7 @@ import (
 
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/diagnostic"
-	"go.yorun.ai/skel/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestParseFrozenImportGraph(t *testing.T) {
@@ -140,7 +140,7 @@ func ExampleParse() {
 	// Output: demo.user
 }
 
-func TestParseExposesSemanticModel(t *testing.T) {
+func TestParseExposesSemanticSchema(t *testing.T) {
 	skelDir := t.TempDir()
 	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
 
@@ -148,7 +148,7 @@ func TestParseExposesSemanticModel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse Skel: %v", err)
 	}
-	var domain *model.Domain = result.Domain
+	var domain *schema.Domain = result.Domain
 	if domain.Name() != "demo.user" {
 		t.Fatalf("unexpected domain: %s", domain.Name())
 	}
@@ -183,8 +183,7 @@ func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 			directory: "internal/parser",
 			forbidden: func(path string) bool {
 				return strings.HasPrefix(path, internalPrefix) &&
-					path != internalPrefix+"parser/grammar" &&
-					path != internalPrefix+"model"
+					path != internalPrefix+"parser/grammar"
 			},
 		},
 		{
@@ -201,19 +200,7 @@ func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 		{
 			directory: "internal/hasher",
 			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"model"
-			},
-		},
-		{
-			directory: "internal/model",
-			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"location"
-			},
-		},
-		{
-			directory: "model",
-			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"model"
+				return strings.HasPrefix(path, internalPrefix)
 			},
 		},
 		{
@@ -248,21 +235,28 @@ func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 		},
 
 		{
-			directory: "schema",
+			directory:   "schema",
+			packageOnly: true,
 			forbidden: func(path string) bool {
 				return strings.HasPrefix(path, "go.yorun.ai/skel/") && path != internalPrefix+"location" && !strings.HasPrefix(path, internalPrefix+"util/")
+			},
+		},
+		{
+			directory: "descriptor",
+			forbidden: func(path string) bool {
+				return strings.HasPrefix(path, "go.yorun.ai/")
+			},
+		},
+		{
+			directory: "schema/diff",
+			forbidden: func(path string) bool {
+				return strings.HasPrefix(path, "go.yorun.ai/skel/") && path != "go.yorun.ai/skel/schema"
 			},
 		},
 		{
 			directory: "types",
 			forbidden: func(path string) bool {
 				return strings.HasPrefix(path, "go.yorun.ai/skel/") || strings.HasPrefix(path, "go.yorun.ai/vine/") || strings.HasPrefix(path, "go.yorun.ai/vrpc/")
-			},
-		},
-		{
-			directory: "internal/projection",
-			forbidden: func(path string) bool {
-				return strings.HasPrefix(path, "go.yorun.ai/skel/api") || (strings.HasPrefix(path, internalPrefix) && path != internalPrefix+"model" && !strings.HasPrefix(path, internalPrefix+"util/"))
 			},
 		},
 		{
@@ -298,7 +292,7 @@ func TestPublicPackagesRespectDependencyBoundaries(t *testing.T) {
 	}
 
 	// Shared capabilities must not depend on API adapters or command implementations.
-	for _, directory := range []string{"internal/compiler", "internal/parser", "internal/symbol", "internal/analyzer", "internal/model", "schema", "types", "internal/projection", "internal/formatter", "internal/codegen", "internal/lsp", "internal/sourcediff", "internal/loader", "internal/source", "internal/hasher", "internal/optionvalidation"} {
+	for _, directory := range []string{"internal/compiler", "internal/parser", "internal/symbol", "internal/analyzer", "schema", "schema/diff", "descriptor", "types", "internal/formatter", "internal/codegen", "internal/lsp", "internal/sourcediff", "internal/loader", "internal/source", "internal/hasher", "internal/optionvalidation"} {
 		t.Run(directory+"/no-api-or-command-dependencies", func(t *testing.T) {
 			inspectProductionImports(t, directory, func(path string) bool {
 				return path == internalPrefix+"api" || path == "go.yorun.ai/skel/api" || strings.HasPrefix(path, internalPrefix+"cmd/") || strings.HasPrefix(path, "go.yorun.ai/skel/cmd/")

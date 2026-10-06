@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 	"os"
 	"path/filepath"
 	"testing"
@@ -73,7 +73,7 @@ func TestWriteFilesPreservesBothTargetsOnCommitFailure(t *testing.T) {
 }
 
 func TestGenerateCancellationNeverPublishes(t *testing.T) {
-	input, err := Prepare(model.NewDomainFromSpec(model.DomainSpec{Name: "demo"}), Selection{})
+	input, err := Prepare(schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo"}), Selection{})
 	if err != nil {
 		t.Fatal(err)
 	}

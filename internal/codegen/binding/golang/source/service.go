@@ -3,7 +3,7 @@ package source
 import (
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 const (
@@ -88,19 +88,19 @@ type Service struct {
 	HasMethodArguments bool
 }
 
-func (g *_Gen) serviceClientOnly(service *model.Service) bool {
+func (g *_Gen) serviceClientOnly(service *schema.Service) bool {
 	return (g.isSplitPub() && service.Pub) || (g.isSplitRegular() && service.Ext)
 }
 
-func (g *_Gen) serviceServerOnly(service *model.Service) bool {
+func (g *_Gen) serviceServerOnly(service *schema.Service) bool {
 	return service.Api || (g.isSplitRegular() && service.Pub) || (g.isSplitPub() && service.Ext)
 }
 
-func (g *_Gen) castService(p *model.Service, clientOnly bool, serverOnly bool) *Service {
+func (g *_Gen) castService(p *schema.Service, clientOnly bool, serverOnly bool) *Service {
 	return g.types.castService(p, clientOnly, serverOnly)
 }
 
-func (r _Types) castService(p *model.Service, clientOnly bool, serverOnly bool) *Service {
+func (r _Types) castService(p *schema.Service, clientOnly bool, serverOnly bool) *Service {
 	names := buildServiceNames(p.Name)
 	service := &Service{
 		Name:                    names.Name,
@@ -154,7 +154,7 @@ func (r _Types) castService(p *model.Service, clientOnly bool, serverOnly bool) 
 	return service
 }
 
-func (r _Types) castActorAuthService(p *model.Service) *Service {
+func (r _Types) castActorAuthService(p *schema.Service) *Service {
 	return r.castService(p, false, true)
 }
 

@@ -1,13 +1,11 @@
 package compiler
 
 import (
-	"go.yorun.ai/skel/internal/projection"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"go.yorun.ai/skel/diagnostic"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -37,11 +35,7 @@ func TestCompileAuthModes(t *testing.T) {
 			if wantCode != "" && (len(result.Diagnostics) != 1 || result.Diagnostics[0].Code != wantCode || result.Diagnostics[0].Severity != DiagnosticSeverityWarning) {
 				t.Fatal(result.Diagnostics)
 			}
-			document, err := projection.Project(result.Domain, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			for _, d := range document.Declarations {
+			for _, d := range result.Domain.Declarations() {
 				if d.Service == nil {
 					continue
 				}
@@ -52,8 +46,8 @@ func TestCompileAuthModes(t *testing.T) {
 				if expected == "noauth" {
 					expected = "optional"
 				}
-				if string(d.Service.Auth) != expected || d.Service.Methods[0].Auth != schema.AuthModeAnonymous {
-					t.Fatalf("unexpected projected auth: %+v", d.Service)
+				if string(d.Service.NormalizedAuth()) != expected || d.Service.Methods[0].NormalizedAuth() != schema.AuthModeAnonymous {
+					t.Fatalf("unexpected normalized auth: %+v", d.Service)
 				}
 			}
 			_, err = Compile(Option{SkelIn: path, Strict: true})
@@ -77,10 +71,6 @@ func TestCompileWebAuthModes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			document, err := projection.Project(result.Domain, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
 			expected := mode
 			switch mode {
 			case "", "auth":
@@ -88,9 +78,9 @@ func TestCompileWebAuthModes(t *testing.T) {
 			case "noauth":
 				expected = "off"
 			}
-			for _, d := range document.Declarations {
-				if d.Web != nil && string(d.Web.Auth) != expected {
-					t.Fatalf("web auth = %q, want %q", d.Web.Auth, expected)
+			for _, d := range result.Domain.Declarations() {
+				if d.Web != nil && string(d.Web.NormalizedAuth()) != expected {
+					t.Fatalf("web auth = %q, want %q", d.Web.NormalizedAuth(), expected)
 				}
 			}
 			_, err = Compile(Option{SkelIn: path, Strict: true})
@@ -135,7 +125,7 @@ pub service LegacyService { noauth method ping { auth } }
 		t.Fatal(err)
 	}
 	service := result.Domain.Services()[0]
-	if !service.ClientApi() || service.Auth != model.AuthModeNoAuth || service.Methods[0].Auth != model.AuthModeAuth {
+	if !service.ClientApi() || service.Auth != schema.AuthModeNoAuth || service.Methods[0].Auth != schema.AuthModeAuth {
 		t.Fatalf("lost legacy rules: %+v", service)
 	}
 	if len(result.Diagnostics) != 3 {
@@ -165,7 +155,7 @@ api service UserApiService {
 	}
 }
 
-func TestCompileProjectsOnlyCanonicalAuthModes(t *testing.T) {
+func TestCompileNormalizesAuthModes(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "domain.skel")
 	writeFile(t, path, `domain demo.auth
 actor ClientActor { via client {} }
@@ -192,13 +182,9 @@ web ConsoleWeb { for ClientActor via client noauth }
 			t.Fatal(item)
 		}
 	}
-	document, err := projection.Project(result.Domain, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, declaration := range document.Declarations {
-		if declaration.Web != nil && declaration.Web.Auth != schema.AuthModeOff {
-			t.Fatal(declaration.Web.Auth)
+	for _, declaration := range result.Domain.Declarations() {
+		if declaration.Web != nil && declaration.Web.NormalizedAuth() != schema.AuthModeOff {
+			t.Fatal(declaration.Web.NormalizedAuth())
 		}
 		if declaration.Service == nil {
 			continue
@@ -207,8 +193,8 @@ web ConsoleWeb { for ClientActor via client noauth }
 		if declaration.Service.Api {
 			want = schema.AuthModeOptional
 		}
-		if declaration.Service.Auth != want {
-			t.Fatalf("%s: %s", declaration.Name, declaration.Service.Auth)
+		if declaration.Service.NormalizedAuth() != want {
+			t.Fatalf("%s: %s", declaration.Name, declaration.Service.NormalizedAuth())
 		}
 		for _, method := range declaration.Service.Methods {
 			want := schema.AuthModeInherit
@@ -218,8 +204,8 @@ web ConsoleWeb { for ClientActor via client noauth }
 			case "public":
 				want = schema.AuthModeOptional
 			}
-			if method.Auth != want {
-				t.Fatalf("%s/%s: %s", declaration.Name, method.Name, method.Auth)
+			if method.NormalizedAuth() != want {
+				t.Fatalf("%s/%s: %s", declaration.Name, method.Name, method.NormalizedAuth())
 			}
 		}
 	}

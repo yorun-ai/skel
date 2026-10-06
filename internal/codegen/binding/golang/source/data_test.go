@@ -8,34 +8,34 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/testutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastData(t *testing.T) {
-	data := (_Types{}).castData(&model.Data{
+	data := (_Types{}).castData(&schema.Data{
 		Name:        "Page",
 		Description: "Paginated result",
 		Sensitive:   true,
-		TypeParameters: []*model.TypeParameter{
+		TypeParameters: []*schema.TypeParameter{
 			{Name: "TItem"},
 		},
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name:        "generatedAt",
 				Description: "Generated at",
-				Type: &model.Type{
-					Kind:   model.TypeKindScalar,
-					Scalar: model.ScalarTimestamp,
+				Type: &schema.Type{
+					Kind:   schema.TypeKindScalar,
+					Scalar: schema.ScalarTimestamp,
 				},
 			},
 			{
 				Name:        "avatarUrl",
 				Description: "Avatar URL",
 				Example:     `"https://xxx.com/a.png"`,
-				Type: &model.Type{
-					Kind:     model.TypeKindScalar,
-					Scalar:   model.ScalarString,
+				Type: &schema.Type{
+					Kind:     schema.TypeKindScalar,
+					Scalar:   schema.ScalarString,
 					Nullable: true,
 				},
 			},
@@ -85,14 +85,14 @@ func TestSensitiveMarkerMethodNeedsNoImport(t *testing.T) {
 }
 
 func TestCastDataMapsDurationToSkelDuration(t *testing.T) {
-	data := (_Types{}).castData(&model.Data{
+	data := (_Types{}).castData(&schema.Data{
 		Name: "TimeoutConfig",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name: "timeout",
-				Type: &model.Type{
-					Kind:   model.TypeKindScalar,
-					Scalar: model.ScalarDuration,
+				Type: &schema.Type{
+					Kind:   schema.TypeKindScalar,
+					Scalar: schema.ScalarDuration,
 				},
 			},
 		},
@@ -103,14 +103,14 @@ func TestCastDataMapsDurationToSkelDuration(t *testing.T) {
 }
 
 func TestCastDataMapsLocalDateToSkelLocalDate(t *testing.T) {
-	data := (_Types{}).castData(&model.Data{
+	data := (_Types{}).castData(&schema.Data{
 		Name: "Profile",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name: "birthday",
-				Type: &model.Type{
-					Kind:   model.TypeKindScalar,
-					Scalar: model.ScalarLocalDate,
+				Type: &schema.Type{
+					Kind:   schema.TypeKindScalar,
+					Scalar: schema.ScalarLocalDate,
 				},
 			},
 		},
@@ -122,15 +122,15 @@ func TestCastDataMapsLocalDateToSkelLocalDate(t *testing.T) {
 
 func TestGeneratedNullableTypeParametersRoundTrip(t *testing.T) {
 	parameter := codegentest.TypeParam("TValue")
-	nullable := func() *model.Type { return codegentest.NullableType(codegentest.TypeParamType(parameter)) }
-	box := &model.Data{Name: "Box", TypeParameters: []*model.TypeParameter{parameter}, Members: []*model.DataMember{{Name: "value", Type: codegentest.TypeParamType(parameter)}}}
-	wrapper := &model.Data{Name: "Wrapper", TypeParameters: []*model.TypeParameter{parameter}, Members: []*model.DataMember{
+	nullable := func() *schema.Type { return codegentest.NullableType(codegentest.TypeParamType(parameter)) }
+	box := &schema.Data{Name: "Box", TypeParameters: []*schema.TypeParameter{parameter}, Members: []*schema.DataMember{{Name: "value", Type: codegentest.TypeParamType(parameter)}}}
+	wrapper := &schema.Data{Name: "Wrapper", TypeParameters: []*schema.TypeParameter{parameter}, Members: []*schema.DataMember{
 		{Name: "optional", Type: nullable()},
 		{Name: "items", Type: codegentest.ListType(nullable())},
 		{Name: "values", Type: codegentest.MapType(codegentest.StringType(), nullable())},
 		{Name: "nested", Type: codegentest.DataType(box, nullable())},
 	}}
-	domain := buildModelDomainForTest(t, model.DomainSpec{Name: "demo.generic", Data: []*model.Data{box, wrapper}})
+	domain := buildSchemaDomainForTest(t, schema.DomainSpec{Name: "demo.generic", Data: []*schema.Data{box, wrapper}})
 	output := t.TempDir()
 	generator := newGen(Option{Domain: domain, View: mustView(t, view.ModeRegular, domain), Mode: view.ModeRegular, PackageName: "generic", Out: output})
 	generator.genDataGo()

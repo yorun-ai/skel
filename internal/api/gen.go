@@ -9,7 +9,7 @@ import (
 	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/binding/skeleton"
 	"go.yorun.ai/skel/internal/codegen/binding/typescript"
-	"go.yorun.ai/skel/model"
+	"go.yorun.ai/skel/schema"
 )
 
 // MinimumGolangVineVersion is the minimum Vine module version supported by
@@ -40,7 +40,7 @@ type SkeletonOption = skeleton.Option
 
 // GenerateGolang generates Go source or a standalone Go module from a parsed
 // domain. Stale files carrying the skelc generated marker may be removed.
-func GenerateGolang(domain *model.Domain, option GolangOption) error {
+func GenerateGolang(domain *schema.Domain, option GolangOption) error {
 	if domain == nil {
 		return fmt.Errorf("parsed domain is required")
 	}
@@ -74,7 +74,7 @@ func CompileGolang(input Input, option GolangOption) (CompileResult, error) {
 
 // GenerateTypeScript generates TypeScript source from a parsed domain. Stale
 // files carrying the skelc generated marker may be removed.
-func GenerateTypeScript(domain *model.Domain, option TypeScriptOption) error {
+func GenerateTypeScript(domain *schema.Domain, option TypeScriptOption) error {
 	if domain == nil {
 		return fmt.Errorf("parsed domain is required")
 	}
@@ -108,7 +108,7 @@ func CompileTypeScript(input Input, option TypeScriptOption) (CompileResult, err
 
 // GenerateSkeleton generates a Skel contract from a parsed domain. Stale files
 // carrying the skelc generated marker may be removed.
-func GenerateSkeleton(domain *model.Domain, option SkeletonOption) error {
+func GenerateSkeleton(domain *schema.Domain, option SkeletonOption) error {
 	if domain == nil {
 		return fmt.Errorf("parsed domain is required")
 	}

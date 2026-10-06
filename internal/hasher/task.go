@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func (s *_HashState) triggerHash(trigger *model.TaskTrigger) string {
+func (s *_HashState) triggerHash(trigger *schema.TaskTrigger) string {
 	return s.hashValue(_TriggerHashValue{
 		Name:               trigger.Name,
 		SkelName:           trigger.SkelName,
@@ -20,7 +20,7 @@ func (s *_HashState) triggerHash(trigger *model.TaskTrigger) string {
 	})
 }
 
-func (s *_HashState) taskHash(task *model.Task) string {
+func (s *_HashState) taskHash(task *schema.Task) string {
 	return s.memoHash("task", task.SkelName, func() string {
 		for _, trigger := range task.Triggers {
 			trigger.Hash = s.triggerHash(trigger)
@@ -32,8 +32,8 @@ func (s *_HashState) taskHash(task *model.Task) string {
 			Deprecated:       task.Deprecated,
 			DeprecatedReason: task.DeprecatedReason,
 			Triggers: buildNamedValues(task.Triggers,
-				func(trigger *model.TaskTrigger) string { return trigger.SkelName },
-				func(trigger *model.TaskTrigger) string { return trigger.Hash }),
+				func(trigger *schema.TaskTrigger) string { return trigger.SkelName },
+				func(trigger *schema.TaskTrigger) string { return trigger.Hash }),
 		})
 	})
 }
@@ -71,7 +71,7 @@ func (s *_HashState) hashValue(value any) string {
 	return hash
 }
 
-func (s *_HashState) buildActorAudienceHashValues(audiences []*model.ActorAudience) []*_ActorRefHashValue {
+func (s *_HashState) buildActorAudienceHashValues(audiences []*schema.ActorAudience) []*_ActorRefHashValue {
 	values := make([]*_ActorRefHashValue, 0, len(audiences))
 	for _, audience := range audiences {
 		name, skelName := s.actorRefNames(audience.Actor)

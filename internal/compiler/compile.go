@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/loader"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser"
+	"go.yorun.ai/skel/schema"
 )
 
 type Option struct {
@@ -21,10 +21,10 @@ type Option struct {
 type Result struct {
 	// Imports retains direct source declarations, including repeated imports
 	// across files. Their Domain pointers are intentionally unset.
-	Imports       []*model.Import
-	Domain        *model.Domain
-	ImportAliases map[string]string
-	Diagnostics   Diagnostics
+	Imports []*schema.Import
+	Domain  *schema.Domain
+
+	Diagnostics Diagnostics
 }
 
 // Compile loads, resolves, analyzes, and hashes one complete Skel input graph.
@@ -113,10 +113,10 @@ func compileFrom(ctx context.Context, provider loader.Provider, option Option, u
 	}
 	for _, domain := range domains {
 		if domain.Root == sources[0].Root && domain.Name == sources[0].ExpectedDomain {
-			imports := make([]*model.Import, 0)
+			imports := make([]*schema.Import, 0)
 			for _, source := range sources {
 				for _, declaration := range source.Parsed.Imports {
-					item := &model.Import{Name: declaration.Domain.String(), Pos: parser.SourcePosition(declaration.Pos)}
+					item := &schema.Import{Name: declaration.Domain.String(), Pos: parser.SourcePosition(declaration.Pos)}
 					if declaration.Alias != nil {
 						item.Alias = declaration.Alias.Value
 						item.ExplicitAlias = true
@@ -124,7 +124,7 @@ func compileFrom(ctx context.Context, provider loader.Provider, option Option, u
 					imports = append(imports, item)
 				}
 			}
-			return Result{Domain: domain.Model, ImportAliases: domain.ImportAliases, Imports: imports, Diagnostics: diagnostics}, nil
+			return Result{Domain: domain.Schema, Imports: imports, Diagnostics: diagnostics}, nil
 		}
 	}
 	return Result{}, fmt.Errorf("no complete domain in %s", option.SkelIn)
@@ -134,7 +134,7 @@ func compileFrom(ctx context.Context, provider loader.Provider, option Option, u
 func LoaderWarningDiagnostics(warnings []loader.Warning) Diagnostics {
 	diagnostics := make(Diagnostics, 0, len(warnings))
 	for _, warning := range warnings {
-		position := model.Position{File: warning.Path, Line: 1, Column: 1}
+		position := schema.Position{File: warning.Path, Line: 1, Column: 1}
 		diagnostics = append(diagnostics, Diagnostic{
 			Code: warning.Code, Severity: DiagnosticSeverityWarning, Position: position,
 			Range: SourceRange{Start: position, End: position}, Message: warning.Message,

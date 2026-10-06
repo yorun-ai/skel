@@ -12,7 +12,7 @@ import (
 	"go.lsp.dev/uri"
 	"go.yorun.ai/skel/internal/lsp/features"
 	"go.yorun.ai/skel/internal/testutil"
-	"go.yorun.ai/skel/schema"
+	"go.yorun.ai/skel/schema/diff"
 )
 
 func TestSchemaCompatibilityCodeLensAndCommandUseInMemoryDocument(t *testing.T) {
@@ -40,10 +40,10 @@ func TestSchemaCompatibilityCodeLensAndCommandUseInMemoryDocument(t *testing.T) 
 		Command: commandSchemaDiff, Arguments: []protocol.LSPAny{argument},
 	})
 	require.NoError(t, err)
-	var report schema.Report
+	var report diff.Report
 	require.NoError(t, json.Unmarshal(value, &report))
 	require.Len(t, report.Changes, 1)
-	assert.Equal(t, schema.ImpactBreaking, report.Changes[0].Impact)
+	assert.Equal(t, diff.ImpactBreaking, report.Changes[0].Impact)
 	assert.Equal(t, "data.member.type.changed", report.Changes[0].Code)
 }
 
@@ -75,7 +75,7 @@ func TestRemoteSchemaCommandRetainsDocumentIdentity(t *testing.T) {
 	require.NoError(t, err)
 	value, err := server.ExecuteCommand(t.Context(), &protocol.ExecuteCommandParams{Command: commandSchemaDiff, Arguments: []protocol.LSPAny{argument}})
 	require.NoError(t, err)
-	var report schema.Report
+	var report diff.Report
 	require.NoError(t, json.Unmarshal(value, &report))
 	require.Len(t, report.Changes, 1)
 	assert.Equal(t, string(remote), report.Changes[0].Candidate.File)

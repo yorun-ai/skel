@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/codegen"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestViewSeparatesPubResources(t *testing.T) {
-	domain := model.NewDomainFromSpec(model.DomainSpec{
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: "demo",
-		Resources: []*model.Resource{
-			{Pub: true, Name: "PublicUser", Actions: []*model.ResourceAction{{Name: "read"}}},
-			{Name: "LocalUser", Actions: []*model.ResourceAction{{Name: "read"}}},
+		Resources: []*schema.Resource{
+			{Pub: true, Name: "PublicUser", Actions: []*schema.ResourceAction{{Name: "read"}}},
+			{Name: "LocalUser", Actions: []*schema.ResourceAction{{Name: "read"}}},
 		},
 	})
 
@@ -35,19 +35,19 @@ func TestViewSeparatesPubResources(t *testing.T) {
 }
 
 func TestPubViewRejectsServiceRequiringNonPubResource(t *testing.T) {
-	domain := model.NewDomainFromSpec(model.DomainSpec{
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: "demo",
-		Resources: []*model.Resource{
-			{Name: "LocalUser", Actions: []*model.ResourceAction{{Name: "read"}}},
+		Resources: []*schema.Resource{
+			{Name: "LocalUser", Actions: []*schema.ResourceAction{{Name: "read"}}},
 		},
-		Services: []*model.Service{
+		Services: []*schema.Service{
 			{
 				Pub:      true,
 				Name:     "UserService",
 				SkelName: "demo.UserService",
-				Require: &model.PermissionRequire{
-					Expr: &model.PermissionExpr{
-						Mode: model.PermissionRequireModeCode,
+				Require: &schema.PermissionRequire{
+					Expression: &schema.PermissionExpression{
+						Mode: schema.PermissionRequireModeCode,
 						Code: "demo.LocalUser:read",
 					},
 				},
@@ -61,18 +61,18 @@ func TestPubViewRejectsServiceRequiringNonPubResource(t *testing.T) {
 }
 
 func TestFullViewKeepsEveryDeclaration(t *testing.T) {
-	domain := model.NewDomainFromSpec(model.DomainSpec{
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: "demo",
-		Data: []*model.Data{{Name: "Public", Pub: true}, {Name: "Local"}},
-		Enums: []*model.Enum{
+		Data: []*schema.Data{{Name: "Public", Pub: true}, {Name: "Local"}},
+		Enums: []*schema.Enum{
 			{Name: "PublicStatus", Pub: true},
 			{Name: "LocalStatus"},
 		},
-		Resources: []*model.Resource{
+		Resources: []*schema.Resource{
 			{Pub: true, Name: "PublicUser"},
 			{Name: "LocalUser"},
 		},
-		Services: []*model.Service{
+		Services: []*schema.Service{
 			{Pub: true, Name: "PublicService", SkelName: "demo.PublicService"},
 			{Name: "LocalService", SkelName: "demo.LocalService"},
 		},
@@ -86,14 +86,14 @@ func TestFullViewKeepsEveryDeclaration(t *testing.T) {
 }
 
 func TestViewTypeRootsRespectArgumentSource(t *testing.T) {
-	declared := &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString}
-	injected := &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString}
-	domain := model.NewDomainFromSpec(model.DomainSpec{
+	declared := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}
+	injected := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}
+	domain := schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: "demo",
-		Services: []*model.Service{{Name: "ExampleApiService", Api: true, Audiences: []*model.ActorAudience{{Actor: "ClientActor"}}, Methods: []*model.Method{{
-			Arguments: []*model.Argument{
-				{Name: "input", Type: declared, Source: model.ArgumentSourceDeclared},
-				{Name: "code", Type: injected, Source: model.ArgumentSourcePermissionCode},
+		Services: []*schema.Service{{Name: "ExampleApiService", Api: true, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{
+			Arguments: []*schema.Argument{
+				{Name: "input", Type: declared, Source: schema.ArgumentSourceDeclared},
+				{Name: "code", Type: injected, Source: schema.ArgumentSourcePermissionCode},
 			},
 		}}}},
 	})

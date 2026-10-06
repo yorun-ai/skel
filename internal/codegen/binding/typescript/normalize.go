@@ -6,8 +6,8 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/optionvalidation"
+	"go.yorun.ai/skel/schema"
 )
 
 // RequestOption describes TypeScript generation before normalization.
@@ -82,14 +82,14 @@ func NormalizeOption(option RequestOption) (Option, error) {
 	}, nil
 }
 
-func validateTypeScriptImports(domain *model.Domain, option Option) error {
+func validateTypeScriptImports(domain *schema.Domain, option Option) error {
 	apiDomains, err := codegen.ApiImportDomains(domain, option.ApiFilter)
 	if err != nil {
 		return err
 	}
 	for _, domainImport := range domain.Imports() {
 		if domainImport == nil {
-			return fmt.Errorf("generated model contains nil import")
+			return fmt.Errorf("generated schema contains nil import")
 		}
 		if !apiDomains[domainImport.Name] {
 			continue

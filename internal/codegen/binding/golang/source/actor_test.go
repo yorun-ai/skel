@@ -8,19 +8,19 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestActorInfoIdentifierTag(t *testing.T) {
 	for _, sensitive := range []bool{false, true} {
-		pkg := buildModelDomainForTest(t, model.DomainSpec{
+		pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 			Name: "demo.auth",
-			Actors: []*model.Actor{{
+			Actors: []*schema.Actor{{
 				Name:            "UserActor",
 				AuthEnabled:     true,
 				IdentifierField: "userId",
-				AuthCredential:  &model.Data{Name: "UserActorCredential"},
-				AuthInfo: &model.Data{Name: "UserActorInfo", Members: []*model.DataMember{
+				AuthCredential:  &schema.Data{Name: "UserActorCredential"},
+				AuthInfo: &schema.Data{Name: "UserActorInfo", Members: []*schema.DataMember{
 					{Name: "userId", Type: codegentest.StringType(), Sensitive: sensitive},
 				}},
 			}},

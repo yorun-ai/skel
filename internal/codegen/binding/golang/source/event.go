@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const eventGoFilename = "event.go"
@@ -75,15 +75,15 @@ func (g *_Gen) buildEventGoPayload() *EventGoPayload {
 	return payload
 }
 
-func (g *_Gen) eventListenerOnly(event *model.Data) bool {
+func (g *_Gen) eventListenerOnly(event *schema.Data) bool {
 	return (g.isSplitPub() && event.Pub) || (g.isSplitRegular() && event.Ext)
 }
 
-func (g *_Gen) eventEmitterOnly(event *model.Data) bool {
+func (g *_Gen) eventEmitterOnly(event *schema.Data) bool {
 	return (g.isSplitRegular() && event.Pub) || (g.isSplitPub() && event.Ext)
 }
 
-func (g *_Gen) castEvent(p *model.Data, listenerOnly bool, emitterOnly bool) *Event {
+func (g *_Gen) castEvent(p *schema.Data, listenerOnly bool, emitterOnly bool) *Event {
 	eventName := nameutil.ToCamel(p.Name)
 	methodName := strings.TrimSuffix(eventName, "Event")
 	event_ := &Event{

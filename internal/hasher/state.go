@@ -1,23 +1,23 @@
 package hasher
 
-import "go.yorun.ai/skel/internal/model"
+import "go.yorun.ai/skel/schema"
 
 type _HashState struct {
-	domain      *model.Domain
-	enumBySkel  map[string]*model.Enum
-	dataBySkel  map[string]*model.Data
-	actorBySkel map[string]*model.Actor
+	domain      *schema.Domain
+	enumBySkel  map[string]*schema.Enum
+	dataBySkel  map[string]*schema.Data
+	actorBySkel map[string]*schema.Actor
 	status      map[string]bool
 	cache       map[string]string
 	err         error
 }
 
-func newHashState(domain *model.Domain) *_HashState {
+func newHashState(domain *schema.Domain) *_HashState {
 	state := &_HashState{
 		domain:      domain,
-		enumBySkel:  map[string]*model.Enum{},
-		dataBySkel:  map[string]*model.Data{},
-		actorBySkel: map[string]*model.Actor{},
+		enumBySkel:  map[string]*schema.Enum{},
+		dataBySkel:  map[string]*schema.Data{},
+		actorBySkel: map[string]*schema.Actor{},
 		status:      map[string]bool{},
 		cache:       map[string]string{},
 	}
@@ -39,7 +39,7 @@ func newHashState(domain *model.Domain) *_HashState {
 	return state
 }
 
-func (s *_HashState) enumHash(enum *model.Enum) string {
+func (s *_HashState) enumHash(enum *schema.Enum) string {
 	return s.memoHash("enum", enum.SkelName, func() string {
 		return s.hashValue(_EnumHashValue{
 			Name:             enum.Name,
@@ -52,7 +52,7 @@ func (s *_HashState) enumHash(enum *model.Enum) string {
 	})
 }
 
-func (s *_HashState) dataHash(data *model.Data) string {
+func (s *_HashState) dataHash(data *schema.Data) string {
 	return s.memoHash(string(data.Kind), data.SkelName, func() string {
 		return s.hashValue(_DataHashValue{
 			Name:             data.Name,
@@ -71,10 +71,10 @@ func (s *_HashState) dataHash(data *model.Data) string {
 	})
 }
 
-func (s *_HashState) webHash(web *model.Web) string {
+func (s *_HashState) webHash(web *schema.Web) string {
 	return s.memoHash("web", web.SkelName, func() string {
 		auth := web.Auth
-		if auth == model.AuthModeUnset {
+		if auth == schema.AuthModeUnset {
 			auth = ""
 		}
 		return s.hashValue(_WebHashValue{Auth: auth,
@@ -89,7 +89,7 @@ func (s *_HashState) webHash(web *model.Web) string {
 	})
 }
 
-func (s *_HashState) actorHash(actor *model.Actor) string {
+func (s *_HashState) actorHash(actor *schema.Actor) string {
 	return s.memoHash("actor", actor.SkelName, func() string {
 		var authCredentialName string
 		var authCredentialHash string
@@ -107,9 +107,9 @@ func (s *_HashState) actorHash(actor *model.Actor) string {
 		}
 		var permMethodName string
 		var permMethodHash string
-		if actor.PermMethod != nil {
-			permMethodName = actor.PermMethod.SkelName
-			permMethodHash = s.methodHash(actor.PermMethod)
+		if actor.PermissionMethod != nil {
+			permMethodName = actor.PermissionMethod.SkelName
+			permMethodHash = s.methodHash(actor.PermissionMethod)
 		}
 		return s.hashValue(_ActorHashValue{
 			IdentifierField:    actor.IdentifierField,
@@ -126,8 +126,8 @@ func (s *_HashState) actorHash(actor *model.Actor) string {
 			AuthInfoHash:       authInfoHash,
 			AuthMethod:         authMethodName,
 			AuthMethodHash:     authMethodHash,
-			PermEnabled:        actor.PermEnabled,
-			PermMethod:         permMethodName,
+			PermissionEnabled:  actor.PermissionEnabled,
+			PermissionMethod:   permMethodName,
 			PermMethodHash:     permMethodHash,
 		})
 	})

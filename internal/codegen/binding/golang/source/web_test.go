@@ -3,15 +3,15 @@ package source
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastWeb(t *testing.T) {
-	web := new(_Gen).castWeb(&model.Web{
+	web := new(_Gen).castWeb(&schema.Web{
 		Name:        "UserPortalWeb",
 		SkelName:    "demo.user.UserPortalWeb",
 		Description: "User portal entry point",
-		Audiences:   []*model.ActorAudience{{Actor: "ClientActor"}},
+		Audiences:   []*schema.ActorAudience{{Actor: "ClientActor"}},
 	})
 
 	if web.ServerName != "UserPortalWebServer" {

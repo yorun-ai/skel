@@ -8,17 +8,17 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCastEnum(t *testing.T) {
-	enum := castEnum(&model.Enum{
+	enum := castEnum(&schema.Enum{
 		Name:        "UserStatus",
 		Description: "User status",
-		UnspecifiedItem: &model.EnumItem{
+		UnspecifiedItem: &schema.EnumItem{
 			Name: "UNSPECIFIED",
 		},
-		Items: []*model.EnumItem{
+		Items: []*schema.EnumItem{
 			{
 				Name:        "ACTIVE",
 				Description: "Active",
@@ -56,9 +56,9 @@ func TestGenEnumGoAppendsJSONBytes(t *testing.T) {
 	out := t.TempDir()
 	gen := newGen(Option{
 		PackageName: "example", Out: out,
-		View: &view.Domain{Enums: []*model.Enum{
-			{Name: "UserStatus", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}, Items: []*model.EnumItem{{Name: "ACTIVE"}}},
-			{Name: "SiteType", UnspecifiedItem: &model.EnumItem{Name: "UNSPECIFIED"}, Items: []*model.EnumItem{{Name: "WEB"}}},
+		View: &view.Domain{Enums: []*schema.Enum{
+			{Name: "UserStatus", UnspecifiedItem: &schema.EnumItem{Name: "UNSPECIFIED"}, Items: []*schema.EnumItem{{Name: "ACTIVE"}}},
+			{Name: "SiteType", UnspecifiedItem: &schema.EnumItem{Name: "UNSPECIFIED"}, Items: []*schema.EnumItem{{Name: "WEB"}}},
 		}},
 	})
 	gen.genEnumGo()

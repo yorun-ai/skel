@@ -4,12 +4,12 @@ import (
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type _Gen struct {
 	types  _Types
-	Domain *model.Domain
+	Domain *schema.Domain
 
 	mode          view.Mode
 	pkgName       string
@@ -22,7 +22,7 @@ type _Gen struct {
 type Option struct {
 	Sink          binding.FileSink
 	Bindings      binding.TypeBindings
-	Domain        *model.Domain
+	Domain        *schema.Domain
 	View          *view.Domain
 	Mode          view.Mode
 	PackageName   string
@@ -32,7 +32,7 @@ type Option struct {
 
 // GenerateValidated renders a domain already checked by codegen.ValidateDomain.
 func GenerateValidated(domain codegen.Input, option Option) error {
-	option.Domain = domain.Model()
+	option.Domain = domain.Schema()
 	gen := newGen(option)
 	if err := gen.validateSensitiveMembers(); err != nil {
 		return err

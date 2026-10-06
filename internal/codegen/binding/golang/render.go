@@ -7,14 +7,14 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
+	"go.yorun.ai/skel/internal/codegen/binding/golang/descriptor"
 	"go.yorun.ai/skel/internal/codegen/binding/golang/source"
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
-	"go.yorun.ai/skel/internal/codegen/binding/golang/vineschema"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 type _Gen struct {
-	domain   *model.Domain
+	domain   *schema.Domain
 	view     *view.Domain
 	bindings binding.TypeBindings
 
@@ -35,7 +35,7 @@ type _Gen struct {
 
 func render(validated codegen.Input, resolved ResolvedOption, files *binding.FileCollector) error {
 	option := resolved.option
-	domain := validated.Model()
+	domain := validated.Schema()
 	if option.ApiOnly || option.PubOnly {
 		mode := view.ModePub
 		if option.ApiOnly {
@@ -119,7 +119,7 @@ func newGen(option _GenOption) (*_Gen, error) {
 		}
 	}
 	g := &_Gen{
-		domain:            option.Input.Model(),
+		domain:            option.Input.Schema(),
 		sink:              option.Sink,
 		mode:              option.Mode,
 		asModule:          option.AsModule,
@@ -196,7 +196,7 @@ func (g *_Gen) gen(validated codegen.Input) error {
 	if g.mode == view.ModeApi {
 		return nil
 	}
-	return vineschema.GenerateValidated(validated, vineschema.Option{
+	return descriptor.GenerateValidated(validated, descriptor.Option{
 		Domain:          g.domain,
 		View:            g.view,
 		Mode:            g.mode,

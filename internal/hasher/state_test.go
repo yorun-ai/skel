@@ -1,13 +1,13 @@
 package hasher
 
 import (
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 	"testing"
 )
 
 func TestEventDirectionChangesHashes(t *testing.T) {
-	plainDomain, plainEvent := newHashDataKindTestDomain(model.DataKindEvent)
-	extDomain, extEvent := newHashDataKindTestDomain(model.DataKindEvent)
+	plainDomain, plainEvent := newHashDataKindTestDomain(schema.DataKindEvent)
+	extDomain, extEvent := newHashDataKindTestDomain(schema.DataKindEvent)
 	extEvent.Ext = true
 	fillHashes(t, plainDomain, extDomain)
 	if plainEvent.Hash == extEvent.Hash || plainDomain.Hash() == extDomain.Hash() {
@@ -57,7 +57,7 @@ func TestWebMountChangesWebAndDomainHashes(t *testing.T) {
 func TestWebAuthChangesHashes(t *testing.T) {
 	hashes := map[string]bool{}
 	domains := map[string]bool{}
-	for _, auth := range []model.AuthMode{model.AuthModeUnset, model.AuthModeAuth, model.AuthModeNoAuth, model.AuthModeRequired, model.AuthModeOptional, model.AuthModeAnonymous, model.AuthModeOff} {
+	for _, auth := range []schema.AuthMode{schema.AuthModeUnset, schema.AuthModeAuth, schema.AuthModeNoAuth, schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous, schema.AuthModeOff} {
 		domain := newHashAllowViaTestDomain(t, "client")
 		domain.Webs()[0].Auth = auth
 		fillHashes(t, domain)

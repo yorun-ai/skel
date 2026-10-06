@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/alecthomas/participle/v2"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestPermissionRequireSupportsNestedExpressions(t *testing.T) {
@@ -75,7 +75,7 @@ service UserService {
 	if len(content.Entries) != 3 {
 		t.Fatalf("unexpected entry count: %d", len(content.Entries))
 	}
-	domain := mustAnalyze(t, content).Model()
+	domain := mustAnalyze(t, content).Schema()
 	if len(domain.Services()) != 1 {
 		t.Fatalf("unexpected service count: %d", len(domain.Services()))
 	}
@@ -84,7 +84,7 @@ service UserService {
 	if len(checkMethod.Arguments) != 2 {
 		t.Fatalf("unexpected resource check argument count: %d", len(checkMethod.Arguments))
 	}
-	if checkMethod.Arguments[0].Name != "code" || checkMethod.Arguments[0].Source != model.ArgumentSourcePermissionCode || checkMethod.Arguments[0].Type.Kind != model.TypeKindScalar || checkMethod.Arguments[0].Type.Scalar != model.ScalarString {
+	if checkMethod.Arguments[0].Name != "code" || checkMethod.Arguments[0].Source != schema.ArgumentSourcePermissionCode || checkMethod.Arguments[0].Type.Kind != schema.TypeKindScalar || checkMethod.Arguments[0].Type.Scalar != schema.ScalarString {
 		t.Fatalf("unexpected resource check code argument: %+v", checkMethod.Arguments[0])
 	}
 	if !checkMethod.Arguments[1].Sensitive || !checkMethod.ArgumentsData.Members[1].Sensitive {
@@ -101,18 +101,18 @@ service UserService {
 	}
 
 	require := domain.Services()[0].Methods[0].Require
-	if require.Expr.Mode != model.PermissionRequireModeAny {
-		t.Fatalf("unexpected root mode: %s", require.Expr.Mode)
+	if require.Expression.Mode != schema.PermissionRequireModeAny {
+		t.Fatalf("unexpected root mode: %s", require.Expression.Mode)
 	}
-	if len(require.Expr.Children) != 2 {
-		t.Fatalf("unexpected root children: %d", len(require.Expr.Children))
+	if len(require.Expression.Children) != 2 {
+		t.Fatalf("unexpected root children: %d", len(require.Expression.Children))
 	}
-	if require.Expr.Children[0].Code != "demo.User:manage" {
-		t.Fatalf("unexpected first code: %s", require.Expr.Children[0].Code)
+	if require.Expression.Children[0].Code != "demo.User:manage" {
+		t.Fatalf("unexpected first code: %s", require.Expression.Children[0].Code)
 	}
 
-	allExpr := require.Expr.Children[1]
-	if allExpr.Mode != model.PermissionRequireModeAll || len(allExpr.Children) != 3 {
+	allExpr := require.Expression.Children[1]
+	if allExpr.Mode != schema.PermissionRequireModeAll || len(allExpr.Children) != 3 {
 		t.Fatalf("unexpected all expr: %+v", allExpr)
 	}
 	if allExpr.Children[0].Code != "demo.User:read" {
@@ -120,14 +120,14 @@ service UserService {
 	}
 
 	checkAllExpr := allExpr.Children[1]
-	if checkAllExpr.Mode != model.PermissionRequireModeAll || len(checkAllExpr.Children) != 2 {
+	if checkAllExpr.Mode != schema.PermissionRequireModeAll || len(checkAllExpr.Children) != 2 {
 		t.Fatalf("unexpected resource check all expr: %+v", checkAllExpr)
 	}
 	if checkAllExpr.Children[0].Code != "demo.User:update" {
 		t.Fatalf("unexpected resource check code: %s", checkAllExpr.Children[0].Code)
 	}
 	checkExpr := checkAllExpr.Children[1]
-	if checkExpr.Mode != model.PermissionRequireModeCheck || checkExpr.Check.MethodSkelName != "checkById" {
+	if checkExpr.Mode != schema.PermissionRequireModeCheck || checkExpr.Check.MethodSkelName != "checkById" {
 		t.Fatalf("unexpected resource check expr: %+v", checkExpr)
 	}
 	if len(checkExpr.Check.Arguments) != 1 || checkExpr.Check.Arguments[0].Name != "userId" {
@@ -135,14 +135,14 @@ service UserService {
 	}
 
 	checkAllExpr = allExpr.Children[2]
-	if checkAllExpr.Mode != model.PermissionRequireModeAll || len(checkAllExpr.Children) != 2 {
+	if checkAllExpr.Mode != schema.PermissionRequireModeAll || len(checkAllExpr.Children) != 2 {
 		t.Fatalf("unexpected action check all expr: %+v", checkAllExpr)
 	}
 	if checkAllExpr.Children[0].Code != "demo.User:update" {
 		t.Fatalf("unexpected action check code: %s", checkAllExpr.Children[0].Code)
 	}
 	checkExpr = checkAllExpr.Children[1]
-	if checkExpr.Mode != model.PermissionRequireModeCheck || checkExpr.Check.MethodSkelName != "checkUpdateSelf" {
+	if checkExpr.Mode != schema.PermissionRequireModeCheck || checkExpr.Check.MethodSkelName != "checkUpdateSelf" {
 		t.Fatalf("unexpected action check expr: %+v", checkExpr)
 	}
 }
@@ -203,13 +203,13 @@ service UserService {
     }
 }
 `)
-	domain := mustAnalyze(t, content).Model()
+	domain := mustAnalyze(t, content).Schema()
 	require := domain.Services()[0].Methods[0].Require
-	checkArgument := require.Expr.Children[1].Check.Arguments[0]
+	checkArgument := require.Expression.Children[1].Check.Arguments[0]
 	if checkArgument.JsonPath != "users[*].id" {
 		t.Fatalf("unexpected json path: %s", checkArgument.JsonPath)
 	}
-	if checkArgument.Type.Kind != model.TypeKindList || checkArgument.Type.List.Value.Scalar != model.ScalarInt {
+	if checkArgument.Type.Kind != schema.TypeKindList || checkArgument.Type.List.Value.Scalar != schema.ScalarInt {
 		t.Fatalf("unexpected check argument type: %+v", checkArgument.Type)
 	}
 }

@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
 const dataGoFilename = "data.go"
@@ -60,7 +60,7 @@ type Data struct {
 	MarkerMethodName string
 }
 
-func (r _Types) castData(p *model.Data) *Data {
+func (r _Types) castData(p *schema.Data) *Data {
 	data := &Data{
 		Name:             transDataName(p),
 		ImplName:         "_" + transDataName(p),
@@ -78,7 +78,7 @@ func (r _Types) castData(p *model.Data) *Data {
 	data.FullName = data.Name
 	data.ReceiverType = data.Name
 	if p.TypeParameters != nil {
-		tpNames := sliceutil.Map(p.TypeParameters, func(tp *model.TypeParameter) string {
+		tpNames := sliceutil.Map(p.TypeParameters, func(tp *schema.TypeParameter) string {
 			return tp.Name
 		})
 		data.FullName = fmt.Sprintf("%s[%s any]", data.Name, strings.Join(tpNames, ", "))
@@ -87,7 +87,7 @@ func (r _Types) castData(p *model.Data) *Data {
 	return data
 }
 
-func transDataName(p *model.Data) string {
+func transDataName(p *schema.Data) string {
 	return nameutil.ToCamel(p.Name)
 }
 
@@ -100,7 +100,7 @@ type DataMember struct {
 	Identifier   bool
 }
 
-func (r _Types) castDataMember(p *model.DataMember) *DataMember {
+func (r _Types) castDataMember(p *schema.DataMember) *DataMember {
 	memberType := r.castType(p.Type)
 	return &DataMember{
 		Name: nameutil.ToCamel(p.Name),

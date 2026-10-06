@@ -5,12 +5,12 @@ import (
 	"slices"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {
-	graph := newGraph[*model.Data]()
-	edges := map[*model.Data][]*model.Data{}
+func (p *Analysis) checkHardCycleReferences(dataList []*schema.Data) {
+	graph := newGraph[*schema.Data]()
+	edges := map[*schema.Data][]*schema.Data{}
 	for _, data := range dataList {
 		if p.reporter.cancelled() {
 			return
@@ -34,7 +34,7 @@ func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {
 				edges[data] = append(edges[data], target)
 			}
 		}
-		slices.SortFunc(edges[data], func(a, b *model.Data) int { return strings.Compare(a.Name, b.Name) })
+		slices.SortFunc(edges[data], func(a, b *schema.Data) int { return strings.Compare(a.Name, b.Name) })
 		for _, target := range edges[data] {
 			graph.addEdge(data, target)
 		}
@@ -53,13 +53,13 @@ func (p *Analysis) checkHardCycleReferences(dataList []*model.Data) {
 		}
 		// A strongly connected component is a set, not an ordered cycle. Follow
 		// edges inside it until a node repeats to obtain a real diagnostic path.
-		members := map[*model.Data]bool{}
+		members := map[*schema.Data]bool{}
 		for _, data := range component {
 			members[data] = true
 		}
-		slices.SortFunc(component, func(a, b *model.Data) int { return strings.Compare(a.Name, b.Name) })
-		positions := map[*model.Data]int{}
-		path := []*model.Data{}
+		slices.SortFunc(component, func(a, b *schema.Data) int { return strings.Compare(a.Name, b.Name) })
+		positions := map[*schema.Data]int{}
+		path := []*schema.Data{}
 		current := component[0]
 		for {
 			if p.reporter.cancelled() {
