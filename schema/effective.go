@@ -32,7 +32,8 @@ func ComputeEffectivePolicy(service *Service, method *Method) (EffectivePolicy, 
 }
 
 // ComposeRequirements returns the conjunction of two requirements, expanding
-// unresolved source terms while preserving check order and reference bindings.
+// unresolved source terms and ordering codes before groups before checks within
+// each group. Relative order within each category and reference bindings are kept.
 // Permission nodes and argument values are copied; semantic type links are borrowed.
 func ComposeRequirements(service, method *PermissionRequire) (*PermissionRequire, error) {
 	roots := [2]*PermissionExpression{}
@@ -69,8 +70,13 @@ func ExpandPermissionExpression(value *PermissionExpression) *PermissionExpressi
 }
 
 var permissionExpressions = policy.Expressions[PermissionExpression]{
-	Expand:   ExpandPermissionExpression,
-	Children: func(value *PermissionExpression) []*PermissionExpression { return value.Children },
+	Expand: ExpandPermissionExpression,
+	Mode: func(value *PermissionExpression) string {
+		return string(value.Mode)
+	},
+	Children: func(value *PermissionExpression) []*PermissionExpression {
+		return value.Children
+	},
 	All: func(children []*PermissionExpression) *PermissionExpression {
 		return new(PermissionExpression{Mode: PermissionRequireModeAll, Children: children})
 	},

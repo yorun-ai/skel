@@ -368,9 +368,10 @@ Frozen candidates require an explicit baseline.
 
 Parsed methods retain declared `AuthMode` and `Require` alongside `EffectiveAuthMode` and
 `EffectiveRequire`. Effective authentication applies service inheritance; effective
-requirements conjoin service and method policies, preserving check order and
-argument bindings. This also works with unresolved imports without resolving their
-check targets. For programmatically edited schemas, call
+requirements conjoin service and method policies. Within each group, permission
+codes precede nested groups, which precede resource checks; relative order within
+each category and argument bindings are preserved. This also works with unresolved
+imports without resolving their check targets. For programmatically edited schemas, call
 `schema.PopulateEffectivePolicies(domain)` before sharing the graph read-only.
 `schema.ComputeEffectivePolicy(service, method)` computes without mutation.
 `schema.ValidateEffectivePolicy(domain)` and

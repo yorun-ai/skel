@@ -334,7 +334,7 @@ Git HEAD 比较。基线与候选输入必须满足相同的语言规则，内�
 
 解析后的方法保留声明的 `AuthMode` 和 `Require`，并提供 `EffectiveAuthMode` 和
 `EffectiveRequire`。生效认证策略处理 service 继承；生效权限要求将 service 与 method
-的策略按 AND 组合，保留 check 顺序和参数绑定。未解析 import 时也会计算这些值，
+的策略按 AND 组合；每个分组内按权限码、嵌套分组、资源 check 的顺序排列，保留同类节点的相对顺序和参数绑定。未解析 import 时也会计算这些值，
 但不会解析外部 check 目标。程序化修改 schema 后，在只读共享前调用
 `schema.PopulateEffectivePolicies(domain)`；需要纯计算时使用
 `schema.ComputeEffectivePolicy(service, method)`。

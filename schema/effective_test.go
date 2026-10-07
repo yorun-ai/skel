@@ -121,3 +121,70 @@ func TestEffectivePolicyDoesNotReuseCachedValues(t *testing.T) {
 		t.Fatalf("cached value affected computation: %+v, %v", value, err)
 	}
 }
+
+func TestComposeRequirementsOrdersWithinGroupsWithoutChangingDeclarations(t *testing.T) {
+	check := func(name string) *schema.PermissionExpression {
+		return new(schema.PermissionExpression{
+			Mode: schema.PermissionRequireModeCheck,
+			Check: new(schema.PermissionCheckInvocation{
+				CheckName: name,
+			}),
+		})
+	}
+	first, last, nested := check("first"), check("last"), check("nested")
+	unresolved := new(schema.PermissionExpression{
+		Check: new(schema.PermissionCheckInvocation{
+			ResourceSkelName: "external.File",
+			ActionName:       "read",
+			CheckName:        "owner",
+		}),
+	})
+	group := new(schema.PermissionExpression{
+		Mode: schema.PermissionRequireModeAny,
+		Children: []*schema.PermissionExpression{
+			nested, unresolved,
+			{Mode: schema.PermissionRequireModeCode, Code: "nested-code"},
+		},
+	})
+	declared := new(schema.PermissionExpression{
+		Mode: schema.PermissionRequireModeAll,
+		Children: []*schema.PermissionExpression{
+			first, group,
+			{Mode: schema.PermissionRequireModeCode, Code: "first-code"},
+			last,
+			{Mode: schema.PermissionRequireModeCode, Code: "last-code"},
+		},
+	})
+	value, err := schema.ComposeRequirements(
+		new(schema.PermissionRequire{Expression: declared}),
+		new(schema.PermissionRequire{Expression: new(schema.PermissionExpression{
+			Mode: schema.PermissionRequireModeCode, Code: "method-code",
+		})}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := value.Expression
+	if root.Mode != schema.PermissionRequireModeAll || len(root.Children) != 2 || root.Children[0].Code != "method-code" {
+		t.Fatalf("conjoined requirements were not ordered: %+v", root)
+	}
+	ordered := root.Children[1]
+	if ordered.Mode != schema.PermissionRequireModeAll || len(ordered.Children) != 5 ||
+		ordered.Children[0].Code != "first-code" || ordered.Children[1].Code != "last-code" ||
+		ordered.Children[2].Mode != schema.PermissionRequireModeAny ||
+		ordered.Children[3].Check.CheckName != "first" || ordered.Children[4].Check.CheckName != "last" {
+		t.Fatalf("grouping or stable evaluation order lost: %+v", ordered)
+	}
+	children := ordered.Children[2].Children
+	if len(children) != 3 || children[0].Code != "nested-code" ||
+		children[1].Mode != schema.PermissionRequireModeAll || children[2].Check.CheckName != "nested" {
+		t.Fatalf("nested group was not ordered after expansion: %+v", children)
+	}
+	if expanded := children[1].Children; len(expanded) != 2 || expanded[0].Code != "external.File:read" || expanded[1].Check.CheckName != "owner" {
+		t.Fatalf("unresolved source term lost its grouping: %+v", expanded)
+	}
+	if declared.Children[0] != first || declared.Children[1] != group || declared.Children[3] != last ||
+		group.Children[0] != nested || group.Children[1] != unresolved || unresolved.Mode != "" {
+		t.Fatal("composition changed the declared order or unresolved source term")
+	}
+}

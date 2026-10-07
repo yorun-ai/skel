@@ -93,7 +93,12 @@ func ValidateEffectivePolicy(domain *Domain) error {
 }
 
 var permissionExpressions = policy.Expressions[PermissionExpression]{
-	Children: func(value *PermissionExpression) []*PermissionExpression { return value.Children },
+	Mode: func(value *PermissionExpression) string {
+		return string(value.Mode)
+	},
+	Children: func(value *PermissionExpression) []*PermissionExpression {
+		return value.Children
+	},
 	All: func(children []*PermissionExpression) *PermissionExpression {
 		return new(PermissionExpression{Mode: PermissionRequireModeAll, Children: children})
 	},

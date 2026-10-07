@@ -3,7 +3,10 @@
 // language rules without depending on one another's representations.
 package policy
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // NormalizeAuth interprets inheritance defaults for one declaration.
 func NormalizeAuth(mode, owner string) string {
@@ -43,13 +46,15 @@ func EffectiveAuth(service, method string) (string, error) {
 type Expressions[T any] struct {
 	// Expand optionally expands an unresolved source term into code/check nodes.
 	Expand   func(*T) *T
+	Mode     func(*T) string
 	Children func(*T) []*T
 	Copy     func(*T, []*T) (*T, error)
 	All      func([]*T) *T
 }
 
-// Clone copies an expression, rejecting cyclic or missing child nodes. Each
-// representation owns leaf copying and retains its reference-resolution state.
+// Clone copies an expression into evaluation order, rejecting cyclic or missing
+// child nodes. Each representation owns leaf copying and retains its reference
+// resolution state. Nested groups are preserved, never flattened.
 func (ops Expressions[T]) Clone(root *T) (*T, error) {
 	active := map[*T]bool{}
 	var visit func(*T) (*T, error)
@@ -77,14 +82,18 @@ func (ops Expressions[T]) Clone(root *T) (*T, error) {
 				children[index] = copied
 			}
 		}
+		if mode := ops.Mode(value); mode == "all" || mode == "any" {
+			ops.orderChildren(children)
+		}
 		return ops.Copy(value, children)
 	}
 	return visit(root)
 }
 
-// Conjoin combines service and method requirements in declaration order. It
-// preserves disjunctions, checks and argument bindings, with no request-time
-// evaluation or reordering. The returned expression does not alias input nodes.
+// Conjoin combines service and method requirements in evaluation order. Within
+// each group, codes precede nested groups, which precede remote checks. Relative
+// order within each category and argument bindings are preserved. The returned
+// expression does not alias input nodes or evaluate requests.
 func (ops Expressions[T]) Conjoin(service, method *T) (*T, error) {
 	var children []*T
 	for index, root := range []*T{service, method} {
@@ -103,6 +112,24 @@ func (ops Expressions[T]) Conjoin(service, method *T) (*T, error) {
 	case 1:
 		return children[0], nil
 	default:
+		ops.orderChildren(children)
 		return ops.All(children), nil
+	}
+}
+
+func (ops Expressions[T]) orderChildren(children []*T) {
+	slices.SortStableFunc(children, func(a *T, b *T) int {
+		return expressionRank(ops.Mode(a)) - expressionRank(ops.Mode(b))
+	})
+}
+
+func expressionRank(mode string) int {
+	switch mode {
+	case "code":
+		return 0
+	case "check":
+		return 2
+	default:
+		return 1
 	}
 }
