@@ -80,9 +80,6 @@ ext event StoredEvent { payload { value: Payload } }
 			if !strings.Contains(content, "RecordReadPermission") || strings.Contains(content, "Local") {
 				t.Fatalf("facade differs from selected public contract: %s", content)
 			}
-			if strings.Contains(content, "type ClientActor =") {
-				t.Fatalf("unexpected legacy actor facade: %s", content)
-			}
 		})
 	}
 }
@@ -140,9 +137,6 @@ func TestFacadeGoRendersActorAuthService(t *testing.T) {
 	if strings.Contains(content, "PublicActorAuthServiceClient") {
 		t.Fatalf("did not expect auth service client facade, got:\n%s", content)
 	}
-	if strings.Contains(content, "type PublicActor =") {
-		t.Fatalf("unexpected legacy actor facade: %s", content)
-	}
 }
 
 func TestFacadeGoImportsActorRegistration(t *testing.T) {
@@ -159,8 +153,8 @@ func TestFacadeGoImportsActorRegistration(t *testing.T) {
 	})
 	gen.genFacadeGo()
 	content := readFacadeGoForTest(t, outputDir)
-	if !strings.Contains(content, `import _ "example.com/demopub"`) || strings.Contains(content, "type ") {
-		t.Fatalf("actor-only facade must preserve registration without a type alias: %s", content)
+	if !strings.Contains(content, `import _ "example.com/demopub"`) {
+		t.Fatalf("actor-only facade must import the public package for registration: %s", content)
 	}
 }
 

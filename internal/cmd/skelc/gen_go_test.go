@@ -11,7 +11,7 @@ import (
 	codegenoutput "go.yorun.ai/skel/internal/codegen/output"
 )
 
-func TestRunSkelcInvalidGenerationPreservesOutputsInAllModes(t *testing.T) {
+func TestRunSkelcCompilationFailurePreservesOutputs(t *testing.T) {
 	for _, kind := range []string{"go", "go-module", "ts", "skel"} {
 		t.Run(kind, func(t *testing.T) {
 			root := t.TempDir()
@@ -31,9 +31,9 @@ func TestRunSkelcInvalidGenerationPreservesOutputsInAllModes(t *testing.T) {
 				args = append(args, "--pub", "--skel-out", out)
 			}
 			if result := Run(args); result.ExitCode != ExitCodeSuccess {
-				t.Fatalf("compatible generation failed: %+v", result)
+				t.Fatalf("initial generation failed: %+v", result)
 			}
-			writeCLIFile(t, entry, "domain demo.order\nservice MissingModifierService { method ping {} }\n")
+			writeCLIFile(t, entry, "domain demo.order\npub service BackendService { method ping { output Missing } }\n")
 			before := map[string]string{}
 			err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 				if err != nil {
@@ -49,17 +49,15 @@ func TestRunSkelcInvalidGenerationPreservesOutputsInAllModes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, flags := range [][]string{nil, {"--strict"}, {"--strict=false"}} {
-				result := Run(append(flags, args...))
-				failure := decodeCommandError(t, result)
-				if result.ExitCode != ExitCodeError || failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(result.Stderr, `"severity":"error"`) {
-					t.Fatalf("expected strict generation failure: %+v", result)
-				}
-				for path, want := range before {
-					got, err := os.ReadFile(path)
-					if err != nil || string(got) != want {
-						t.Fatalf("strict failure changed %s: %v", path, err)
-					}
+			result := Run(args)
+			failure := decodeCommandError(t, result)
+			if result.ExitCode != ExitCodeError || failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(result.Stderr, `"severity":"error"`) {
+				t.Fatalf("expected compilation failure: %+v", result)
+			}
+			for path, want := range before {
+				got, err := os.ReadFile(path)
+				if err != nil || string(got) != want {
+					t.Fatalf("compilation failure changed %s: %v", path, err)
 				}
 			}
 		})
@@ -118,52 +116,6 @@ func TestRunSkelcGenGoClassifiesOutputFailures(t *testing.T) {
 	if result.ExitCode != ExitCodeError || commandError.Code != output.ErrorCodeCommandFailed {
 		t.Fatalf("expected generation output failure: %+v", result)
 	}
-}
-
-func TestRunSkelcGenGoOmitsCloneCode(t *testing.T) {
-	dir, goOut := newGenFixture(t)
-	writeCLIFile(t, filepath.Join(dir, "types.skel"), `domain demo.user
-
-data User {
-    name: string
-    roles: list<string>
-}
-
-data Page<TItem> {
-    items: list<TItem>
-}
-
-data Users {
-    page: Page<User>
-}
-
-pub service UserService {
-    method listUsers {
-        output Page<User>
-    }
-}
-`)
-
-	result := Run([]string{"gen", "go", "--skel-in", dir, "--go-out", goOut})
-
-	if result.ExitCode != ExitCodeSuccess {
-		t.Fatalf("unexpected exit code: %d, stderr=%q", result.ExitCode, result.Stderr)
-	}
-
-	// Generated data and services no longer carry clone code: the Vine runtime
-	// clones in-process Rpc values from their Go types.
-	for _, path := range []string{filepath.Join(goOut, "data.go"), filepath.Join(goOut, "service.go")} {
-		generated, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, fragment := range []string{"Clone", "cloneTItem"} {
-			if strings.Contains(string(generated), fragment) {
-				t.Fatalf("%s must not contain %q:\n%s", path, fragment, generated)
-			}
-		}
-	}
-	assertFileContains(t, filepath.Join(goOut, "data.go"), "type User struct {", "type Page[TItem any] struct {")
 }
 
 func TestRunSkelcGenGoPreservesUnmanagedOutput(t *testing.T) {

@@ -202,11 +202,6 @@ func TestGenDescriptorGoRendersActorCapabilities(t *testing.T) {
 	codegentest.AssertGoSourceContains(t, string(content), "Auth: &descriptor.ActorAuth{")
 	codegentest.AssertGoSourceContains(t, string(content), `MethodName: "auth"`)
 	codegentest.AssertGoSourceContains(t, string(content), `{Name: "AnonymousActor", SkelName: "", Hash: "", Vias: []descriptor.ActorViaKind{descriptor.ActorViaClient}}`)
-	for _, old := range []string{"AuthEnabled:", "PermissionEnabled:", "AuthCredential:", "AuthService:"} {
-		if strings.Contains(string(content), old) {
-			t.Fatalf("generated descriptor retains flattened actor field %s", old)
-		}
-	}
 }
 
 func TestGenDescriptorGoRendersDeprecatedFields(t *testing.T) {

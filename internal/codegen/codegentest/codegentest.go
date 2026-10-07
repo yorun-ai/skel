@@ -85,12 +85,12 @@ func ActorVia(kind schema.ActorViaKind) *schema.ActorVia {
 	return new(schema.ActorVia{Name: string(kind)})
 }
 
-// DomainModel builds a named domain spec.
+// DomainSchema builds a named domain spec.
 func DomainSchema(name string) schema.DomainSpec {
 	return DomainSchemaWithDescription(name, "")
 }
 
-// DomainModelWithDescription builds a named domain spec carrying description.
+// DomainSchemaWithDescription builds a named domain spec carrying description.
 func DomainSchemaWithDescription(name string, description string) schema.DomainSpec {
 	return schema.DomainSpec{Name: name, Description: description}
 }

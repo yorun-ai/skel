@@ -144,9 +144,9 @@ task RebuildIndexTask {
 		t.Fatalf("expected sensitive task argument tag, got:\n%s", taskContent)
 	}
 
-	schemaContent := readFileForTest(t, filepath.Join(outputDir, "descriptor.go"))
-	if !strings.Contains(schemaContent, "ArgumentsSensitive: true,") ||
-		!strings.Contains(schemaContent, "Sensitive: true,") {
-		t.Fatalf("expected sensitive task metadata in DomainSchema, got:\n%s", schemaContent)
+	descriptorContent := readFileForTest(t, filepath.Join(outputDir, "descriptor.go"))
+	if !strings.Contains(descriptorContent, "ArgumentsSensitive: true,") ||
+		!strings.Contains(descriptorContent, "Sensitive: true,") {
+		t.Fatalf("expected sensitive task metadata in domain descriptor, got:\n%s", descriptorContent)
 	}
 }

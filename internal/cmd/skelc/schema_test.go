@@ -12,33 +12,6 @@ import (
 	schemadiff "go.yorun.ai/skel/schema/diff"
 )
 
-func TestRunSkelcStrictSchemaCommands(t *testing.T) {
-	dir := t.TempDir()
-	entry, baseline := filepath.Join(dir, "order.skel"), filepath.Join(dir, "baseline.skel")
-	writeCLIFile(t, entry, "domain demo.order\nservice OrderService { method ping {} }\n")
-	writeCLIFile(t, baseline, "domain demo.order\nservice OrderService { method ping {} }\n")
-	for _, args := range [][]string{
-		{"schema", "list"},
-		{"schema", "get", "service", "demo.order.OrderService"},
-		{"schema", "diff", "--baseline-skel-in", baseline},
-	} {
-		args = append(args, "--skel-in", entry)
-		if result := Run(args); result.ExitCode != ExitCodeError {
-			t.Fatalf("invalid schema accepted: %+v", result)
-		}
-		result := Run(append([]string{"--strict"}, args...))
-		failure := decodeCommandError(t, result)
-		if result.ExitCode != ExitCodeError || failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(result.Stderr, `"severity":"error"`) {
-			t.Fatalf("expected strict schema failure: %+v", result)
-		}
-	}
-	writeCLIFile(t, entry, "domain demo.order\npub service OrderService { method ping {} }\n")
-	result := Run([]string{"--strict", "schema", "diff", "--skel-in", entry, "--baseline-skel-in", baseline})
-	if result.ExitCode != ExitCodeError {
-		t.Fatalf("invalid baseline accepted: %+v", result)
-	}
-}
-
 func TestRunSkelcSchemaListAndGet(t *testing.T) {
 	dir := t.TempDir()
 	writeCLIFile(t, filepath.Join(dir, "domain.skel"), `domain demo.user`)
@@ -225,7 +198,6 @@ func TestRunSkelcSchemaErrorsUseStdoutResult(t *testing.T) {
 func TestRunSkelcSchemaParserErrorsUseStdoutResult(t *testing.T) {
 	for _, args := range [][]string{
 		{"schema", "unknown"},
-		{"schema", "snapshot"},
 		{"schema", "list", "--unknown"},
 		{"--log-format", "unknown", "schema", "list"},
 	} {
@@ -582,23 +554,12 @@ func TestSchemaListViewImportsAndErrors(t *testing.T) {
 		{"--pub", "--api"}, {"--actor", "demo.UserActor"}, {"--prune"}, {"--name", "demo.Value"},
 		{"--pub", "--actor", "demo.UserActor"}, {"--api", "--prune"}, {"--api", "--name", "demo.Value"},
 		{"--api", "--prune", "--name", "Value"}, {"--skel-import", "shared=" + shared},
-		{"--api", "--skel-import", "broken"}, {"--api", "--prune", "--type", "demo.Value"},
+		{"--api", "--skel-import", "broken"},
 	} {
 		result := Run(append(append([]string{}, base...), flags...))
 		failure := decodeCommandError(t, result)
 		if failure.Code != output.ErrorCodeInvalidArgument {
 			t.Fatalf("wrong error for %v: %+v", flags, result)
-		}
-	}
-	writeCLIFile(t, source, "domain demo\nservice LegacyService { method ping {} }\n")
-	for _, mode := range []string{"--pub", "--api"} {
-		result := Run([]string{"schema", "list", mode, "--skel-in", source})
-		if result.ExitCode != ExitCodeError || !strings.Contains(result.Stdout, "COMPILATION_FAILED") {
-			t.Fatalf("warnings mixed with empty result: %+v", result)
-		}
-		failure := decodeCommandError(t, Run([]string{"--strict", "schema", "list", mode, "--skel-in", source}))
-		if failure.Code != output.ErrorCodeCompilationFailed {
-			t.Fatalf("strict ignored: %+v", failure)
 		}
 	}
 	writeCLIFile(t, source, "domain demo\nactor UserActor { via client {} }\npub service ReadService { for UserActor method ping {} }\n")

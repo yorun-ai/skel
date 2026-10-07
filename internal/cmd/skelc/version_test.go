@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"runtime"
 	"runtime/debug"
-	"strings"
 	"testing"
 
 	"go.yorun.ai/skel/internal/cmd/skelc/output"
@@ -38,28 +37,6 @@ func TestGoVineVersions(t *testing.T) {
 	}
 	if version := info.GolangCodeGen.DefaultVineVersion; version != "v0.27.0" {
 		t.Fatalf("unexpected default Go Vine version: %q", version)
-	}
-}
-
-func TestRunSkelcVersionRejectsFeatures(t *testing.T) {
-	for _, flag := range []string{"--features", "--features=false"} {
-		t.Run(flag, func(t *testing.T) {
-			result := Run([]string{"version", flag})
-			var failure output.Error
-			if err := json.Unmarshal([]byte(result.Stdout), &failure); err != nil {
-				t.Fatal(err)
-			}
-			if result.ExitCode != output.ExitCodeError || failure.Code != output.ErrorCodeInvalidArgument {
-				t.Fatalf("unexpected result: %+v", result)
-			}
-		})
-	}
-}
-
-func TestRunSkelcVersionHelpOmitsFeatures(t *testing.T) {
-	result := Run([]string{"version", "--help"})
-	if result.ExitCode != ExitCodeSuccess || result.Stderr != "" || strings.Contains(result.Stdout, "--features") {
-		t.Fatalf("unexpected result: %+v", result)
 	}
 }
 

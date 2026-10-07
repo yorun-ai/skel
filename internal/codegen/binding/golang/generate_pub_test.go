@@ -255,11 +255,11 @@ func TestGeneratorRendersPubGoView(t *testing.T) {
 	if !strings.Contains(string(configContent), "type DemoConfig struct") {
 		t.Fatalf("expected explicitly pub config, got:\n%s", string(configContent))
 	}
-	schemaContent, err := os.ReadFile(filepath.Join(goPubOutDir, "descriptor.go"))
+	descriptorContent, err := os.ReadFile(filepath.Join(goPubOutDir, "descriptor.go"))
 	if err != nil {
-		t.Fatalf("read go schema file: %v", err)
+		t.Fatalf("read go descriptor file: %v", err)
 	}
-	codegentest.AssertGoSourceContains(t, string(schemaContent), `Name: "demo.user"`)
+	codegentest.AssertGoSourceContains(t, string(descriptorContent), `Name: "demo.user"`)
 	assertFileMissing(t, filepath.Join(goPubOutDir, "task.go"))
 }
 

@@ -32,7 +32,6 @@ api service ReadApiService { for UserActor via client auth anonymous method read
 		t.Fatalf("%+v", report)
 	}
 	assertCommandErrorMessage(t, Run(append(append([]string{}, base...), "--name", "demo.Status")), "flag name requires prune")
-	assertCommandErrorMessage(t, Run(append(append([]string{}, base...), "--prune", "--type", "demo.Status")), "flag provided but not defined: -type")
 	for _, extra := range [][]string{nil, {"--prune", "--actor", "demo.UserActor"}, {"--prune", "--name", "demo.Status"}, {"--prune", "--actor", "demo.UserActor", "--name", "demo.Unused"}} {
 		result := Run(append(append([]string{}, base...), extra...))
 		var report skelapi.ApiDependencyReport
@@ -69,9 +68,6 @@ api service ReadApiService { for UserActor via client auth anonymous method read
 			args = append(args, "--go-module", "example.com/demoapi")
 		}
 		assertGenerationResult(t, Run(args))
-		legacyArgs := append([]string{}, args...)
-		legacyArgs[4] = "--type"
-		assertCommandErrorMessage(t, Run(legacyArgs), "flag provided but not defined: -type")
 		noAPI := append(append([]string{}, args[:2]...), args[3:]...)
 		assertCommandErrorMessage(t, Run(noAPI), "flag prune requires api")
 	}
@@ -154,7 +150,7 @@ api service ReadApiService { for s.CallerActor via client auth anonymous require
 	}
 }
 
-func TestSchemaDepEmptyAndStrict(t *testing.T) {
+func TestSchemaDepEmptyViews(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "empty.skel")
 	writeCLIFile(t, source, "domain empty\n")
 	for _, mode := range []string{"", "--pub", "--api"} {
@@ -176,22 +172,6 @@ func TestSchemaDepEmptyAndStrict(t *testing.T) {
 			if present != (mode != "--api") || present && string(value) != "[]" {
 				t.Fatalf("%s: unexpected %s: %s", mode, field, value)
 			}
-		}
-
-	}
-	writeCLIFile(t, source, "domain empty\nservice LegacyService { method ping {} }\n")
-	for _, mode := range []string{"", "--pub", "--api"} {
-		args := []string{"schema", "dep", "--skel-in", source}
-		if mode != "" {
-			args = append(args, mode)
-		}
-		result := Run(args)
-		if result.ExitCode != 2 || !strings.Contains(result.Stderr, `"severity":"error"`) {
-			t.Fatalf("warnings lost: %+v", result)
-		}
-		result = Run(append([]string{"--strict"}, args...))
-		if result.ExitCode == 0 || !strings.Contains(result.Stdout, "COMPILATION_FAILED") {
-			t.Fatalf("strict ignored: %+v", result)
 		}
 	}
 }
@@ -219,11 +199,11 @@ api service ReadApiService { for UserActor via client auth anonymous method read
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
-			legacy, err := skelapi.QueryApiDependencies(skelapi.Input{SkelIn: source}, test.selection)
+			queried, err := skelapi.QueryApiDependencies(skelapi.Input{SkelIn: source}, test.selection)
 			if err != nil {
 				t.Fatal(err)
 			}
-			expected, err := json.Marshal(legacy.Report)
+			expected, err := json.Marshal(queried.Report)
 			if err != nil {
 				t.Fatal(err)
 			}

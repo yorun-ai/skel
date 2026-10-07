@@ -105,21 +105,21 @@ func TestGeneratorGoRendersDescriptorFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	goSchemaContent, err := os.ReadFile(filepath.Join(pubOutDir, "descriptor.go"))
+	goDescriptorContent, err := os.ReadFile(filepath.Join(pubOutDir, "descriptor.go"))
 	if err != nil {
-		t.Fatalf("read go schema file: %v", err)
+		t.Fatalf("read go descriptor file: %v", err)
 	}
-	if !strings.Contains(string(goSchemaContent), "skel.RegisterDomainDescriptor(_DomainDescriptor)") {
-		t.Fatalf("expected schema go registration, got:\n%s", string(goSchemaContent))
+	if !strings.Contains(string(goDescriptorContent), "skel.RegisterDomainDescriptor(_DomainDescriptor)") {
+		t.Fatalf("expected descriptor registration, got:\n%s", string(goDescriptorContent))
 	}
-	codegentest.AssertGoSourceContains(t, string(goSchemaContent), `Name: "AppContext"`)
-	if !strings.Contains(string(goSchemaContent), `"AppConfig"`) ||
-		!strings.Contains(string(goSchemaContent), `"demo.app.AppConfig"`) {
-		t.Fatalf("expected pub schema config declaration, got:\n%s", string(goSchemaContent))
+	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), `Name: "AppContext"`)
+	if !strings.Contains(string(goDescriptorContent), `"AppConfig"`) ||
+		!strings.Contains(string(goDescriptorContent), `"demo.app.AppConfig"`) {
+		t.Fatalf("expected pub descriptor config declaration, got:\n%s", string(goDescriptorContent))
 	}
-	codegentest.AssertGoSourceContains(t, string(goSchemaContent), "Pub: true")
-	if !strings.Contains(string(goSchemaContent), `descriptor.ActorViaClient`) {
-		t.Fatalf("expected pub schema actor via, got:\n%s", string(goSchemaContent))
+	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), "Pub: true")
+	if !strings.Contains(string(goDescriptorContent), `descriptor.ActorViaClient`) {
+		t.Fatalf("expected pub descriptor actor via, got:\n%s", string(goDescriptorContent))
 	}
 }
 
@@ -194,8 +194,8 @@ func TestGeneratorGoDescriptorHasNoBlankLineInsideDeclarations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	goSchemaContent := readFileForTest(t, filepath.Join(goOutDir, "descriptor.go"))
-	assertNoBlankLineInsideDeclaration(t, goSchemaContent)
+	goDescriptorContent := readFileForTest(t, filepath.Join(goOutDir, "descriptor.go"))
+	assertNoBlankLineInsideDeclaration(t, goDescriptorContent)
 }
 
 // assertNoBlankLineInsideDeclaration reports a failure when a blank line opens

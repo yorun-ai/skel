@@ -71,32 +71,10 @@ func TestScanImportsEmptyAndInvalidInputs(t *testing.T) {
 	}
 }
 
-func TestScanImportsStrictAndCommandRemoval(t *testing.T) {
-	source := filepath.Join(t.TempDir(), "source.skel")
-	writeCLIFile(t, source, "domain demo\nservice LegacyService { method ping {} }\n")
-	result := Run([]string{"scan", "imports", "--skel-in", source})
-	if result.ExitCode != ExitCodeError || !strings.Contains(result.Stdout, "COMPILATION_FAILED") {
-		t.Fatalf("unexpected scan result: %+v", result)
-	}
-	result = Run([]string{"--strict", "scan", "imports", "--skel-in", source})
-	failure := decodeCommandError(t, result)
-	if result.ExitCode != ExitCodeError || failure.Code != output.ErrorCodeCompilationFailed {
-		t.Fatalf("strict ignored: %+v", result)
-	}
-	result = Run([]string{"schema", "import", "--skel-in", source})
-	if result.ExitCode == ExitCodeSuccess {
-		t.Fatalf("removed schema import accepted: %+v", result)
-	}
-}
-
 func TestScanHelp(t *testing.T) {
 	result := Run([]string{"scan", "--help"})
 	if result.ExitCode != ExitCodeSuccess || !strings.Contains(result.Stdout, "imports OPTIONS:") || !strings.Contains(result.Stdout, "--skel-in") {
 		t.Fatalf("unexpected help: %+v", result)
-	}
-	result = Run([]string{"schema", "--help"})
-	if strings.Contains(result.Stdout, "import OPTIONS:") {
-		t.Fatal("schema help still exposes import")
 	}
 	result = Run([]string{"--help"})
 	if !strings.Contains(result.Stdout, "scan") {

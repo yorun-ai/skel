@@ -31,7 +31,7 @@ func TestIndex(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, found)
 	require.Equal(t, 2, index)
-	_, found, err = skeltag.Index(`skel:"sensitive" arg:"0"`)
+	_, found, err = skeltag.Index(`skel:"sensitive"`)
 	require.NoError(t, err)
 	require.False(t, found)
 	for _, value := range []string{"index", "index()", "index(x)", "index(0", "index(0)extra", "index(0),index(1)", "index(0),index(0)", "index(999999999999999999999999)"} {

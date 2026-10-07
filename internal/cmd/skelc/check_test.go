@@ -13,22 +13,21 @@ import (
 func TestRunSkelcCheckModesHaveIdenticalDiagnostics(t *testing.T) {
 	dir := t.TempDir()
 	writeCLIFile(t, dir+"/domain.skel", "domain demo.order")
-	writeCLIFile(t, dir+"/service.skel", "domain demo.order\nservice LegacyService { method ping {} }\npub service DualService { auth optional method ping {} }\n")
+	writeCLIFile(t, dir+"/service.skel", "domain demo.order\npub service BackendService { auth optional method ping {} }\n")
 	writeCLIFile(t, dir+"/.hidden.skel", "ignored")
 	for _, test := range []struct {
-		name   string
-		args   []string
-		strict bool
+		name string
+		args []string
 	}{
 		{name: "default", args: []string{"check"}},
 		{name: "disabled", args: []string{"--strict=false", "check"}},
-		{name: "global", args: []string{"--strict", "check"}, strict: true},
-		{name: "inherited", args: []string{"check", "--strict"}, strict: true},
+		{name: "global", args: []string{"--strict", "check"}},
+		{name: "inherited", args: []string{"check", "--strict"}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			result := Run(append(test.args, "--skel-in", dir))
 			checked := decodeCheckResult(t, result)
-			if result.ExitCode != ExitCodeUnsatisfied || checked.Valid || len(checked.Diagnostics) != 3 {
+			if result.ExitCode != ExitCodeUnsatisfied || checked.Valid || len(checked.Diagnostics) != 2 {
 				t.Fatalf("unexpected check: %+v", result)
 			}
 
@@ -61,20 +60,12 @@ func TestRunSkelcCheckReturnsSyntaxDiagnostics(t *testing.T) {
 	writeCLIFile(t, dir+"/domain.skel", `domain demo.user`)
 	writeCLIFile(t, dir+"/service.skel", `domain demo.user
 
-actor ClientActor {
-    via client {}
-}
-
-service UserService {
-    allow ClientActor
-
-    method ping {}
-}`)
+data User { id string }`)
 
 	result := Run([]string{"check", "--skel-in", dir})
 	checked := decodeCheckResult(t, result)
 	if result.ExitCode != ExitCodeUnsatisfied || checked.Valid ||
-		!checkDiagnosticsContain(checked, diagnostic.CodeSyntaxUnexpected, `unexpected token "allow"`) || result.Stderr != "" {
+		!checkDiagnosticsContain(checked, diagnostic.CodeSyntaxUnexpected, `unexpected token "string"`) || result.Stderr != "" {
 		t.Fatalf("unexpected check result: %+v", result)
 	}
 }

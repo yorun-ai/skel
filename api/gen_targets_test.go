@@ -228,10 +228,10 @@ api service UserApiService { auth required
 			if _, err := api.CompileGolang(api.Input{SkelIn: input}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out}); err != nil {
 				t.Fatal(err)
 			}
-			generatedSchema := strings.Join(strings.Fields(readTestFile(t, filepath.Join(out, "descriptor.go"))), " ")
+			generatedDescriptor := strings.Join(strings.Fields(readTestFile(t, filepath.Join(out, "descriptor.go"))), " ")
 			for _, want := range []string{`CodeArgumentName: "code2"`, `CodeArgumentName: "code"`, `Name: "code", JsonPath: "code"`, `Name: "code1", JsonPath: "code1"`} {
-				if !strings.Contains(generatedSchema, want) {
-					t.Fatalf("missing %s in schema:\n%s", want, generatedSchema)
+				if !strings.Contains(generatedDescriptor, want) {
+					t.Fatalf("missing %s in descriptor:\n%s", want, generatedDescriptor)
 				}
 			}
 			resource := strings.Join(strings.Fields(readTestFile(t, filepath.Join(out, "resource.go"))), " ")

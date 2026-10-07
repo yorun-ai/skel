@@ -192,15 +192,15 @@ func TestGeneratorRendersGoPubAndRegularModules(t *testing.T) {
 		t.Fatalf("did not expect regular pub event listener, got:\n%s", regularEventContent)
 	}
 
-	pubSchemaContent := readFileForTest(t, filepath.Join(goPubOutDir, "descriptor.go"))
+	pubDescriptorContent := readFileForTest(t, filepath.Join(goPubOutDir, "descriptor.go"))
 	for _, name := range []string{"User", "UserService", "UserChangedEvent"} {
-		codegentest.AssertGoSourceContains(t, pubSchemaContent, `Name: "`+name+`"`)
+		codegentest.AssertGoSourceContains(t, pubDescriptorContent, `Name: "`+name+`"`)
 	}
-	codegentest.AssertGoSourceContains(t, pubSchemaContent, "Full: false")
-	regularSchemaContent := readFileForTest(t, filepath.Join(goOutDir, "descriptor.go"))
-	codegentest.AssertGoSourceContains(t, regularSchemaContent, "Full: true")
+	codegentest.AssertGoSourceContains(t, pubDescriptorContent, "Full: false")
+	regularDescriptorContent := readFileForTest(t, filepath.Join(goOutDir, "descriptor.go"))
+	codegentest.AssertGoSourceContains(t, regularDescriptorContent, "Full: true")
 	for _, name := range []string{"User", "UserService", "UserChangedEvent"} {
-		codegentest.AssertGoSourceContains(t, regularSchemaContent, `Name: "`+name+`"`)
+		codegentest.AssertGoSourceContains(t, regularDescriptorContent, `Name: "`+name+`"`)
 	}
 
 	regularGoModContent := readFileForTest(t, filepath.Join(goOutDir, "go.mod"))

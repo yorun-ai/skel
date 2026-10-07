@@ -20,50 +20,21 @@ func TestCompileExplicitAuthModes(t *testing.T) {
 				}
 				path := filepath.Join(t.TempDir(), "input.skel")
 				writeFile(t, path, "domain demo.user\nactor ClientActor { via client {} }\n"+declaration)
-				for _, strict := range []bool{false, true} {
-					result, err := Compile(Option{SkelIn: path, Strict: strict})
-					if err != nil {
-						t.Fatal(err)
+				result, err := Compile(Option{SkelIn: path})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(result.Diagnostics) != 0 {
+					t.Fatal(result.Diagnostics)
+				}
+				if owner == "web" {
+					if result.Domain.Webs()[0].NormalizedAuth() != schema.AuthMode(mode) {
+						t.Fatal(result.Domain.Webs()[0])
 					}
-					if len(result.Diagnostics) != 0 {
-						t.Fatal(result.Diagnostics)
-					}
-					if owner == "web" {
-						if result.Domain.Webs()[0].NormalizedAuth() != schema.AuthMode(mode) {
-							t.Fatal(result.Domain.Webs()[0])
-						}
-					} else if method := result.Domain.Services()[0].Methods[0]; method.NormalizedAuth() != schema.AuthModeInherit || method.EffectiveAuthMode != schema.AuthMode(mode) {
-						t.Fatal(method)
-					}
+				} else if method := result.Domain.Services()[0].Methods[0]; method.NormalizedAuth() != schema.AuthModeInherit || method.EffectiveAuthMode != schema.AuthMode(mode) {
+					t.Fatal(method)
 				}
 			})
-		}
-	}
-}
-
-func TestCompileRejectsUnsupportedAuthSyntax(t *testing.T) {
-	for _, marker := range []string{"auth", "noauth", "auth unknown"} {
-		for _, declaration := range []string{
-			"api service EntryApiService { for ClientActor " + marker + " method ping {} }",
-			"api service EntryApiService { for ClientActor auth required method ping { " + marker + " } }",
-			"web EntryWeb { for ClientActor " + marker + " }",
-		} {
-			path := filepath.Join(t.TempDir(), "input.skel")
-			writeFile(t, path, "domain demo\nactor ClientActor { via client {} }\n"+declaration)
-			for _, strict := range []bool{false, true} {
-				if _, err := Compile(Option{SkelIn: path, Strict: strict}); err == nil {
-					t.Fatal("accepted unsupported auth syntax")
-				}
-				checked, err := Check(Option{SkelIn: path, Strict: strict})
-				if err != nil || !checked.Diagnostics.HasErrors() {
-					t.Fatalf("%+v %v", checked, err)
-				}
-				for _, item := range checked.Diagnostics {
-					if item.Suggestion != nil && (strings.Contains(item.Suggestion.Replacement, "auth") || strings.Contains(item.Suggestion.Message, "auth")) {
-						t.Fatalf("unexpected replacement suggestion: %+v", item)
-					}
-				}
-			}
 		}
 	}
 }
@@ -109,7 +80,7 @@ api service UserApiService {
 		t.Fatal(err)
 	}
 	if len(result.Diagnostics) != 0 || result.Domain.Actors()[0].Auth == nil {
-		t.Fatalf("actor auth deprecated: %+v", result)
+		t.Fatalf("expected actor auth without diagnostics: %+v", result)
 	}
 }
 

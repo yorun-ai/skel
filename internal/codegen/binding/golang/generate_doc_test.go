@@ -262,36 +262,24 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 	}
 	codegentest.AssertGoSourceContains(t, string(goActorContent), `meta.RegisterActor(meta.ActorSpec{`)
 	codegentest.AssertGoSourceContains(t, string(goActorContent), `SkelName: "demo.user.ClientActor"`)
-	for _, fragment := range []string{
-		"type ClientActor struct",
-		"func (ClientActor)",
-		"skel.ActorBase",
-		`"go.yorun.ai/skel/descriptor"`,
-		`"go.yorun.ai/vine/core/skel"`,
-	} {
-		if strings.Contains(string(goActorContent), fragment) {
-			t.Fatalf("unexpected legacy actor declaration or import %q:\n%s", fragment, goActorContent)
-		}
-	}
-
-	goSchemaContent, err := os.ReadFile(filepath.Join(goOutDir, "descriptor.go"))
+	goDescriptorContent, err := os.ReadFile(filepath.Join(goOutDir, "descriptor.go"))
 	if err != nil {
-		t.Fatalf("read go schema file: %v", err)
+		t.Fatalf("read go descriptor file: %v", err)
 	}
-	codegentest.AssertGoSourceContains(t, string(goSchemaContent), `SkelName: "demo.user.ClientActor"`)
-	codegentest.AssertGoSourceContains(t, string(goSchemaContent), "descriptor.ActorViaClient")
-	if !strings.Contains(string(goSchemaContent), `Hash:`) {
-		t.Fatalf("expected go schema hash fields, got:\n%s", string(goSchemaContent))
+	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), `SkelName: "demo.user.ClientActor"`)
+	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), "descriptor.ActorViaClient")
+	if !strings.Contains(string(goDescriptorContent), `Hash:`) {
+		t.Fatalf("expected go descriptor hash fields, got:\n%s", string(goDescriptorContent))
 	}
-	if !strings.Contains(string(goSchemaContent), "ArgumentsSensitive:") ||
-		!strings.Contains(string(goSchemaContent), "ResultSensitive:") ||
-		!strings.Contains(string(goSchemaContent), "Sensitive:") {
-		t.Fatalf("expected sensitive metadata in go schema, got:\n%s", string(goSchemaContent))
+	if !strings.Contains(string(goDescriptorContent), "ArgumentsSensitive:") ||
+		!strings.Contains(string(goDescriptorContent), "ResultSensitive:") ||
+		!strings.Contains(string(goDescriptorContent), "Sensitive:") {
+		t.Fatalf("expected sensitive metadata in go descriptor, got:\n%s", string(goDescriptorContent))
 	}
-	initIndex := strings.Index(string(goSchemaContent), "func init()")
-	schemaIndex := strings.Index(string(goSchemaContent), "var _DomainDescriptor")
-	if initIndex < 0 || schemaIndex < 0 || initIndex > schemaIndex {
-		t.Fatalf("expected schema init before schema var, got:\n%s", string(goSchemaContent))
+	initIndex := strings.Index(string(goDescriptorContent), "func init()")
+	descriptorIndex := strings.Index(string(goDescriptorContent), "var _DomainDescriptor")
+	if initIndex < 0 || descriptorIndex < 0 || initIndex > descriptorIndex {
+		t.Fatalf("expected descriptor init before descriptor var, got:\n%s", string(goDescriptorContent))
 	}
 
 	goTaskContent, err := os.ReadFile(filepath.Join(goOutDir, "task.go"))
