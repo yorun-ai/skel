@@ -6,75 +6,6 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
-## [0.31.0] - 2026-10-07
-
-### Added
-
-- Expose a Go generator SDK through `codegen`, including declaration selection,
-  dependency traversal, custom generators and managed multi-target output.
-- Provide portable Go scalar types and JSON/CBOR encodings in `types`, and
-  semantic struct-tag helpers in `tag`, for generators and runtime consumers.
-- Expose runtime metadata through `descriptor`, with named type references,
-  actor and resource callback services, effective authentication and permission
-  policies, and helpers to compute and validate those derived policies.
-
-### Changed
-
-- Rename the Go module to `go.yorun.ai/skel`; the executable remains `skelc`.
-  Move programmatic entrypoints to `api` and CLI output contracts to
-  `cmd/skelc/output`, without compatibility forwarding from the root package.
-- Replace the former `model` package with the semantic `schema` package.
-  Schema queries return semantic domains, and `schema/diff` compares those
-  domains directly while preserving source locations for diagnostics.
-- Generate `descriptor.go` with `skel.RegisterDomainDescriptor` and use
-  `skeltype` imports from `go.yorun.ai/skel/types` throughout Go output.
-  Backend generation now requires and defaults to Vine v0.28.0.
-- Use full `Permission` names in Go contracts and CLI JSON. Actor query output
-  represents authentication and permission declarations as `auth` and
-  `permission` objects; method output includes effective policy fields.
-- Preserve the explicit `pub` modifier in query output, descriptors and service
-  hashes. Public generation views continue to select extension contracts.
-- Enforce current language rules in every mode: services need `pub`, `ext` or
-  `api`; client admission declarations belong to API services; API services
-  and webs require explicit authentication modes. `--strict` remains available
-  for future migration checks and currently matches the default mode.
-- Reject import aliases that collide with the current domain, another imported
-  domain's original name, or another domain's effective qualifier.
-- Keep Skel CI independent of Vine publication: example generation and backend
-  generator tests no longer compile generated modules against Vine.
-
-### Removed
-
-- Remove `schema snapshot` and the former schema snapshot/projection APIs.
-  Source-based schema inspection and diff remain available.
-- Stop generating empty actor marker structs and their `ActorBase` embedding.
-  Authentication data and actor callback services continue to be generated.
-- Remove obsolete language spellings and their editor replacement suggestions.
-
-### Fixed
-
-- Avoid treating imported type resolution state as a contract change or
-  rewriting already-resolved type names through import aliases.
-- Retain useful source locations for actor capability changes and preserve
-  permission-check short-circuit order when composing effective policies.
-- Check sensitive-field/generated-method collisions only in the Go binding,
-  rather than reserving the field name throughout the language.
-
-### Upgrade Notes
-
-- Install the compiler with `go install go.yorun.ai/skel/cmd/skelc@v0.31.0`.
-  Update Go imports to the new module and package layout; replace `model`
-  consumers with `schema`, snapshot comparisons with `schema/diff`, and CLI
-  result consumers with `cmd/skelc/output`.
-- Regenerate dependent Go packages together. Backend output needs the matching
-  Vine descriptor registration API in v0.28.0; upgrade that runtime when it is
-  published before compiling the new backend output. Go API clients remain
-  independent of Vine and continue to support vRPC v0.13.0 or later.
-- Update services and webs to the explicit current syntax before running
-  checks, formatting, generation or source diffs. `--strict=false` no longer
-  enables retired syntax. Review scripts consuming schema JSON and service
-  hashes, whose contracts changed in this release.
-
 ## [0.30.0] - 2026-10-06
 
 ### Added
@@ -967,8 +898,7 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.31.0...HEAD
-[0.31.0]: https://github.com/yorun-ai/skel/compare/v0.30.0...v0.31.0
+[Unreleased]: https://github.com/yorun-ai/skelc/compare/v0.30.0...HEAD
 [0.30.0]: https://github.com/yorun-ai/skelc/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/yorun-ai/skelc/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/yorun-ai/skelc/compare/v0.27.0...v0.28.0
