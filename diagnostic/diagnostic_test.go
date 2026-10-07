@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.yorun.ai/skel/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestPublicDiagnosticCodesRemainStable(t *testing.T) {
@@ -52,7 +52,7 @@ func TestPublicDiagnosticCodesRemainStable(t *testing.T) {
 func TestDiagnosticsExposeOnlyFailuresAsErrors(t *testing.T) {
 	diagnostics := Diagnostics{
 		{Severity: SeverityWarning, Message: "warning"},
-		{Severity: SeverityError, Position: model.Position{File: "demo.skel", Line: 2, Column: 3}, Message: "failure"},
+		{Severity: SeverityError, Position: schema.Position{File: "demo.skel", Line: 2, Column: 3}, Message: "failure"},
 	}
 
 	require.True(t, diagnostics.HasErrors())

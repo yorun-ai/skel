@@ -97,30 +97,13 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Exercise and compile examples
+      - name: Generate examples
         run: |
           quickstart_out="$RUNNER_TEMP/skelc-quickstart"
           commerce_out="$RUNNER_TEMP/skelc-commerce"
 
           ./examples/quickstart/generate.sh "$quickstart_out"
-          (
-            cd "$quickstart_out/go"
-            GOWORK=off go test -mod=mod ./...
-          )
-
           ./examples/commerce/generate.sh "$commerce_out"
-          (
-            cd "$commerce_out/go/identitypub"
-            GOWORK=off go test -mod=mod ./...
-          )
-          for module in identity order; do
-            (
-              cd "$commerce_out/go/$module"
-              go mod edit \
-                -replace example.com/yorun/commerce/identitypub=../identitypub
-              GOWORK=off go test -mod=mod ./...
-            )
-          done
 
       - name: Type-check generated TypeScript against the published runtime
         run: node .github/scripts/typecheck-generated.mjs "$RUNNER_TEMP/skelc-quickstart" "$RUNNER_TEMP/skelc-commerce"

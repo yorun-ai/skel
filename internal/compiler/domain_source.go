@@ -7,14 +7,14 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/loader"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 type _DomainSourceIssue struct {
 	code          string
-	position      model.Position
+	position      schema.Position
 	message       string
 	strictMessage string
 }
@@ -46,7 +46,7 @@ func mergeDomainContents(contents []*grammar.SkelContent) *grammar.SkelContent {
 }
 
 func inspectDirectorySource(path, expectedDomain string, content *grammar.SkelContent) *_DomainSourceIssue {
-	position := model.Position{File: path, Line: 1, Column: 1}
+	position := schema.Position{File: path, Line: 1, Column: 1}
 	if content != nil {
 		position = parser.SourcePosition(content.Pos)
 		position.File = path

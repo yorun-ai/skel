@@ -12,7 +12,6 @@ import (
 	"slices"
 	"strings"
 
-	"go.yorun.ai/skel/internal/codegen/common"
 	"go.yorun.ai/skel/internal/util/fileutil"
 )
 
@@ -163,7 +162,7 @@ func generatedFileMarkerInReader(reader io.Reader) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return common.HasGeneratedFileMarker(prefix), nil
+	return HasGeneratedFileMarker(prefix), nil
 }
 
 func (o *ManagedOutput) commitOutputFile(relative string) error {

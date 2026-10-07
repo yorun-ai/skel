@@ -5,8 +5,8 @@ import (
 	"slices"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skel/internal/binding"
 	"go.yorun.ai/skel/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
@@ -20,7 +20,7 @@ func (s *Service) Hover(_ context.Context, params *protocol.HoverParams) (*proto
 		if len(definitions) > 0 {
 			definition := definitions[0].Definition
 			name := definition.Key
-			if binding.ParseKey(name).Scope != "" {
+			if symbol.ParseKey(name).Scope != "" {
 				name = definition.Name
 			}
 			return hoverResult(occurrence.Range, definition.Detail, name, definition.Description), nil

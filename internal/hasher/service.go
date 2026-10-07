@@ -1,8 +1,8 @@
 package hasher
 
-import "go.yorun.ai/skel/internal/model"
+import "go.yorun.ai/skel/schema"
 
-func (s *_HashState) resourceHash(resource *model.Resource) string {
+func (s *_HashState) resourceHash(resource *schema.Resource) string {
 	return s.memoHash("resource", resource.SkelName, func() string {
 		var checkServiceName string
 		var checkServiceHash string
@@ -25,7 +25,7 @@ func (s *_HashState) resourceHash(resource *model.Resource) string {
 	})
 }
 
-func (s *_HashState) methodHash(method *model.Method) string {
+func (s *_HashState) methodHash(method *schema.Method) string {
 	return s.hashValue(_MethodHashValue{
 		Name:               method.Name,
 		SkelName:           method.SkelName,
@@ -33,7 +33,7 @@ func (s *_HashState) methodHash(method *model.Method) string {
 		Deprecated:         method.Deprecated,
 		DeprecatedReason:   method.DeprecatedReason,
 		Example:            method.Example,
-		Auth:               authModeHashValue(method.Auth),
+		Auth:               authModeHashValue(method.AuthMode),
 		Require:            s.buildRequireHashValue(method.Require),
 		InputDescription:   method.InputDescription,
 		ArgumentsSensitive: method.ArgumentsSensitive,
@@ -45,7 +45,7 @@ func (s *_HashState) methodHash(method *model.Method) string {
 	})
 }
 
-func (s *_HashState) serviceHash(service *model.Service) string {
+func (s *_HashState) serviceHash(service *schema.Service) string {
 	return s.memoHash("service", service.SkelName, func() string {
 		for _, method := range service.Methods {
 			method.Hash = s.methodHash(method)
@@ -56,20 +56,20 @@ func (s *_HashState) serviceHash(service *model.Service) string {
 			Description:      service.Description,
 			Deprecated:       service.Deprecated,
 			DeprecatedReason: service.DeprecatedReason,
-			Pub:              service.Public(),
+			Pub:              service.Pub,
 			Ext:              service.Ext,
 			Api:              service.Api,
 			Actors:           s.buildActorAudienceHashValues(service.Audiences),
-			Auth:             authModeHashValue(service.Auth),
+			Auth:             authModeHashValue(service.AuthMode),
 			Require:          s.buildRequireHashValue(service.Require),
 			Methods: buildNamedValues(service.Methods,
-				func(method *model.Method) string { return method.SkelName },
-				func(method *model.Method) string { return method.Hash }),
+				func(method *schema.Method) string { return method.SkelName },
+				func(method *schema.Method) string { return method.Hash }),
 		})
 	})
 }
 
-func (s *_HashState) buildResourceCheckHashValues(checks []*model.ResourceCheck) []*_ResourceCheck {
+func (s *_HashState) buildResourceCheckHashValues(checks []*schema.ResourceCheck) []*_ResourceCheck {
 	values := make([]*_ResourceCheck, 0, len(checks))
 	for _, check := range checks {
 		values = append(values, &_ResourceCheck{
@@ -84,7 +84,7 @@ func (s *_HashState) buildResourceCheckHashValues(checks []*model.ResourceCheck)
 	return values
 }
 
-func (s *_HashState) buildResourceActionHashValues(actions []*model.ResourceAction) []*_ResourceAction {
+func (s *_HashState) buildResourceActionHashValues(actions []*schema.ResourceAction) []*_ResourceAction {
 	values := make([]*_ResourceAction, 0, len(actions))
 	for _, action := range actions {
 		value := &_ResourceAction{
@@ -100,16 +100,16 @@ func (s *_HashState) buildResourceActionHashValues(actions []*model.ResourceActi
 	return values
 }
 
-func (s *_HashState) buildRequireHashValue(require *model.PermissionRequire) *_RequireHashValue {
+func (s *_HashState) buildRequireHashValue(require *schema.PermissionRequire) *_RequireHashValue {
 	if require == nil {
 		return nil
 	}
 	return &_RequireHashValue{
-		Expr: s.buildRequireExprHashValue(require.Expr),
+		Expression: s.buildRequireExprHashValue(require.Expression),
 	}
 }
 
-func (s *_HashState) buildRequireExprHashValue(expr *model.PermissionExpr) *_RequireExprHashValue {
+func (s *_HashState) buildRequireExprHashValue(expr *schema.PermissionExpression) *_RequireExprHashValue {
 	if expr == nil {
 		return nil
 	}
@@ -134,7 +134,7 @@ func (s *_HashState) buildRequireExprHashValue(expr *model.PermissionExpr) *_Req
 	return value
 }
 
-func (s *_HashState) buildRequireCheckArgumentHashValues(arguments []*model.PermissionCheckArgument) []*_RequireCheckArgument {
+func (s *_HashState) buildRequireCheckArgumentHashValues(arguments []*schema.PermissionCheckArgument) []*_RequireCheckArgument {
 	values := make([]*_RequireCheckArgument, 0, len(arguments))
 	for _, argument := range arguments {
 		values = append(values, &_RequireCheckArgument{
@@ -146,9 +146,9 @@ func (s *_HashState) buildRequireCheckArgumentHashValues(arguments []*model.Perm
 	return values
 }
 
-func authModeHashValue(mode model.AuthMode) string {
+func authModeHashValue(mode schema.AuthMode) string {
 	if mode == "" {
-		return string(model.AuthModeUnset)
+		return string(schema.AuthModeUnset)
 	}
 	return string(mode)
 }

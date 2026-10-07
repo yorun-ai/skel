@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/analyzer"
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestParseSourceRecoveringCollectsIndependentSyntaxErrors(t *testing.T) {
@@ -78,11 +78,11 @@ service UserService {
 func TestSourceRangeUsesRuneColumns(t *testing.T) {
 	tests := []struct {
 		source    string
-		start     model.Position
+		start     schema.Position
 		endColumn int
 	}{
-		{source: `@desc("𐐀") data user {}`, start: model.Position{File: "/workspace/data.skel", Line: 1, Column: 17}, endColumn: 21},
-		{source: `😀`, start: model.Position{File: "/workspace/data.skel", Line: 1, Column: 1}, endColumn: 2},
+		{source: `@desc("𐐀") data user {}`, start: schema.Position{File: "/workspace/data.skel", Line: 1, Column: 17}, endColumn: 21},
+		{source: `😀`, start: schema.Position{File: "/workspace/data.skel", Line: 1, Column: 1}, endColumn: 2},
 	}
 	for _, test := range tests {
 		range_ := sourceRangeAt(test.start, []byte(test.source))

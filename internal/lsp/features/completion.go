@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skel/internal/binding"
 	"go.yorun.ai/skel/internal/lsp/workspace"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 var completionKeywords = []string{
@@ -76,7 +76,7 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 		domain := document.Imports[qualifier]
 		for _, candidate := range snapshot.DocumentsFor(document, domain) {
 			for _, definition := range candidate.Definitions {
-				if binding.ParseKey(definition.Key).Scope != "" {
+				if symbol.ParseKey(definition.Key).Scope != "" {
 					continue
 				}
 				items[definition.Name] = symbolCompletion(definition, domain)
@@ -103,7 +103,7 @@ func (s *Service) Completion(_ context.Context, params *protocol.CompletionParam
 		}
 		for _, candidate := range snapshot.DocumentsFor(document, document.Domain) {
 			for _, definition := range candidate.Definitions {
-				if binding.ParseKey(definition.Key).Scope != "" {
+				if symbol.ParseKey(definition.Key).Scope != "" {
 					continue
 				}
 				items[definition.Name] = symbolCompletion(definition, document.Domain)

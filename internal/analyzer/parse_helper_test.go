@@ -3,8 +3,8 @@ package analyzer
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func requireNoReporterDiagnostics(t *testing.T, reporter *_DiagnosticReporter) {
@@ -14,7 +14,7 @@ func requireNoReporterDiagnostics(t *testing.T, reporter *_DiagnosticReporter) {
 	}
 }
 
-func parseActorTest(t *testing.T, value *grammar.Actor) *model.Actor {
+func parseActorTest(t *testing.T, value *grammar.Actor) *schema.Actor {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseActor(reporter, value)
@@ -29,7 +29,7 @@ func expectActorDiagnostic(t *testing.T, expected string, value *grammar.Actor) 
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseEnumTest(t *testing.T, value *grammar.Enum) *model.Enum {
+func parseEnumTest(t *testing.T, value *grammar.Enum) *schema.Enum {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseEnum(reporter, value)
@@ -44,7 +44,7 @@ func expectEnumDiagnostic(t *testing.T, expected string, value *grammar.Enum) {
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseDataTest(t *testing.T, value *grammar.Data) *model.Data {
+func parseDataTest(t *testing.T, value *grammar.Data) *schema.Data {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseData(reporter, value)
@@ -59,7 +59,7 @@ func expectDataDiagnostic(t *testing.T, expected string, value *grammar.Data) {
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseConfigTest(t *testing.T, value *grammar.Data) *model.Data {
+func parseConfigTest(t *testing.T, value *grammar.Data) *schema.Data {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseConfig(reporter, value)
@@ -74,7 +74,7 @@ func expectConfigDiagnostic(t *testing.T, expected string, value *grammar.Data) 
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseEventTest(t *testing.T, value *grammar.Event) *model.Data {
+func parseEventTest(t *testing.T, value *grammar.Event) *schema.Data {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseEvent(reporter, value)
@@ -89,7 +89,7 @@ func expectEventDiagnostic(t *testing.T, expected string, value *grammar.Event) 
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseServiceTest(t *testing.T, value *grammar.Service) *model.Service {
+func parseServiceTest(t *testing.T, value *grammar.Service) *schema.Service {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseService(reporter, value)
@@ -104,7 +104,7 @@ func expectServiceDiagnostic(t *testing.T, expected string, value *grammar.Servi
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseWebTest(t *testing.T, value *grammar.Web, pub bool) *model.Web {
+func parseWebTest(t *testing.T, value *grammar.Web, pub bool) *schema.Web {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseWeb(reporter, value, pub)
@@ -119,7 +119,7 @@ func expectWebDiagnostic(t *testing.T, expected string, value *grammar.Web, pub 
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseTaskTest(t *testing.T, value *grammar.Task) *model.Task {
+func parseTaskTest(t *testing.T, value *grammar.Task) *schema.Task {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseTask(reporter, value)
@@ -134,7 +134,7 @@ func expectTaskDiagnostic(t *testing.T, expected string, value *grammar.Task) {
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseTypeTest(t *testing.T, value *grammar.Type) *model.Type {
+func parseTypeTest(t *testing.T, value *grammar.Type) *schema.Type {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	parsed, _ := parseType(reporter, value)
@@ -142,14 +142,14 @@ func parseTypeTest(t *testing.T, value *grammar.Type) *model.Type {
 	return parsed
 }
 
-func fixTypeRefTest(t *testing.T, value *model.Type, refs *_RefContext) {
+func fixTypeRefTest(t *testing.T, value *schema.Type, refs *_RefContext) {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	fixTypeRef(reporter, value, refs)
 	requireNoReporterDiagnostics(t, reporter)
 }
 
-func expectFixTypeRefDiagnostic(t *testing.T, expected string, value *model.Type, refs *_RefContext) {
+func expectFixTypeRefDiagnostic(t *testing.T, expected string, value *schema.Type, refs *_RefContext) {
 	t.Helper()
 	reporter := newDiagnosticReporter()
 	fixTypeRef(reporter, value, refs)

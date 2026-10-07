@@ -3,14 +3,14 @@ package workspace
 import (
 	"fmt"
 
-	"go.yorun.ai/skel/internal/binding"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 // ValidateRename resolves the affected workspace against a hypothetical symbol
 // table. This catches both direct collisions and capture of generic references,
-// using exactly the same scope and precedence rules as normal binding.
+// using exactly the same scope and precedence rules as normal name resolution.
 func (s Snapshot) ValidateRename(document *Document, key, newName string) error {
-	oldID := binding.ParseKey(key)
+	oldID := symbol.ParseKey(key)
 	if oldID.Name == newName {
 		return nil
 	}
@@ -21,13 +21,13 @@ func (s Snapshot) ValidateRename(document *Document, key, newName string) error 
 	if len(s.symbols[newKey]) > 0 {
 		return fmt.Errorf("Skel declaration %s already exists", newID.Key())
 	}
-	renamed := append([]binding.Symbol{}, s.symbols[oldKey]...)
+	renamed := append([]symbol.Symbol{}, s.symbols[oldKey]...)
 	for i := range renamed {
 		renamed[i].ID = newID
 	}
 	for _, candidate := range s.ordered {
-		lookup := func(id binding.SymbolID) []binding.Symbol { return s.symbols[s.ResolveKey(candidate, id.Key())] }
-		changedLookup := func(id binding.SymbolID) []binding.Symbol {
+		lookup := func(id symbol.SymbolID) []symbol.Symbol { return s.symbols[s.ResolveKey(candidate, id.Key())] }
+		changedLookup := func(id symbol.SymbolID) []symbol.Symbol {
 			resolved := s.ResolveKey(candidate, id.Key())
 			if resolved == oldKey {
 				return nil
@@ -38,8 +38,8 @@ func (s Snapshot) ValidateRename(document *Document, key, newName string) error 
 			return s.symbols[resolved]
 		}
 		for _, reference := range candidate.Bindings.References {
-			before := binding.Resolve(reference, candidate.Bindings.Imports, lookup)
-			if before.Status != binding.Resolved {
+			before := symbol.Resolve(reference, candidate.Bindings.Imports, lookup)
+			if before.Status != symbol.Resolved {
 				continue
 			}
 			expected := before.Target
@@ -47,8 +47,8 @@ func (s Snapshot) ValidateRename(document *Document, key, newName string) error 
 				reference.Name = newName
 				expected = newID
 			}
-			after := binding.Resolve(reference, candidate.Bindings.Imports, changedLookup)
-			if after.Status != binding.Resolved || after.Target != expected {
+			after := symbol.Resolve(reference, candidate.Bindings.Imports, changedLookup)
+			if after.Status != symbol.Resolved || after.Target != expected {
 				return fmt.Errorf("Skel name %s conflicts with an existing reference binding", newName)
 			}
 		}

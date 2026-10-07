@@ -8,7 +8,7 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 	lspsource "go.yorun.ai/skel/internal/lsp/source"
-	"go.yorun.ai/skel/internal/schema"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestIndexDocumentDefinitionsAndReferences(t *testing.T) {

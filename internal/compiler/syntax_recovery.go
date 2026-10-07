@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"go.yorun.ai/skel/internal/analyzer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 // ParseSourceRecovering returns the declarations that can be recovered from a
@@ -115,7 +115,7 @@ func mergeRecoveredContent(path string, original []byte, target, source *grammar
 	return diagnostics
 }
 
-func declarationOrderDiagnostic(path string, source []byte, position model.Position, message string) Diagnostic {
+func declarationOrderDiagnostic(path string, source []byte, position schema.Position, message string) Diagnostic {
 	start := position
 	start.File = path
 	return Diagnostic{
@@ -125,7 +125,7 @@ func declarationOrderDiagnostic(path string, source []byte, position model.Posit
 }
 
 func syntaxDiagnostic(path string, source []byte, err error) Diagnostic {
-	position := model.Position{File: path, Line: 1, Column: 1}
+	position := schema.Position{File: path, Line: 1, Column: 1}
 	message := ""
 	code := DiagnosticCodeSyntaxUnexpected
 	var syntaxError *parser.SyntaxError
@@ -151,7 +151,7 @@ func syntaxDiagnostic(path string, source []byte, err error) Diagnostic {
 	}
 	if lineStart, lineEnd, ok := sourceLineOffsets(source, position.Line); ok &&
 		braceBalance(source[:lineStart]) > 0 && looksLikeTopLevelDeclaration(strings.TrimSpace(string(source[lineStart:lineEnd]))) {
-		rangePosition := model.Position{File: path, Line: position.Line, Column: 1}
+		rangePosition := schema.Position{File: path, Line: position.Line, Column: 1}
 		diagnostic.Range = sourceRangeAt(rangePosition, source)
 		diagnostic.Suggestion = &DiagnosticSuggestion{Message: "insert } before this declaration", Replacement: "}\n"}
 	}
@@ -176,7 +176,7 @@ func expectedSyntaxReplacement(message string) string {
 	return value
 }
 
-func recoverSyntaxLine(source *[]byte, position model.Position, unexpectedEOF bool) bool {
+func recoverSyntaxLine(source *[]byte, position schema.Position, unexpectedEOF bool) bool {
 	if position.Line <= 0 {
 		return false
 	}

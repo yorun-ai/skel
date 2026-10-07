@@ -5,6 +5,8 @@ package testutil
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -58,6 +60,18 @@ func RequireToolchain(t *testing.T) {
 	if _, err := exec.LookPath("go"); err != nil {
 		t.Skip("go is not installed")
 	}
+}
+
+// UseLocalSkel makes a temporary generated module test the runtime types from
+// this checkout. Other dependencies continue to use their published versions.
+func UseLocalSkel(t *testing.T, directory string) {
+	t.Helper()
+	_, source, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("locate Skel test source")
+	}
+	root := filepath.Dir(filepath.Dir(filepath.Dir(source)))
+	Go(t, directory, "mod", "edit", "-replace=go.yorun.ai/skel="+root)
 }
 
 // Go runs the go command in directory with a self-contained module graph and

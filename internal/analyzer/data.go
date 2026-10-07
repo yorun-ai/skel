@@ -4,20 +4,19 @@ import (
 	"strings"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
-	"go.yorun.ai/skel/internal/skelmeta"
+	"go.yorun.ai/skel/schema"
 )
 
-func parseData(reporter *_DiagnosticReporter, gs *grammar.Data) (*model.Data, bool) {
-	return parseDataLike(reporter, gs, model.DataKindData)
+func parseData(reporter *_DiagnosticReporter, gs *grammar.Data) (*schema.Data, bool) {
+	return parseDataLike(reporter, gs, schema.DataKindData)
 }
 
-func parseConfig(reporter *_DiagnosticReporter, gs *grammar.Data) (*model.Data, bool) {
-	return parseDataLike(reporter, gs, model.DataKindConfig)
+func parseConfig(reporter *_DiagnosticReporter, gs *grammar.Data) (*schema.Data, bool) {
+	return parseDataLike(reporter, gs, schema.DataKindConfig)
 }
 
-func parseEvent(reporter *_DiagnosticReporter, ge *grammar.Event) (*model.Data, bool) {
+func parseEvent(reporter *_DiagnosticReporter, ge *grammar.Event) (*schema.Data, bool) {
 	members := []*grammar.DataMember{}
 	if ge.Payload != nil {
 		members = ge.Payload.Members
@@ -30,7 +29,7 @@ func parseEvent(reporter *_DiagnosticReporter, ge *grammar.Event) (*model.Data, 
 		Qualifier:      ge.Qualifier,
 		Members:        members,
 		TypeParameters: ge.TypeParameters,
-	}, model.DataKindEvent)
+	}, schema.DataKindEvent)
 	event.Ext = ge.Ext
 	valid = reporter.checkNot(ge.Ext && ge.Pub, "%s ext and pub are mutually exclusive", ge.Name.Pos) && valid
 	if ge.Payload == nil {
@@ -43,9 +42,9 @@ func parseEvent(reporter *_DiagnosticReporter, ge *grammar.Event) (*model.Data, 
 	return event, payloadValid && valid
 }
 
-func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.DataKind) (*model.Data, bool) {
+func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind schema.DataKind) (*schema.Data, bool) {
 	valid := checkCase(reporter, "Data", caseTypeCamel, gs.Name)
-	if kind == model.DataKindConfig {
+	if kind == schema.DataKindConfig {
 		valid = reporter.check(strings.HasSuffix(gs.Name.Value, "Config"), "%s Config name must end with Config", gs.Name.Pos) && valid
 		qualifierValid := reporter.check(gs.Qualifier != nil,
 			"%s Config %s requires lifecycle qualifier eternal/instant",
@@ -53,14 +52,14 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.D
 		valid = qualifierValid && valid
 		if qualifierValid {
 			valid = reporter.check(
-				gs.Qualifier.Value == string(model.ConfigLifecycleEternal) || gs.Qualifier.Value == string(model.ConfigLifecycleInstant),
+				gs.Qualifier.Value == string(schema.ConfigLifecycleEternal) || gs.Qualifier.Value == string(schema.ConfigLifecycleInstant),
 				"%s Config %s has invalid lifecycle qualifier %s, expected eternal/instant",
 				gs.Qualifier.Pos, gs.Name.Value, gs.Qualifier.Value) && valid
 		}
 		valid = reporter.check(len(gs.TypeParameters) == 0,
 			"%s Config %s does not support type parameters",
 			gs.Name.Pos, gs.Name.Value) && valid
-	} else if kind == model.DataKindEvent {
+	} else if kind == schema.DataKindEvent {
 		valid = reporter.check(strings.HasSuffix(gs.Name.Value, "Event"), "%s Event name must end with Event", gs.Name.Pos) && valid
 		valid = reporter.check(len(gs.TypeParameters) == 0,
 			"%s Event %s does not support type parameters",
@@ -76,19 +75,19 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.D
 			valid = false
 		}
 	}
-	parsedData := &model.Data{
+	parsedData := &schema.Data{
 		Pos:     position(gs.Name.Pos),
 		Name:    gs.Name.Value,
 		Kind:    kind,
 		Pub:     gs.Pub,
-		Members: []*model.DataMember{},
+		Members: []*schema.DataMember{},
 	}
 	if gs.Qualifier != nil {
-		parsedData.Lifecycle = model.ConfigLifecycle(gs.Qualifier.Value)
+		parsedData.Lifecycle = schema.ConfigLifecycle(gs.Qualifier.Value)
 	}
 	meta, metaValid := parseDecoratorMeta(reporter, gs.Decorators, _DecoratorContext{
 		allowDesc:       true,
-		allowSensitive:  kind != model.DataKindEvent,
+		allowSensitive:  kind != schema.DataKindEvent,
 		allowDeprecated: true,
 	})
 	valid = metaValid && valid
@@ -121,9 +120,6 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.D
 		}
 		member, memberValid := parseDataMember(reporter, grammarMember)
 		valid = memberValid && valid
-		valid = reporter.check(member.Name != skelmeta.SensitiveMarkerFieldName(),
-			"%s DataMember %s is reserved for the generated sensitive marker method",
-			member.Pos, skelmeta.SensitiveMarkerFieldName()) && valid
 		duplicatedPosition, duplicated := memberPos[member.Name]
 		if duplicated {
 			reporter.reportDuplicatef("%s duplicated DataMember %s found, also present at %s", member.Pos, member.Name, duplicatedPosition)
@@ -137,16 +133,16 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind model.D
 	return parsedData, valid
 }
 
-func parseTypeParameter(reporter *_DiagnosticReporter, gtp *grammar.TypeParameter) (*model.TypeParameter, bool) {
+func parseTypeParameter(reporter *_DiagnosticReporter, gtp *grammar.TypeParameter) (*schema.TypeParameter, bool) {
 	valid := checkCaseAdvanced(reporter, "TypeParameter", "T", "", caseTypeCamel, gtp.Name)
 	valid = reporter.checkNot(gtp.Nullable, "%s TypeParameter %s cannot be nullable", gtp.Pos, gtp.Name.Value) && valid
-	return &model.TypeParameter{
+	return &schema.TypeParameter{
 		Name: gtp.Name.Value,
 		Pos:  position(gtp.Name.Pos),
 	}, valid
 }
 
-func parseDataMember(reporter *_DiagnosticReporter, gsm *grammar.DataMember) (*model.DataMember, bool) {
+func parseDataMember(reporter *_DiagnosticReporter, gsm *grammar.DataMember) (*schema.DataMember, bool) {
 	valid := checkCase(reporter, "DataMember", caseTypeLowerCamel, gsm.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, gsm.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -158,7 +154,7 @@ func parseDataMember(reporter *_DiagnosticReporter, gsm *grammar.DataMember) (*m
 	valid = metaValid && valid
 	memberType, typeValid := parseType(reporter, gsm.Type)
 	valid = typeValid && valid
-	return &model.DataMember{
+	return &schema.DataMember{
 		Pos:              position(gsm.Name.Pos),
 		Name:             gsm.Name.Value,
 		Description:      meta.Description,

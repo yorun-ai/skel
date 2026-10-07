@@ -100,7 +100,9 @@ func TestAnalyzeReturnsErrorWhenAllowViaDoesNotExist(t *testing.T) {
 			},
 			{
 				Service: &grammar.Service{
-					Name:      ident("UserService"),
+					Auth:      &grammar.AuthMarker{Value: "required"},
+					Api:       true,
+					Name:      ident("UserApiService"),
 					Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor", "openapi")},
 					Methods: []*grammar.Method{
 						{Name: ident("ping")},
@@ -131,6 +133,7 @@ func TestAnalyzeReturnsErrorWhenActorAuthServiceNameConflicts(t *testing.T) {
 			},
 			{
 				Service: &grammar.Service{
+					Pub:  true,
 					Name: ident("ClientActorAuthService"),
 					Methods: []*grammar.Method{
 						{Name: ident("ping")},

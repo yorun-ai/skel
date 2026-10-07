@@ -4,9 +4,9 @@ import (
 	"slices"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
 type _RefKind int
@@ -22,9 +22,9 @@ func (rk _RefKind) isHard() bool {
 	return rk == refKindDirect
 }
 
-type _Refs map[*model.Data]_RefKind
+type _Refs map[*schema.Data]_RefKind
 
-func (r _Refs) put(rk _RefKind, rs *model.Data) {
+func (r _Refs) put(rk _RefKind, rs *schema.Data) {
 	if prevKind, exists := r[rs]; exists && prevKind <= rk {
 		return
 	}
@@ -43,10 +43,10 @@ func (r _Refs) override(refKind _RefKind, other _Refs) {
 	}
 }
 
-func referencedData(t *model.Type) _Refs {
+func referencedData(t *schema.Type) _Refs {
 	refs := _Refs{}
 	switch t.Kind {
-	case model.TypeKindData:
+	case schema.TypeKindData:
 		rk := refKindDirect
 		if t.Nullable {
 			rk = refKindNullable
@@ -55,20 +55,20 @@ func referencedData(t *model.Type) _Refs {
 		for _, arg := range t.TypeArguments {
 			refs.override(rk, referencedData(arg))
 		}
-	case model.TypeKindList:
-		refs.override(refKindList, referencedData(t.List.Value))
-	case model.TypeKindMap:
+	case schema.TypeKindList:
+		refs.override(refKindList, referencedData(t.List.Element))
+	case schema.TypeKindMap:
 		refs.override(refKindMap, referencedData(t.Map.Value))
 	}
 	return refs
 }
 
-func checkTypeCanBeMapKey(reporter *_DiagnosticReporter, t *model.Type) bool {
+func checkTypeCanBeMapKey(reporter *_DiagnosticReporter, t *schema.Type) bool {
 	valid := reporter.checkNot(t.Nullable, "%s incorrect key type, must not be nullable", t.Pos)
 
 	canBeMapKey := false
 	if slices.Contains(mapKeyTypes, t.Kind) {
-		if t.Kind != model.TypeKindScalar {
+		if t.Kind != schema.TypeKindScalar {
 			canBeMapKey = true
 		} else if slices.Contains(mapKeyScalarTypes, t.Scalar) {
 			canBeMapKey = true
@@ -78,7 +78,7 @@ func checkTypeCanBeMapKey(reporter *_DiagnosticReporter, t *model.Type) bool {
 	return valid
 }
 
-func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*model.Type, bool) {
+func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*schema.Type, bool) {
 	if reporter.cancelled() {
 		return nil, false
 	}
@@ -87,7 +87,7 @@ func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*model.Type, boo
 	}
 	valid := true
 
-	t := &model.Type{
+	t := &schema.Type{
 		Pos:           position(s.Pos),
 		Kind:          typeKindNone,
 		Scalar:        scalarNone,
@@ -100,34 +100,34 @@ func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*model.Type, boo
 
 	switch {
 	case s.Plain != nil:
-		t.Kind = model.TypeKindScalar
+		t.Kind = schema.TypeKindScalar
 		switch *s.Plain {
 		case grammar.Int:
-			t.Scalar = model.ScalarInt
+			t.Scalar = schema.ScalarInt
 		case grammar.Float:
-			t.Scalar = model.ScalarFloat
+			t.Scalar = schema.ScalarFloat
 		case grammar.Boolean:
-			t.Scalar = model.ScalarBoolean
+			t.Scalar = schema.ScalarBoolean
 		case grammar.String:
-			t.Scalar = model.ScalarString
+			t.Scalar = schema.ScalarString
 		case grammar.Decimal:
-			t.Scalar = model.ScalarDecimal
+			t.Scalar = schema.ScalarDecimal
 		case grammar.Binary:
-			t.Scalar = model.ScalarBinary
+			t.Scalar = schema.ScalarBinary
 		case grammar.Timestamp:
-			t.Scalar = model.ScalarTimestamp
+			t.Scalar = schema.ScalarTimestamp
 		case grammar.Duration:
-			t.Scalar = model.ScalarDuration
+			t.Scalar = schema.ScalarDuration
 		case grammar.LocalDate:
-			t.Scalar = model.ScalarLocalDate
+			t.Scalar = schema.ScalarLocalDate
 		case grammar.LocalTime:
-			t.Scalar = model.ScalarLocalTime
+			t.Scalar = schema.ScalarLocalTime
 		case grammar.LocalDateTime:
-			t.Scalar = model.ScalarLocalDateTime
+			t.Scalar = schema.ScalarLocalDateTime
 		case grammar.UUID:
-			t.Scalar = model.ScalarUUID
+			t.Scalar = schema.ScalarUUID
 		case grammar.JSON:
-			t.Scalar = model.ScalarJSON
+			t.Scalar = schema.ScalarJSON
 		default:
 			reporter.reportReferencef("%s unknown PlainType %s", s.Pos, *s.Plain)
 			valid = false
@@ -136,17 +136,17 @@ func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*model.Type, boo
 	case s.List != nil:
 		valueType, valueValid := parseType(reporter, s.List.Value)
 		valid = valueValid && valid
-		t.Kind = model.TypeKindList
-		t.List = &model.ListType{
-			Value: valueType,
+		t.Kind = schema.TypeKindList
+		t.List = &schema.ListType{
+			Element: valueType,
 		}
 
 	case s.Map != nil:
 		keyType, keyValid := parseType(reporter, s.Map.Key)
 		valueType, valueValid := parseType(reporter, s.Map.Value)
 		valid = keyValid && valueValid && valid
-		t.Kind = model.TypeKindMap
-		t.Map = &model.MapType{
+		t.Kind = schema.TypeKindMap
+		t.Map = &schema.MapType{
 			Key:   keyType,
 			Value: valueType,
 		}
@@ -155,8 +155,8 @@ func parseType(reporter *_DiagnosticReporter, s *grammar.Type) (*model.Type, boo
 		refName, refQualifier, refPos, referenceValid := parseReferenceName(reporter, s.Reference.Name)
 		valid = referenceValid && valid
 		valid = checkCase(reporter, "Enum/Data/TypeParameter", caseTypeCamel, &grammar.Identifier{Value: refName, Pos: refPos}) && valid
-		t.Kind = model.TypeKindUnresolvedReference
-		typeArgs := make([]*model.Type, 0, len(s.Reference.TypeArguments))
+		t.Kind = schema.TypeKindUnresolvedReference
+		typeArgs := make([]*schema.Type, 0, len(s.Reference.TypeArguments))
 		for _, typeArg := range s.Reference.TypeArguments {
 			if reporter.cancelled() {
 				break

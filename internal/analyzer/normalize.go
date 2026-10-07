@@ -5,9 +5,9 @@ import (
 	"maps"
 	"slices"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/internal/util/sliceutil"
+	"go.yorun.ai/skel/schema"
 )
 
 func (p *Analysis) normalizeWithMissingImports(allowMissingImports bool) {
@@ -44,10 +44,12 @@ func (p *Analysis) normalizeOwnedTypes(refs *_RefContext, allowMissingImports bo
 			break
 		}
 		actor := p.actorsMap[name]
-		p.normalizeDataType(actor.AuthCredential, refs)
-		p.normalizeDataType(actor.AuthInfo, refs)
-		if actor.PermService != nil {
-			p.normalizeServiceTypes(actor.PermService, refs)
+		if actor.Auth != nil {
+			p.normalizeDataType(actor.Auth.Credential, refs)
+			p.normalizeDataType(actor.Auth.Info, refs)
+		}
+		if actor.Permission != nil {
+			p.normalizeServiceTypes(actor.Permission.Service, refs)
 		}
 	}
 	for _, name := range slices.Sorted(maps.Keys(p.resourcesMap)) {
@@ -102,7 +104,7 @@ func (p *Analysis) normalizeOwnedTypes(refs *_RefContext, allowMissingImports bo
 }
 
 func (p *Analysis) validateNormalizedData() {
-	allData := sliceutil.Filter(sortData(p.dataMap), func(dataType *model.Data) bool {
+	allData := sliceutil.Filter(sortData(p.dataMap), func(dataType *schema.Data) bool {
 		return !p.invalidData[dataType]
 	})
 	for _, name := range slices.Sorted(maps.Keys(p.actorsMap)) {
@@ -110,21 +112,24 @@ func (p *Analysis) validateNormalizedData() {
 			break
 		}
 		actor := p.actorsMap[name]
-		if actor.AuthCredential != nil {
-			allData = append(allData, actor.AuthCredential)
+		if actor.Auth == nil {
+			continue
 		}
-		if actor.AuthInfo != nil {
-			allData = append(allData, actor.AuthInfo)
+		if actor.Auth.Credential != nil {
+			allData = append(allData, actor.Auth.Credential)
+		}
+		if actor.Auth.Info != nil {
+			allData = append(allData, actor.Auth.Info)
 		}
 	}
 	p.checkHardCycleReferences(allData)
 }
 
-func (p *Analysis) normalizeDataType(dataType *model.Data, refs *_RefContext) bool {
+func (p *Analysis) normalizeDataType(dataType *schema.Data, refs *_RefContext) bool {
 	if dataType == nil {
 		return true
 	}
-	refs.typeParameters = sliceutil.MapToMap(dataType.TypeParameters, func(typeParam *model.TypeParameter) (string, *model.TypeParameter) {
+	refs.typeParameters = sliceutil.MapToMap(dataType.TypeParameters, func(typeParam *schema.TypeParameter) (string, *schema.TypeParameter) {
 		return typeParam.Name, typeParam
 	})
 	defer func() {
@@ -169,12 +174,12 @@ func (p *Analysis) propagateInvalidData() {
 	}
 }
 
-func referencesInvalidData(type_ *model.Type, invalid map[*model.Data]bool) bool {
+func referencesInvalidData(type_ *schema.Type, invalid map[*schema.Data]bool) bool {
 	if type_ == nil {
 		return false
 	}
 	switch type_.Kind {
-	case model.TypeKindData:
+	case schema.TypeKindData:
 		if invalid[type_.Data] {
 			return true
 		}
@@ -183,15 +188,15 @@ func referencesInvalidData(type_ *model.Type, invalid map[*model.Data]bool) bool
 				return true
 			}
 		}
-	case model.TypeKindList:
-		return referencesInvalidData(type_.List.Value, invalid)
-	case model.TypeKindMap:
+	case schema.TypeKindList:
+		return referencesInvalidData(type_.List.Element, invalid)
+	case schema.TypeKindMap:
 		return referencesInvalidData(type_.Map.Key, invalid) || referencesInvalidData(type_.Map.Value, invalid)
 	}
 	return false
 }
 
-func (p *Analysis) checkActorAudiences(audiences []*model.ActorAudience, ownerPos fmt.Stringer, ownerKind string, ownerName string) bool {
+func (p *Analysis) checkActorAudiences(audiences []*schema.ActorAudience, ownerPos fmt.Stringer, ownerKind string, ownerName string) bool {
 	valid := true
 	for _, audience := range audiences {
 		if p.reporter.cancelled() {
@@ -205,7 +210,7 @@ func (p *Analysis) checkActorAudiences(audiences []*model.ActorAudience, ownerPo
 		if audience.Via == "" {
 			continue
 		}
-		_, ok := sliceutil.Find(actor.Vias, func(via *model.ActorVia) bool {
+		_, ok := sliceutil.Find(actor.Vias, func(via *schema.ActorVia) bool {
 			return via.Name == audience.Via
 		})
 		if !p.reporter.checkReference(ok, `%s %s %s for %s references undefined actor via "%s"`, ownerPos, ownerKind, ownerName, audience.Actor, audience.Via) {
@@ -215,7 +220,7 @@ func (p *Analysis) checkActorAudiences(audiences []*model.ActorAudience, ownerPo
 	return valid
 }
 
-func (p *Analysis) actorByRef(actorName string) *model.Actor {
+func (p *Analysis) actorByRef(actorName string) *schema.Actor {
 	qualifier, name, ok := nameutil.SplitQualified(actorName)
 	if !ok {
 		return p.actorsMap[actorName]
@@ -227,7 +232,7 @@ func (p *Analysis) actorByRef(actorName string) *model.Actor {
 	return import_.Domain.actorsMap[name]
 }
 
-func (p *Analysis) resourceByRef(resourceName string) *model.Resource {
+func (p *Analysis) resourceByRef(resourceName string) *schema.Resource {
 	qualifier, name, ok := nameutil.SplitQualified(resourceName)
 	if !ok {
 		return p.resourcesMap[resourceName]

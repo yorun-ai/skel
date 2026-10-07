@@ -1,12 +1,13 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/internal/util/webpath"
+	"go.yorun.ai/skel/schema"
 )
 
-func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.Web, bool) {
+func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*schema.Web, bool) {
 	valid := checkCaseAdvanced(reporter, "Web", "", "Web", caseTypeCamel, gw.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, gw.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -18,7 +19,7 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.
 	audiences, audiencesValid := parseWebAudiences(reporter, gw.Audiences)
 	valid = audiencesValid && valid
 	valid = reporter.check(len(audiences) > 0, "%s web %s must declare at least one actor", gw.Name.Pos, gw.Name.Value) && valid
-	authMode := model.AuthModeUnset
+	authMode := schema.AuthModeUnset
 	var authMarker *grammar.AuthMarker
 	for _, section := range gw.Sections {
 		if section.Auth == nil {
@@ -30,14 +31,11 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.
 			continue
 		}
 		authMarker = section.Auth
-		if authMarker.Value == "off" {
-			authMode = model.AuthModeOff
-		} else {
-			parsed, ok := parseAuthMode(reporter, authMarker, model.AuthModeUnset)
-			authMode = parsed
-			valid = ok && valid
-		}
+		parsed, ok := parseAuthMode(reporter, authMarker, schema.AuthModeUnset, true)
+		authMode = parsed
+		valid = ok && valid
 	}
+	valid = reporter.checkCode(diagnostic.CodeWebAuthMissing, authMarker != nil, "%s web must explicitly declare auth required, auth optional, auth anonymous, or auth off", gw.Name.Pos) && valid
 	mountPath := ""
 	for index, mount := range gw.Mounts {
 		if reporter.cancelled() {
@@ -49,7 +47,7 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.
 		}
 		mountPath = mount.Path.Value
 	}
-	return &model.Web{
+	return &schema.Web{
 		Pos:              position(gw.Name.Pos),
 		Name:             gw.Name.Value,
 		SkelName:         "",
@@ -57,13 +55,13 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*model.
 		Deprecated:       meta.Deprecated,
 		DeprecatedReason: meta.DeprecatedReason,
 		Audiences:        audiences,
-		Auth:             authMode,
+		AuthMode:         authMode,
 		AuthPos:          authMarkerPosition(authMarker),
 		MountPath:        mountPath,
 	}, valid
 }
 
-func parseWebAudiences(reporter *_DiagnosticReporter, audiences []*grammar.WebAudience) ([]*model.ActorAudience, bool) {
+func parseWebAudiences(reporter *_DiagnosticReporter, audiences []*grammar.WebAudience) ([]*schema.ActorAudience, bool) {
 	serviceAudiences := make([]*grammar.ServiceAudience, 0, len(audiences))
 	for _, audience := range audiences {
 		if reporter.cancelled() {

@@ -60,14 +60,16 @@ func (p *Analysis) loadEntry(entry *grammar.SkelEntry) bool {
 			return false
 		}
 		actor.SkelName = p.skelName(actor.Name)
-		if actor.AuthEnabled {
-			actor.AuthCredential.Domain = p.name
-			actor.AuthCredential.SkelName = p.skelName(actor.AuthCredential.Name)
-			actor.AuthInfo.Domain = p.name
-			actor.AuthInfo.SkelName = p.skelName(actor.AuthInfo.Name)
+		if actor.Auth != nil {
+			actor.Auth.Credential.Domain = p.name
+			actor.Auth.Credential.SkelName = p.skelName(actor.Auth.Credential.Name)
+			actor.Auth.Info.Domain = p.name
+			actor.Auth.Info.SkelName = p.skelName(actor.Auth.Info.Name)
+			actor.Auth.Service = buildActorAuthService(actor)
 		}
-		actor.AuthService = buildActorAuthService(actor)
-		actor.PermService = buildActorPermissionService(actor)
+		if actor.Permission != nil {
+			actor.Permission.Service = buildActorPermissionService(actor)
+		}
 		p.actorsMap[actor.Name] = actor
 	case entry.Resource != nil:
 		resource, valid := parseResource(p.reporter, entry.Resource, entry.Pub)

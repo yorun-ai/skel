@@ -9,24 +9,7 @@ import (
 
 type AuthMarker struct {
 	Pos   lexer.Position
-	Value string
-}
-
-func (m *AuthMarker) Parse(lex *lexer.PeekingLexer) error {
-	token := lex.Peek()
-	if token.Value != "auth" && token.Value != "noauth" {
-		return participle.NextMatch
-	}
-	lex.Next()
-	m.Pos = token.Pos
-	m.Value = token.Value
-	if token.Value == "auth" {
-		switch lex.Peek().Value {
-		case "required", "optional", "anonymous", "off":
-			m.Value = lex.Next().Value
-		}
-	}
-	return nil
+	Value string `parser:"\"auth\" @(\"required\" | \"optional\" | \"anonymous\" | \"off\")"`
 }
 
 type TaskTrigger struct {

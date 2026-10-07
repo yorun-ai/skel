@@ -1,7 +1,7 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 	"testing"
 )
 
@@ -13,7 +13,7 @@ resource User {
     action read
 }
 `)
-	domain := mustAnalyze(t, content).Model()
+	domain := mustAnalyze(t, content).Schema()
 
 	if len(domain.Resources()) != 1 {
 		t.Fatalf("unexpected resource count: %d", len(domain.Resources()))
@@ -31,7 +31,7 @@ pub resource User {
     action read
 }
 `)
-	domain := mustAnalyze(t, content).Model()
+	domain := mustAnalyze(t, content).Schema()
 
 	if len(domain.Resources()) != 1 {
 		t.Fatalf("unexpected resource count: %d", len(domain.Resources()))
@@ -58,7 +58,7 @@ actor UserActor {
     via client {}
 }
 
-service UserService {
+api service UserApiService { auth required
     for UserActor
 
     method getUser {
@@ -79,9 +79,9 @@ func TestResourceCheckAvoidsBusinessCodeNames(t *testing.T) {
 		{"code1: string", "code"},
 	} {
 		content := parseResourceTestContent(t, "domain demo\nresource User {\ncheck byId { input {\n"+test.input+"\n} }\naction read\n}")
-		domain := mustAnalyze(t, content).Model()
+		domain := mustAnalyze(t, content).Schema()
 		method := domain.Resources()[0].Checks[0].Method
-		if method.Arguments[0].Name != test.want || method.Arguments[0].Source != model.ArgumentSourcePermissionCode {
+		if method.Arguments[0].Name != test.want || method.Arguments[0].Source != schema.ArgumentSourcePermissionCode {
 			t.Fatalf("unexpected injected argument: %+v", method.Arguments[0])
 		}
 		if method.ArgumentsData.Members[0].Name != test.want {
@@ -98,20 +98,20 @@ resource User {
     action read
 }
 actor UserActor { via client {} }
-service UserService {
+api service UserApiService { auth required
     for UserActor
     method read {
         require User:read:byPermission(permission)
         input { permission: PermissionInput }
     }
 }`)
-	domain := mustAnalyze(t, content).Model()
+	domain := mustAnalyze(t, content).Schema()
 	check := domain.Resources()[0].Checks[0]
 	arguments := resourceCheckArguments(check)
-	if len(arguments) != 1 || arguments[0].Name != "permission" || arguments[0].Source != model.ArgumentSourceDeclared {
+	if len(arguments) != 1 || arguments[0].Name != "permission" || arguments[0].Source != schema.ArgumentSourceDeclared {
 		t.Fatalf("user-defined data argument was treated as injected: %+v", arguments)
 	}
-	if arguments[0].Type.Kind != model.TypeKindData || arguments[0].Type.Data.Name != "PermissionInput" {
+	if arguments[0].Type.Kind != schema.TypeKindData || arguments[0].Type.Data.Name != "PermissionInput" {
 		t.Fatalf("expected an ordinary data reference, got %+v", arguments[0].Type)
 	}
 }

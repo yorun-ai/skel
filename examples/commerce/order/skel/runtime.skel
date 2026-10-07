@@ -3,6 +3,7 @@ domain commerce.order
 @desc("Customer-facing web capability")
 web CustomerPortalWeb {
     for CustomerActor via client
+    auth required
 }
 
 @desc("Rebuilds the searchable order index")

@@ -1,7 +1,7 @@
 package main
 
-import "go.yorun.ai/skel/internal/cli"
+import "go.yorun.ai/skel/internal/cmd/skelc"
 
 func main() {
-	cli.Main()
+	skelc.Main()
 }

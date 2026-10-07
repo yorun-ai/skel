@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"testing"
 
-	"go.yorun.ai/skel/internal/compiler"
-	"go.yorun.ai/skel/internal/model"
+	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/parser"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestExtensionEventRoundTrip(t *testing.T) {
@@ -137,8 +137,8 @@ func TestFormatterIsIdempotentAroundInlineTripleString(t *testing.T) {
 }
 
 func TestSourcePreservesCommentsAndStrings(t *testing.T) {
-	source := []byte("domain demo.user\n\n/* comment { }\n   keep */\n@desc(\"\"\"\n  keep { content }\n    nested\n\"\"\") // inline\nservice UserService {\nmethod ping {}\n}\n")
-	want := "domain demo.user\n\n/* comment { }\n   keep */\n@desc(\"\"\"\nkeep { content }\n  nested\n\"\"\") // inline\nservice UserService {\n    method ping {}\n}\n"
+	source := []byte("domain demo.user\n\n/* comment { }\n   keep */\n@desc(\"\"\"\n  keep { content }\n    nested\n\"\"\") // inline\npub service UserService {\nmethod ping {}\n}\n")
+	want := "domain demo.user\n\n/* comment { }\n   keep */\n@desc(\"\"\"\nkeep { content }\n  nested\n\"\"\") // inline\npub service UserService {\n    method ping {}\n}\n"
 
 	got := formatTestSource(t, source)
 	if string(got) != want {
@@ -237,7 +237,7 @@ pub data User {
 id:uuid
 }
 
-pub service UserService {
+api service UserApiService { auth required
 for ClientActor via client
 method get {
 input {
@@ -286,7 +286,7 @@ func parseDomainHash(t *testing.T, name string, source []byte) string {
 	return compileTestDomain(t, name, source).Hash()
 }
 
-func compileTestDomain(t *testing.T, name string, source []byte) *model.Domain {
+func compileTestDomain(t *testing.T, name string, source []byte) *schema.Domain {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), name)
 	if err := os.WriteFile(path, source, 0o600); err != nil {
@@ -304,7 +304,7 @@ func TestActorIdentifierRoundTrip(t *testing.T) {
 	before := compileTestDomain(t, "actor.skel", source)
 	formatted := formatTestSource(t, source)
 	after := compileTestDomain(t, "actor.skel", formatted)
-	if before.Actors()[0].IdentifierField != "id" || after.Actors()[0].IdentifierField != "id" || before.Hash() != after.Hash() {
+	if before.Actors()[0].Auth.IdentifierField != "id" || after.Actors()[0].Auth.IdentifierField != "id" || before.Hash() != after.Hash() {
 		t.Fatal("format lost actor identity metadata")
 	}
 	if second := formatTestSource(t, formatted); string(second) != string(formatted) {
@@ -313,7 +313,7 @@ func TestActorIdentifierRoundTrip(t *testing.T) {
 }
 
 func TestApiServiceRoundTrip(t *testing.T) {
-	input := []byte("domain demo.order\nactor ClientActor{via client{}}\n// client endpoint\napi   service  OrderApiService{for ClientActor via client method ping{}}\n")
+	input := []byte("domain demo.order\nactor ClientActor{via client{}}\n// client endpoint\napi service OrderApiService { auth required for ClientActor via client method ping{}}\n")
 	before := compileTestDomain(t, "api.skel", input)
 	formatted := formatTestSource(t, input)
 	after := compileTestDomain(t, "api.skel", formatted)
@@ -333,7 +333,7 @@ func TestApiServiceRoundTrip(t *testing.T) {
 }
 
 func TestExtServiceRoundTrip(t *testing.T) {
-	input := []byte("domain demo.storage\n// reusable contract\next   service  StorageService{method ping{}}\n")
+	input := []byte("domain demo.storage\n// reusable contract\next service StorageService {method ping{}}\n")
 	before := compileTestDomain(t, "ext.skel", input)
 	formatted := formatTestSource(t, input)
 	after := compileTestDomain(t, "ext.skel", formatted)
@@ -346,7 +346,7 @@ func TestExtServiceRoundTrip(t *testing.T) {
 }
 
 func TestWebMountFormattingRoundTrip(t *testing.T) {
-	source := []byte("domain demo\nactor ClientActor { via client {} }\nweb PortalWeb{\nmount\t/* base */\t/portal/v1-assets/ // keep\nfor ClientActor\nauth required\n}\n")
+	source := []byte("domain demo\nactor ClientActor { via client {} }\nweb PortalWeb {\nmount\t/* base */\t/portal/v1-assets/ // keep\nfor ClientActor\nauth required\n}\n")
 	want := "domain demo\n\nactor ClientActor {\n    via client {}\n}\n\nweb PortalWeb {\n    mount /* base */ /portal/v1-assets/ // keep\n    for ClientActor\n    auth required\n}\n"
 	got := formatTestSource(t, source)
 	if string(got) != want {
@@ -359,7 +359,7 @@ func TestWebMountFormattingRoundTrip(t *testing.T) {
 }
 
 func TestFullDomainReferencesRoundTrip(t *testing.T) {
-	input := []byte("domain demo\nimport ws.sandbox\nimport other.sandbox as other\npub data Payload{value:ws.sandbox.Value alias:other.Value}\nweb ProxyWeb{for ws.sandbox.SandboxActor auth required}\n")
+	input := []byte("domain demo\nimport ws.sandbox\nimport other.sandbox as other\npub data Payload{value:ws.sandbox.Value alias:other.Value}\nweb ProxyWeb {for ws.sandbox.SandboxActor auth required}\n")
 	formatted := formatTestSource(t, input)
 	checkTestSource(t, "domain.skel", formatted)
 	if again := formatTestSource(t, formatted); string(again) != string(formatted) {

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestCompileServiceAndData(t *testing.T) {
@@ -23,7 +23,7 @@ actor ClientActor {
     }
 }
 
-service UserService {
+api service UserApiService { auth required
     for ClientActor via client
 
     @desc("Get a user by ID")
@@ -54,7 +54,7 @@ enum UserStatus {
 		t.Fatalf("unexpected service count: %d", len(domain.Services()))
 	}
 	service := domain.Services()[0]
-	if service.Name != "UserService" {
+	if service.Name != "UserApiService" {
 		t.Fatalf("unexpected service name: %s", service.Name)
 	}
 	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "client" {
@@ -93,7 +93,7 @@ data User {
 }
 `,
 		"service.skel": `
-service UserService {
+api service UserApiService { auth required
     for ClientActor
     for OpenAPIActor
 
@@ -119,7 +119,7 @@ service UserService {
 
 	service := domain.Services()[0]
 	method := service.Methods[0]
-	if service.SkelName != "demo.user.UserService" {
+	if service.SkelName != "demo.user.UserApiService" {
 		t.Fatalf("unexpected skel name: %q", service.SkelName)
 	}
 	if len(service.Audiences) != 2 {
@@ -140,12 +140,12 @@ service UserService {
 	if method.ArgumentsData == nil {
 		t.Fatal("arguments data should not be nil")
 	}
-	if method.ArgumentsData.Name != "UserServiceListUsersArguments" {
+	if method.ArgumentsData.Name != "UserApiServiceListUsersArguments" {
 		t.Fatalf("unexpected arguments data name: %q", method.ArgumentsData.Name)
 	}
 
 	result := method.ResultType
-	if result.Kind != model.TypeKindData {
+	if result.Kind != schema.TypeKindData {
 		t.Fatalf("unexpected result kind: %v", result.Kind)
 	}
 	if result.Data == nil || result.Data.Name != "Page" {
@@ -154,7 +154,7 @@ service UserService {
 	if len(result.TypeArguments) != 1 {
 		t.Fatalf("unexpected type arg count: %d", len(result.TypeArguments))
 	}
-	if result.TypeArguments[0].Kind != model.TypeKindData || result.TypeArguments[0].Data.Name != "User" {
+	if result.TypeArguments[0].Kind != schema.TypeKindData || result.TypeArguments[0].Data.Name != "User" {
 		t.Fatalf("unexpected type argument: %+v", result.TypeArguments[0])
 	}
 	if result.Name() != "PageOfUser" {
@@ -165,21 +165,21 @@ service UserService {
 	if len(pageData.TypeParameters) != 1 || pageData.TypeParameters[0].Name != "TItem" {
 		t.Fatalf("unexpected type parameters: %+v", pageData.TypeParameters)
 	}
-	if pageData.Members[0].Type.Kind != model.TypeKindList {
+	if pageData.Members[0].Type.Kind != schema.TypeKindList {
 		t.Fatalf("unexpected items member kind: %v", pageData.Members[0].Type.Kind)
 	}
-	if pageData.Members[0].Type.List.Value.Kind != model.TypeKindTypeParameter {
-		t.Fatalf("unexpected list value kind: %v", pageData.Members[0].Type.List.Value.Kind)
+	if pageData.Members[0].Type.List.Element.Kind != schema.TypeKindTypeParameter {
+		t.Fatalf("unexpected list value kind: %v", pageData.Members[0].Type.List.Element.Kind)
 	}
-	if pageData.Members[0].Type.List.Value.TypeParameter.Name != "TItem" {
-		t.Fatalf("unexpected type parameter name: %q", pageData.Members[0].Type.List.Value.TypeParameter.Name)
+	if pageData.Members[0].Type.List.Element.TypeParameter.Name != "TItem" {
+		t.Fatalf("unexpected type parameter name: %q", pageData.Members[0].Type.List.Element.TypeParameter.Name)
 	}
 	if !pageData.Members[1].Type.Nullable {
 		t.Fatal("nextToken should be nullable")
 	}
 
 	userData := findDataByName(t, domain, "User")
-	if userData.Members[1].Type.Kind != model.TypeKindEnum {
+	if userData.Members[1].Type.Kind != schema.TypeKindEnum {
 		t.Fatalf("unexpected user status kind: %v", userData.Members[1].Type.Kind)
 	}
 	if userData.Members[1].Type.Enum.Name != "UserStatus" {
@@ -190,7 +190,7 @@ service UserService {
 func TestCompileDirectoryIncludesAllDeclarationKinds(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "domain.skel"), describedUserDomain)
-	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\nactor PortalAdminActor { via client {} }\nservice AgentService { for PortalAdminActor\nmethod ping {} }\n")
+	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\nactor PortalAdminActor { via client {} }\napi service AgentApiService { auth required  for PortalAdminActor\nmethod ping {} }\n")
 	writeFile(t, filepath.Join(dir, "types.skel"), "domain demo.user\ndata User { id: int }\nenum UserStatus { ACTIVE }\n")
 
 	result, err := Compile(Option{SkelIn: dir})
@@ -202,7 +202,7 @@ func TestCompileDirectoryIncludesAllDeclarationKinds(t *testing.T) {
 	entryKinds := map[string]bool{}
 	for _, service := range domain.Services() {
 		entryKinds["service"] = true
-		if service.Name != "AgentService" {
+		if service.Name != "AgentApiService" {
 			t.Fatalf("unexpected service: %+v", service)
 		}
 	}

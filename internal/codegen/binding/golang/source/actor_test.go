@@ -1,0 +1,44 @@
+package source
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
+	"go.yorun.ai/skel/schema"
+)
+
+func TestActorInfoIdentifierTag(t *testing.T) {
+	for _, sensitive := range []bool{false, true} {
+		pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
+			Name: "demo.auth",
+			Actors: []*schema.Actor{{
+				Name: "UserActor",
+				Auth: new(schema.ActorAuth{
+					IdentifierField: "userId",
+					Credential:      &schema.Data{Name: "UserActorCredential"},
+					Info: &schema.Data{Name: "UserActorInfo", Members: []*schema.DataMember{
+						{Name: "userId", Type: codegentest.StringType(), Sensitive: sensitive},
+					}},
+				}),
+			}},
+		})
+		outputDir := t.TempDir()
+		gen := newGen(Option{Domain: pkg, View: mustView(t, view.ModeFull, pkg), Mode: view.ModeFull, PackageName: "skeled", Out: outputDir})
+		gen.genActorGo()
+		content, err := os.ReadFile(filepath.Join(outputDir, actorGoFilename))
+		if err != nil {
+			t.Fatal(err)
+		}
+		tag := `json:"userId" skel:"identifier"`
+		if sensitive {
+			tag = `json:"userId" skel:"sensitive,identifier"`
+		}
+		if !strings.Contains(string(content), tag) {
+			t.Fatalf("missing tag %s in generated actor:\n%s", tag, content)
+		}
+	}
+}

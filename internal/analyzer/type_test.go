@@ -1,35 +1,35 @@
 package analyzer
 
 import (
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 	"testing"
 )
 
 func TestTypeContainsBinaryType(t *testing.T) {
-	asset := &model.Data{
+	asset := &schema.Data{
 		Name: "Asset",
-		Members: []*model.DataMember{
+		Members: []*schema.DataMember{
 			{
 				Name: "Payload",
-				Type: &model.Type{
-					Kind:   model.TypeKindScalar,
-					Scalar: model.ScalarBinary,
+				Type: &schema.Type{
+					Kind:   schema.TypeKindScalar,
+					Scalar: schema.ScalarBinary,
 				},
 			},
 		},
 	}
-	wrapper := &model.Type{
-		Kind: model.TypeKindList,
-		List: &model.ListType{
-			Value: &model.Type{
-				Kind: model.TypeKindMap,
-				Map: &model.MapType{
-					Key: &model.Type{
-						Kind:   model.TypeKindScalar,
-						Scalar: model.ScalarString,
+	wrapper := &schema.Type{
+		Kind: schema.TypeKindList,
+		List: &schema.ListType{
+			Element: &schema.Type{
+				Kind: schema.TypeKindMap,
+				Map: &schema.MapType{
+					Key: &schema.Type{
+						Kind:   schema.TypeKindScalar,
+						Scalar: schema.ScalarString,
 					},
-					Value: &model.Type{
-						Kind: model.TypeKindData,
+					Value: &schema.Type{
+						Kind: schema.TypeKindData,
 						Data: asset,
 					},
 				},

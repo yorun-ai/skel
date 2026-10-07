@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skel/internal/compiler"
+	compiler "go.yorun.ai/skel/internal/compiler"
 	"go.yorun.ai/skel/internal/lsp/workspace"
 )
 
-func TestSemanticStrictModePreservesCachedWarningSeverity(t *testing.T) {
+func TestSemanticStrictModePreservesCachedErrors(t *testing.T) {
 	documentURI := uri.File("/workspace/order.skel")
 	document := workspace.BuildDocument(documentURI, documentURI.FsPath(), "domain demo.order\nservice OrderService { method ping {} }\n", 1)
 	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
@@ -22,12 +22,9 @@ func TestSemanticStrictModePreservesCachedWarningSeverity(t *testing.T) {
 	for _, strict := range []bool{false, true, false} {
 		diagnostics, domains, err := SemanticWorkspace(t.Context(), analyzer, sources, paths, strict)
 		require.NoError(t, err)
-		require.Len(t, domains, 1)
+		require.Empty(t, domains)
 		require.Len(t, diagnostics[documentURI], 1)
-		severity := protocol.DiagnosticSeverityWarning
-		if strict {
-			severity = protocol.DiagnosticSeverityError
-		}
+		severity := protocol.DiagnosticSeverityError
 		assert.Equal(t, severity, diagnostics[documentURI][0].Severity)
 	}
 }
@@ -44,6 +41,21 @@ func TestSemanticDiagnosticsDoNotResolveImportsAcrossDomainRoots(t *testing.T) {
 	diagnostics, err := SemanticDiagnostics(context.Background(), compiler.NewWorkspaceAnalyzer(), sources, paths)
 	require.NoError(t, err)
 	assert.Empty(t, diagnostics)
+}
+
+func TestSemanticDiagnosticsRejectImportAliasAtItsSource(t *testing.T) {
+	documentURI := uri.File("/workspace/order.skel")
+	document := workspace.BuildDocument(documentURI, documentURI.FsPath(), "domain app\nimport second as first\nimport first as a\n", 1)
+	sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
+	diagnostics, err := SemanticDiagnostics(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths)
+	require.NoError(t, err)
+	require.Len(t, diagnostics[documentURI], 1)
+	d := diagnostics[documentURI][0]
+	assert.Equal(t, protocol.String(compiler.DiagnosticCodeSemanticDuplicate), d.Code)
+	assert.Equal(t, protocol.Position{Line: 1, Character: 17}, d.Range.Start)
+	assert.Equal(t, protocol.Position{Line: 1, Character: 22}, d.Range.End)
+	require.Len(t, d.RelatedInformation, 1)
+	assert.Equal(t, protocol.Position{Line: 2, Character: 7}, d.RelatedInformation[0].Location.Range.Start)
 }
 
 func TestSemanticDiagnosticsDoNotDuplicateSyntaxErrors(t *testing.T) {

@@ -2,48 +2,48 @@ package analyzer
 
 import (
 	"context"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 type Analysis struct {
 	name        string
 	description string
-	model       *model.Domain
+	schema      *schema.Domain
 
-	imports []*model.Import
+	imports []*schema.Import
 
-	enums     []*model.Enum
-	dataList  []*model.Data
-	configs   []*model.Data
-	events    []*model.Data
-	actors    []*model.Actor
-	resources []*model.Resource
-	webs      []*model.Web
-	services  []*model.Service
-	tasks     []*model.Task
+	enums     []*schema.Enum
+	dataList  []*schema.Data
+	configs   []*schema.Data
+	events    []*schema.Data
+	actors    []*schema.Actor
+	resources []*schema.Resource
+	webs      []*schema.Web
+	services  []*schema.Service
+	tasks     []*schema.Task
 
 	warnings []string
 
 	content *grammar.SkelContent
 
-	enumsMap     map[string]*model.Enum
-	dataMap      map[string]*model.Data
-	actorsMap    map[string]*model.Actor
-	resourcesMap map[string]*model.Resource
-	websMap      map[string]*model.Web
-	servicesMap  map[string]*model.Service
-	tasksMap     map[string]*model.Task
+	enumsMap     map[string]*schema.Enum
+	dataMap      map[string]*schema.Data
+	actorsMap    map[string]*schema.Actor
+	resourcesMap map[string]*schema.Resource
+	websMap      map[string]*schema.Web
+	servicesMap  map[string]*schema.Service
+	tasksMap     map[string]*schema.Task
 	importsMap   map[string]*_DomainImport
 
 	reporter    *_DiagnosticReporter
-	invalidData map[*model.Data]bool
+	invalidData map[*schema.Data]bool
 	unavailable map[string]bool
 }
 
 type _DomainImport struct {
 	Domain *Analysis
-	Model  *model.Import
+	Schema *schema.Import
 }
 
 // Analyze analyzes a domain and explicitly reports independent
@@ -70,7 +70,7 @@ func analyzeContext(ctx context.Context, content *grammar.SkelContent, importedD
 		if ctx.Err() != nil {
 			return nil, nil, ctx.Err()
 		}
-		domainByName[importedDomain.Model().Name()] = importedDomain
+		domainByName[importedDomain.Schema().Name()] = importedDomain
 	}
 	if !domain.load() {
 		if ctx.Err() != nil {
@@ -80,14 +80,22 @@ func analyzeContext(ctx context.Context, content *grammar.SkelContent, importedD
 		return domain, domain.reporter.result(), nil
 	}
 	diagnosticsBeforeImports := len(domain.reporter.errors)
-	if !allowMissingImports {
-		domain.loadImports(domainByName)
+	domain.validateImportNames()
+	if len(domain.reporter.errors) == diagnosticsBeforeImports {
+		if allowMissingImports {
+			domain.loadUnresolvedImports()
+		} else {
+			domain.loadImports(domainByName)
+		}
 	}
 	if ctx.Err() == nil && len(domain.reporter.errors) == diagnosticsBeforeImports {
 		domain.normalizeWithMissingImports(allowMissingImports)
 	}
 	if ctx.Err() == nil && len(domain.reporter.errors) == 0 {
 		domain.finalize()
+		if err := schema.PopulateEffectivePolicies(domain.Schema()); err != nil {
+			domain.reporter.reportf("%s %v", content.Domain.Name.Pos, err)
+		}
 	}
 	if ctx.Err() != nil {
 		return nil, nil, ctx.Err()
@@ -115,52 +123,37 @@ func (p *Analysis) ImportNames() []string {
 	return names
 }
 
-// ImportAliases returns source qualifiers mapped to fully qualified imported
-// domain names without requiring those domains to be loaded.
-func (p *Analysis) ImportAliases() map[string]string {
-	aliases := make(map[string]string, len(p.content.Imports))
-	for _, importDecl := range p.content.Imports {
-		domainName := importDecl.Domain.String()
-		alias := domainName
-		if importDecl.Alias != nil {
-			alias = importDecl.Alias.Value
-		}
-		aliases[alias] = domainName
-	}
-	return aliases
-}
-
 func newAnalysis(content *grammar.SkelContent) *Analysis {
 	return &Analysis{
 		name: "",
 
 		content: content,
 
-		enumsMap:     map[string]*model.Enum{},
-		dataMap:      map[string]*model.Data{},
-		actorsMap:    map[string]*model.Actor{},
-		resourcesMap: map[string]*model.Resource{},
-		websMap:      map[string]*model.Web{},
-		servicesMap:  map[string]*model.Service{},
-		tasksMap:     map[string]*model.Task{},
+		enumsMap:     map[string]*schema.Enum{},
+		dataMap:      map[string]*schema.Data{},
+		actorsMap:    map[string]*schema.Actor{},
+		resourcesMap: map[string]*schema.Resource{},
+		websMap:      map[string]*schema.Web{},
+		servicesMap:  map[string]*schema.Service{},
+		tasksMap:     map[string]*schema.Task{},
 		importsMap:   map[string]*_DomainImport{},
 
 		reporter:    newDiagnosticReporter(),
-		invalidData: map[*model.Data]bool{},
+		invalidData: map[*schema.Data]bool{},
 		unavailable: map[string]bool{},
 	}
 }
 
-func (p *Analysis) Model() *model.Domain {
-	if p.model != nil {
-		return p.model
+func (p *Analysis) Schema() *schema.Domain {
+	if p.schema != nil {
+		return p.schema
 	}
-	p.model = model.NewDomainFromSpec(model.DomainSpec{
+	p.schema = schema.NewDomainFromSpec(schema.DomainSpec{
 		Name: p.name, Description: p.description,
 		Imports: p.imports, Enums: p.enums, Data: p.dataList, Configs: p.configs, Events: p.events,
 		Actors: p.actors, Resources: p.resources, Webs: p.webs, Services: p.services, Tasks: p.tasks,
 	})
-	return p.model
+	return p.schema
 }
 
 func (p *Analysis) Warnings() []string {

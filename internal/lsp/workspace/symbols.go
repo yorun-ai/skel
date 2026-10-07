@@ -5,29 +5,29 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skel/internal/binding"
 	"go.yorun.ai/skel/internal/lsp/source"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 func entryDefinition(entry *grammar.SkelEntry) (string, lexer.Position, protocol.SymbolKind, string) {
-	identifier, kind := binding.Declaration(entry)
+	identifier, kind := symbol.Declaration(entry)
 	if identifier == nil {
 		return "", lexer.Position{}, protocol.SymbolKindNull, ""
 	}
 	protocolKind, detail := protocol.SymbolKindNull, ""
 	switch kind {
-	case binding.Enum:
+	case symbol.Enum:
 		protocolKind, detail = protocol.SymbolKindEnum, "enum"
-	case binding.Data:
+	case symbol.Data:
 		protocolKind, detail = protocol.SymbolKindStruct, "data"
-	case binding.Config:
+	case symbol.Config:
 		protocolKind, detail = protocol.SymbolKindStruct, "config"
-	case binding.Actor:
+	case symbol.Actor:
 		protocolKind, detail = protocol.SymbolKindInterface, "actor"
-	case binding.Resource:
+	case symbol.Resource:
 		protocolKind, detail = protocol.SymbolKindObject, "resource"
-	case binding.Service:
+	case symbol.Service:
 		protocolKind, detail = protocol.SymbolKindInterface, "service"
 		if entry.Service.Ext {
 			detail = "ext service"
@@ -35,14 +35,14 @@ func entryDefinition(entry *grammar.SkelEntry) (string, lexer.Position, protocol
 		if entry.Service.Api {
 			detail = "api service"
 		}
-	case binding.Web:
+	case symbol.Web:
 		protocolKind, detail = protocol.SymbolKindInterface, "web"
-	case binding.Event:
+	case symbol.Event:
 		protocolKind, detail = protocol.SymbolKindEvent, "event"
 		if entry.Event.Ext {
 			detail = "ext event"
 		}
-	case binding.Task:
+	case symbol.Task:
 		protocolKind, detail = protocol.SymbolKindFunction, "task"
 	}
 	return identifier.Value, identifier.Pos, protocolKind, detail

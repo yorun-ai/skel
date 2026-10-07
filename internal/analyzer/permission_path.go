@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func resolveMethodArgumentJsonPath(reporter *_DiagnosticReporter, method *model.Method, path string) (*model.Type, bool) {
+func resolveMethodArgumentJsonPath(reporter *_DiagnosticReporter, method *schema.Method, path string) (*schema.Type, bool) {
 	parts, valid := parsePermissionCheckJsonPath(reporter, path)
 	if !valid || len(parts) == 0 {
 		return nil, false
@@ -59,11 +59,11 @@ func parsePermissionCheckJsonPath(reporter *_DiagnosticReporter, path string) ([
 	return parts, valid
 }
 
-func resolveJsonPathType(reporter *_DiagnosticReporter, type_ *model.Type, parts []_PermissionCheckPathPart, fullPath string) (*model.Type, bool) {
+func resolveJsonPathType(reporter *_DiagnosticReporter, type_ *schema.Type, parts []_PermissionCheckPathPart, fullPath string) (*schema.Type, bool) {
 	if len(parts) == 0 {
 		return type_, true
 	}
-	if !reporter.check(type_ != nil && type_.Kind == model.TypeKindData,
+	if !reporter.check(type_ != nil && type_.Kind == schema.TypeKindData,
 		"require check argument path %s cannot select member on %s", fullPath, typeName(type_)) {
 		return nil, false
 	}
@@ -79,43 +79,43 @@ func resolveJsonPathType(reporter *_DiagnosticReporter, type_ *model.Type, parts
 	return nil, false
 }
 
-func resolveJsonPathPartType(reporter *_DiagnosticReporter, type_ *model.Type, part _PermissionCheckPathPart, remainingParts []_PermissionCheckPathPart, fullPath string) (*model.Type, bool) {
+func resolveJsonPathPartType(reporter *_DiagnosticReporter, type_ *schema.Type, part _PermissionCheckPathPart, remainingParts []_PermissionCheckPathPart, fullPath string) (*schema.Type, bool) {
 	if !part.Wildcard {
 		return resolveJsonPathType(reporter, type_, remainingParts, fullPath)
 	}
-	if !reporter.check(type_ != nil && type_.Kind == model.TypeKindList,
+	if !reporter.check(type_ != nil && type_.Kind == schema.TypeKindList,
 		"require check argument path %s can only use [*] on list, got %s", fullPath, typeName(type_)) {
 		return nil, false
 	}
-	valueType, valid := resolveJsonPathType(reporter, type_.List.Value, remainingParts, fullPath)
+	valueType, valid := resolveJsonPathType(reporter, type_.List.Element, remainingParts, fullPath)
 	if !valid {
 		return nil, false
 	}
-	return &model.Type{Kind: model.TypeKindList, List: &model.ListType{Value: valueType}}, true
+	return &schema.Type{Kind: schema.TypeKindList, List: &schema.ListType{Element: valueType}}, true
 }
 
-func typeName(type_ *model.Type) string {
+func typeName(type_ *schema.Type) string {
 	if type_ == nil {
 		return "<unknown>"
 	}
 	return type_.Name()
 }
 
-func typeEqual(a *model.Type, b *model.Type) bool {
+func typeEqual(a *schema.Type, b *schema.Type) bool {
 	if a == nil || b == nil || a.Kind != b.Kind || a.Nullable != b.Nullable || a.Scalar != b.Scalar || a.SkelName != b.SkelName {
 		return false
 	}
 	switch a.Kind {
-	case model.TypeKindList:
-		return typeEqual(a.List.Value, b.List.Value)
-	case model.TypeKindMap:
+	case schema.TypeKindList:
+		return typeEqual(a.List.Element, b.List.Element)
+	case schema.TypeKindMap:
 		return typeEqual(a.Map.Key, b.Map.Key) && typeEqual(a.Map.Value, b.Map.Value)
 	default:
 		return reflect.DeepEqual(typeArgumentNames(a), typeArgumentNames(b))
 	}
 }
 
-func typeArgumentNames(type_ *model.Type) []string {
+func typeArgumentNames(type_ *schema.Type) []string {
 	values := make([]string, 0, len(type_.TypeArguments))
 	for _, argument := range type_.TypeArguments {
 		values = append(values, argument.Name())

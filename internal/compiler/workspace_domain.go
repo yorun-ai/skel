@@ -197,7 +197,7 @@ func (w *WorkspaceAnalyzer) analyzeResolvedWorkspaceDomain(
 		local = append(local, diagnosticFromError(domain.merged.Pos.Filename, DiagnosticCodeSemanticValidation, analysisError))
 	}
 	if len(local) == 0 {
-		if err := hasher.FillHashes(analysis.Model()); err != nil {
+		if err := hasher.FillHashes(analysis.Schema()); err != nil {
 			local = append(local, diagnosticFromError(domain.merged.Pos.Filename, DiagnosticCodeSemanticValidation, err))
 		}
 	}

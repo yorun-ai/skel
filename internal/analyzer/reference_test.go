@@ -3,32 +3,32 @@ package analyzer
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/schema"
 )
 
 func TestParseTypeAndFixRef(t *testing.T) {
-	page := &model.Data{
+	page := &schema.Data{
 		Name: "Page",
-		Kind: model.DataKindData,
-		TypeParameters: []*model.TypeParameter{
+		Kind: schema.DataKindData,
+		TypeParameters: []*schema.TypeParameter{
 			{Name: "TItem"},
 		},
 	}
-	user := &model.Data{Name: "User", Kind: model.DataKindData}
+	user := &schema.Data{Name: "User", Kind: schema.DataKindData}
 
 	tp := parseTypeTest(t, refGrammarType("Page", refGrammarType("User")))
 	fixTypeRefTest(t, tp, &_RefContext{
-		dataList: map[string]*model.Data{
+		dataList: map[string]*schema.Data{
 			"Page": page,
 			"User": user,
 		},
-		typeParameters: map[string]*model.TypeParameter{
+		typeParameters: map[string]*schema.TypeParameter{
 			"TItem": page.TypeParameters[0],
 		},
 	})
 
-	if tp.Kind != model.TypeKindData {
+	if tp.Kind != schema.TypeKindData {
 		t.Fatalf("unexpected type kind: %v", tp.Kind)
 	}
 	if tp.Data != page {
@@ -43,12 +43,12 @@ func TestParseTypeAndFixRef(t *testing.T) {
 }
 
 func TestTypeRefData(t *testing.T) {
-	user := &model.Data{Name: "User", Kind: model.DataKindData}
-	page := &model.Type{
-		Kind: model.TypeKindData,
-		Data: &model.Data{Name: "Page"},
-		TypeArguments: []*model.Type{
-			{Kind: model.TypeKindData, Data: user},
+	user := &schema.Data{Name: "User", Kind: schema.DataKindData}
+	page := &schema.Type{
+		Kind: schema.TypeKindData,
+		Data: &schema.Data{Name: "Page"},
+		TypeArguments: []*schema.Type{
+			{Kind: schema.TypeKindData, Data: user},
 		},
 	}
 	refs := referencedData(page)
@@ -63,16 +63,16 @@ func TestTypeRefData(t *testing.T) {
 
 func TestParseTypeMapAndNullable(t *testing.T) {
 	typ := parseTypeTest(t, nullableType(mapType(plainType(grammar.String), refGrammarType("User"))))
-	if typ.Kind != model.TypeKindMap {
+	if typ.Kind != schema.TypeKindMap {
 		t.Fatalf("unexpected type kind: %v", typ.Kind)
 	}
 	if !typ.Nullable {
 		t.Fatal("expected nullable map type")
 	}
-	if typ.Map.Key.Kind != model.TypeKindScalar || typ.Map.Key.Scalar != model.ScalarString {
+	if typ.Map.Key.Kind != schema.TypeKindScalar || typ.Map.Key.Scalar != schema.ScalarString {
 		t.Fatalf("unexpected map key: %+v", typ.Map.Key)
 	}
-	if typ.Map.Value.Kind != model.TypeKindUnresolvedReference || typ.Map.Value.SkelName != "User" {
+	if typ.Map.Value.Kind != schema.TypeKindUnresolvedReference || typ.Map.Value.SkelName != "User" {
 		t.Fatalf("unexpected map value: %+v", typ.Map.Value)
 	}
 }
@@ -84,10 +84,10 @@ func TestFixRefReturnsErrorWhenDefinitionMissing(t *testing.T) {
 }
 
 func TestFixRefReturnsErrorWhenGenericTypeArgsMismatch(t *testing.T) {
-	page := &model.Data{
+	page := &schema.Data{
 		Name: "Page",
-		Kind: model.DataKindData,
-		TypeParameters: []*model.TypeParameter{
+		Kind: schema.DataKindData,
+		TypeParameters: []*schema.TypeParameter{
 			{Name: "TItem"},
 		},
 	}
@@ -95,19 +95,19 @@ func TestFixRefReturnsErrorWhenGenericTypeArgsMismatch(t *testing.T) {
 	typ := parseTypeTest(t, refGrammarType("Page", refGrammarType("User"), refGrammarType("Profile")))
 
 	expectFixTypeRefDiagnostic(t, "mismatched type arguments", typ, &_RefContext{
-		dataList: map[string]*model.Data{
+		dataList: map[string]*schema.Data{
 			"Page":    page,
-			"User":    {Name: "User", Kind: model.DataKindData},
-			"Profile": {Name: "Profile", Kind: model.DataKindData},
+			"User":    {Name: "User", Kind: schema.DataKindData},
+			"Profile": {Name: "Profile", Kind: schema.DataKindData},
 		},
 	})
 }
 
 func TestFixRefReturnsErrorWhenGenericTypeArgsMissing(t *testing.T) {
-	page := &model.Data{
+	page := &schema.Data{
 		Name: "Page",
-		Kind: model.DataKindData,
-		TypeParameters: []*model.TypeParameter{
+		Kind: schema.DataKindData,
+		TypeParameters: []*schema.TypeParameter{
 			{Name: "TItem"},
 		},
 	}
@@ -115,7 +115,7 @@ func TestFixRefReturnsErrorWhenGenericTypeArgsMissing(t *testing.T) {
 	typ := parseTypeTest(t, refGrammarType("Page"))
 
 	expectFixTypeRefDiagnostic(t, "need type argument", typ, &_RefContext{
-		dataList: map[string]*model.Data{
+		dataList: map[string]*schema.Data{
 			"Page": page,
 		},
 	})
@@ -131,7 +131,7 @@ func TestFixRefAllowsUUIDMapKey(t *testing.T) {
 	typ := parseTypeTest(t, mapType(plainType(grammar.UUID), plainType(grammar.Int)))
 
 	fixTypeRefTest(t, typ, &_RefContext{})
-	if typ.Map.Key.Kind != model.TypeKindScalar || typ.Map.Key.Scalar != model.ScalarUUID {
+	if typ.Map.Key.Kind != schema.TypeKindScalar || typ.Map.Key.Scalar != schema.ScalarUUID {
 		t.Fatalf("unexpected map key: %+v", typ.Map.Key)
 	}
 }

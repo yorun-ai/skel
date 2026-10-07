@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
-	"go.yorun.ai/skel/internal/compiler"
+	compiler "go.yorun.ai/skel/internal/compiler"
 	lspdiagnostic "go.yorun.ai/skel/internal/lsp/diagnostic"
 )
 

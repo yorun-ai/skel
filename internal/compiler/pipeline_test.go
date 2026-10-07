@@ -32,10 +32,10 @@ func TestPipelineMatchesDiskAndMemoryProviders(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, diagnostics)
 	require.Len(t, domains, 1)
-	require.Equal(t, disk.Domain.Hash(), domains[0].Model.Hash())
+	require.Equal(t, disk.Domain.Hash(), domains[0].Schema.Hash())
 }
 
-func TestPipelineOptionsSeparateUnresolvedImportsAndRejectPartialModels(t *testing.T) {
+func TestPipelineOptionsSeparateUnresolvedImportsAndRejectPartialSchemas(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "input.skel")
 	writeFile(t, path, "domain demo\nimport shared\ndata Value { other: shared.Value }\n")
 	_, err := Compile(Option{SkelIn: path})

@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/alecthomas/participle/v2/lexer"
-	"go.yorun.ai/skel/internal/model"
 	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/internal/util/nameutil"
+	"go.yorun.ai/skel/schema"
 )
 
-func buildResourceCheckService(domainName string, resource *model.Resource) *model.Service {
-	methods := []*model.Method{}
+func buildResourceCheckService(domainName string, resource *schema.Resource) *schema.Service {
+	methods := []*schema.Method{}
 	serviceName := resource.Name + "CheckService"
 	for _, check := range resource.Checks {
 		methods = append(methods, prepareResourceCheckMethod(domainName, serviceName, check))
@@ -23,16 +23,16 @@ func buildResourceCheckService(domainName string, resource *model.Resource) *mod
 	if len(methods) == 0 {
 		return nil
 	}
-	return &model.Service{
+	return &schema.Service{
 		Pos:      resource.Pos,
 		Name:     serviceName,
 		SkelName: domainName + "." + serviceName,
-		Auth:     model.AuthModeRequired,
+		AuthMode: schema.AuthModeRequired,
 		Methods:  methods,
 	}
 }
 
-func prepareResourceCheckMethod(domainName string, serviceName string, check *model.ResourceCheck) *model.Method {
+func prepareResourceCheckMethod(domainName string, serviceName string, check *schema.ResourceCheck) *schema.Method {
 	method := check.Method
 	if method.ArgumentsData != nil {
 		method.ArgumentsData.Name = serviceName + method.ArgumentsData.Name
@@ -42,7 +42,7 @@ func prepareResourceCheckMethod(domainName string, serviceName string, check *mo
 	return method
 }
 
-func parseResource(reporter *_DiagnosticReporter, ge *grammar.Resource, pub bool) (*model.Resource, bool) {
+func parseResource(reporter *_DiagnosticReporter, ge *grammar.Resource, pub bool) (*schema.Resource, bool) {
 	valid := checkCase(reporter, "Resource", caseTypeCamel, ge.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, ge.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -51,7 +51,7 @@ func parseResource(reporter *_DiagnosticReporter, ge *grammar.Resource, pub bool
 	valid = metaValid && valid
 	valid = reporter.checkNot(meta.HasExample, "%s resource does not support decorator @example", ge.Name.Pos) && valid
 
-	checks := make([]*model.ResourceCheck, 0, len(ge.Checks))
+	checks := make([]*schema.ResourceCheck, 0, len(ge.Checks))
 	checkPos := map[string]lexer.Position{}
 	for _, grammarCheck := range ge.Checks {
 		if reporter.cancelled() {
@@ -69,7 +69,7 @@ func parseResource(reporter *_DiagnosticReporter, ge *grammar.Resource, pub bool
 		checks = append(checks, check)
 	}
 
-	actions := make([]*model.ResourceAction, 0, len(ge.Actions))
+	actions := make([]*schema.ResourceAction, 0, len(ge.Actions))
 	actionPos := map[string]lexer.Position{}
 	for _, grammarAction := range ge.Actions {
 		if reporter.cancelled() {
@@ -88,7 +88,7 @@ func parseResource(reporter *_DiagnosticReporter, ge *grammar.Resource, pub bool
 	}
 	valid = reporter.check(len(actions) > 0, "%s resource %s must have at least one action", ge.Name.Pos, ge.Name.Value) && valid
 
-	return &model.Resource{
+	return &schema.Resource{
 		Pos:              position(ge.Name.Pos),
 		Name:             ge.Name.Value,
 		Description:      meta.Description,
@@ -100,7 +100,7 @@ func parseResource(reporter *_DiagnosticReporter, ge *grammar.Resource, pub bool
 	}, valid
 }
 
-func parseResourceAction(reporter *_DiagnosticReporter, ga *grammar.ResourceAction, resourceCheckPos map[string]lexer.Position) (*model.ResourceAction, bool) {
+func parseResourceAction(reporter *_DiagnosticReporter, ga *grammar.ResourceAction, resourceCheckPos map[string]lexer.Position) (*schema.ResourceAction, bool) {
 	valid := checkCase(reporter, "ResourceAction", caseTypeLowerCamel, ga.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, ga.Decorators, _DecoratorContext{
 		allowDesc:       true,
@@ -109,7 +109,7 @@ func parseResourceAction(reporter *_DiagnosticReporter, ga *grammar.ResourceActi
 	valid = metaValid && valid
 	valid = reporter.checkNot(meta.HasExample, "%s resource action does not support decorator @example", ga.Name.Pos) && valid
 
-	checks := make([]*model.ResourceCheck, 0, len(ga.Checks))
+	checks := make([]*schema.ResourceCheck, 0, len(ga.Checks))
 	checkPos := map[string]lexer.Position{}
 	for _, grammarCheck := range ga.Checks {
 		if reporter.cancelled() {
@@ -132,7 +132,7 @@ func parseResourceAction(reporter *_DiagnosticReporter, ga *grammar.ResourceActi
 		checks = append(checks, check)
 	}
 
-	return &model.ResourceAction{
+	return &schema.ResourceAction{
 		Pos:              position(ga.Name.Pos),
 		Name:             ga.Name.Value,
 		Description:      meta.Description,
@@ -142,14 +142,14 @@ func parseResourceAction(reporter *_DiagnosticReporter, ga *grammar.ResourceActi
 	}, valid
 }
 
-func parseResourceCheck(reporter *_DiagnosticReporter, actionName string, gc *grammar.ResourceCheck) (*model.ResourceCheck, bool) {
+func parseResourceCheck(reporter *_DiagnosticReporter, actionName string, gc *grammar.ResourceCheck) (*schema.ResourceCheck, bool) {
 	valid := checkCase(reporter, "ResourceCheck", caseTypeLowerCamel, gc.Name)
 	meta, metaValid := parseDecoratorMeta(reporter, gc.Decorators, _DecoratorContext{
 		allowDesc:       true,
 		allowDeprecated: true,
 	})
 	valid = metaValid && valid
-	args := []*model.Argument{}
+	args := []*schema.Argument{}
 	argPos := map[string]lexer.Position{}
 	inputDescription := ""
 	inputSensitive := false
@@ -187,30 +187,30 @@ func parseResourceCheck(reporter *_DiagnosticReporter, actionName string, gc *gr
 		}
 		codeArgument.Name = fmt.Sprintf("code%d", suffix)
 	}
-	args = append([]*model.Argument{codeArgument}, args...)
+	args = append([]*schema.Argument{codeArgument}, args...)
 	methodName := "check" + nameutil.ToCamel(actionName) + nameutil.ToCamel(gc.Name.Value)
 	if actionName == "" {
 		methodName = "check" + nameutil.ToCamel(gc.Name.Value)
 	}
-	method := &model.Method{
+	method := &schema.Method{
 		Pos:                position(gc.Name.Pos),
 		Name:               methodName,
 		SkelName:           methodName,
 		Description:        meta.Description,
 		Deprecated:         meta.Deprecated,
 		DeprecatedReason:   meta.DeprecatedReason,
-		Auth:               model.AuthModeRequired,
+		AuthMode:           schema.AuthModeRequired,
 		Arguments:          args,
 		InputDescription:   inputDescription,
 		ArgumentsSensitive: inputSensitive,
 	}
 	if len(args) > 0 {
-		method.ArgumentsData = &model.Data{
+		method.ArgumentsData = &schema.Data{
 			Name:    fmt.Sprintf("%sArguments", nameutil.ToCamel(method.Name)),
 			Members: buildArgumentMembers(method.Arguments),
 		}
 	}
-	return &model.ResourceCheck{
+	return &schema.ResourceCheck{
 		Name:             gc.Name.Value,
 		Deprecated:       meta.Deprecated,
 		DeprecatedReason: meta.DeprecatedReason,
@@ -218,10 +218,10 @@ func parseResourceCheck(reporter *_DiagnosticReporter, actionName string, gc *gr
 	}, valid
 }
 
-func newPermissionCodeArgument() *model.Argument {
-	return &model.Argument{
+func newPermissionCodeArgument() *schema.Argument {
+	return &schema.Argument{
 		Name:   "code",
-		Source: model.ArgumentSourcePermissionCode,
-		Type:   &model.Type{Kind: model.TypeKindScalar, Scalar: model.ScalarString},
+		Source: schema.ArgumentSourcePermissionCode,
+		Type:   &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString},
 	}
 }

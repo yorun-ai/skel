@@ -4,16 +4,16 @@ import (
 	"slices"
 
 	"go.lsp.dev/protocol"
-	"go.yorun.ai/skel/internal/binding"
 	"go.yorun.ai/skel/internal/lsp/source"
+	"go.yorun.ai/skel/internal/symbol"
 )
 
 func indexOccurrences(document *Document) []Occurrence {
-	return bindOccurrences(document, func(id binding.SymbolID) []binding.Symbol {
-		result := []binding.Symbol{}
-		for _, symbol := range document.Bindings.Symbols {
-			if symbol.ID == id {
-				result = append(result, symbol)
+	return bindOccurrences(document, func(id symbol.SymbolID) []symbol.Symbol {
+		result := []symbol.Symbol{}
+		for _, declaration := range document.Bindings.Symbols {
+			if declaration.ID == id {
+				result = append(result, declaration)
 			}
 		}
 		return result
@@ -22,21 +22,21 @@ func indexOccurrences(document *Document) []Occurrence {
 
 // bindOccurrences projects shared bindings into LSP ranges. The workspace
 // supplies input-scoped lookup so references can resolve across source files.
-func bindOccurrences(document *Document, lookup binding.Lookup) []Occurrence {
+func bindOccurrences(document *Document, lookup symbol.Lookup) []Occurrence {
 	occurrences := []Occurrence{}
 	seen := map[protocol.Range]bool{}
-	add := func(id binding.SymbolID, range_ protocol.Range, resolution binding.Resolution) {
+	add := func(id symbol.SymbolID, range_ protocol.Range, resolution symbol.Resolution) {
 		if !seen[range_] {
 			seen[range_] = true
 			occurrences = append(occurrences, Occurrence{Key: id.Key(), Range: range_, Binding: resolution})
 		}
 	}
-	for _, symbol := range document.Bindings.Symbols {
-		add(symbol.ID, document.Buffer.Range(symbol.Span.Start, symbol.Span.End), binding.Resolution{Target: symbol.ID, Kind: symbol.Kind, Status: binding.Resolved})
+	for _, declaration := range document.Bindings.Symbols {
+		add(declaration.ID, document.Buffer.Range(declaration.Span.Start, declaration.Span.End), symbol.Resolution{Target: declaration.ID, Kind: declaration.Kind, Status: symbol.Resolved})
 	}
 	for _, reference := range document.Bindings.References {
-		resolved := binding.Resolve(reference, document.Bindings.Imports, lookup)
-		if resolved.Status != binding.UnknownImport {
+		resolved := symbol.Resolve(reference, document.Bindings.Imports, lookup)
+		if resolved.Status != symbol.UnknownImport {
 			add(resolved.Target, document.Buffer.Range(reference.Span.Start, reference.Span.End), resolved)
 		}
 	}

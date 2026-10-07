@@ -9,29 +9,38 @@
 
 ## Architecture Boundaries
 
-- `cmd/skelc` is the executable entry point; keep it thin and delegate CLI behavior to `internal/cli`.
-- `internal/cli` owns command definitions, flag-specific validation, terminal output, and exit codes. Generation commands call the root `skel` API; input normalization, target-option normalization, and output-directory lifecycle must not be duplicated in CLI code.
-- Keep source loading, syntax parsing, semantic analysis and compatibility hashing separate. `internal/compiler` coordinates them and owns recovery, diagnostics, imports and incremental analysis; `internal/model` remains parser-independent.
+- `types` directly defines portable Skel Go scalar values and their JSON/CBOR encodings. Keep it independent of compiler models, schemas, generators, Vine, and vRPC. All Go generation modes use `go.yorun.ai/skel/types` for scalar values; application registration and schema metadata remain separate.
+- `tag` directly owns Go struct-tag interpretation through semantic helpers. Keep generic flag parsing private and runtime behavior such as redaction, actor registration and argument-range validation in consumers; the package must not depend on compiler models or application runtimes.
+
+- `cmd/skelc/output` exposes CLI result, error and exit-code contracts through `internal/cmd/skelc/output`; keep command execution in `internal/cmd/skelc`.
+- `cmd/skelc` is the executable entry point; keep it thin and delegate CLI behavior to `internal/cmd/skelc`.
+- `internal/cmd/skelc` owns command definitions, flag-specific validation, terminal output, and exit codes. Generation commands call the public `api` package; input normalization, target-option normalization, and output-directory lifecycle must not be duplicated in CLI code.
+- `internal/compiler` is the source-compilation orchestration package; CLI implementation and output contracts belong to `internal/cmd/skelc`, while shared option validation lives in `internal/optionvalidation`. LSP, formatting and generation remain independent capabilities.
+- Keep source loading, syntax parsing, semantic analysis and compatibility hashing separate. `internal/compiler` coordinates them and owns recovery, diagnostics, imports and incremental analysis; `schema` remains parser-independent.
+- `internal/symbol` owns shared declaration identities, scopes and name resolution for semantic analysis and language tooling, including recovered syntax. Keep semantic validation in `internal/analyzer`; target-language bindings belong to `internal/codegen/binding`.
 - `internal/source` owns immutable document revisions and byte locations; `internal/loader` owns input discovery and filesystem, memory, and Git providers.
-- `internal/schema` owns canonical schema projection, validation and diffing without compiler or input-loading dependencies. `internal/schema/sourcediff` coordinates compilation and source baselines for CLI and LSP comparisons. `internal/codegen/golang/vineschema` adapts the pure projection to Vine with runtime metadata only.
-- Target generators live in `internal/codegen/{golang,skeleton,typescript}`. Shared helpers in `internal/codegen/common` must not depend on a target generator; `internal/codegen/output` owns managed multi-target transactions.
-- Keep module metadata generation in its target generator package. TypeScript rendering and template payloads belong to `internal/codegen/typescript`; Go source rendering and Vine schema adaptation retain their separate boundaries.
+- `schema` directly owns semantic declarations, source positions and graph links without parsing or input loading. `descriptor` owns runtime metadata with named references, no source locations or compiler dependencies, and full `Permission` names. `schema/diff` compares semantic domains directly using named reference identities; source positions, hashes and derived runtime graphs do not determine equality. CLI JSON declaration shapes and serialization belong to `internal/cmd/skelc/output`; do not introduce a shared snapshot model. `internal/sourcediff` coordinates compilation and source baselines for CLI and LSP comparisons. `internal/codegen/binding/golang/descriptor` converts semantic schemas directly into public descriptors and emits `RegisterDomainDescriptor` calls.
+- Target generators live in `internal/codegen/binding/{golang,skeleton,typescript}`. `internal/codegen` owns SDK inputs, declaration selection, type traversal and execution. `internal/codegen/binding` owns shared rendering and import helpers and must not depend on a target generator. `internal/codegen/output` owns generated-file markers and managed multi-target transactions; it must not depend on the SDK or binding implementations.
+- Target-language naming constraints belong to the corresponding binding. In particular, Go validates sensitive marker field/method collisions only for emitted structures; `skelSensitive` is not a language-level reserved field.
+- Keep module metadata generation in its target generator package. TypeScript rendering and template payloads belong to `internal/codegen/binding/typescript`; Go source rendering and Vine schema adaptation retain their separate boundaries.
 - `internal/lsp/workspace` owns document indexing, workspace state and immutable snapshots; analysis scheduling and language features consume those snapshots.
+- `internal/location` owns shared source-position values used by schema, semantic models and diagnostics. Reusable helpers stay in `internal/util`; language capabilities remain peer packages under `internal`, regardless of which tools consume them.
+- Semantic failure values and reference-cycle algorithms belong to `internal/analyzer`; terminal log formatting belongs to `internal/cmd/skelc`. Do not extract capability-local implementation details into generic utility packages.
 - Prefer cohesive packages with responsibility-specific files. Add a package only for a meaningful dependency, ownership or reuse boundary, not for each implementation stage or helper.
 - `internal/formatter` owns pure Skel source formatting. The CLI owns in-place formatting and must validate all applicable inputs before writing files so a failed operation does not leave a partially updated source tree.
-- Keep implementation packages under `internal` unless they form part of the supported programmatic API. The root `skel` facade exposes parsing and generation, while `model` exposes parser-independent semantic data required by custom generators. Keep public facade packages limited to aliases, constants, and narrowly scoped function forwarding to their matching implementation package.
+- Keep implementation packages under `internal` unless they form part of the supported programmatic API. The public `api` package is a facade over `internal/api`, which owns source-input adaptation, source inspection and cross-capability orchestration. Target-option normalization belongs to target generators; `codegen` exposes the shared generator SDK and managed execution boundary. The API implementation composes the core pipeline and independent generators; the core must not depend on this adapter. The root `skel` package does not expose toolchain APIs. `schema` exposes parser-independent semantic data. `codegen.Input` borrows that graph read-only and supplies generation selection, lookup and traversal; do not duplicate declarations in a separate generator model or write target-language metadata back to the graph. Public facade packages remain limited to aliases, constants, and narrowly scoped function forwarding to their matching implementation package. The public `schema`, `descriptor` and `types` packages own their implementations directly; do not add matching internal packages or forwarding layers.
 
 ## Language and Compatibility
 
 - Treat the Skel grammar, accepted legacy syntax, diagnostics, CLI flags, exit codes, JSON/JSONL fields, generated filenames, generated APIs, and generated module metadata as public compatibility boundaries.
-- When changing Skel syntax, coordinate affected grammar, semantic model, formatter, generators and tests. Check the language and CLI references for descriptions made inaccurate by the change.
+- When changing Skel syntax, coordinate affected grammar, semantic schema, formatter, generators and tests. Check the language and CLI references for descriptions made inaccurate by the change.
 - When changing generated code, update every affected language backend and golden or structural tests. Confirm that generated Go code remains compatible with the declared Vine version.
 - Keep deterministic behavior: input discovery, symbols, imports, dependencies, diagnostics, and generated files must have stable ordering.
 - Do not add silent recovery for invalid contracts. Diagnostics should identify the relevant source path and location whenever available.
 
 ## Generated Artifacts
 
-- Modify generator templates under the relevant `internal/codegen/{golang,skeleton,typescript}` package rather than patching expected generated output behavior elsewhere.
+- Modify generator templates under the relevant `internal/codegen/binding/{golang,skeleton,typescript}` package rather than patching expected generated output behavior elsewhere.
 - Editor integrations live in the independent `yorun-ai/skel-editor-support` repository. Keep editor client code and Marketplace packaging out of skelc; coordinate LSP compatibility across the two repositories.
 
 ## Documentation
@@ -69,6 +78,7 @@
 
 - Keep implementation tests paired with their source files. Shared setup may live in a narrowly scoped test helper file.
 - Name unit tests `<source>_test.go`. For larger suites or integration scenarios, use `<entrypoint>_<scenario>_test.go`; name tests after the current entrypoint rather than a removed API.
+- Group generator scenarios by stable responsibilities such as documentation, services, schemas, and extension contracts; keep related regressions in the same file. Cross-binding selection and shared-schema integration tests belong in `api`. Binding-specific output tests stay with the binding, including tests that consume generated public Skel as a fixture.
 - Use `<subject>_benchmark_test.go` and `<subject>_fuzz_test.go` for dedicated benchmark and fuzz files. Keep shared setup in `test_helper_test.go` or `<subject>_helper_test.go`; avoid vague names such as `performance_test.go` and `api_util_test.go`.
 - Preserve tests for currently supported compatibility behavior. Remove retired-feature assertions only after confirming the support boundary, and exercise production entrypoints instead of recreating removed production pipelines in test helpers.
 - Use `t.TempDir` for filesystem tests and `t.Cleanup` to restore modified globals or environment variables.

@@ -1,23 +1,23 @@
 package hasher
 
-import "go.yorun.ai/skel/internal/model"
+import "go.yorun.ai/skel/schema"
 
 type _HashState struct {
-	domain      *model.Domain
-	enumBySkel  map[string]*model.Enum
-	dataBySkel  map[string]*model.Data
-	actorBySkel map[string]*model.Actor
+	domain      *schema.Domain
+	enumBySkel  map[string]*schema.Enum
+	dataBySkel  map[string]*schema.Data
+	actorBySkel map[string]*schema.Actor
 	status      map[string]bool
 	cache       map[string]string
 	err         error
 }
 
-func newHashState(domain *model.Domain) *_HashState {
+func newHashState(domain *schema.Domain) *_HashState {
 	state := &_HashState{
 		domain:      domain,
-		enumBySkel:  map[string]*model.Enum{},
-		dataBySkel:  map[string]*model.Data{},
-		actorBySkel: map[string]*model.Actor{},
+		enumBySkel:  map[string]*schema.Enum{},
+		dataBySkel:  map[string]*schema.Data{},
+		actorBySkel: map[string]*schema.Actor{},
 		status:      map[string]bool{},
 		cache:       map[string]string{},
 	}
@@ -39,7 +39,7 @@ func newHashState(domain *model.Domain) *_HashState {
 	return state
 }
 
-func (s *_HashState) enumHash(enum *model.Enum) string {
+func (s *_HashState) enumHash(enum *schema.Enum) string {
 	return s.memoHash("enum", enum.SkelName, func() string {
 		return s.hashValue(_EnumHashValue{
 			Name:             enum.Name,
@@ -52,7 +52,7 @@ func (s *_HashState) enumHash(enum *model.Enum) string {
 	})
 }
 
-func (s *_HashState) dataHash(data *model.Data) string {
+func (s *_HashState) dataHash(data *schema.Data) string {
 	return s.memoHash(string(data.Kind), data.SkelName, func() string {
 		return s.hashValue(_DataHashValue{
 			Name:             data.Name,
@@ -71,10 +71,10 @@ func (s *_HashState) dataHash(data *model.Data) string {
 	})
 }
 
-func (s *_HashState) webHash(web *model.Web) string {
+func (s *_HashState) webHash(web *schema.Web) string {
 	return s.memoHash("web", web.SkelName, func() string {
-		auth := web.Auth
-		if auth == model.AuthModeUnset {
+		auth := web.AuthMode
+		if auth == schema.AuthModeUnset {
 			auth = ""
 		}
 		return s.hashValue(_WebHashValue{Auth: auth,
@@ -89,45 +89,47 @@ func (s *_HashState) webHash(web *model.Web) string {
 	})
 }
 
-func (s *_HashState) actorHash(actor *model.Actor) string {
+func (s *_HashState) actorHash(actor *schema.Actor) string {
 	return s.memoHash("actor", actor.SkelName, func() string {
+		var identifierField string
 		var authCredentialName string
 		var authCredentialHash string
 		var authInfoName string
 		var authInfoHash string
 		var authMethodName string
 		var authMethodHash string
-		if actor.AuthEnabled {
-			authCredentialName = actor.AuthCredential.SkelName
-			authCredentialHash = s.dataHash(actor.AuthCredential)
-			authInfoName = actor.AuthInfo.SkelName
-			authInfoHash = s.dataHash(actor.AuthInfo)
-			authMethodName = actor.AuthMethod.SkelName
-			authMethodHash = s.methodHash(actor.AuthMethod)
+		if actor.Auth != nil {
+			identifierField = actor.Auth.IdentifierField
+			authCredentialName = actor.Auth.Credential.SkelName
+			authCredentialHash = s.dataHash(actor.Auth.Credential)
+			authInfoName = actor.Auth.Info.SkelName
+			authInfoHash = s.dataHash(actor.Auth.Info)
+			authMethodName = actor.Auth.Method.SkelName
+			authMethodHash = s.methodHash(actor.Auth.Method)
 		}
 		var permMethodName string
 		var permMethodHash string
-		if actor.PermMethod != nil {
-			permMethodName = actor.PermMethod.SkelName
-			permMethodHash = s.methodHash(actor.PermMethod)
+		if actor.Permission != nil && actor.Permission.Method != nil {
+			permMethodName = actor.Permission.Method.SkelName
+			permMethodHash = s.methodHash(actor.Permission.Method)
 		}
 		return s.hashValue(_ActorHashValue{
-			IdentifierField:    actor.IdentifierField,
+			IdentifierField:    identifierField,
 			Name:               actor.Name,
 			SkelName:           actor.SkelName,
 			Description:        actor.Description,
 			Deprecated:         actor.Deprecated,
 			DeprecatedReason:   actor.DeprecatedReason,
 			Vias:               buildActorViaNames(actor.Vias),
-			AuthEnabled:        actor.AuthEnabled,
+			AuthEnabled:        actor.Auth != nil,
 			AuthCredential:     authCredentialName,
 			AuthCredentialHash: authCredentialHash,
 			AuthInfo:           authInfoName,
 			AuthInfoHash:       authInfoHash,
 			AuthMethod:         authMethodName,
 			AuthMethodHash:     authMethodHash,
-			PermEnabled:        actor.PermEnabled,
-			PermMethod:         permMethodName,
+			PermissionEnabled:  actor.Permission != nil,
+			PermissionMethod:   permMethodName,
 			PermMethodHash:     permMethodHash,
 		})
 	})

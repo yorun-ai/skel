@@ -41,28 +41,28 @@ func TestParseActor(t *testing.T) {
 	if len(actor.Vias) != 2 || actor.Vias[0].Name != "client" || actor.Vias[1].Name != "openapi" {
 		t.Fatalf("unexpected actor vias: %+v", actor.Vias)
 	}
-	if actor.AuthCredential == nil || actor.AuthCredential.Name != "PortalAdminActorCredential" {
-		t.Fatalf("unexpected actor credential: %+v", actor.AuthCredential)
+	if actor.Auth.Credential == nil || actor.Auth.Credential.Name != "PortalAdminActorCredential" {
+		t.Fatalf("unexpected actor credential: %+v", actor.Auth.Credential)
 	}
-	if !actor.AuthCredential.Pub {
+	if !actor.Auth.Credential.Pub {
 		t.Fatal("expected actor credential to follow actor pub")
 	}
-	if len(actor.AuthCredential.Members) != 1 || actor.AuthCredential.Members[0].Name != "subject" {
-		t.Fatalf("unexpected actor credential members: %+v", actor.AuthCredential.Members)
+	if len(actor.Auth.Credential.Members) != 1 || actor.Auth.Credential.Members[0].Name != "subject" {
+		t.Fatalf("unexpected actor credential members: %+v", actor.Auth.Credential.Members)
 	}
-	if !actor.AuthCredential.Sensitive {
+	if !actor.Auth.Credential.Sensitive {
 		t.Fatal("expected actor credential to be sensitive as a whole")
 	}
-	if actor.AuthInfo == nil || actor.AuthInfo.Name != "PortalAdminActorInfo" {
-		t.Fatalf("unexpected actor info: %+v", actor.AuthInfo)
+	if actor.Auth.Info == nil || actor.Auth.Info.Name != "PortalAdminActorInfo" {
+		t.Fatalf("unexpected actor info: %+v", actor.Auth.Info)
 	}
-	if !actor.AuthInfo.Pub {
+	if !actor.Auth.Info.Pub {
 		t.Fatal("expected actor info to follow actor pub")
 	}
-	if len(actor.AuthInfo.Members) != 1 || actor.AuthInfo.Members[0].Name != "userId" {
-		t.Fatalf("unexpected actor info members: %+v", actor.AuthInfo.Members)
+	if len(actor.Auth.Info.Members) != 1 || actor.Auth.Info.Members[0].Name != "userId" {
+		t.Fatalf("unexpected actor info members: %+v", actor.Auth.Info.Members)
 	}
-	if !actor.AuthInfo.Sensitive {
+	if !actor.Auth.Info.Sensitive {
 		t.Fatal("expected actor info to be sensitive as a whole")
 	}
 }
@@ -104,7 +104,7 @@ func TestParseActorAcceptsNullableCredentialMember(t *testing.T) {
 		},
 	})
 
-	if !actor.AuthCredential.Members[0].Type.Nullable {
+	if !actor.Auth.Credential.Members[0].Type.Nullable {
 		t.Fatal("credential field lost its nullable type")
 	}
 }
@@ -220,11 +220,11 @@ func TestActorIdentifier(t *testing.T) {
 			if valid != tt.valid {
 				t.Fatalf("valid=%v diagnostics=%v", valid, reporter.result())
 			}
-			if valid && tt.name != "optional marker" && actor.IdentifierField != "id" {
-				t.Fatalf("identifier = %q", actor.IdentifierField)
+			if valid && tt.name != "optional marker" && actor.Auth.IdentifierField != "id" {
+				t.Fatalf("identifier = %q", actor.Auth.IdentifierField)
 			}
 			again, validAgain := parseActor(newDiagnosticReporter(), content.Entries[0].Actor)
-			if validAgain != valid || again.IdentifierField != actor.IdentifierField {
+			if validAgain != valid || again.Auth.IdentifierField != actor.Auth.IdentifierField {
 				t.Fatal("analysis mutated source")
 			}
 		})

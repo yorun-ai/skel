@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 )
 
-func buildEnumItemHashValues(items []*model.EnumItem) []*_EnumItemHashValue {
+func buildEnumItemHashValues(items []*schema.EnumItem) []*_EnumItemHashValue {
 	values := make([]*_EnumItemHashValue, 0, len(items))
 	for _, item := range items {
 		values = append(values, &_EnumItemHashValue{
@@ -20,7 +20,7 @@ func buildEnumItemHashValues(items []*model.EnumItem) []*_EnumItemHashValue {
 	return values
 }
 
-func buildTypeParameterNames(items []*model.TypeParameter) []string {
+func buildTypeParameterNames(items []*schema.TypeParameter) []string {
 	values := make([]string, 0, len(items))
 	for _, item := range items {
 		values = append(values, item.Name)
@@ -28,7 +28,7 @@ func buildTypeParameterNames(items []*model.TypeParameter) []string {
 	return values
 }
 
-func buildActorViaNames(items []*model.ActorVia) []string {
+func buildActorViaNames(items []*schema.ActorVia) []string {
 	values := make([]string, 0, len(items))
 	for _, item := range items {
 		values = append(values, string(item.Name))
@@ -36,7 +36,7 @@ func buildActorViaNames(items []*model.ActorVia) []string {
 	return values
 }
 
-func (s *_HashState) buildMemberHashValues(items []*model.DataMember) []*_MemberHashValue {
+func (s *_HashState) buildMemberHashValues(items []*schema.DataMember) []*_MemberHashValue {
 	values := make([]*_MemberHashValue, 0, len(items))
 	for _, item := range items {
 		values = append(values, &_MemberHashValue{
@@ -52,7 +52,7 @@ func (s *_HashState) buildMemberHashValues(items []*model.DataMember) []*_Member
 	return values
 }
 
-func (s *_HashState) buildArgumentHashValues(items []*model.Argument) []*_MemberHashValue {
+func (s *_HashState) buildArgumentHashValues(items []*schema.Argument) []*_MemberHashValue {
 	values := make([]*_MemberHashValue, 0, len(items))
 	for _, item := range items {
 		values = append(values, &_MemberHashValue{
@@ -68,7 +68,7 @@ func (s *_HashState) buildArgumentHashValues(items []*model.Argument) []*_Member
 	return values
 }
 
-func (s *_HashState) buildTypeHashValue(typeMeta *model.Type) *_TypeHashValue {
+func (s *_HashState) buildTypeHashValue(typeMeta *schema.Type) *_TypeHashValue {
 	if typeMeta == nil {
 		return nil
 	}
@@ -80,11 +80,11 @@ func (s *_HashState) buildTypeHashValue(typeMeta *model.Type) *_TypeHashValue {
 		SkelName: typeMeta.SkelName,
 	}
 	switch typeMeta.Kind {
-	case model.TypeKindEnum:
+	case schema.TypeKindEnum:
 		if enum := s.enumBySkel[typeMeta.SkelName]; enum != nil {
 			value.Hash = s.enumHash(enum)
 		}
-	case model.TypeKindData:
+	case schema.TypeKindData:
 		if data := s.dataBySkel[typeMeta.SkelName]; data != nil {
 			value.Hash = s.dataHash(data)
 		}
@@ -96,7 +96,7 @@ func (s *_HashState) buildTypeHashValue(typeMeta *model.Type) *_TypeHashValue {
 		}
 	}
 	if typeMeta.List != nil {
-		value.Element = s.buildTypeHashValue(typeMeta.List.Value)
+		value.Element = s.buildTypeHashValue(typeMeta.List.Element)
 	}
 	if typeMeta.Map != nil {
 		value.Key = s.buildTypeHashValue(typeMeta.Map.Key)
@@ -105,37 +105,37 @@ func (s *_HashState) buildTypeHashValue(typeMeta *model.Type) *_TypeHashValue {
 	return value
 }
 
-func typeKindName(typeMeta *model.Type) string {
+func typeKindName(typeMeta *schema.Type) string {
 	switch typeMeta.Kind {
-	case model.TypeKindScalar:
+	case schema.TypeKindScalar:
 		return "scalar"
-	case model.TypeKindList:
+	case schema.TypeKindList:
 		return "list"
-	case model.TypeKindMap:
+	case schema.TypeKindMap:
 		return "map"
-	case model.TypeKindEnum:
+	case schema.TypeKindEnum:
 		return "enum"
-	case model.TypeKindData:
+	case schema.TypeKindData:
 		return string(typeMeta.Data.Kind)
-	case model.TypeKindTypeParameter:
+	case schema.TypeKindTypeParameter:
 		return "typeParameter"
 	default:
 		return fmt.Sprintf("unknown:%d", typeMeta.Kind)
 	}
 }
 
-func scalarName(typeMeta *model.Type) string {
-	if typeMeta.Kind != model.TypeKindScalar {
+func scalarName(typeMeta *schema.Type) string {
+	if typeMeta.Kind != schema.TypeKindScalar {
 		return ""
 	}
 	return strings.ToLower(typeMeta.Scalar.Name())
 }
 
-func typeName(typeMeta *model.Type) string {
+func typeName(typeMeta *schema.Type) string {
 	switch typeMeta.Kind {
-	case model.TypeKindScalar:
+	case schema.TypeKindScalar:
 		return ""
-	case model.TypeKindList, model.TypeKindMap:
+	case schema.TypeKindList, schema.TypeKindMap:
 		return ""
 	default:
 		return typeMeta.Name()

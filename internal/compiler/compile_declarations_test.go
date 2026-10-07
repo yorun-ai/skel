@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	"go.yorun.ai/skel/internal/model"
+	"go.yorun.ai/skel/schema"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -11,7 +11,7 @@ func TestCompileServiceWithoutActor(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": describedUserDomain,
 		"service.skel": `
-service UserService {
+pub service UserService {
     method ping {
         output string
     }
@@ -58,7 +58,7 @@ event UserCreatedEvent {
 	if event.Name != "UserCreatedEvent" {
 		t.Fatalf("unexpected event: %+v", event)
 	}
-	if event.Kind != model.DataKindEvent {
+	if event.Kind != schema.DataKindEvent {
 		t.Fatalf("unexpected event kind: %v", event.Kind)
 	}
 	if len(event.Members) != 2 {
@@ -151,7 +151,7 @@ resource UserResource {
 }
 
 @deprecated("Use ProfileService")
-service UserService {
+pub service UserService {
     @deprecated("Use getProfile")
     method getUser {
         input {
@@ -173,7 +173,7 @@ task RefreshTask {
 }
 
 @deprecated("Use NewWeb")
-web PortalWeb {
+web PortalWeb { auth required
     for ClientActor via client
 }
 `,
@@ -214,7 +214,7 @@ func TestCompileRejectsDeprecatedOnStructuralBlocks(t *testing.T) {
 domain demo
 `,
 		"input": `domain demo
-service UserService {
+pub service UserService {
     method getUser {
         @deprecated("Not supported")
         input { id: string }
@@ -222,7 +222,7 @@ service UserService {
 }
 `,
 		"output": `domain demo
-service UserService {
+pub service UserService {
     method getUser {
         @deprecated("Not supported")
         output string
