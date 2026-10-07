@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/api"
+	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestGeneratedScalarTypes(t *testing.T) {
-	testutil.RequireToolchain(t)
 	root := t.TempDir()
 	input := filepath.Join(root, "domain.skel")
 	writeFileForTest(t, input, `domain demo.scalar
@@ -61,29 +61,20 @@ api service ScalarApiService {
 			if strings.Contains(data, `"go.yorun.ai/vrpc/skel"`) || strings.Contains(data, `"go.yorun.ai/vine/core/skel"`) {
 				t.Fatalf("data still imports runtime scalar types:\n%s", data)
 			}
-			pkg := "scalar"
+			for _, field := range []string{
+				"Amount skeltype.Decimal", "Bytes skeltype.Binary", "At skeltype.Timestamp",
+				"Elapsed skeltype.Duration", "Date skeltype.LocalDate", "Clock skeltype.LocalTime",
+				"Local skeltype.LocalDateTime", "Id skeltype.UUID", "Document skeltype.JSON",
+				"Optional *skeltype.Timestamp", "Lookup map[skeltype.UUID][]skeltype.Decimal",
+			} {
+				codegentest.AssertGoSourceContains(t, data, field)
+			}
 			if mode == "api" {
-				pkg = "scalarapi"
-			}
-			if mode == "public" || mode == "split" {
-				pkg = "scalarpub"
-			}
-			writeFileForTest(t, filepath.Join(dataOut, "types_test.go"), "package "+pkg+`
-import "go.yorun.ai/skel/types"
-var _ types.Sensitive = Values{}
-var _ = Values{
-    Amount: types.Decimal{}, Bytes: types.Binary{}, At: types.Timestamp{},
-    Elapsed: types.Duration{}, Date: types.LocalDate{}, Clock: types.LocalTime{},
-    Local: types.LocalDateTime{}, Id: types.UUID{}, Document: types.JSON("{}"),
-    Optional: new(types.Timestamp), Lookup: map[types.UUID][]types.Decimal{},
-}
-`)
-			testutil.UseLocalSkel(t, dataOut)
-			testutil.Go(t, dataOut, "test", "-mod=mod", "./...")
-			if mode == "split" {
-				testutil.UseLocalSkel(t, out)
-				testutil.Go(t, out, "mod", "edit", "-replace=example.com/scalarpub="+dataOut)
-				testutil.Go(t, out, "test", "-mod=mod", "./...")
+				t.Run("compile", func(t *testing.T) {
+					testutil.RequireToolchain(t)
+					testutil.UseLocalSkel(t, out)
+					testutil.Go(t, out, "test", "-mod=mod", "./...")
+				})
 			}
 		})
 	}

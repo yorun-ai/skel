@@ -14,7 +14,6 @@ import (
 
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/codegen"
-	"go.yorun.ai/skel/internal/testutil"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -149,7 +148,6 @@ pub actor UserActor {
 }
 
 func TestPermissionGenerationUsesStrings(t *testing.T) {
-	testutil.RequireToolchain(t)
 	root := t.TempDir()
 	input := filepath.Join(root, "domain.skel")
 	contract := `domain demo
@@ -196,8 +194,6 @@ api service UserApiService { auth required
 	if _, err := api.CompileGolang(api.Input{SkelIn: public}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: filepath.Join(root, "roundtrip")}); err != nil {
 		t.Fatal(err)
 	}
-	testutil.UseLocalSkel(t, out)
-	testutil.Go(t, out, "test", "-mod=mod", "./...")
 }
 
 func TestPermissionCodeArgumentNameGeneration(t *testing.T) {

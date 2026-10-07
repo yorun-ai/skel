@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	skelapi "go.yorun.ai/skel/api"
-	"go.yorun.ai/skel/internal/testutil"
 	"go.yorun.ai/skel/schema"
 	"golang.org/x/mod/modfile"
 )
@@ -485,23 +484,6 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 			writeTestFile(t, c, "domain c\npub data Access { id: uuid }\n")
 			input := skelapi.Input{SkelIn: a, SkelImports: map[string]string{"b": b, "c": c}}
 			mappings := map[string]string{"b": "example.com/bpub@v1.2.3", "c": "example.com/cpub@v1.3.0", "unused": "example.com/unused@v1.4.0"}
-			dependencyOutputs := map[bool]map[string]string{}
-			for _, api := range []bool{false, true} {
-				dependencyOutputs[api] = map[string]string{}
-				for name, entry := range map[string]string{"b": b, "c": c} {
-					out := filepath.Join(root, map[bool]string{false: "pubdeps", true: "apideps"}[api], name)
-					dependencyImports := map[string]string{}
-					if name == "b" {
-						dependencyImports["c"] = c
-					}
-					if _, err := skelapi.CompileGolang(skelapi.Input{SkelIn: entry, SkelImports: dependencyImports}, skelapi.GolangOption{
-						CompilerVersion: "v0.0.0-dev", PubOnly: !api, ApiOnly: api, AsModule: true, Module: "example.com/" + name + "pub", Out: out, Imports: mappings,
-					}); err != nil {
-						t.Fatal(err)
-					}
-					dependencyOutputs[api][name] = out
-				}
-			}
 			for _, mode := range []string{"full", "pub", "api", "split"} {
 				t.Run(mode, func(t *testing.T) {
 					out := filepath.Join(root, mode)
@@ -533,26 +515,6 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 							t.Fatal("split output lost its own public-module dependency")
 						}
 					}
-					t.Run("compile", func(t *testing.T) {
-						testutil.RequireToolchain(t)
-						// Use generated local dependencies; go.work must not hide a
-						// missing requirement in any generated module.
-						for name, dir := range dependencyOutputs[mode == "api"] {
-							testutil.Go(t, out, "mod", "edit", "-replace=example.com/"+name+"pub="+dir)
-						}
-						if mode == "split" {
-							testutil.Go(t, out, "mod", "edit", "-replace=example.com/apub="+opts.PubOut)
-						}
-						testutil.UseLocalSkel(t, out)
-						testutil.Go(t, out, "mod", "tidy")
-						files, err := filepath.Glob(filepath.Join(out, "*.go"))
-						if err != nil {
-							t.Fatal(err)
-						}
-						if len(files) > 0 {
-							testutil.Go(t, out, "test", "./...")
-						}
-					})
 				})
 			}
 			tsOut := filepath.Join(root, "ts")

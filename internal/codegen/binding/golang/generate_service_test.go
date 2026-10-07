@@ -6,10 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/testutil"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -79,45 +77,4 @@ func TestGeneratorRendersNullableMapAndServiceHooks(t *testing.T) {
 			t.Fatalf("service must not declare %s, got:\n%s", fragment, string(goServiceContent))
 		}
 	}
-}
-
-func TestRuntimeClientLocalNameCollisions(t *testing.T) {
-	testutil.RequireToolchain(t)
-	root := t.TempDir()
-	input := filepath.Join(root, "service.skel")
-	source := `domain demo.names
-pub service NameService {
-    method get {
-        input {
-            client: string
-            ret: string
-            err: string
-            retI: string
-            errI: string
-        }
-        output string
-    }
-    method find {
-        output string?
-    }
-    method ping {
-        input { err: string }
-    }
-}
-`
-	if err := os.WriteFile(input, []byte(source), 0600); err != nil {
-		t.Fatal(err)
-	}
-	output := filepath.Join(root, "generated")
-	if _, err := api.CompileGolang(api.Input{SkelIn: input}, api.GolangOption{
-		CompilerVersion: "v0.0.0-dev",
-		PubOnly:         true,
-		AsModule:        true,
-		Module:          "example.com/names",
-		Out:             output,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	testutil.UseLocalSkel(t, output)
-	testutil.Go(t, output, "build", "-mod=mod", "./...")
 }

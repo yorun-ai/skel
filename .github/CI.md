@@ -22,9 +22,15 @@ changes skip those jobs while the required gate still completes successfully:
 | --- | --- |
 | Go static | Module metadata drift, `go vet`, Staticcheck correctness/simplification/unused-code checks and nilness |
 | Go race | Full-repository tests with the race detector |
-| Examples | Generate both examples, compile their Go modules, and type-check their TypeScript clients against the pinned published vRPC runtime |
+| Examples | Generate both examples and type-check their TypeScript clients against the pinned published vRPC runtime |
 
-All Go commands use `GOWORK=off`, including commands in generated modules.
+Generated backend Go modules are not compiled in Skel CI or cache warmup.
+Generator tests check emitted declarations and module requirements without
+loading Vine. Go API client compilation and checks against Skel's own public
+types remain covered. Consumers compile and test generated backend code with
+their selected runtime dependencies.
+
+All Go commands use `GOWORK=off`.
 Run `bash .github/scripts/ci.sh static` from the repository root to reproduce
 the static gate locally. Both CI and cache warmup use this script, which pins
 Staticcheck and the Go analysis tools without adding application dependencies.

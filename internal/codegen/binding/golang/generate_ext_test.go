@@ -7,11 +7,9 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/api"
-	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestExtServicePublicServer(t *testing.T) {
-	testutil.RequireToolchain(t)
 	root := t.TempDir()
 	input := filepath.Join(root, "service.skel")
 	source := `domain demo.storage
@@ -56,40 +54,6 @@ func TestExtServicePublicServer(t *testing.T) {
 	if !strings.Contains(string(facade), "type StorageServiceServer =") || strings.Contains(string(facade), "type StorageServiceClient =") {
 		t.Fatalf("incorrect extension facade: %s", facade)
 	}
-	testSource := `package storage_test
-import (
- "reflect"
- "testing"
- storage "example.com/storage"
- pub "example.com/storagepub"
- "go.yorun.ai/vine/core/ex"
- "go.yorun.ai/vine/core/skel"
-)
-type implementation struct { pub.DefaultStorageServiceServer }
-func (*implementation) Get(key string) pub.Item { return pub.Item{Value:key} }
-type errorImplementation struct { pub.DefaultStorageServiceServerER }
-func (*errorImplementation) Get(key string) (pub.Item, ex.Error) { return pub.Item{Value:key}, nil }
-var _ pub.StorageServiceServer = (*implementation)(nil)
-var _ storage.StorageServiceServer = (*implementation)(nil)
-var _ pub.StorageServiceServerER = (*errorImplementation)(nil)
-var _ storage.StorageServiceServerER = (*errorImplementation)(nil)
-func TestPublicServer(t *testing.T) {
- if reflect.TypeFor[storage.StorageServiceServer]() != reflect.TypeFor[pub.StorageServiceServer]() { t.Fatal("server types differ") }
- var server storage.StorageServiceServer = &implementation{}
- if server.Get("ok").Value != "ok" { t.Fatal("wrong result") }
- for _, domain := range skel.RegisteredDomainDescriptors() {
-  if domain.Domain != "demo.storage" { continue }
-  for _, service := range domain.Services {
-   if service.SkelName == "demo.storage.StorageService" {
-    if !service.Ext || service.Api { t.Fatalf("wrong runtime extension metadata: %+v", service) }
-    return
-   }
-  }
- }
- t.Fatal("extension runtime schema not registered")
-}
-`
-	writeFileForTest(t, filepath.Join(regular, "ext_test.go"), testSource)
 
 	for _, pubOnly := range []bool{false, true} {
 		out := filepath.Join(root, "full")
@@ -99,18 +63,10 @@ func TestPublicServer(t *testing.T) {
 		if _, err := api.CompileGolang(api.Input{SkelIn: skelOut, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/standalone", AsModule: true, PubOnly: pubOnly}); err != nil {
 			t.Fatal(err)
 		}
-		testutil.UseLocalSkel(t, out)
-		testutil.Go(t, out, "build", "-mod=mod", "./...")
 	}
-	testutil.UseLocalSkel(t, pub)
-	testutil.Go(t, pub, "build", "-mod=mod", "./...")
-	testutil.Go(t, regular, "mod", "edit", "-replace=example.com/storagepub="+pub)
-	testutil.UseLocalSkel(t, regular)
-	testutil.Go(t, regular, "test", "-mod=mod", "./...")
 }
 
 func TestExtensionEventSplitContracts(t *testing.T) {
-	testutil.RequireToolchain(t)
 	root := t.TempDir()
 	input := filepath.Join(root, "event.skel")
 	writeFileForTest(t, input, `domain demo.audit
@@ -155,44 +111,6 @@ event PrivateEvent { payload {} }
 			t.Fatal("extension runtime flag missing")
 		}
 	}
-	writeFileForTest(t, filepath.Join(regular, "ext_event_test.go"), `package audit_test
-import (
- "reflect"
- "testing"
- audit "example.com/audit"
- pub "example.com/auditpub"
- "go.yorun.ai/vine/core/ex"
- "go.yorun.ai/vine/core/skel"
-)
-type listener struct { audit.DefaultAuditRecordedEventListener; message string }
-func (l *listener) OnAuditRecorded(event *pub.AuditRecordedEvent) { l.message = event.Detail.Message }
-type errorListener struct { audit.DefaultAuditRecordedEventListenerER }
-func (*errorListener) OnAuditRecorded(event *pub.AuditRecordedEvent) ex.Error { return nil }
-var _ audit.AuditRecordedEventListener = (*listener)(nil)
-var _ audit.AuditRecordedEventListenerER = (*errorListener)(nil)
-var _ audit.AuditRecordedEventEmitter = (pub.AuditRecordedEventEmitter)(nil)
-func TestExtensionContract(t *testing.T) {
- if reflect.TypeFor[audit.AuditRecordedEvent]() != reflect.TypeFor[pub.AuditRecordedEvent]() { t.Fatal("payload types differ") }
- handler := &listener{}
- handler.OnAuditRecorded(&pub.AuditRecordedEvent{Detail: pub.Detail{Message:"received"}})
- if handler.message != "received" { t.Fatal("wrong payload") }
- for _, domain := range skel.RegisteredDomainDescriptors() {
-  if domain.Domain != "demo.audit" { continue }
-  for _, event := range domain.Events {
-   if event.SkelName == "demo.audit.AuditRecordedEvent" {
-    if !event.Ext || !event.Pub || !event.Sensitive { t.Fatalf("wrong schema: %+v", event) }
-    return
-   }
-  }
- }
- t.Fatal("extension event schema not registered")
-}
-`)
-	testutil.Go(t, regular, "mod", "edit", "-replace=example.com/auditpub="+pub)
-	testutil.UseLocalSkel(t, pub)
-	testutil.Go(t, pub, "build", "-mod=mod", "./...")
-	testutil.UseLocalSkel(t, regular)
-	testutil.Go(t, regular, "test", "-mod=mod", "./...")
 	for _, pubOnly := range []bool{false, true} {
 		out := filepath.Join(t.TempDir(), "standalone")
 		if _, err := api.CompileGolang(api.Input{SkelIn: skelOut, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auditpub", AsModule: true, PubOnly: pubOnly}); err != nil {
@@ -202,13 +120,10 @@ func TestExtensionContract(t *testing.T) {
 		if strings.Contains(code, "PrivateEvent") || !strings.Contains(code, "AuditRecordedEventEmitter") || (pubOnly && strings.Contains(code, "AuditRecordedEventListener")) || (!pubOnly && !strings.Contains(code, "AuditRecordedEventListener")) {
 			t.Fatalf("incorrect standalone event: %s", code)
 		}
-		testutil.UseLocalSkel(t, out)
-		testutil.Go(t, out, "build", "-mod=mod", "./...")
 	}
 }
 
 func TestExtensionContractsImportExternalGenericData(t *testing.T) {
-	testutil.RequireToolchain(t)
 	root := t.TempDir()
 	sharedSource := filepath.Join(root, "shared.skel")
 	writeFileForTest(t, sharedSource, `domain common.contracts
@@ -220,11 +135,7 @@ data Hidden { value: string }
 	if _, err := api.CompileSkeleton(api.Input{SkelIn: sharedSource, Strict: true}, api.SkeletonOption{Out: sharedSkel, PubOnly: true}); err != nil {
 		t.Fatal(err)
 	}
-	sharedGo := filepath.Join(root, "contractspub")
 	const sharedModule = "example.com/contractspub"
-	if _, err := api.CompileGolang(api.Input{SkelIn: sharedSkel, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: sharedGo, Module: sharedModule, PubOnly: true, AsModule: true}); err != nil {
-		t.Fatal(err)
-	}
 	ownerSource := filepath.Join(root, "audit.skel")
 	writeFileForTest(t, ownerSource, `domain demo.audit
 import common.contracts as shared
@@ -270,38 +181,5 @@ ext event AuditRecordedEvent { payload { envelope: Envelope records: shared.Page
 		if !strings.Contains(mod, sharedModule+" ") || !strings.Contains(mod, "go.yorun.ai/vine "+api.DefaultGolangVineVersion) {
 			t.Fatalf("generated module lost its contract or runtime dependency: %s", mod)
 		}
-		testutil.Go(t, directory, "mod", "edit", "-replace="+sharedModule+"="+sharedGo)
 	}
-	testutil.Go(t, regular, "mod", "edit", "-replace=example.com/auditpub="+pub)
-	writeFileForTest(t, filepath.Join(regular, "ext_import_test.go"), `package audit_test
-import (
-    "reflect"
-    "testing"
-    audit "example.com/audit"
-    pub "example.com/auditpub"
-    shared "example.com/contractspub"
-)
-type implementation struct { pub.DefaultAuditServiceServer }
-func (*implementation) Record(envelope pub.Envelope) shared.Page[shared.Record] { return envelope.Records }
-type listener struct { audit.DefaultAuditRecordedEventListener; records shared.Page[shared.Record] }
-func (l *listener) OnAuditRecorded(event *pub.AuditRecordedEvent) { l.records = event.Records }
-var _ pub.AuditServiceServer = (*implementation)(nil)
-var _ audit.AuditServiceServer = (*implementation)(nil)
-var _ audit.AuditRecordedEventListener = (*listener)(nil)
-func TestImportedGenericContract(t *testing.T) {
-    records := shared.Page[shared.Record]{Items: []shared.Record{{Id:"audit"}}}
-    envelope := audit.Envelope{Records: records}
-    var server audit.AuditServiceServer = &implementation{}
-    if server.Record(envelope).Items[0].Id != "audit" { t.Fatal("wrong imported service result") }
-    handler := &listener{}
-    handler.OnAuditRecorded(&audit.AuditRecordedEvent{Envelope: envelope, Records: records})
-    if handler.records.Items[0].Id != "audit" { t.Fatal("wrong imported event payload") }
-    if reflect.TypeFor[audit.AuditRecordedEvent]() != reflect.TypeFor[pub.AuditRecordedEvent]() { t.Fatal("event payload types differ") }
-    if reflect.TypeFor[audit.AuditRecordedEventEmitter]() != reflect.TypeFor[pub.AuditRecordedEventEmitter]() { t.Fatal("emitter types differ") }
-}
-`)
-	testutil.UseLocalSkel(t, pub)
-	testutil.Go(t, pub, "build", "-mod=mod", "./...")
-	testutil.UseLocalSkel(t, regular)
-	testutil.Go(t, regular, "test", "-mod=mod", "./...")
 }

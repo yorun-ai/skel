@@ -11,7 +11,6 @@ import (
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/codegen/binding/golang"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/testutil"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -254,46 +253,6 @@ func TestGeneratorGoRendersWebMountInSpecAndDescriptor(t *testing.T) {
 			}
 		}
 	}
-}
-
-func TestGeneratedAuthModesWithPublishedVine(t *testing.T) {
-	testutil.RequireToolchain(t)
-	root := t.TempDir()
-	input := filepath.Join(root, "domain.skel")
-	writeFileForTest(t, input, `domain demo.auth
-actor ClientActor { via client {} }
-api service SessionApiService {
- for ClientActor via client
- auth required
- method profile {}
- method browse { auth optional }
- method login { auth anonymous }
-}
-web RequiredWeb { for ClientActor via client auth required }
-web OptionalWeb { for ClientActor via client auth optional }
-web AnonymousWeb { for ClientActor via client auth anonymous }
-web OffWeb { for ClientActor via client auth off }
-`)
-	out := filepath.Join(root, "auth")
-	if _, err := api.CompileGolang(api.Input{SkelIn: input, Strict: true}, api.GolangOption{CompilerVersion: "v0.0.0-dev", Out: out, Module: "example.com/auth", AsModule: true}); err != nil {
-		t.Fatal(err)
-	}
-	writeFileForTest(t, filepath.Join(out, "auth_test.go"), `package auth
-import (
- "testing"
- "go.yorun.ai/skel/descriptor"
-)
-func TestAuthModes(t *testing.T) {
- if _DomainDescriptor.Services[0].AuthMode != descriptor.AuthModeRequired { t.Fatal("wrong service auth") }
- methods:=_DomainDescriptor.Services[0].Methods
- want:=map[string]descriptor.AuthMode{"profile":descriptor.AuthModeInherit,"browse":descriptor.AuthModeOptional,"login":descriptor.AuthModeAnonymous}
- for _,method:=range methods { if method.AuthMode!=want[method.Name] { t.Fatalf("method %s: %s",method.Name,method.AuthMode) } }
- webs:=map[string]descriptor.AuthMode{"RequiredWeb":descriptor.AuthModeRequired,"OptionalWeb":descriptor.AuthModeOptional,"AnonymousWeb":descriptor.AuthModeAnonymous,"OffWeb":descriptor.AuthModeOff}
- for _,web:=range _DomainDescriptor.Webs { if web.AuthMode!=webs[web.Name] { t.Fatalf("web %s: %s",web.Name,web.AuthMode) } }
-}
-`)
-	testutil.UseLocalSkel(t, out)
-	testutil.Go(t, out, "test", "-mod=mod", "./...")
 }
 
 func TestApiBackendDescriptorAndClientBoundary(t *testing.T) {

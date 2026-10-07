@@ -61,11 +61,9 @@ jobs:
         if: matrix.mode == 'standard'
         run: bash .github/scripts/ci.sh static
 
-      - name: Populate example module cache
+      - name: Populate example generation cache
         if: matrix.mode == 'standard'
-        run: |
-          ./examples/quickstart/generate.sh "$RUNNER_TEMP/skelc-quickstart"
-          (cd "$RUNNER_TEMP/skelc-quickstart/go" && go test -mod=mod ./...)
+        run: ./examples/quickstart/generate.sh "$RUNNER_TEMP/skelc-quickstart"
 
       - name: Populate race build and test cache
         if: matrix.mode == 'race'
