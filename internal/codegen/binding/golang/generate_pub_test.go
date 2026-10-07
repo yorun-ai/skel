@@ -167,13 +167,13 @@ func TestGeneratorRendersPubGoView(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read go actor file: %v", err)
 	}
-	if !strings.Contains(string(actorContent), "type OpenAPIActor struct {") {
+	if !strings.Contains(string(actorContent), `"OpenAPIActor"`) {
 		t.Fatalf("expected referenced pub actor, got:\n%s", string(actorContent))
 	}
-	if !strings.Contains(string(actorContent), "type PublicOnlyActor struct {") {
+	if !strings.Contains(string(actorContent), `"PublicOnlyActor"`) {
 		t.Fatalf("expected explicitly pub actor, got:\n%s", string(actorContent))
 	}
-	if strings.Contains(string(actorContent), "type PartnerActor struct {") {
+	if strings.Contains(string(actorContent), `"PartnerActor"`) {
 		t.Fatalf("did not expect non-pub actor in pub-only codegen, got:\n%s", string(actorContent))
 	}
 	if strings.Contains(string(actorContent), "PartnerActorAuthService") {

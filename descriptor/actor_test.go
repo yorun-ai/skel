@@ -7,6 +7,60 @@ import (
 	"go.yorun.ai/skel/descriptor"
 )
 
+func TestActorAudienceMatching(t *testing.T) {
+	audiences := []*descriptor.ActorAudience{
+		{
+			SkelName: "demo.User",
+			Via:      descriptor.ActorViaClient,
+		},
+		{
+			SkelName: "demo.Admin",
+		},
+	}
+	service := new(descriptor.Service{
+		Audiences: audiences,
+	})
+	web := new(descriptor.Web{
+		Audiences: audiences,
+	})
+	for _, test := range []struct {
+		actor string
+		via   descriptor.ActorViaKind
+		want  bool
+	}{
+		{
+			actor: "demo.User",
+			via:   descriptor.ActorViaClient,
+			want:  true,
+		},
+		{
+			actor: "demo.User",
+			via:   descriptor.ActorViaAgent,
+		},
+		{
+			actor: "demo.Admin",
+			via:   descriptor.ActorViaOpenAPI,
+			want:  true,
+		},
+		{
+			actor: "other.User",
+			via:   descriptor.ActorViaClient,
+		},
+	} {
+		if got := service.HasAudience(test.actor, test.via); got != test.want {
+			t.Errorf("Service.HasAudience(%q, %q) = %v, want %v", test.actor, test.via, got, test.want)
+		}
+		if got := web.HasAudience(test.actor, test.via); got != test.want {
+			t.Errorf("Web.HasAudience(%q, %q) = %v, want %v", test.actor, test.via, got, test.want)
+		}
+	}
+	var emptyService descriptor.Service
+	var emptyWeb descriptor.Web
+	if emptyService.HasAudience("demo.User", descriptor.ActorViaClient) || emptyWeb.HasAudience("demo.User", descriptor.ActorViaClient) {
+		t.Fatal("empty audiences must not grant access")
+	}
+}
+
 func TestActorMethodsReferenceServiceAfterJSONRoundTrip(t *testing.T) {
 	actor := new(descriptor.Actor{
 		Auth: new(descriptor.ActorAuth{

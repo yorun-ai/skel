@@ -1,6 +1,6 @@
 package {{ $.PackageName }}
 
-import "{{ $.PubImport.Path }}"
+import {{ if $.PubImport.Alias }}{{ $.PubImport.Alias }} {{ end }}"{{ $.PubImport.Path }}"
 
 {{ if $.Enums -}}
 {{ range $e := $.Enums -}}
@@ -24,10 +24,7 @@ type {{ $s.FullName }} = {{ $.PubPackageName }}.{{ $s.ReceiverType }}
 type {{ $s.FullName }} = {{ $.PubPackageName }}.{{ $s.ReceiverType }}
 {{ end -}}
 {{ end }}
-{{ if or $.Actors $.AuthCredentialData $.AuthServices -}}
-{{ range $actor := $.Actors -}}
-type {{ $actor.Name }} = {{ $.PubPackageName }}.{{ $actor.Name }}
-{{ end -}}
+{{ if or $.AuthCredentialData $.AuthServices -}}
 {{ range $s := $.AuthCredentialData -}}
 type {{ $s.FullName }} = {{ $.PubPackageName }}.{{ $s.ReceiverType }}
 {{ end -}}

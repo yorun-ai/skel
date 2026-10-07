@@ -15,18 +15,18 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func TestActorDescriptorImportDoesNotCollideWithSourceAlias(t *testing.T) {
+func TestActorRegistrationImportDoesNotCollideWithSourceAlias(t *testing.T) {
 	root := t.TempDir()
 	shared := filepath.Join(root, "shared.skel")
 	entry := filepath.Join(root, "actor.skel")
 	writeFileForTest(t, shared, "domain shared\npub data Credential { token: string }\n")
 	writeFileForTest(t, entry, `domain demo
-import shared as descriptor
+import shared as meta
 actor ClientActor {
     via client {}
     auth {
         credential { token: string }
-        info { id: string details: descriptor.Credential }
+        info { id: string details: meta.Credential }
     }
 }`)
 	out := filepath.Join(root, "generated")
@@ -40,11 +40,17 @@ actor ClientActor {
 		t.Fatal(err)
 	}
 	for _, item := range file.Imports {
-		if item.Path.Value == `"example.com/shared"` && (item.Name == nil || item.Name.Name == "descriptor") {
-			t.Fatalf("source alias collides with descriptor import: %s", content)
+		if item.Path.Value == `"example.com/shared"` && (item.Name == nil || item.Name.Name == "meta") {
+			t.Fatalf("source alias collides with actor registration import: %s", content)
 		}
 	}
-	for _, fragment := range []string{`"go.yorun.ai/skel/descriptor"`, "Vias() []descriptor.ActorViaKind", "descriptor.ActorViaClient"} {
+	for _, fragment := range []string{
+		`"go.yorun.ai/vine/core/meta"`,
+		"meta.RegisterActor(meta.ActorSpec{",
+		"reflect.TypeFor[*ClientActorInfo]()",
+		"type ClientActorCredential struct",
+		"type ClientActorInfo struct",
+	} {
 		if !strings.Contains(content, fragment) {
 			t.Fatalf("missing %s in generated actor: %s", fragment, content)
 		}

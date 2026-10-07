@@ -22,7 +22,6 @@ type FacadeGoPayload struct {
 	Enums              []*Enum
 	Data               []*Data
 	Configs            []*Data
-	Actors             []*Actor
 	AuthCredentialData []*Data
 	AuthServices       []*Service
 	Resources          []*Resource
@@ -49,7 +48,6 @@ func (g *_Gen) genFacadeGo() {
 		Enums:              make([]*Enum, 0),
 		Data:               make([]*Data, 0),
 		Configs:            make([]*Data, 0),
-		Actors:             make([]*Actor, 0),
 		AuthCredentialData: make([]*Data, 0),
 		AuthServices:       make([]*Service, 0),
 		Resources:          make([]*Resource, 0),
@@ -66,7 +64,6 @@ func (g *_Gen) genFacadeGo() {
 		payload.Configs = append(payload.Configs, g.types.castData(config))
 	}
 	for _, actor := range public.Actors {
-		payload.Actors = append(payload.Actors, castActor(actor))
 		if actor.Auth != nil {
 			payload.AuthCredentialData = append(payload.AuthCredentialData, g.types.castData(actor.Auth.Credential), g.types.castData(actor.Auth.Info))
 			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.Auth.Service))
@@ -89,5 +86,14 @@ func (g *_Gen) genFacadeGo() {
 		payload.Events = append(payload.Events, g.castEvent(event, true, false))
 	}
 
+	declarations := len(payload.Enums) + len(payload.Data) + len(payload.Configs) +
+		len(payload.AuthCredentialData) + len(payload.AuthServices) + len(payload.Services) + len(payload.Events)
+	for _, resource := range payload.Resources {
+		declarations += len(resource.Actions)
+	}
+	if declarations == 0 {
+		// Actors without auth or permission still need their public package registration.
+		payload.PubImport.Alias = "_"
+	}
 	g.renderGo(facadeGoFilename, facadeGoTemplate, payload)
 }

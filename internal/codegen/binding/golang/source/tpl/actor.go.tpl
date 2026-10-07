@@ -13,32 +13,6 @@ func init() { {{ range $actor := $.Actors }}
 }
 
 {{ end -}}
-{{ range $actor := $.Actors }}
-{{- if $actor.CommentLines }}
-{{- range $line := $actor.CommentLines }}
-// {{ $line }}
-{{- end }}
-{{- end }}
-type {{ $actor.Name }} struct {
-	skel.ActorBase
-}
-
-func ({{ $actor.Name }}) Name() string {
-	return "{{ $actor.Name }}"
-}
-
-func ({{ $actor.Name }}) SkelName() string {
-	return "{{ $actor.SkelName }}"
-}
-
-func ({{ $actor.Name }}) Vias() []descriptor.ActorViaKind {
-	return []descriptor.ActorViaKind{
-		{{- range $via := $actor.Vias }}
-		{{ $via }},
-		{{- end }}
-	}
-}
-{{ end }}
 {{ range $s := $.CredentialData }}
 {{- if $s.CommentLines }}
 {{- range $line := $s.CommentLines }}

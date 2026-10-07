@@ -260,23 +260,26 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read go actor file: %v", err)
 	}
-	if !strings.Contains(string(goActorContent), `type ClientActor struct {`) {
-		t.Fatalf("expected go actor type, got:\n%s", string(goActorContent))
-	}
-	if !strings.Contains(string(goActorContent), `func (ClientActor) SkelName() string {`) {
-		t.Fatalf("expected go actor skel name method, got:\n%s", string(goActorContent))
-	}
-	if !strings.Contains(string(goActorContent), `return "demo.user.ClientActor"`) {
-		t.Fatalf("expected go actor skel name, got:\n%s", string(goActorContent))
-	}
-	if !strings.Contains(string(goActorContent), "return []descriptor.ActorViaKind{\n\t\tdescriptor.ActorViaClient,") {
-		t.Fatalf("expected go actor vias, got:\n%s", string(goActorContent))
+	codegentest.AssertGoSourceContains(t, string(goActorContent), `meta.RegisterActor(meta.ActorSpec{`)
+	codegentest.AssertGoSourceContains(t, string(goActorContent), `SkelName: "demo.user.ClientActor"`)
+	for _, fragment := range []string{
+		"type ClientActor struct",
+		"func (ClientActor)",
+		"skel.ActorBase",
+		`"go.yorun.ai/skel/descriptor"`,
+		`"go.yorun.ai/vine/core/skel"`,
+	} {
+		if strings.Contains(string(goActorContent), fragment) {
+			t.Fatalf("unexpected legacy actor declaration or import %q:\n%s", fragment, goActorContent)
+		}
 	}
 
 	goSchemaContent, err := os.ReadFile(filepath.Join(goOutDir, "descriptor.go"))
 	if err != nil {
 		t.Fatalf("read go schema file: %v", err)
 	}
+	codegentest.AssertGoSourceContains(t, string(goSchemaContent), `SkelName: "demo.user.ClientActor"`)
+	codegentest.AssertGoSourceContains(t, string(goSchemaContent), "descriptor.ActorViaClient")
 	if !strings.Contains(string(goSchemaContent), `Hash:`) {
 		t.Fatalf("expected go schema hash fields, got:\n%s", string(goSchemaContent))
 	}

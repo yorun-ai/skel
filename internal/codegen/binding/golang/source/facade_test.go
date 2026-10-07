@@ -70,7 +70,7 @@ ext event StoredEvent { payload { value: Payload } }
 			}
 			content := readFacadeGoForTest(t, outputDir)
 			for _, name := range []string{
-				"Mode", "Direct", "State", "Payload", "SettingsConfig", "ClientActor",
+				"Mode", "Direct", "State", "Payload", "SettingsConfig",
 				"BackendServiceClient", "StorageServiceServer", "ChangedEventListener", "StoredEventEmitter",
 			} {
 				if !strings.Contains(content, "type "+name+" = demopub."+name) {
@@ -79,6 +79,9 @@ ext event StoredEvent { payload { value: Payload } }
 			}
 			if !strings.Contains(content, "RecordReadPermission") || strings.Contains(content, "Local") {
 				t.Fatalf("facade differs from selected public contract: %s", content)
+			}
+			if strings.Contains(content, "type ClientActor =") {
+				t.Fatalf("unexpected legacy actor facade: %s", content)
 			}
 		})
 	}
@@ -123,7 +126,6 @@ func TestFacadeGoRendersActorAuthService(t *testing.T) {
 	content := readFacadeGoForTest(t, outputDir)
 	for _, expected := range []string{
 		`import "github.com/acme/skel/demo/authpub"`,
-		"type PublicActor = authpub.PublicActor",
 		"type PublicActorCredential = authpub.PublicActorCredential",
 		"type PublicActorInfo = authpub.PublicActorInfo",
 		"type PublicActorAuthServiceServer = authpub.PublicActorAuthServiceServer",
@@ -137,6 +139,28 @@ func TestFacadeGoRendersActorAuthService(t *testing.T) {
 	}
 	if strings.Contains(content, "PublicActorAuthServiceClient") {
 		t.Fatalf("did not expect auth service client facade, got:\n%s", content)
+	}
+	if strings.Contains(content, "type PublicActor =") {
+		t.Fatalf("unexpected legacy actor facade: %s", content)
+	}
+}
+
+func TestFacadeGoImportsActorRegistration(t *testing.T) {
+	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
+		Name: "demo",
+		Actors: []*schema.Actor{
+			{Pub: true, Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
+		},
+	})
+	outputDir := t.TempDir()
+	gen := newGen(Option{
+		Domain: pkg, View: mustView(t, view.ModeRegular, pkg), Mode: view.ModeRegular,
+		PackageName: "demo", PubImportPath: "example.com/demopub", Out: outputDir,
+	})
+	gen.genFacadeGo()
+	content := readFacadeGoForTest(t, outputDir)
+	if !strings.Contains(content, `import _ "example.com/demopub"`) || strings.Contains(content, "type ") {
+		t.Fatalf("actor-only facade must preserve registration without a type alias: %s", content)
 	}
 }
 

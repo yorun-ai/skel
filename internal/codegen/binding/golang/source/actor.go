@@ -5,9 +5,7 @@ import "go.yorun.ai/skel/schema"
 const actorGoFilename = "actor.go"
 
 var actorImports = []*Import{
-	{Path: "go.yorun.ai/skel/descriptor"},
 	{Path: "go.yorun.ai/vine/core/meta"},
-	{Path: "go.yorun.ai/vine/core/skel"},
 }
 
 var actorInfoImports = []*Import{
@@ -39,8 +37,6 @@ type Actor struct {
 	Name             string
 	SkelName         string
 	Hash             string
-	CommentLines     []string
-	Vias             []string
 	AuthInfoName     string
 	AuthInfoSkelName string
 	HasInfo          bool
@@ -104,31 +100,14 @@ func (g *_Gen) authServiceActors() []*schema.Actor {
 
 func castActor(p *schema.Actor) *Actor {
 	actor := &Actor{
-		Name:         p.Name,
-		SkelName:     p.SkelName,
-		Hash:         p.Hash,
-		CommentLines: deprecatedGoDocLines(goDocLines(p.Name, p.Description), p.Name, p.DeprecatedReason),
-		Vias:         make([]string, 0, len(p.Vias)),
+		Name:     p.Name,
+		SkelName: p.SkelName,
+		Hash:     p.Hash,
 	}
 	if p.Auth != nil {
 		actor.AuthInfoName = p.Auth.Info.Name
 		actor.AuthInfoSkelName = p.Auth.Info.SkelName
 		actor.HasInfo = true
 	}
-	for _, via := range p.Vias {
-		actor.Vias = append(actor.Vias, castActorVia(via.Name))
-	}
 	return actor
-}
-
-func castActorVia(via string) string {
-	switch schema.ActorViaKind(via) {
-	case schema.ActorViaClient:
-		return "descriptor.ActorViaClient"
-	case schema.ActorViaAgent:
-		return "descriptor.ActorViaAgent"
-	case schema.ActorViaOpenAPI:
-		return "descriptor.ActorViaOpenAPI"
-	}
-	return ""
 }

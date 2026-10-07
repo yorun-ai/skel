@@ -66,3 +66,12 @@ type ActorAudience struct {
 	SkelName string       `json:"skelName"`
 	Via      ActorViaKind `json:"via,omitempty"`
 }
+
+func hasAudience(audiences []*ActorAudience, actor string, via ActorViaKind) bool {
+	for _, audience := range audiences {
+		if audience.SkelName == actor && (audience.Via == "" || audience.Via == via) {
+			return true
+		}
+	}
+	return false
+}

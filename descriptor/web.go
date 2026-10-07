@@ -12,3 +12,9 @@ type Web struct {
 	Audiences        []*ActorAudience `json:"audiences"`
 	MountPath        string           `json:"mountPath"`
 }
+
+// HasAudience reports whether the web entry accepts the actor's Skel name and transport.
+// An audience with no Via restriction accepts any transport for that actor.
+func (web *Web) HasAudience(actor string, via ActorViaKind) bool {
+	return hasAudience(web.Audiences, actor, via)
+}

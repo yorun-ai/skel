@@ -21,6 +21,12 @@ type Service struct {
 	Methods []*Method          `json:"methods"`
 }
 
+// HasAudience reports whether the service accepts the actor's Skel name and transport.
+// An audience with no Via restriction accepts any transport for that actor.
+func (service *Service) HasAudience(actor string, via ActorViaKind) bool {
+	return hasAudience(service.Audiences, actor, via)
+}
+
 // Method returns the method with the given local name, or nil if unavailable.
 func (service *Service) Method(name string) *Method {
 	if service == nil || name == "" {
@@ -28,6 +34,19 @@ func (service *Service) Method(name string) *Method {
 	}
 	for _, method := range service.Methods {
 		if method != nil && method.Name == name {
+			return method
+		}
+	}
+	return nil
+}
+
+// MethodBySkelName returns the method with the given wire name, or nil if unavailable.
+func (service *Service) MethodBySkelName(name string) *Method {
+	if service == nil || name == "" {
+		return nil
+	}
+	for _, method := range service.Methods {
+		if method != nil && method.SkelName == name {
 			return method
 		}
 	}

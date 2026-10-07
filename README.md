@@ -278,6 +278,10 @@ Backend and API Go output share these types. Generated modules require the Skel
 compiler version used for generation; development builds require a local workspace
 or module replacement. See the [types example](types/example_test.go).
 
+`go.yorun.ai/skel/tag` reads generated Go struct metadata through `IsSensitive`,
+`IsIdentifier`, and `Index`. It accepts `reflect.StructTag`; runtime consumers
+apply redaction, actor identity, and argument-index validation themselves.
+
 Go programs can invoke generation through `go.yorun.ai/skel/api` without importing implementation packages:
 
 Import `go.yorun.ai/skel/api` and use the `api` package for source inspection, compilation, and generation. Move existing root-package toolchain imports to `go.yorun.ai/skel/api` and replace `skel.` references with `api.`; The CLI wire contract moves to `go.yorun.ai/skel/cmd/skelc/output`; Semantic declarations now live in `go.yorun.ai/skel/schema`; runtime metadata lives in `go.yorun.ai/skel/descriptor`. The executable name and CLI commands remain `skelc`.

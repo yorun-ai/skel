@@ -10,6 +10,7 @@
 ## Architecture Boundaries
 
 - `types` directly defines portable Skel Go scalar values and their JSON/CBOR encodings. Keep it independent of compiler models, schemas, generators, Vine, and vRPC. All Go generation modes use `go.yorun.ai/skel/types` for scalar values; application registration and schema metadata remain separate.
+- `tag` directly owns Go struct-tag interpretation through semantic helpers. Keep generic flag parsing private and runtime behavior such as redaction, actor registration and argument-range validation in consumers; the package must not depend on compiler models or application runtimes.
 
 - `cmd/skelc/output` exposes CLI result, error and exit-code contracts through `internal/cmd/skelc/output`; keep command execution in `internal/cmd/skelc`.
 - `cmd/skelc` is the executable entry point; keep it thin and delegate CLI behavior to `internal/cmd/skelc`.

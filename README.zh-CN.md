@@ -256,6 +256,10 @@ Go 值类型、构造函数及 JSON/CBOR 编解码。服务端和 API 客户端�
 生成模块依赖本次使用的 Skel 编译器版本；开发构建需要配置本地 workspace 或 module replace。
 用法见 [types 示例](types/example_test.go)。
 
+`go.yorun.ai/skel/tag` 通过 `IsSensitive`、`IsIdentifier` 和 `Index` 读取生成的
+Go struct tag，参数为 `reflect.StructTag`。脱敏、Actor 身份处理和参数索引范围校验
+由运行时调用方负责。
+
 Go 程序可以通过 `go.yorun.ai/skel/api` 调用生成能力，无需导入实现 package：
 
 导入 `go.yorun.ai/skel/api`，使用 `api` package 调用源码检查、编译和生成能力。原先使用根包编译 API 的程序需要将导入改为 `go.yorun.ai/skel/api`，并将 `skel.` 引用改为 `api.`；CLI wire 契约移到 `go.yorun.ai/skel/cmd/skelc/output`；语义声明迁到 `go.yorun.ai/skel/schema`，运行时元数据位于 `go.yorun.ai/skel/descriptor`。可执行文件名和 CLI 命令仍为 `skelc`。
