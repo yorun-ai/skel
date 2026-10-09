@@ -37,11 +37,11 @@ func (service *{{ .WrapperERServerName }}) server() {{ .ServerName }} {
 	return service.serverImpl
 }
 
-{{ range .Methods }}func (service *{{ $.WrapperERServerName }}) {{ .Name }}(
+{{ range .Methods }}func ({{ .ServerReceiverName }} *{{ $.WrapperERServerName }}) {{ .Name }}(
 {{- range $argIndex, $argument := .Arguments }}{{ if gt $argIndex 0 }}, {{ end }}{{ $argument.Name }} {{ $argument.Type.Plain }}{{ end -}}
-) ({{ if .ResultType }}ret {{ .ResultType.Plain }}, {{ end }}err ex.Error) {
-	defer func() { err = ex.Recover(recover()) }()
-	{{ if .ResultType }}ret = {{ end }}service.server().{{ .Name }}({{ range $argIndex, $argument := .Arguments }}{{ if gt $argIndex 0 }}, {{ end }}{{ $argument.Name }}{{ end }})
+) ({{ if .ResultType }}{{ .ResultName }} {{ .ResultType.Plain }}, {{ end }}{{ .ErrorName }} ex.Error) {
+	defer func() { {{ .ErrorName }} = ex.Recover(recover()) }()
+	{{ if .ResultType }}{{ .ResultName }} = {{ end }}{{ .ServerReceiverName }}.server().{{ .Name }}({{ range $argIndex, $argument := .Arguments }}{{ if gt $argIndex 0 }}, {{ end }}{{ $argument.Name }}{{ end }})
 	return
 }
 

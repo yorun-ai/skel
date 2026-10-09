@@ -46,6 +46,7 @@ type Task struct {
 }
 
 type TaskTrigger struct {
+	*_MethodNames
 	Name               string
 	LaunchName         string
 	RunName            string
@@ -124,7 +125,9 @@ func (r _Types) castTaskTrigger(task_ *schema.Task, p *schema.TaskTrigger) *Task
 		arguments = append(arguments, castedArgument)
 	}
 
+	escapeArgumentNames(arguments, nil)
 	trigger := &TaskTrigger{
+		_MethodNames:       buildMethodNames(arguments, nil),
 		Name:               nameutil.ToCamel(p.Name),
 		LaunchName:         fmt.Sprintf("Launch%s", nameutil.ToCamel(p.Name)),
 		RunName:            fmt.Sprintf("Run%s", nameutil.ToCamel(p.Name)),
