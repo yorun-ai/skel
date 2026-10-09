@@ -6,6 +6,18 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.31.1] - 2026-10-09
+
+### Fixed
+
+- Generate valid Go service and task parameters when contract names match Go
+  keywords, and avoid collisions with generated receivers, results and type
+  references. Preserve contract and JSON names and valid exported fields such
+  as `Type`.
+- Restore static analysis compatibility with current Go 1.27 patch releases
+  through an isolated, pinned analyzer dependency graph. CI continues to use
+  the latest `1.27.x` toolchain.
+
 ## [0.31.0] - 2026-10-07
 
 ### Added
@@ -967,7 +979,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.31.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.31.1...HEAD
+[0.31.1]: https://github.com/yorun-ai/skel/compare/v0.31.0...v0.31.1
 [0.31.0]: https://github.com/yorun-ai/skel/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/yorun-ai/skelc/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/yorun-ai/skelc/compare/v0.28.0...v0.29.0
