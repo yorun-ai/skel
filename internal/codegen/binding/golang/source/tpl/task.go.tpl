@@ -113,10 +113,10 @@ func {{ $task.LauncherCtorName }}(launcher *task.Launcher) {{ $task.LauncherName
 	}
 }
 {{ range $trigger := $task.Triggers }}
-func (launcher *{{ $task.LauncherImplName }}) {{ $trigger.LaunchName }}(
+func ({{ $trigger.LauncherReceiverName }} *{{ $task.LauncherImplName }}) {{ $trigger.LaunchName }}(
 {{- range $trigger.Arguments }}{{ .Name }} {{ .Type.Plain }}, {{ end -}}
 _ltOpts ...task.LaunchOption) {
-	launcher.launcher.Launch({{ $trigger.SpecName }}.Info(), {{ if $trigger.ArgumentsData }}&{{ $trigger.ArgumentsData.Name }}{
+	{{ $trigger.LauncherReceiverName }}.launcher.Launch({{ $trigger.SpecName }}.Info(), {{ if $trigger.ArgumentsData }}&{{ $trigger.ArgumentsData.Name }}{
 	{{- range $trigger.Arguments }}
 		{{ .MemberName }}: {{ .Name }},
 	{{- end }}
@@ -199,11 +199,11 @@ func (runner *{{ $task.WrapperERRunnerName }}) runner() {{ $task.RunnerName }} {
 	return runner.runnerImpl
 }
 {{ range $trigger := $task.Triggers }}
-func (runner *{{ $task.WrapperERRunnerName }}) {{ $trigger.RunName }}(
+func ({{ $trigger.RunnerReceiverName }} *{{ $task.WrapperERRunnerName }}) {{ $trigger.RunName }}(
 {{- range $argIndex, $argument := $trigger.Arguments }}{{ if gt $argIndex 0 }}, {{ end }}{{ $argument.Name }} {{ $argument.Type.Plain }}{{ end -}}
-) (err ex.Error) {
-	defer func() { err = ex.Recover(recover()) }()
-	runner.runner().{{ $trigger.RunName }}({{ range $argIndex, $argument := $trigger.Arguments }}{{ if gt $argIndex 0 }}, {{ end }}{{ $argument.Name }}{{ end }})
+) ({{ $trigger.ErrorName }} ex.Error) {
+	defer func() { {{ $trigger.ErrorName }} = ex.Recover(recover()) }()
+	{{ $trigger.RunnerReceiverName }}.runner().{{ $trigger.RunName }}({{ range $argIndex, $argument := $trigger.Arguments }}{{ if gt $argIndex 0 }}, {{ end }}{{ $argument.Name }}{{ end }})
 	return
 }
 

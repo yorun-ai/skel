@@ -31,7 +31,7 @@ type _ApiService struct {
 }
 
 type _ApiMethod struct {
-	*_ClientMethodNames
+	*_MethodNames
 	Name               string
 	SkelName           string
 	CommentLines       []string
@@ -90,7 +90,8 @@ func (g *_Gen) genApiGo() {
 				m.ResultType = kind
 				imports.addMany(kind.Imports)
 			}
-			m._ClientMethodNames = buildClientMethodNames(m.Arguments)
+			escapeArgumentNames(m.Arguments, m.ResultType)
+			m._MethodNames = buildMethodNames(m.Arguments, m.ResultType)
 			m.CommentLines = goMethodDocLines(
 				m.Name, method.Description, method.Example, m.Arguments, m.ResultType,
 				method.OutputDescription, method.OutputExample, method.DeprecatedReason,

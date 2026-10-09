@@ -6,13 +6,19 @@ usage() {
 }
 
 # Keep local validation, the PR gate and cache warmup on the same pinned checks.
-static_checks() {
+static_checks() (
   export GOWORK=off
   go mod tidy -diff
   go vet ./...
-  go run honnef.co/go/tools/cmd/staticcheck@v0.8.1 -checks='SA*,S1*,U1000' ./...
-  go run golang.org/x/tools/go/analysis/passes/nilness/cmd/nilness@v0.47.0 ./...
-}
+  go -C .github/go-tools mod tidy -diff
+  local analyzer_dir
+  analyzer_dir=$(mktemp -d)
+  trap 'rm -rf "$analyzer_dir"' EXIT
+  go -C .github/go-tools build -o "$analyzer_dir/staticcheck" honnef.co/go/tools/cmd/staticcheck
+  go -C .github/go-tools build -o "$analyzer_dir/nilness" golang.org/x/tools/go/analysis/passes/nilness/cmd/nilness
+  "$analyzer_dir/staticcheck" -checks='SA*,S1*,U1000' ./...
+  "$analyzer_dir/nilness" ./...
+)
 
 # classify_changes reads NUL-delimited changed paths from stdin and reports the
 # checks the change selects. Documentation-only changes skip the Go jobs.

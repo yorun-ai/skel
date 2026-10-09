@@ -10,7 +10,7 @@ import (
 )
 
 type ServiceMethod struct {
-	*_ClientMethodNames
+	*_MethodNames
 	Name                        string
 	SkelName                    string
 	SpecName                    string
@@ -31,8 +31,9 @@ func (r _Types) castServiceMethod(ps *schema.Service, pm *schema.Method) *Servic
 		methodArgs = append(methodArgs, castedArgument)
 	}
 	resultType := r.castType(pm.ResultType)
+	escapeArgumentNames(methodArgs, resultType)
 	method := &ServiceMethod{
-		_ClientMethodNames:          buildClientMethodNames(methodArgs),
+		_MethodNames:                buildMethodNames(methodArgs, resultType),
 		Name:                        nameutil.ToCamel(pm.Name),
 		SkelName:                    pm.Name,
 		Arguments:                   methodArgs,
@@ -92,11 +93,6 @@ type MethodArgument struct {
 func (r _Types) castMethodArgument(p *schema.Argument) *MethodArgument {
 	argType := r.castType(p.Type)
 	name := nameutil.ToLowerCamel(p.Name)
-	// Generated method bodies may refer to the scalar package, including when
-	// a business parameter is named skeltype. Keep its wire name unchanged.
-	if name == "skeltype" {
-		name = "skeltype_"
-	}
 	description := binding.MergeDescriptionAndExample(p.Description, p.Example)
 	if p.Deprecated {
 		if description != "" {
