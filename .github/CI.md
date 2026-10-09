@@ -30,11 +30,15 @@ loading Vine. Go API client compilation and checks against Skel's own public
 types remain covered. Consumers compile and test generated backend code with
 their selected runtime dependencies.
 
-All Go commands use `GOWORK=off`. CI, cache warmup and release builds pin
-Go 1.27.1 so compiler export data stays compatible with the pinned analyzers.
+All Go commands use `GOWORK=off`. CI and cache warmup follow the latest Go
+1.27 patch; the static job also checks Go 1.27.1, which remains the validated
+release toolchain.
 Run `bash .github/scripts/ci.sh static` from the repository root to reproduce
 the static gate locally. Both CI and cache warmup use this script, which pins
-Staticcheck and the Go analysis tools without adding application dependencies.
+Staticcheck and the Go analysis tools through the separate `.github/go-tools`
+module and its checksum file, without adding application dependencies. The
+shared `golang.org/x/tools` dependency is pinned explicitly so both analyzers
+can read compiler export data from current Go 1.27 patches.
 The nilness analyzer catches redundant nil comparisons as well as definite nil
 dereferences. Legacy LSP initialization fields have local, explained
 Staticcheck exemptions so support for older clients remains covered by tests.
