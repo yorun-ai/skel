@@ -1,0 +1,57 @@
+domain example.versions
+
+data Order {
+    id: int
+}
+
+actor ClientActor {
+    via client {}
+}
+
+actor ClientActorV1 {
+    via client {}
+}
+
+actor ClientActorV2 {
+    via client {}
+}
+
+actor ClientActorV10 {
+    via client {}
+}
+
+api service OrderApiService {
+    for ClientActor via client
+    auth required
+    method get {
+        input { id: int }
+        output Order
+    }
+}
+
+api service OrderApiServiceV1 {
+    for ClientActorV1 via client
+    auth required
+    method get {
+        input { id: int }
+        output Order
+    }
+}
+
+api service OrderApiServiceV2 {
+    for ClientActorV2 via client
+    auth required
+    method get {
+        input { id: int }
+        output Order
+    }
+}
+
+api service OrderApiServiceV10 {
+    for ClientActorV10 via client
+    auth required
+    method get {
+        input { id: int }
+        output Order
+    }
+}
