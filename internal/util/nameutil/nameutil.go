@@ -13,6 +13,28 @@ func MaxLength(strs []string) int {
 	return maxLen
 }
 
+// CutKindSuffix splits a declaration name into its body and optional version
+// after removing suffix. Versions use V followed by a positive decimal integer
+// without leading zeroes. A failed match returns value unchanged.
+func CutKindSuffix(value string, suffix string) (body string, version string, found bool) {
+	if body, found := strings.CutSuffix(value, suffix); found {
+		return body, "", true
+	}
+	i := strings.LastIndexByte(value, 'V')
+	if i < 0 || i+1 == len(value) || value[i+1] < '1' || value[i+1] > '9' {
+		return value, "", false
+	}
+	for j := i + 2; j < len(value); j++ {
+		if value[j] < '0' || value[j] > '9' {
+			return value, "", false
+		}
+	}
+	if body, found := strings.CutSuffix(value[:i], suffix); found {
+		return body, value[i:], true
+	}
+	return value, "", false
+}
+
 func PaddingSpaces(count int) string {
 	return strings.Repeat(" ", count)
 }

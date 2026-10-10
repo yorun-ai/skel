@@ -54,19 +54,22 @@ func checkCaseAdvanced(
 		expectedFormat = fmt.Sprintf("[%s]%s", prefix, expectedFormat)
 	}
 	if suffix != "" {
-		expectedFormat = fmt.Sprintf("%s[%s]", expectedFormat, suffix)
+		expectedFormat = fmt.Sprintf("%s[%s][Vn]?", expectedFormat, suffix)
 	}
 
 	valid = reporter.check(prefix == "" || strings.HasPrefix(name, prefix),
 		"%s missing prefix: found=%s, expected=%s... (%s -> %s)", pos, name, prefix, kindName, expectedFormat) && valid
-	valid = reporter.check(suffix == "" || strings.HasSuffix(ident.Value, suffix),
-		"%s missing suffix: found=%s, expected=...%s (%s -> %s)", pos, name, suffix, kindName, expectedFormat) && valid
-
 	body := strings.TrimPrefix(name, prefix)
-	body = strings.TrimSuffix(body, suffix)
+	version := ""
+	if suffix != "" {
+		var found bool
+		body, version, found = nameutil.CutKindSuffix(body, suffix)
+		valid = reporter.check(found,
+			"%s missing suffix: found=%s, expected=...%s optionally followed by V and a positive integer without leading zeroes (%s -> %s)", pos, name, suffix, kindName, expectedFormat) && valid
+	}
 	valid = reporter.check(body != "", "%s missing body after trimming prefix & suffix: found=%s", pos, name) && valid
 	if !matchesCase(body, expectedCase) {
-		expectedName := fmt.Sprintf("%s%s%s", prefix, convertCase(body, expectedCase), suffix)
+		expectedName := fmt.Sprintf("%s%s%s%s", prefix, convertCase(body, expectedCase), suffix, version)
 		reporter.reportNamingf(expectedName, "%s incorrect case: found=%s, expected=%s (%s -> %s)", pos, name, expectedName, kindName, expectedFormat)
 		valid = false
 	}

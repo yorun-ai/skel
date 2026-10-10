@@ -22,7 +22,7 @@ changes skip those jobs while the required gate still completes successfully:
 | --- | --- |
 | Go static | Module metadata drift, `go vet`, Staticcheck correctness/simplification/unused-code checks and nilness |
 | Go race | Full-repository tests with the race detector |
-| Examples | Generate both examples and type-check their TypeScript clients against the pinned published vRPC runtime |
+| Examples | Generate both examples and the versioned API fixture, type-check their TypeScript clients and exercise versioned calls against the pinned published vRPC runtime |
 
 Generated backend Go modules are not compiled in Skel CI or cache warmup.
 Generator tests check emitted declarations and module requirements without
@@ -109,6 +109,13 @@ Its isolated temporary workspace installs the exact versions and integrity hashe
 from `.github/typescript/package-lock.json`; it never substitutes sibling runtime
 source. Cross-domain example imports resolve through TypeScript paths. Update the
 fixture lockfile deliberately when changing the tested runtime or TypeScript version.
+
+`.github/typescript/versions.skel` keeps unversioned, V1, V2 and V10 API services
+and actors in one domain. The generated clients and `versions-client.ts` are
+type-checked together, then compiled to CommonJS for execution in Node. The call
+check uses the published runtime with an in-memory transport to verify that every
+client retains its full service name, passes its input and returns the decoded
+result. It requires no running backend or network requests.
 
 ## Release Publication and Recovery
 

@@ -132,3 +132,27 @@ func TestRenameChecksGenericParametersInSiblingFiles(t *testing.T) {
 	require.Error(t, err)
 	assert.Nil(t, edit)
 }
+
+func TestRenameVersionedActorKeepsOtherVersions(t *testing.T) {
+	f := newFixture()
+	actorURI := uri.File("/workspace/actors.skel")
+	apiURI := uri.File("/consumer/api.skel")
+	f.putDocument(actorURI, "domain demo.actors\npub actor ClientActorV2 { via client {} }\npub actor ClientActorV10 { via client {} }\n", 1, true)
+	f.putDocument(apiURI, "domain demo.api\nimport demo.actors as actors\napi service EntryApiServiceV2 { for actors.ClientActorV2 auth required method ping {} }\napi service EntryApiServiceV10 { for actors.ClientActorV10 auth required method ping {} }\n", 1, true)
+	edit, err := f.service().Rename(t.Context(), &protocol.RenameParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: actorURI},
+			Position:     protocol.Position{Line: 1, Character: 15},
+		},
+		NewName: "ClientActorV3",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, edit)
+	require.Len(t, edit.Changes, 2)
+	require.Len(t, edit.Changes[actorURI], 1)
+	require.Len(t, edit.Changes[apiURI], 1)
+	assert.Equal(t, uint32(1), edit.Changes[actorURI][0].Range.Start.Line)
+	assert.Equal(t, uint32(2), edit.Changes[apiURI][0].Range.Start.Line)
+	assert.Equal(t, "ClientActorV3", edit.Changes[actorURI][0].NewText)
+	assert.Equal(t, "ClientActorV3", edit.Changes[apiURI][0].NewText)
+}

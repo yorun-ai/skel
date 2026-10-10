@@ -1,10 +1,9 @@
 package analyzer
 
 import (
-	"strings"
-
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -45,7 +44,9 @@ func parseEvent(reporter *_DiagnosticReporter, ge *grammar.Event) (*schema.Data,
 func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind schema.DataKind) (*schema.Data, bool) {
 	valid := checkCase(reporter, "Data", caseTypeCamel, gs.Name)
 	if kind == schema.DataKindConfig {
-		valid = reporter.check(strings.HasSuffix(gs.Name.Value, "Config"), "%s Config name must end with Config", gs.Name.Pos) && valid
+		body, _, hasSuffix := nameutil.CutKindSuffix(gs.Name.Value, "Config")
+		valid = reporter.check(hasSuffix, "%s Config name must end with Config, optionally followed by V and a positive integer without leading zeroes", gs.Name.Pos) && valid
+		valid = reporter.check(body != "", "%s missing body after trimming prefix & suffix: found=%s", gs.Name.Pos, gs.Name.Value) && valid
 		qualifierValid := reporter.check(gs.Qualifier != nil,
 			"%s Config %s requires lifecycle qualifier eternal/instant",
 			gs.Name.Pos, gs.Name.Value)
@@ -60,7 +61,9 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind schema.
 			"%s Config %s does not support type parameters",
 			gs.Name.Pos, gs.Name.Value) && valid
 	} else if kind == schema.DataKindEvent {
-		valid = reporter.check(strings.HasSuffix(gs.Name.Value, "Event"), "%s Event name must end with Event", gs.Name.Pos) && valid
+		body, _, hasSuffix := nameutil.CutKindSuffix(gs.Name.Value, "Event")
+		valid = reporter.check(hasSuffix, "%s Event name must end with Event, optionally followed by V and a positive integer without leading zeroes", gs.Name.Pos) && valid
+		valid = reporter.check(body != "", "%s missing body after trimming prefix & suffix: found=%s", gs.Name.Pos, gs.Name.Value) && valid
 		valid = reporter.check(len(gs.TypeParameters) == 0,
 			"%s Event %s does not support type parameters",
 			gs.Name.Pos, gs.Name.Value) && valid

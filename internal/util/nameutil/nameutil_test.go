@@ -51,3 +51,33 @@ func TestSplitWordsMixedInput(t *testing.T) {
 	assert.Equal(t, []string{"HTTP", "Server", "2", "Test"}, splitWords("HTTPServer2-Test"))
 	assert.True(t, strings.Contains(ToScreamingSnake("HTTPServer2-Test"), "HTTP_SERVER_2_TEST"))
 }
+
+func TestCutKindSuffix(t *testing.T) {
+	for _, test := range []struct {
+		name, suffix, body, version string
+		found                       bool
+	}{
+		{"OrderService", "Service", "Order", "", true},
+		{"OrderServiceV1", "Service", "Order", "V1", true},
+		{"OrderServiceV10", "Service", "Order", "V10", true},
+		{"OrderServiceV999999999999999999999", "Service", "Order", "V999999999999999999999", true},
+		{"OrderApiServiceV2", "ApiService", "Order", "V2", true},
+		{"OrderV2Service", "Service", "OrderV2", "", true},
+		{"OrderV2EventV10", "Event", "OrderV2", "V10", true},
+		{"ServiceV2", "Service", "", "V2", true},
+		{"OrderServiceV0", "Service", "OrderServiceV0", "", false},
+		{"OrderServiceV01", "Service", "OrderServiceV01", "", false},
+		{"OrderServiceV", "Service", "OrderServiceV", "", false},
+		{"OrderServicev2", "Service", "OrderServicev2", "", false},
+		{"OrderServiceV2Beta", "Service", "OrderServiceV2Beta", "", false},
+		{"OrderServiceV٢", "Service", "OrderServiceV٢", "", false},
+		{"OrderServiceV2", "ApiService", "OrderServiceV2", "", false},
+	} {
+		t.Run(test.name+"/"+test.suffix, func(t *testing.T) {
+			body, version, found := CutKindSuffix(test.name, test.suffix)
+			assert.Equal(t, test.body, body)
+			assert.Equal(t, test.version, version)
+			assert.Equal(t, test.found, found)
+		})
+	}
+}

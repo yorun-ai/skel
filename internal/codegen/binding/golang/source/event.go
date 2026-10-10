@@ -2,7 +2,6 @@ package source
 
 import (
 	"fmt"
-	"strings"
 
 	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/schema"
@@ -85,7 +84,8 @@ func (g *_Gen) eventEmitterOnly(event *schema.Data) bool {
 
 func (g *_Gen) castEvent(p *schema.Data, listenerOnly bool, emitterOnly bool) *Event {
 	eventName := nameutil.ToCamel(p.Name)
-	methodName := strings.TrimSuffix(eventName, "Event")
+	body, version, _ := nameutil.CutKindSuffix(eventName, "Event")
+	methodName := body + version
 	event_ := &Event{
 		Name:                      eventName,
 		Ext:                       p.Ext,

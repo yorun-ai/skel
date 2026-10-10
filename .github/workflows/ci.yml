@@ -104,9 +104,12 @@ jobs:
 
           ./examples/quickstart/generate.sh "$quickstart_out"
           ./examples/commerce/generate.sh "$commerce_out"
+          go run ./cmd/skelc gen ts --api \
+            --skel-in .github/typescript/versions.skel \
+            --ts-out "$RUNNER_TEMP/skelc-versions/typescript"
 
-      - name: Type-check generated TypeScript against the published runtime
-        run: node .github/scripts/typecheck-generated.mjs "$RUNNER_TEMP/skelc-quickstart" "$RUNNER_TEMP/skelc-commerce"
+      - name: Check generated TypeScript and versioned calls against the published runtime
+        run: node .github/scripts/typecheck-generated.mjs "$RUNNER_TEMP/skelc-quickstart" "$RUNNER_TEMP/skelc-commerce" "$RUNNER_TEMP/skelc-versions"
 
   ci-checks:
     name: CI / Required Checks
