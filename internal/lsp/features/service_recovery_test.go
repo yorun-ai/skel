@@ -95,7 +95,7 @@ func exerciseEditingSource(t *testing.T, text string) {
 
 func TestLanguageFeaturesHandleEditingDeclarations(t *testing.T) {
 	complete := "domain demo\n" + strings.Join(editingDeclarations[2:], "\n")
-	if diagnostics := compiler.AnalyzeWorkspace([]compiler.Source{{Path: "/workspace/edit.skel", Content: []byte(complete)}}); len(diagnostics) != 0 {
+	if diagnostics := compiler.AnalyzeWorkspace([]compiler.Source{{Path: "/workspace/edit.skel", Content: []byte(complete)}}); compiler.Diagnostics(diagnostics).HasErrors() {
 		t.Fatalf("editing fixture must exercise a valid resolved domain: %v", diagnostics)
 	}
 	declarations := append(append([]string{}, editingDeclarations...), strings.Join(editingDeclarations[2:], "\n"))

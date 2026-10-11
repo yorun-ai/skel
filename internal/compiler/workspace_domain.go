@@ -205,6 +205,9 @@ func (w *WorkspaceAnalyzer) analyzeResolvedWorkspaceDomain(
 		return false
 	}
 	if len(local) > 0 {
+		if w.options.IncludeWarnings {
+			local = appendAnalysisWarnings(local, analysis.Warnings())
+		}
 		*diagnostics = append(*diagnostics, local...)
 		domain.state = workspaceDomainFailed
 		w.domains[domain.key] = _CachedWorkspaceDomain{fingerprint: domain.fingerprint, diagnostics: cloneDiagnostics(local)}

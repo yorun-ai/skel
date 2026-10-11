@@ -11,13 +11,13 @@ func TestDeclarationVersionSuffixes(t *testing.T) {
 	for _, declaration := range []struct{ prefix, suffix, body string }{
 		{"pub service", "Service", "method ping {}"},
 		{"ext service", "Service", "method ping {}"},
-		{"api service", "ApiService", "for ClientActor via client auth required method ping {}"},
+		{"api service", "ApiService", "for ClientActor auth required method ping {}"},
 		{"pub event", "Event", "payload { id: int }"},
 		{"ext event", "Event", "payload { id: int }"},
 		{"config", "Config", "id: int"},
-		{"pub actor", "Actor", "via client {}"},
+		{"pub actor", "Actor", ""},
 		{"task", "Task", "trigger run {}"},
-		{"web", "Web", "for ClientActor via client auth required"},
+		{"web", "Web", "for ClientActor auth required"},
 	} {
 		for _, version := range []string{"", "V1", "V2", "V10", "V999999999999999999999", "V0", "V01", "V", "v2", "V2Beta", "V2V3"} {
 			t.Run(declaration.prefix+"/"+version, func(t *testing.T) {
@@ -27,7 +27,7 @@ func TestDeclarationVersionSuffixes(t *testing.T) {
 					qualifier = " eternal"
 				}
 				path := filepath.Join(t.TempDir(), "domain.skel")
-				writeFile(t, path, fmt.Sprintf("domain demo\nactor ClientActor { via client {} }\n%s %s%s { %s }\n", declaration.prefix, name, qualifier, declaration.body))
+				writeFile(t, path, fmt.Sprintf("domain demo\nactor ClientActor {  }\n%s %s%s { %s }\n", declaration.prefix, name, qualifier, declaration.body))
 				valid := version == "" || version == "V1" || version == "V2" || version == "V10" || version == "V999999999999999999999"
 				result, err := Check(Option{SkelIn: path})
 				if err != nil {
@@ -87,13 +87,13 @@ func TestVersionSuffixPreservesNamingRules(t *testing.T) {
 		"api service ApiServiceV2 { for ClientActor auth required method ping {} }",
 		"api service OrderServiceV2 { for ClientActor auth required method ping {} }",
 		"api service OrderAPIServiceV2 { for ClientActor auth required method ping {} }",
-		"actor ActorV2 { via client {} }",
+		"actor ActorV2 {  }",
 		"task TaskV2 { trigger run {} }",
 		"web WebV2 { for ClientActor auth required }",
 	} {
 		t.Run(declaration, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "domain.skel")
-			writeFile(t, path, "domain demo\nactor ClientActor { via client {} }\n"+declaration)
+			writeFile(t, path, "domain demo\nactor ClientActor {  }\n"+declaration)
 			if _, err := Compile(Option{SkelIn: path}); err == nil {
 				t.Fatal("accepted declaration without the required name body or kind suffix")
 			}

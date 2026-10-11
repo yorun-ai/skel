@@ -6,7 +6,6 @@ type _ActorRefHashValue struct {
 	Name     string `json:"name"`
 	SkelName string `json:"skelName"`
 	Hash     string `json:"hash,omitempty"`
-	Via      string `json:"via,omitempty"`
 }
 
 type _EnumItemHashValue struct {
@@ -77,23 +76,22 @@ type _WebHashValue struct {
 // _ActorHashValue encodes language semantics independently of the public Actor layout.
 // Grouping capability metadata must not change the hash of an unchanged declaration.
 type _ActorHashValue struct {
-	IdentifierField    string   `json:"identifierField,omitempty"`
-	Name               string   `json:"name"`
-	SkelName           string   `json:"skelName"`
-	Description        string   `json:"description,omitempty"`
-	Deprecated         bool     `json:"deprecated,omitempty"`
-	DeprecatedReason   string   `json:"deprecatedReason,omitempty"`
-	Vias               []string `json:"vias,omitempty"`
-	AuthEnabled        bool     `json:"authEnabled,omitempty"`
-	AuthCredential     string   `json:"authCredential,omitempty"`
-	AuthCredentialHash string   `json:"authCredentialHash,omitempty"`
-	AuthInfo           string   `json:"authInfo,omitempty"`
-	AuthInfoHash       string   `json:"authInfoHash,omitempty"`
-	AuthMethod         string   `json:"authMethod,omitempty"`
-	AuthMethodHash     string   `json:"authMethodHash,omitempty"`
-	PermissionEnabled  bool     `json:"permEnabled,omitempty"`
-	PermissionMethod   string   `json:"permMethod,omitempty"`
-	PermMethodHash     string   `json:"permMethodHash,omitempty"`
+	IdentifierField    string `json:"identifierField,omitempty"`
+	Name               string `json:"name"`
+	SkelName           string `json:"skelName"`
+	Description        string `json:"description,omitempty"`
+	Deprecated         bool   `json:"deprecated,omitempty"`
+	DeprecatedReason   string `json:"deprecatedReason,omitempty"`
+	AuthEnabled        bool   `json:"authEnabled,omitempty"`
+	AuthCredential     string `json:"authCredential,omitempty"`
+	AuthCredentialHash string `json:"authCredentialHash,omitempty"`
+	AuthInfo           string `json:"authInfo,omitempty"`
+	AuthInfoHash       string `json:"authInfoHash,omitempty"`
+	AuthMethod         string `json:"authMethod,omitempty"`
+	AuthMethodHash     string `json:"authMethodHash,omitempty"`
+	PermissionEnabled  bool   `json:"permEnabled,omitempty"`
+	PermissionMethod   string `json:"permMethod,omitempty"`
+	PermMethodHash     string `json:"permMethodHash,omitempty"`
 }
 
 type _ResourceHashValue struct {

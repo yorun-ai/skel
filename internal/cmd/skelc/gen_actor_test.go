@@ -10,10 +10,10 @@ import (
 func TestGenerationActorFlags(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "source.skel")
 	writeCLIFile(t, source, `domain demo.user
-actor UserActor { via client {} }
-actor AdminActor { via client {} }
-api service UserApiService { for UserActor via client auth required method ping {} }
-api service AdminApiService { for AdminActor via client auth required method ping {} }
+actor UserActor {  }
+actor AdminActor {  }
+api service UserApiService { for UserActor auth required method ping {} }
+api service AdminApiService { for AdminActor auth required method ping {} }
 `)
 	for _, target := range []string{"go", "go-module", "ts"} {
 		t.Run(target, func(t *testing.T) {
@@ -60,10 +60,10 @@ api service AdminApiService { for AdminActor via client auth required method pin
 func TestGenerationActorFlagsMatchExactVersion(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "source.skel")
 	writeCLIFile(t, source, `domain demo.user
-actor ClientActorV1 { via client {} }
-actor ClientActorV10 { via client {} }
-api service OrderApiServiceV1 { for ClientActorV1 via client auth required method ping {} }
-api service OrderApiServiceV10 { for ClientActorV10 via client auth required method ping {} }
+actor ClientActorV1 {  }
+actor ClientActorV10 {  }
+api service OrderApiServiceV1 { for ClientActorV1 auth required method ping {} }
+api service OrderApiServiceV10 { for ClientActorV10 auth required method ping {} }
 `)
 	for _, target := range []string{"go", "go-module", "ts"} {
 		t.Run(target, func(t *testing.T) {

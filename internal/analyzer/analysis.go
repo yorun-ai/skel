@@ -23,8 +23,6 @@ type Analysis struct {
 	services  []*schema.Service
 	tasks     []*schema.Task
 
-	warnings []string
-
 	content *grammar.SkelContent
 
 	enumsMap     map[string]*schema.Enum
@@ -156,6 +154,6 @@ func (p *Analysis) Schema() *schema.Domain {
 	return p.schema
 }
 
-func (p *Analysis) Warnings() []string {
-	return append([]string{}, p.warnings...)
+func (p *Analysis) Warnings() []error {
+	return append([]error{}, p.reporter.warnings...)
 }

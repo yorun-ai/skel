@@ -2,10 +2,35 @@ package descriptor_test
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
 
 	"go.yorun.ai/skel/descriptor"
 )
+
+func TestActorLegacyViaMetadata(t *testing.T) {
+	// Keep the descriptor literal shape emitted by older skelc versions compiling.
+	actor := descriptor.Actor{
+		Name:     "UserActor",
+		SkelName: "demo.UserActor",
+		Vias: []descriptor.ActorViaKind{
+			descriptor.ActorViaClient,
+			descriptor.ActorViaAgent,
+			descriptor.ActorViaOpenAPI,
+		},
+	}
+	encoded, err := json.Marshal(actor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded descriptor.Actor
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(decoded.Vias, actor.Vias) {
+		t.Fatalf("legacy vias did not round trip: got %v, want %v", decoded.Vias, actor.Vias)
+	}
+}
 
 func TestActorAudienceMatching(t *testing.T) {
 	audiences := []*descriptor.ActorAudience{
@@ -36,6 +61,7 @@ func TestActorAudienceMatching(t *testing.T) {
 		{
 			actor: "demo.User",
 			via:   descriptor.ActorViaAgent,
+			want:  true,
 		},
 		{
 			actor: "demo.Admin",

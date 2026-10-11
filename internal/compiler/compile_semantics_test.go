@@ -57,7 +57,7 @@ enum UserStatus {
 	if service.Name != "UserApiService" {
 		t.Fatalf("unexpected service name: %s", service.Name)
 	}
-	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "client" {
+	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "" {
 		t.Fatalf("unexpected service audiences: %+v", service.Audiences)
 	}
 	if len(service.Methods) != 1 {

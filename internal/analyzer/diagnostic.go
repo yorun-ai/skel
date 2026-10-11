@@ -24,9 +24,10 @@ const (
 )
 
 type _DiagnosticReporter struct {
-	ctx    context.Context
-	errors []error
-	seen   map[string]bool
+	ctx      context.Context
+	errors   []error
+	warnings []error
+	seen     map[string]bool
 }
 
 func newDiagnosticReporter() *_DiagnosticReporter {
@@ -66,6 +67,14 @@ func (r *_DiagnosticReporter) checkNotDuplicate(condition bool, message string, 
 
 func (r *_DiagnosticReporter) reportf(message string, args ...any) {
 	r.report(newDiagnosticFailure(DiagnosticCodeValidation, message, args...))
+}
+
+func (r *_DiagnosticReporter) warnIgnoredVia(pos lexer.Position) {
+	if r.cancelled() || len(r.warnings) >= MaxDiagnosticsPerDomain {
+		return
+	}
+	r.warnings = append(r.warnings, newDiagnosticFailure(diagnostic.CodeViaIgnored,
+		"%s via is deprecated and ignored; remove this clause", pos))
 }
 
 func (r *_DiagnosticReporter) reportDuplicatef(message string, args ...any) {

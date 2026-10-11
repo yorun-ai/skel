@@ -83,7 +83,6 @@ func (s *_HashState) buildActorAudienceHashValues(audiences []*schema.ActorAudie
 			Name:     name,
 			SkelName: skelName,
 			Hash:     hash,
-			Via:      audience.Via,
 		})
 	}
 	return values

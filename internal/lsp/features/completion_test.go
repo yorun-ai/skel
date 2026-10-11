@@ -326,8 +326,6 @@ func TestServiceCompletesContextualLanguageValues(t *testing.T) {
 		want     []string
 	}{
 		{position: protocol.Position{Line: 1, Character: 24}, want: []string{"eternal", "instant"}},
-		{position: protocol.Position{Line: 3, Character: 10}, want: []string{"agent", "client", "openapi"}},
-		{position: protocol.Position{Line: 6, Character: 26}, want: []string{"agent", "client", "openapi"}},
 	}
 	for _, test := range tests {
 		result, err := server.service().Completion(t.Context(), &protocol.CompletionParams{
@@ -393,4 +391,21 @@ func TestExtensionModifierCompletion(t *testing.T) {
 		assert.NotEqual(t, "open", item.Label)
 	}
 	assert.True(t, found, "extension modifier must be offered")
+}
+
+func TestServiceDoesNotCompleteDeprecatedVia(t *testing.T) {
+	fixture := newFixture()
+	documentURI := uri.File("/workspace/access.skel")
+	fixture.putDocument(documentURI, "domain demo\nactor UserActor {\n    via cl\n}\n", 1, true)
+	for _, position := range []protocol.Position{{Line: 2, Character: 4}, {Line: 2, Character: 10}} {
+		result, err := fixture.service().Completion(t.Context(), &protocol.CompletionParams{
+			TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+				TextDocument: protocol.TextDocumentIdentifier{URI: documentURI}, Position: position,
+			},
+		})
+		require.NoError(t, err)
+		for _, label := range []string{"via", "client", "agent", "openapi"} {
+			assert.False(t, hasCompletion(result.(protocol.CompletionItemSlice), label), label)
+		}
+	}
 }

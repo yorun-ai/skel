@@ -25,7 +25,7 @@ func TestParseWeb(t *testing.T) {
 	if len(web.Audiences) != 2 || web.Audiences[0].Actor != "ClientActor" || web.Audiences[1].Actor != "OpenAPIActor" {
 		t.Fatalf("unexpected web audiences: %+v", web.Audiences)
 	}
-	if web.Audiences[0].Via != "client" {
+	if web.Audiences[0].Via != "" {
 		t.Fatalf("unexpected web for via: %+v", web.Audiences)
 	}
 }

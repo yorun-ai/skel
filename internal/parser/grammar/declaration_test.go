@@ -174,12 +174,12 @@ web UserPortalWeb {
 	if len(actorEntry.Actor.Vias) != 2 || actorEntry.Actor.Vias[0].Name.Value != "client" || actorEntry.Actor.Vias[1].Name.Value != "openapi" {
 		t.Fatalf("unexpected actor vias: %+v", actorEntry.Actor.Vias)
 	}
-	if len(actorEntry.Actor.Sections) != 1 {
+	if len(actorEntry.Actor.Sections) != 3 {
 		t.Fatalf("unexpected actor sections: %+v", actorEntry.Actor.Sections)
 	}
-	auth := actorEntry.Actor.Sections[0].Auth
+	auth := actorEntry.Actor.Sections[2].Auth
 	if auth == nil {
-		t.Fatalf("unexpected actor auth: %+v", actorEntry.Actor.Sections[0])
+		t.Fatalf("unexpected actor auth: %+v", actorEntry.Actor.Sections[2])
 	}
 	if len(auth.Credential.Decorators) != 1 || auth.Credential.Decorators[0].Name.Value != "sensitive" {
 		t.Fatalf("unexpected actor credential decorators: %+v", auth.Credential.Decorators)
@@ -188,7 +188,7 @@ web UserPortalWeb {
 		t.Fatalf("unexpected actor info decorators: %+v", auth.Info.Decorators)
 	}
 	if auth.Credential == nil || len(auth.Credential.Members) != 1 || auth.Credential.Members[0].Name.Value != "subject" {
-		t.Fatalf("unexpected actor credential: %+v", actorEntry.Actor.Sections[0])
+		t.Fatalf("unexpected actor credential: %+v", actorEntry.Actor.Sections[2])
 	}
 	if auth.Info == nil || len(auth.Info.Members) != 1 || auth.Info.Members[0].Name.Value != "userId" {
 		t.Fatalf("unexpected actor info: %+v", auth)
@@ -273,7 +273,7 @@ web UserPortalWeb {
 	}
 }
 
-func TestParseActorSectionsMustFollowVias(t *testing.T) {
+func TestParseActorAcceptsIgnoredViaAfterAuth(t *testing.T) {
 	parser := buildSkelParserForTest(t)
 	_, err := parser.ParseString("test.skel", strings.TrimSpace(`
 domain demo.user
@@ -287,8 +287,8 @@ actor ClientActor {
     via client {}
 }
 `))
-	if err == nil {
-		t.Fatal("expected parse error when actor section appears before via")
+	if err != nil {
+		t.Fatalf("ignored via must be accepted after actor auth: %v", err)
 	}
 }
 
@@ -309,7 +309,7 @@ actor ClientActor {
 }
 	`)
 	actor := content.Entries[0].Actor
-	if len(actor.Sections) != 1 || actor.Sections[0].Auth == nil || actor.Sections[0].Auth.Info == nil || actor.Sections[0].Auth.Credential == nil {
+	if len(actor.Sections) != 2 || actor.Sections[1].Auth == nil || actor.Sections[1].Auth.Info == nil || actor.Sections[1].Auth.Credential == nil {
 		t.Fatalf("unexpected actor sections: %+v", actor.Sections)
 	}
 }

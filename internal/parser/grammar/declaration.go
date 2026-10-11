@@ -140,13 +140,17 @@ type Actor struct {
 	Pos        lexer.Position
 	Decorators []*Decorator
 	Pub        bool
-	Name       *Identifier     `parser:"@@"`
-	Vias       []*ActorVia     `parser:"\"{\" (Newline)* (@@ (Newline)*)*"`
-	Sections   []*ActorSection `parser:"(@@ (Newline)*)* \"}\""`
+	Name       *Identifier `parser:"@@"`
+	Vias       []*ActorVia
+	Sections   []*ActorSection `parser:"\"{\" (Newline)* (@@ (Newline)*)* \"}\""`
 }
 
 func (actor *Actor) Finalize() error {
+	actor.Vias = nil
 	for _, section := range actor.Sections {
+		if section.Via != nil {
+			actor.Vias = append(actor.Vias, section.Via)
+		}
 		if section.Auth == nil {
 			continue
 		}
@@ -163,7 +167,8 @@ type ActorVia struct {
 }
 
 type ActorSection struct {
-	Auth       *ActorAuth       `parser:"  (?= \"auth\") @@"`
+	Via        *ActorVia        `parser:"  (?= \"via\") @@"`
+	Auth       *ActorAuth       `parser:"| (?= \"auth\") @@"`
 	Permission *ActorPermission `parser:"| (?= \"permission\") @@"`
 }
 

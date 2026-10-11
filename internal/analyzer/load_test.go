@@ -86,8 +86,8 @@ func TestAnalyzeRejectsPubTask(t *testing.T) {
 	})
 }
 
-func TestAnalyzeReturnsErrorWhenAllowViaDoesNotExist(t *testing.T) {
-	expectAnalyzeDiagnosticsContains(t, `references undefined actor via "openapi"`, &grammar.SkelContent{
+func TestAnalyzeIgnoresUnknownAudienceVia(t *testing.T) {
+	analysis, diagnostics := Analyze(&grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
@@ -110,7 +110,10 @@ func TestAnalyzeReturnsErrorWhenAllowViaDoesNotExist(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, nil)
+	if len(diagnostics) != 0 || len(analysis.Warnings()) != 2 {
+		t.Fatalf("expected only via warnings, got %v / %v", diagnostics, analysis.Warnings())
+	}
 }
 
 func TestAnalyzeReturnsErrorWhenActorAuthServiceNameConflicts(t *testing.T) {

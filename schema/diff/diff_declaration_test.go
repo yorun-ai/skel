@@ -213,8 +213,6 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 			diff.compareActor("Caller", auth(true, true), changed)
 		})
 		coverage.assert(t, changes, map[string]ImpactLevel{
-			"actor.via.removed":                       ImpactBreaking,
-			"actor.via.added":                         ImpactCompatible,
 			"actor.auth.added":                        ImpactDangerous,
 			"actor.auth.removed":                      ImpactBreaking,
 			"actor.permission.added":                  ImpactDangerous,

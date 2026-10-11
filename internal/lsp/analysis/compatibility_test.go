@@ -26,8 +26,8 @@ func TestCompatibilityDiagnosticsLocateActorCapabilities(t *testing.T) {
 				if capability == "auth" {
 					body = "auth { credential { token: string } info { id: string } }"
 				}
-				before := "domain demo\nactor UserActor {\n    via client {}\n}\n"
-				after := "domain demo\nactor UserActor {\n    via client {}\n    " + body + "\n}\n"
+				before := "domain demo\nactor UserActor {\n    \n}\n"
+				after := "domain demo\nactor UserActor {\n    \n    " + body + "\n}\n"
 				code := "schema.actor." + capability + ".added"
 				position := protocol.Position{Line: 3, Character: 4}
 				if !added {

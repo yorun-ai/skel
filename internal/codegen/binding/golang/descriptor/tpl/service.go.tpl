@@ -7,7 +7,7 @@
 {{- end }}
 
 {{- define "actorAudienceDescriptor" -}}
-{Name: {{ quote .Name }}, SkelName: {{ quote .SkelName }}{{ with .Via }}, Via: {{ viaLiteral . }}{{ end }}}
+{Name: {{ quote .Name }}, SkelName: {{ quote .SkelName }}}
 {{- end }}
 
 {{- define "methodDescriptorList" -}}

@@ -133,13 +133,13 @@ func (c *_Diff) compareAudiences(owner, prefix string, baseline, candidate []*sc
 	for key, audience := range baselineByKey {
 		if candidateByKey[key] == nil {
 			c.add(ImpactBreaking, prefix+".removed", owner,
-				fmt.Sprintf("audience %s via %s was removed", audience.Actor, audience.Via), audience.Pos, schema.Position{})
+				fmt.Sprintf("audience %s was removed", audience.Actor), audience.Pos, schema.Position{})
 		}
 	}
 	for key, audience := range candidateByKey {
 		if baselineByKey[key] == nil {
 			c.add(ImpactCompatible, prefix+".added", owner,
-				fmt.Sprintf("audience %s via %s was added", audience.Actor, audience.Via), schema.Position{}, audience.Pos)
+				fmt.Sprintf("audience %s was added", audience.Actor), schema.Position{}, audience.Pos)
 		}
 	}
 }

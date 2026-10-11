@@ -72,6 +72,6 @@ func AnalyzeInputFromContext(ctx context.Context, provider loader.Provider, path
 			sources[i].DirectoryInput = false
 		}
 	}
-	diagnostics, domains, err := NewWorkspaceAnalyzer().AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{AllowUnresolvedImports: true})
+	diagnostics, domains, err := NewWorkspaceAnalyzer().AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{AllowUnresolvedImports: true, IncludeWarnings: true})
 	return append(diagnostics, LoaderWarningDiagnostics(loaded.Warnings)...), domains, err
 }

@@ -28,14 +28,6 @@ func buildTypeParameterNames(items []*schema.TypeParameter) []string {
 	return values
 }
 
-func buildActorViaNames(items []*schema.ActorVia) []string {
-	values := make([]string, 0, len(items))
-	for _, item := range items {
-		values = append(values, string(item.Name))
-	}
-	return values
-}
-
 func (s *_HashState) buildMemberHashValues(items []*schema.DataMember) []*_MemberHashValue {
 	values := make([]*_MemberHashValue, 0, len(items))
 	for _, item := range items {

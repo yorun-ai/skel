@@ -14,8 +14,8 @@ func TestServiceEntryPointRules(t *testing.T) {
 	source := Source{Path: "/workspace/api.skel", Content: []byte(`domain demo.order
 service LegacyService { method ping {} }
 pub service DualService { method ping { auth optional } }
-actor TestActor { via client {} }
-api service ClientApiService { for TestActor via client auth required method ping {} }
+actor TestActor {  }
+api service ClientApiService { for TestActor auth required method ping {} }
 pub service BackendService { method ping {} }
 `)}
 	analyzer := NewWorkspaceAnalyzer()
@@ -49,9 +49,9 @@ func TestApiServiceNameSuffix(t *testing.T) {
 		t.Run(test.declaration, func(t *testing.T) {
 			body := " { method ping {} }"
 			if strings.HasPrefix(test.declaration, "api ") {
-				body = " { for TestActor via client auth required method ping {} }"
+				body = " { for TestActor auth required method ping {} }"
 			}
-			source := Source{Path: "/workspace/api.skel", Content: []byte("domain demo.order\n" + test.declaration + body + "\nactor TestActor { via client {} }\n")}
+			source := Source{Path: "/workspace/api.skel", Content: []byte("domain demo.order\n" + test.declaration + body + "\nactor TestActor {  }\n")}
 			analyzer := NewWorkspaceAnalyzer()
 			for range 2 {
 				diagnostics, _, err := analyzer.analyze(context.Background(), []Source{source}, true)
@@ -106,7 +106,7 @@ func TestApiServiceRequiresActorAudience(t *testing.T) {
 				t.Fatalf("unexpected diagnostic: %+v", d)
 			}
 		}
-		source.Content = []byte("domain demo.order\nactor ClientActor { via client {} }\napi service OrderApiService { for ClientActor via client " + auth + " method ping {} }\n")
+		source.Content = []byte("domain demo.order\nactor ClientActor {  }\napi service OrderApiService { for ClientActor " + auth + " method ping {} }\n")
 		diagnostics, _, err := analyzer.analyze(context.Background(), []Source{source}, true)
 		if err != nil || Diagnostics(diagnostics).HasErrors() {
 			t.Fatalf("valid audience rejected: %v, %v", diagnostics, err)
@@ -132,7 +132,7 @@ func TestEntryPointRulesApplyInAllModes(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "entry.skel")
-			writeFile(t, path, "domain demo\nactor ClientActor { via client {} permission {} }\nresource Record { action read }\n"+test.declaration)
+			writeFile(t, path, "domain demo\nactor ClientActor {  permission {} }\nresource Record { action read }\n"+test.declaration)
 			var previous Diagnostics
 			for _, strict := range []bool{false, true, false} {
 				checked, err := Check(Option{SkelIn: path, Strict: strict})

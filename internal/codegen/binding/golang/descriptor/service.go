@@ -42,7 +42,7 @@ func (g *_Gen) buildActorAudienceDescriptors(values []*schema.ActorAudience) []*
 	result := make([]*descriptor.ActorAudience, 0, len(values))
 	for _, value := range values {
 		name, skelName := localAndSkelName(g.Domain.ReferenceName(value.Actor))
-		result = append(result, &descriptor.ActorAudience{Name: name, SkelName: skelName, Via: actorVia(value.Via)})
+		result = append(result, &descriptor.ActorAudience{Name: name, SkelName: skelName})
 	}
 	return result
 }

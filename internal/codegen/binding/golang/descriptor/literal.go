@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"go.yorun.ai/skel/descriptor"
-	"go.yorun.ai/skel/schema"
 )
 
 func renderScalarLiteral(scalar descriptor.Scalar) string {
@@ -38,32 +37,6 @@ func renderScalarLiteral(scalar descriptor.Scalar) string {
 		return "descriptor.ScalarBinary"
 	default:
 		return "descriptor.Scalar(" + quote(string(scalar)) + ")"
-	}
-}
-
-func actorVia(name string) descriptor.ActorViaKind {
-	switch schema.ActorViaKind(name) {
-	case schema.ActorViaClient:
-		return descriptor.ActorViaClient
-	case schema.ActorViaAgent:
-		return descriptor.ActorViaAgent
-	case schema.ActorViaOpenAPI:
-		return descriptor.ActorViaOpenAPI
-	default:
-		return ""
-	}
-}
-
-func renderActorViaLiteral(method descriptor.ActorViaKind) (string, error) {
-	switch method {
-	case descriptor.ActorViaClient:
-		return "descriptor.ActorViaClient", nil
-	case descriptor.ActorViaAgent:
-		return "descriptor.ActorViaAgent", nil
-	case descriptor.ActorViaOpenAPI:
-		return "descriptor.ActorViaOpenAPI", nil
-	default:
-		return "", fmt.Errorf("unsupported actor via %q", method)
 	}
 }
 

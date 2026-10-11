@@ -103,11 +103,11 @@ func TestRunSkelcSchemaGetActorCapabilities(t *testing.T) {
 				t.Fatal(err)
 			}
 			actor := declaration.Actor
-			if string(actor["vias"]) == "" || (actor["auth"] != nil) != test.auth || (actor["permission"] != nil) != test.permission {
+			if actor["vias"] != nil || (actor["auth"] != nil) != test.auth || (actor["permission"] != nil) != test.permission {
 				t.Fatalf("unexpected actor capabilities: %s", result.Stdout)
 			}
 			for key := range actor {
-				if key != "vias" && key != "auth" && key != "permission" {
+				if key != "auth" && key != "permission" {
 					t.Fatalf("unexpected flattened actor field %q", key)
 				}
 			}

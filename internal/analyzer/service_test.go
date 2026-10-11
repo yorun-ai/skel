@@ -67,7 +67,7 @@ func TestParseService(t *testing.T) {
 	if service.Audiences[0].Actor != "ClientActor" || service.Audiences[1].Actor != "OpenAPIActor" {
 		t.Fatalf("unexpected service audiences: %+v", service.Audiences)
 	}
-	if service.Audiences[0].Via != "client" {
+	if service.Audiences[0].Via != "" {
 		t.Fatalf("unexpected service for via: %+v", service.Audiences)
 	}
 	if len(service.Methods) != 1 {
@@ -189,7 +189,7 @@ func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 	if service.AuthMode != schema.AuthModeOptional {
 		t.Fatalf("unexpected service auth: %s", service.AuthMode)
 	}
-	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "client" {
+	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "" {
 		t.Fatalf("unexpected audiences: %+v", service.Audiences)
 	}
 	if service.Methods[0].AuthMode != schema.AuthModeUnset {

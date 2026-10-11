@@ -33,20 +33,26 @@ func TestFillHashesPropagatesDataChangesToService(t *testing.T) {
 	}
 }
 
-func TestFillHashesIncludesAllowVia(t *testing.T) {
+func TestFillHashesIgnoresAllowVia(t *testing.T) {
 	clientDomain := newHashAllowViaTestDomain(t, "client")
 	openapiDomain := newHashAllowViaTestDomain(t, "openapi")
+	openapiDomain.Actors()[0].Vias = []*schema.ActorVia{nil, {Name: "UNKNOWN"}}
+	openapiDomain.Services()[0].Audiences[0].Via = "UNKNOWN"
+	openapiDomain.Webs()[0].Audiences[0].Via = "UNKNOWN"
 
 	fillHashes(t, clientDomain, openapiDomain)
+	if clientDomain.Actors()[0].Hash != openapiDomain.Actors()[0].Hash {
+		t.Fatal("legacy actor vias changed the hash")
+	}
 
-	if clientDomain.Services()[0].Hash == openapiDomain.Services()[0].Hash {
-		t.Fatal("expected service hash to change when for via changes")
+	if clientDomain.Services()[0].Hash != openapiDomain.Services()[0].Hash {
+		t.Fatal("expected service hash to stay unchanged when for via changes")
 	}
-	if clientDomain.Webs()[0].Hash == openapiDomain.Webs()[0].Hash {
-		t.Fatal("expected web hash to change when for via changes")
+	if clientDomain.Webs()[0].Hash != openapiDomain.Webs()[0].Hash {
+		t.Fatal("expected web hash to stay unchanged when for via changes")
 	}
-	if clientDomain.Hash() == openapiDomain.Hash() {
-		t.Fatal("expected domain hash to change when for via changes")
+	if clientDomain.Hash() != openapiDomain.Hash() {
+		t.Fatal("expected domain hash to stay unchanged when for via changes")
 	}
 }
 

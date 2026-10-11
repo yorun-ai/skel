@@ -207,15 +207,6 @@ func (p *Analysis) checkActorAudiences(audiences []*schema.ActorAudience, ownerP
 			valid = false
 			continue
 		}
-		if audience.Via == "" {
-			continue
-		}
-		_, ok := sliceutil.Find(actor.Vias, func(via *schema.ActorVia) bool {
-			return via.Name == audience.Via
-		})
-		if !p.reporter.checkReference(ok, `%s %s %s for %s references undefined actor via "%s"`, ownerPos, ownerKind, ownerName, audience.Actor, audience.Via) {
-			valid = false
-		}
 	}
 	return valid
 }

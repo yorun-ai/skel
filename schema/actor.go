@@ -1,7 +1,6 @@
 package schema
 
-// ActorViaKind identifies a transport through which an actor can access a
-// domain.
+// ActorViaKind names a legacy transport value retained for source compatibility.
 type ActorViaKind string
 
 const (
@@ -13,8 +12,7 @@ const (
 	ActorViaOpenAPI ActorViaKind = "openapi"
 )
 
-// Actor describes a caller identity and the transports and authorization
-// facilities available to it.
+// Actor describes a caller identity and its authentication and authorization contracts.
 type Actor struct {
 	// Pos is the actor declaration's source position.
 	Pos Position
@@ -32,7 +30,7 @@ type Actor struct {
 	DeprecatedReason string
 	// Pub reports whether the actor belongs to the public contract.
 	Pub bool
-	// Vias lists the transports declared by the actor.
+	// Vias is retained for source compatibility and is ignored.
 	Vias []*ActorVia
 	// Auth describes authentication; nil means no auth section was declared.
 	Auth *ActorAuth
@@ -66,7 +64,7 @@ type ActorPermission struct {
 	Method *Method
 }
 
-// ActorVia describes one transport declared by an actor.
+// ActorVia holds legacy metadata ignored by analysis, hashing, and generation.
 type ActorVia struct {
 	// Pos is the transport declaration's source position.
 	Pos Position

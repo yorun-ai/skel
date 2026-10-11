@@ -16,6 +16,7 @@ const (
 	CodeSemanticNaming     = "semantic.naming"
 	CodeSemanticReference  = "semantic.reference"
 	CodeSemanticWarning    = "semantic.warning"
+	CodeViaIgnored         = "actor.via-ignored"
 	CodeImportMissing      = "import.missing"
 	CodeImportCycle        = "import.cycle"
 	CodeDomainMissing      = "domain.missing"
@@ -79,6 +80,11 @@ func (d Diagnostic) Error() string {
 type Diagnostics []Diagnostic
 
 func (d Diagnostics) Error() string {
+	for _, item := range d {
+		if item.Severity != SeverityWarning {
+			return item.Error()
+		}
+	}
 	if len(d) == 0 {
 		return ""
 	}

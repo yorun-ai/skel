@@ -37,9 +37,7 @@ Create `user.skel`:
 ```skel
 domain demo.user
 
-pub actor ClientActor {
-    via client {}
-}
+pub actor ClientActor {}
 
 pub data User {
     id: int
@@ -47,7 +45,7 @@ pub data User {
 }
 
 api service UserApiService {
-    for ClientActor via client
+    for ClientActor
     auth required
 
     method getUser {
@@ -138,7 +136,7 @@ must remain stable across builds and deployments:
 
 ```skel
 web ConsoleWeb {
-    for ClientActor via client
+    for ClientActor
     auth required
     mount /console
 }

@@ -212,7 +212,8 @@ func TestBuildDomainDescriptorCopiesHashes(t *testing.T) {
 	if len(meta.Services) != 1 || meta.Services[0].Hash != "service-hash" {
 		t.Fatalf("unexpected service hash: %+v", meta.Services)
 	}
-	if len(meta.Services[0].Audiences) != 1 || string(meta.Services[0].Audiences[0].Via) != string(schema.ActorViaClient) {
+	//lint:ignore SA1019 Verify that new descriptors leave the legacy Via field empty.
+	if len(meta.Services[0].Audiences) != 1 || meta.Services[0].Audiences[0].Via != "" {
 		t.Fatalf("unexpected service for via: %+v", meta.Services[0].Audiences)
 	}
 	if len(meta.Services[0].Methods) != 1 || meta.Services[0].Methods[0].Hash != "method-hash" {

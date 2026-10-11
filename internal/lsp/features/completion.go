@@ -13,7 +13,7 @@ import (
 var completionKeywords = []string{
 	"actor", "action", "all", "any", "as", "auth", "check", "config", "credential", "data",
 	"domain", "enum", "event", "for", "import", "info", "input", "method", "mount", "output",
-	"api", "ext", "payload", "permission", "pub", "require", "resource", "service", "task", "trigger", "via", "web",
+	"api", "ext", "payload", "permission", "pub", "require", "resource", "service", "task", "trigger", "web",
 }
 
 var completionDecorators = []string{"deprecated", "desc", "example", "identifier", "sensitive"}
@@ -23,7 +23,6 @@ var completionTypes = []string{
 	"localdatetime", "localtime", "map", "string", "timestamp", "uuid",
 }
 
-var actorViaCompletionValues = []string{"agent", "client", "openapi"}
 var configLifecycleCompletionValues = []string{"eternal", "instant"}
 
 func (s *Service) Completion(_ context.Context, params *protocol.CompletionParams) (protocol.CompletionResult, error) {

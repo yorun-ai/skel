@@ -128,6 +128,5 @@ func (g *_Gen) descriptorGoTemplateFuncs() template.FuncMap {
 		"permissionRequireLiteral": renderPermissionRequireModeLiteral,
 		"quote":                    quote,
 		"scalarLiteral":            renderScalarLiteral,
-		"viaLiteral":               renderActorViaLiteral,
 	}
 }

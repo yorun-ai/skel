@@ -230,3 +230,34 @@ func checkDiagnosticsContainCode(result *output.CheckResult, code string) bool {
 	}
 	return false
 }
+
+func TestRunSkelcViaWarningsAllowCheckAndGeneration(t *testing.T) {
+	path := t.TempDir() + "/access.skel"
+	writeCLIFile(t, path, "domain demo\nactor UserActor { via UNKNOWN {} }\napi service EntryApiService { for UserActor via Custom auth required method ping {} }\n")
+	checked := decodeCheckResult(t, Run([]string{"check", "--strict", "--skel-in", path}))
+	if !checked.Valid || len(checked.Diagnostics) != 2 {
+		t.Fatalf("expected valid source with warnings: %+v", checked)
+	}
+	for _, warning := range checked.Diagnostics {
+		if warning.Code != diagnostic.CodeViaIgnored || warning.Severity != diagnostic.SeverityWarning {
+			t.Fatalf("unexpected diagnostic: %+v", warning)
+		}
+	}
+	result := Run([]string{"gen", "ts", "--api", "--skel-in", path, "--ts-out", t.TempDir() + "/generated"})
+	if result.ExitCode != ExitCodeSuccess || !strings.Contains(result.Stdout, `"generated": true`) {
+		t.Fatalf("generation failed: %+v", result)
+	}
+	logs := strings.Split(strings.TrimSpace(result.Stderr), "\n")
+	if len(logs) != 2 {
+		t.Fatalf("expected two warning logs: %s", result.Stderr)
+	}
+	for _, line := range logs {
+		var warning struct{ Level, Code, Severity string }
+		if err := json.Unmarshal([]byte(line), &warning); err != nil {
+			t.Fatal(err)
+		}
+		if warning.Level != "warn" || warning.Code != diagnostic.CodeViaIgnored || warning.Severity != "warning" {
+			t.Fatalf("unexpected warning log: %+v", warning)
+		}
+	}
+}

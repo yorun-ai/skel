@@ -77,7 +77,7 @@ type SchemaType struct {
 
 // SchemaActor is the serialized body of an actor declaration.
 type SchemaActor struct {
-	Vias       []*SchemaActorVia      `json:"vias"`
+	Vias       []*SchemaActorVia      `json:"vias,omitempty"`
 	Auth       *SchemaActorAuth       `json:"auth,omitzero"`
 	Permission *SchemaActorPermission `json:"permission,omitzero"`
 }
@@ -92,7 +92,7 @@ type SchemaActorAuth struct {
 // SchemaActorPermission records the presence of an actor permission declaration.
 type SchemaActorPermission struct{}
 
-// SchemaActorVia is one actor transport capability.
+// SchemaActorVia is a legacy shape retained for decoding older schema output.
 type SchemaActorVia struct {
 	Name string `json:"name"`
 }

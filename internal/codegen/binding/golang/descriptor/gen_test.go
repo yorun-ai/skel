@@ -201,7 +201,7 @@ func TestGenDescriptorGoRendersActorCapabilities(t *testing.T) {
 	codegentest.AssertGoSourceContains(t, string(content), `IdentifierField: "userId"`)
 	codegentest.AssertGoSourceContains(t, string(content), "Auth: &descriptor.ActorAuth{")
 	codegentest.AssertGoSourceContains(t, string(content), `MethodName: "auth"`)
-	codegentest.AssertGoSourceContains(t, string(content), `{Name: "AnonymousActor", SkelName: "", Hash: "", Vias: []descriptor.ActorViaKind{descriptor.ActorViaClient}}`)
+	codegentest.AssertGoSourceContains(t, string(content), `{Name: "AnonymousActor", SkelName: "", Hash: ""}`)
 }
 
 func TestGenDescriptorGoRendersDeprecatedFields(t *testing.T) {

@@ -10,7 +10,7 @@ import {{ $import.Name }}{{ with importAlias $import }} as {{ . }}{{ end }}
 {{- $serviceAuth := authMarker $service.AuthMode -}}
 {{ template "description" (description $service.Description 0) }}{{ template "deprecated" (deprecated $service.Deprecated $service.DeprecatedReason 0) }}{{ if $service.Ext }}ext{{ else }}pub{{ end }} service {{ $service.Name }} {
 {{- range $audience := $service.Audiences }}
-    for {{ $audience.Actor }}{{ with $audience.Via }} via {{ . }}{{ end }}
+    for {{ $audience.Actor }}
 {{- end }}
 {{- if and $service.Audiences (or $serviceAuth $service.Methods) }}
 

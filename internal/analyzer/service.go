@@ -1,8 +1,6 @@
 package analyzer
 
 import (
-	"fmt"
-
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/parser/grammar"
@@ -164,6 +162,7 @@ func parseServiceAudiences(reporter *_DiagnosticReporter, audiences []*grammar.S
 	}
 	parsed := make([]*schema.ActorAudience, 0, len(audiences))
 	audiencePos := map[string]lexer.Position{}
+	legacyAudiences := map[string]bool{}
 	valid := true
 	for _, audience := range audiences {
 		if reporter.cancelled() {
@@ -171,26 +170,25 @@ func parseServiceAudiences(reporter *_DiagnosticReporter, audiences []*grammar.S
 		}
 		actorIdent := audience.Actor.Parts[len(audience.Actor.Parts)-1]
 		valid = checkCaseAdvanced(reporter, "Actor", "", "Actor", caseTypeCamel, actorIdent) && valid
-		via := ""
 		if audience.Via != nil {
-			via = audience.Via.Value
+			reporter.warnIgnoredVia(audience.Via.Pos)
 		}
 		name := audience.Actor.String()
-		key := fmt.Sprintf("%s:%s", name, via)
-		duplicatedPosition, duplicated := audiencePos[key]
+		duplicatedPosition, duplicated := audiencePos[name]
 		if duplicated {
-			if via != "" {
-				reporter.reportDuplicatef("%s duplicated service audience %s via %s found, also present at %s", actorIdent.Pos, name, via, duplicatedPosition)
-			} else {
-				reporter.reportDuplicatef("%s duplicated service audience %s found, also present at %s", actorIdent.Pos, name, duplicatedPosition)
+			// Legacy transport-specific entries collapse to one actor audience.
+			if audience.Via != nil || legacyAudiences[name] {
+				legacyAudiences[name] = true
+				continue
 			}
+			reporter.reportDuplicatef("%s duplicated service audience %s found, also present at %s", actorIdent.Pos, name, duplicatedPosition)
 			valid = false
 			continue
 		}
-		audiencePos[key] = actorIdent.Pos
+		audiencePos[name] = actorIdent.Pos
+		legacyAudiences[name] = audience.Via != nil
 		parsed = append(parsed, &schema.ActorAudience{
 			Actor: name,
-			Via:   via,
 			Pos:   position(audience.Pos),
 		})
 	}

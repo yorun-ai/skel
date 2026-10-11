@@ -55,7 +55,7 @@ type Service struct {
 type ActorAudience struct {
 	// Actor is the referenced actor name as resolved from source.
 	Actor string
-	// Via is the required actor transport, or empty when no transport is selected.
+	// Via is retained for source compatibility and is ignored.
 	Via string
 	// Pos is the audience declaration's source position.
 	Pos Position

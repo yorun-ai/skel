@@ -79,13 +79,6 @@ func completionValuesBeforePositionBuffer(buffer lsource.Buffer, position protoc
 			return configLifecycleCompletionValues
 		}
 	}
-	last := len(fields) - 1
-	switch {
-	case fields[last] == "via" && trailingSpace:
-		return actorViaCompletionValues
-	case last > 0 && fields[last-1] == "via" && isIdentifierValue(fields[last]):
-		return actorViaCompletionValues
-	}
 	return nil
 }
 

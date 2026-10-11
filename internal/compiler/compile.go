@@ -142,11 +142,11 @@ func LoaderWarningDiagnostics(warnings []loader.Warning) Diagnostics {
 	return diagnostics
 }
 
-func appendAnalysisWarnings(diagnostics Diagnostics, warnings []string) Diagnostics {
+func appendAnalysisWarnings(diagnostics Diagnostics, warnings []error) Diagnostics {
 	for _, warning := range warnings {
-		diagnostics = append(diagnostics, Diagnostic{
-			Code: DiagnosticCodeSemanticWarning, Severity: DiagnosticSeverityWarning, Message: warning,
-		})
+		item := diagnosticFromError("", DiagnosticCodeSemanticWarning, warning)
+		item.Severity = DiagnosticSeverityWarning
+		diagnostics = append(diagnostics, item)
 	}
 	return diagnostics
 }

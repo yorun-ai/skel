@@ -38,7 +38,7 @@ func TestParseActor(t *testing.T) {
 	if !actor.Pub {
 		t.Fatal("expected pub actor")
 	}
-	if len(actor.Vias) != 2 || actor.Vias[0].Name != "client" || actor.Vias[1].Name != "openapi" {
+	if len(actor.Vias) != 0 {
 		t.Fatalf("unexpected actor vias: %+v", actor.Vias)
 	}
 	if actor.Auth.Credential == nil || actor.Auth.Credential.Name != "PortalAdminActorCredential" {
@@ -158,27 +158,18 @@ func TestParseActorRejectsDuplicatedAuth(t *testing.T) {
 	})
 }
 
-func TestParseActorRequiresVia(t *testing.T) {
-	expectActorDiagnostic(t, "must have at least one via", &grammar.Actor{
-		Name: ident("PortalAdminActor"),
-	})
-}
-
-func TestParseActorRejectsDuplicatedVia(t *testing.T) {
-	expectActorDiagnostic(t, "duplicated actor via client", &grammar.Actor{
-		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{
-			{Name: ident("client")},
-			{Name: ident("client")},
-		},
-	})
-}
-
-func TestParseActorRejectsUnsupportedVia(t *testing.T) {
-	expectActorDiagnostic(t, "unexpected actor via partner", &grammar.Actor{
-		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{{Name: ident("partner")}},
-	})
+func TestParseActorIgnoresVias(t *testing.T) {
+	for _, names := range [][]string{nil, {"client", "client"}, {"partner", "UPPER"}} {
+		reporter := newDiagnosticReporter()
+		input := &grammar.Actor{Name: ident("PortalAdminActor")}
+		for _, name := range names {
+			input.Vias = append(input.Vias, &grammar.ActorVia{Name: ident(name)})
+		}
+		actor, valid := parseActor(reporter, input)
+		if !valid || len(actor.Vias) != 0 || len(reporter.errors) != 0 || len(reporter.warnings) != len(names) {
+			t.Fatalf("vias %v: valid=%v actor=%+v errors=%v warnings=%v", names, valid, actor, reporter.errors, reporter.warnings)
+		}
+	}
 }
 
 func grammarActorAuthSection(credentialMembers []*grammar.DataMember, infoMembers []*grammar.DataMember) *grammar.ActorSection {

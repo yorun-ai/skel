@@ -117,8 +117,8 @@ func TestGeneratorGoRendersDescriptorFile(t *testing.T) {
 		t.Fatalf("expected pub descriptor config declaration, got:\n%s", string(goDescriptorContent))
 	}
 	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), "Pub: true")
-	if !strings.Contains(string(goDescriptorContent), `descriptor.ActorViaClient`) {
-		t.Fatalf("expected pub descriptor actor via, got:\n%s", string(goDescriptorContent))
+	if strings.Contains(string(goDescriptorContent), `descriptor.ActorVia`) {
+		t.Fatalf("unexpected pub descriptor actor via, got:\n%s", string(goDescriptorContent))
 	}
 }
 

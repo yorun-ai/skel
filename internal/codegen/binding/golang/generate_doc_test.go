@@ -267,7 +267,9 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 		t.Fatalf("read go descriptor file: %v", err)
 	}
 	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), `SkelName: "demo.user.ClientActor"`)
-	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), "descriptor.ActorViaClient")
+	if strings.Contains(string(goDescriptorContent), "descriptor.ActorVia") {
+		t.Fatal("generated descriptor contains ignored actor via")
+	}
 	if !strings.Contains(string(goDescriptorContent), `Hash:`) {
 		t.Fatalf("expected go descriptor hash fields, got:\n%s", string(goDescriptorContent))
 	}
