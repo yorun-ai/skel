@@ -100,7 +100,7 @@ func (w *WorkspaceAnalyzer) AnalyzeContext(ctx context.Context, sources []Source
 }
 
 func (w *WorkspaceAnalyzer) AnalyzeDomainsContext(ctx context.Context, sources []Source) ([]Diagnostic, []WorkspaceDomain, error) {
-	return w.AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{})
+	return w.AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{IncludeWarnings: true})
 }
 
 // AnalyzeWithOptionsContext is the shared semantic pipeline for compile, check,

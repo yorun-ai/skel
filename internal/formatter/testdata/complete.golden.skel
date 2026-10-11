@@ -27,7 +27,6 @@ pub event CreatedEvent {
 }
 
 pub actor ClientActor {
-    via client {}
     auth {
         credential {
             subject: string
@@ -58,7 +57,7 @@ pub resource User {
 }
 
 api service UserApiService {
-    for ClientActor via client
+    for ClientActor
     auth required
     require any(
         User:read,
@@ -86,6 +85,6 @@ task RefreshTask {
 }
 
 web PortalWeb {
-    for ClientActor via openapi
+    for ClientActor
     auth required
 }

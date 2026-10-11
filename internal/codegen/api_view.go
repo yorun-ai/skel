@@ -13,7 +13,7 @@ import (
 type ApiFilter struct {
 	// Actors contains fully qualified actor names. Empty selects all API services
 	// unless Prune is enabled, in which case it selects no services.
-	// Multiple names select the union of matching services, regardless of transport.
+	// Multiple names select the union of matching services.
 	Actors []string
 	// Prune retains only selected services/types and their local type closure.
 	Prune bool
@@ -72,19 +72,8 @@ func BuildApiView(domain *schema.Domain, selection ApiFilter) (*PublicView, erro
 
 func matchesApiActors(domain *schema.Domain, service *schema.Service, selected map[string]bool) bool {
 	for _, audience := range service.Audiences {
-		qualifier, name, qualified := nameutil.SplitQualified(audience.Actor)
-		if !qualified {
-			if selected[domain.Name()+"."+audience.Actor] {
-				return true
-			}
-			continue
-		}
-		for _, imported := range domain.Imports() {
-			if qualifier == imported.Alias || qualifier == imported.Name {
-				if selected[imported.Domain.Name()+"."+name] {
-					return true
-				}
-			}
+		if selected[domain.ReferenceName(audience.Actor)] {
+			return true
 		}
 	}
 	return false

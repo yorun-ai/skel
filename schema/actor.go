@@ -1,20 +1,6 @@
 package schema
 
-// ActorViaKind identifies a transport through which an actor can access a
-// domain.
-type ActorViaKind string
-
-const (
-	// ActorViaClient represents a client application transport.
-	ActorViaClient ActorViaKind = "client"
-	// ActorViaAgent represents an agent transport.
-	ActorViaAgent ActorViaKind = "agent"
-	// ActorViaOpenAPI represents an OpenAPI transport.
-	ActorViaOpenAPI ActorViaKind = "openapi"
-)
-
-// Actor describes a caller identity and the transports and authorization
-// facilities available to it.
+// Actor describes a caller identity and its authentication and authorization contracts.
 type Actor struct {
 	// Pos is the actor declaration's source position.
 	Pos Position
@@ -32,8 +18,6 @@ type Actor struct {
 	DeprecatedReason string
 	// Pub reports whether the actor belongs to the public contract.
 	Pub bool
-	// Vias lists the transports declared by the actor.
-	Vias []*ActorVia
 	// Auth describes authentication; nil means no auth section was declared.
 	Auth *ActorAuth
 	// Permission describes permission support; nil means no permission section was declared.
@@ -64,12 +48,4 @@ type ActorPermission struct {
 	Service *Service
 	// Method is the canonical permission-checking method node in Service.Methods.
 	Method *Method
-}
-
-// ActorVia describes one transport declared by an actor.
-type ActorVia struct {
-	// Pos is the transport declaration's source position.
-	Pos Position
-	// Name is the transport name and corresponds to an [ActorViaKind].
-	Name string
 }

@@ -5,15 +5,8 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/internal/parser/grammar"
-	"go.yorun.ai/skel/internal/util/sliceutil"
 	"go.yorun.ai/skel/schema"
 )
-
-var actorViaKinds = []schema.ActorViaKind{
-	schema.ActorViaClient,
-	schema.ActorViaAgent,
-	schema.ActorViaOpenAPI,
-}
 
 func parseActor(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.Actor, bool) {
 	valid := checkCaseAdvanced(reporter, "Actor", "", "Actor", caseTypeCamel, ga.Name)
@@ -23,8 +16,11 @@ func parseActor(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.Actor
 	})
 	valid = metaValid && valid
 	valid = reporter.checkNot(meta.HasExample, "%s actor does not support decorator @example", ga.Name.Pos) && valid
-	vias, viasValid := parseActorVias(reporter, ga.Name, ga.Vias)
-	valid = viasValid && valid
+	for _, section := range ga.Sections {
+		if section.Via != nil {
+			reporter.warnIgnoredVia(section.Via.Pos)
+		}
+	}
 	auth, authValid := parseActorAuth(reporter, ga)
 	valid = authValid && valid
 	permission, permissionValid := parseActorPermission(reporter, ga)
@@ -37,7 +33,6 @@ func parseActor(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.Actor
 		Deprecated:       meta.Deprecated,
 		DeprecatedReason: meta.DeprecatedReason,
 		Pub:              ga.Pub,
-		Vias:             vias,
 		Auth:             auth,
 		Permission:       permission,
 	}, valid
@@ -198,41 +193,6 @@ func parseActorPermission(reporter *_DiagnosticReporter, ga *grammar.Actor) (*sc
 		return nil, valid
 	}
 	return new(schema.ActorPermission{Pos: position(permission.Pos)}), valid
-}
-
-func parseActorVias(reporter *_DiagnosticReporter, owner *grammar.Identifier, grammarVias []*grammar.ActorVia) ([]*schema.ActorVia, bool) {
-	valid := reporter.check(len(grammarVias) > 0, "%s actor %s must have at least one via", owner.Pos, owner.Value)
-
-	parsedVias := make([]*schema.ActorVia, 0, len(grammarVias))
-	viaPos := map[string]lexer.Position{}
-	for _, grammarVia := range grammarVias {
-		if reporter.cancelled() {
-			break
-		}
-		via, viaValid := parseActorVia(reporter, grammarVia)
-		valid = viaValid && valid
-		duplicatedPosition, duplicated := viaPos[via.Name]
-		if duplicated {
-			reporter.reportDuplicatef("%s duplicated actor via %s found, also present at %s", via.Pos, via.Name, duplicatedPosition)
-			valid = false
-			continue
-		}
-		viaPos[via.Name] = lexer.Position{Filename: via.Pos.File, Line: via.Pos.Line, Column: via.Pos.Column}
-		parsedVias = append(parsedVias, via)
-	}
-	return parsedVias, valid
-}
-
-func parseActorVia(reporter *_DiagnosticReporter, gv *grammar.ActorVia) (*schema.ActorVia, bool) {
-	valid := checkCase(reporter, "ActorVia", caseTypeLowerCamel, gv.Name)
-	_, ok := sliceutil.Find(actorViaKinds, func(candidate schema.ActorViaKind) bool {
-		return string(candidate) == gv.Name.Value
-	})
-	valid = reporter.check(ok, "%s unexpected actor via %s, supported=client/agent/openapi", gv.Name.Pos, gv.Name.Value) && valid
-	return &schema.ActorVia{
-		Name: gv.Name.Value,
-		Pos:  position(gv.Name.Pos),
-	}, valid
 }
 
 func buildActorAuthService(actor *schema.Actor) *schema.Service {

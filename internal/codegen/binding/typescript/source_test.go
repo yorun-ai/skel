@@ -206,21 +206,19 @@ func TestRenderTsTrimsTrailingWhitespace(t *testing.T) {
 	}
 }
 
-func TestApiViewIncludesExplicitServicesAcrossTransports(t *testing.T) {
+func TestApiViewIncludesExplicitServicesAcrossActors(t *testing.T) {
 	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
 		Actors: []*schema.Actor{
-			{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
-			{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
-			{Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaOpenAPI)}},
+			{Name: "ClientActor"},
+			{Name: "AgentActor"},
+			{Name: "OpenAPIActor"},
 		},
 		Services: []*schema.Service{
 			{Name: "ClientOnlyApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
 			{Name: "HybridApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}, {Actor: "ClientActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
 			{Name: "AgentOnlyApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "AgentActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
 			{Name: "OpenAPIOnlyApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "OpenAPIActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "ClientActorOpenAPIOnlyApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaOpenAPI)}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "ClientActorClientViaApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}}, Methods: []*schema.Method{{Name: "ping"}}},
 			{Name: "InternalService", Pub: true, Methods: []*schema.Method{{Name: "ping"}}},
 		},
 	})
@@ -228,7 +226,7 @@ func TestApiViewIncludesExplicitServicesAcrossTransports(t *testing.T) {
 	gen := newTestGen(pkg, filepath.Join(t.TempDir(), "ts"))
 	services := gen.apiView.Services
 	got := sliceutil.Map(services, func(service *schema.Service) string { return service.Name })
-	if want := []string{"AgentOnlyApiService", "ClientActorClientViaApiService", "ClientActorOpenAPIOnlyApiService", "ClientOnlyApiService", "HybridApiService", "OpenAPIOnlyApiService"}; !reflect.DeepEqual(got, want) {
+	if want := []string{"AgentOnlyApiService", "ClientOnlyApiService", "HybridApiService", "OpenAPIOnlyApiService"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("unexpected client services: got=%v want=%v", got, want)
 	}
 }
@@ -236,7 +234,7 @@ func TestApiViewIncludesExplicitServicesAcrossTransports(t *testing.T) {
 func TestClientServicesIncludesImportedClientActors(t *testing.T) {
 	appDomain := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name:   "app",
-		Actors: []*schema.Actor{{Name: "UserActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}}},
+		Actors: []*schema.Actor{{Name: "UserActor"}},
 	})
 	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",

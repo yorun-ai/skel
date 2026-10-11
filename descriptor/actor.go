@@ -1,17 +1,5 @@
 package descriptor
 
-// ActorViaKind identifies an actor transport.
-type ActorViaKind string
-
-const (
-	// ActorViaClient identifies the client transport.
-	ActorViaClient ActorViaKind = "client"
-	// ActorViaAgent identifies the agent transport.
-	ActorViaAgent ActorViaKind = "agent"
-	// ActorViaOpenAPI identifies the openapi transport.
-	ActorViaOpenAPI ActorViaKind = "openapi"
-)
-
 // Actor describes an identity and its generated authentication and permission contracts.
 type Actor struct {
 	Name             string           `json:"name"`
@@ -20,7 +8,6 @@ type Actor struct {
 	Deprecated       bool             `json:"deprecated,omitzero"`
 	DeprecatedReason string           `json:"deprecatedReason,omitempty"`
 	Hash             string           `json:"hash"`
-	Vias             []ActorViaKind   `json:"vias"`
 	Auth             *ActorAuth       `json:"auth,omitzero"`
 	Permission       *ActorPermission `json:"permission,omitzero"`
 }
@@ -60,16 +47,15 @@ func (permission *ActorPermission) Method() *Method {
 	return permission.Service.Method(permission.MethodName)
 }
 
-// ActorAudience identifies an actor and an optional transport allowed to access an entry point.
+// ActorAudience identifies an actor allowed to access an entry point.
 type ActorAudience struct {
-	Name     string       `json:"name"`
-	SkelName string       `json:"skelName"`
-	Via      ActorViaKind `json:"via,omitempty"`
+	Name     string `json:"name"`
+	SkelName string `json:"skelName"`
 }
 
-func hasAudience(audiences []*ActorAudience, actor string, via ActorViaKind) bool {
+func hasAudience(audiences []*ActorAudience, actor string) bool {
 	for _, audience := range audiences {
-		if audience.SkelName == actor && (audience.Via == "" || audience.Via == via) {
+		if audience.SkelName == actor {
 			return true
 		}
 	}

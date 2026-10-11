@@ -42,7 +42,7 @@ func TestSpecTemplateKeepsModuleSemanticsWhenEmpty(t *testing.T) {
 func TestBuildSpecTsPayloadUsesFinalClientServiceSet(t *testing.T) {
 	userActorDomain := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name:   "app",
-		Actors: []*schema.Actor{{Name: "UserActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}}},
+		Actors: []*schema.Actor{{Name: "UserActor"}},
 	})
 	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
@@ -51,7 +51,7 @@ func TestBuildSpecTsPayloadUsesFinalClientServiceSet(t *testing.T) {
 			Name:   "app",
 			Alias:  "app",
 		}},
-		Actors: []*schema.Actor{{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}}},
+		Actors: []*schema.Actor{{Name: "AgentActor"}},
 		Services: []*schema.Service{
 			{Name: "ExternalClientApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
 			{Name: "BackendService", Pub: true, Methods: []*schema.Method{{Name: "ping"}}},
@@ -98,7 +98,7 @@ func TestBuildSpecTsPayloadRendersSparseWireForBinaryMethods(t *testing.T) {
 		Data: []*schema.Data{chunk, fileResult},
 		Services: []*schema.Service{{
 			Name: "FileApiService", Api: true, AuthMode: schema.AuthModeRequired,
-			Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: string(schema.ActorViaClient)}},
+			Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}},
 			Methods: []*schema.Method{
 				{Name: "ping"},
 				{

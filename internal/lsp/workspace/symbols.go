@@ -60,9 +60,6 @@ func entrySymbol(source source.Buffer, entry *grammar.SkelEntry, name, detail, d
 	case entry.Config != nil:
 		children = dataMemberSymbols(source, entry.Config.Members)
 	case entry.Actor != nil:
-		for _, via := range entry.Actor.Vias {
-			children = append(children, newSymbol(source, via.Name, "actor transport", "", false, protocol.SymbolKindInterface, nil))
-		}
 		for _, section := range entry.Actor.Sections {
 			if section.Auth == nil {
 				continue

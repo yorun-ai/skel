@@ -69,9 +69,9 @@ func TestGeneratorRendersPubGoView(t *testing.T) {
 	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
 		Actors: []*schema.Actor{
-			{Pub: true, Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
-			{Name: "PartnerActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}, Auth: new(schema.ActorAuth{Credential: partnerCredential, Info: partnerInfo})},
-			{Pub: true, Name: "PublicOnlyActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}, Auth: new(schema.ActorAuth{Credential: publicCredential, Info: publicInfo})},
+			{Pub: true, Name: "OpenAPIActor"},
+			{Name: "PartnerActor", Auth: new(schema.ActorAuth{Credential: partnerCredential, Info: partnerInfo})},
+			{Pub: true, Name: "PublicOnlyActor", Auth: new(schema.ActorAuth{Credential: publicCredential, Info: publicInfo})},
 		},
 		Enums: []*schema.Enum{userStatus, unusedStatus, publicStatus},
 		Data:  []*schema.Data{address, user, unusedData},
@@ -276,7 +276,7 @@ func TestGeneratorIncludesImplicitPubDependencies(t *testing.T) {
 	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
 		Actors: []*schema.Actor{
-			{Pub: true, Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
+			{Pub: true, Name: "OpenAPIActor"},
 		},
 		Data: []*schema.Data{user},
 		Services: []*schema.Service{

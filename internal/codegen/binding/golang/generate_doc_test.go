@@ -77,9 +77,9 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 		Enums:       []*schema.Enum{userStatus},
 		Data:        []*schema.Data{userProfile},
 		Actors: []*schema.Actor{
-			{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
-			{Name: "PartnerActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
-			{Name: "OpenAPIActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaOpenAPI)}},
+			{Name: "ClientActor"},
+			{Name: "PartnerActor"},
+			{Name: "OpenAPIActor"},
 		},
 		Services: []*schema.Service{
 			{
@@ -267,7 +267,6 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 		t.Fatalf("read go descriptor file: %v", err)
 	}
 	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), `SkelName: "demo.user.ClientActor"`)
-	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), "descriptor.ActorViaClient")
 	if !strings.Contains(string(goDescriptorContent), `Hash:`) {
 		t.Fatalf("expected go descriptor hash fields, got:\n%s", string(goDescriptorContent))
 	}

@@ -120,7 +120,6 @@ func (s *_HashState) actorHash(actor *schema.Actor) string {
 			Description:        actor.Description,
 			Deprecated:         actor.Deprecated,
 			DeprecatedReason:   actor.DeprecatedReason,
-			Vias:               buildActorViaNames(actor.Vias),
 			AuthEnabled:        actor.Auth != nil,
 			AuthCredential:     authCredentialName,
 			AuthCredentialHash: authCredentialHash,

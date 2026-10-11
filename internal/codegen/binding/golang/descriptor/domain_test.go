@@ -133,7 +133,7 @@ func TestDescriptorAdaptsSemanticSchema(t *testing.T) {
 		Name: "demo.user", Description: "User domain.", Data: []*schema.Data{profile},
 		Services: []*schema.Service{new(schema.Service{
 			Name: "Profiles", AuthMode: schema.AuthModeRequired,
-			Audiences: []*schema.ActorAudience{new(schema.ActorAudience{Actor: "Client", Via: string(schema.ActorViaClient)})},
+			Audiences: []*schema.ActorAudience{new(schema.ActorAudience{Actor: "Client"})},
 			Methods: []*schema.Method{new(schema.Method{
 				Name: "get", Description: "Gets a profile.", AuthMode: schema.AuthModeOptional,
 				ResultType: codegentest.DataType(profile),
@@ -169,11 +169,10 @@ func TestBuildDomainDescriptorCopiesHashes(t *testing.T) {
 		Data:        []*schema.Data{userProfile},
 		Actors: []*schema.Actor{{
 			Name: "ClientActor",
-			Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 		}},
 		Services: []*schema.Service{{
 			Name: "UserService",
-			Api:  true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor", Via: "client"}},
+			Api:  true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}},
 			Methods: []*schema.Method{{
 				Name:       "getUser",
 				ResultType: codegentest.DataType(userProfile),
@@ -212,8 +211,8 @@ func TestBuildDomainDescriptorCopiesHashes(t *testing.T) {
 	if len(meta.Services) != 1 || meta.Services[0].Hash != "service-hash" {
 		t.Fatalf("unexpected service hash: %+v", meta.Services)
 	}
-	if len(meta.Services[0].Audiences) != 1 || string(meta.Services[0].Audiences[0].Via) != string(schema.ActorViaClient) {
-		t.Fatalf("unexpected service for via: %+v", meta.Services[0].Audiences)
+	if len(meta.Services[0].Audiences) != 1 || meta.Services[0].Audiences[0].SkelName != "demo.user.ClientActor" {
+		t.Fatalf("unexpected service audience: %+v", meta.Services[0].Audiences)
 	}
 	if len(meta.Services[0].Methods) != 1 || meta.Services[0].Methods[0].Hash != "method-hash" {
 		t.Fatalf("unexpected method hash: %+v", meta.Services[0].Methods)
@@ -405,7 +404,6 @@ func TestBuildDomainDescriptorIncludesActorAuthMethod(t *testing.T) {
 		Name: "demo.user",
 		Actors: []*schema.Actor{{
 			Name: "ClientActor",
-			Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 			Auth: new(schema.ActorAuth{
 				Credential: &schema.Data{
 					Name: "ClientActorCredential",

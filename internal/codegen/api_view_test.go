@@ -116,3 +116,35 @@ func TestApiTypeRootsCollectsDeclaredTypes(t *testing.T) {
 		t.Fatalf("unexpected API type roots: %+v", roots)
 	}
 }
+
+func TestBuildApiViewResolvesActorReferences(t *testing.T) {
+	imported := schema.NewDomainFromSpec(schema.DomainSpec{
+		Name:   "identity.user",
+		Actors: []*schema.Actor{{Name: "ClientActorV1"}, {Name: "ClientActorV10"}},
+	})
+	for _, test := range []struct{ name, qualifier, selected string }{
+		{"local", "", "demo.order.ClientActorV1"},
+		{"local qualified", "demo.order.", "demo.order.ClientActorV1"},
+		{"import alias", "identity.", "identity.user.ClientActorV1"},
+		{"import qualified", "identity.user.", "identity.user.ClientActorV1"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			domain := schema.NewDomainFromSpec(schema.DomainSpec{
+				Name:    "demo.order",
+				Actors:  []*schema.Actor{{Name: "ClientActorV1"}, {Name: "ClientActorV10"}},
+				Imports: []*schema.Import{{Name: "identity.user", Alias: "identity", Domain: imported}},
+				Services: []*schema.Service{
+					{Name: "OrderApiServiceV1", Api: true, Audiences: []*schema.ActorAudience{{Actor: test.qualifier + "ClientActorV1"}}},
+					{Name: "OrderApiServiceV10", Api: true, Audiences: []*schema.ActorAudience{{Actor: test.qualifier + "ClientActorV10"}}},
+				},
+			})
+			view, err := BuildApiView(domain, ApiFilter{Actors: []string{test.selected}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(view.Services) != 1 || view.Services[0].Name != "OrderApiServiceV1" {
+				t.Fatalf("actor filter selected the wrong services: %+v", view.Services)
+			}
+		})
+	}
+}

@@ -18,12 +18,8 @@ func TestParseActor(t *testing.T) {
 		Decorators: []*grammar.Decorator{
 			{Name: ident("desc"), Value: decoratorValue(`"Portal admin"`)},
 		},
-		Pub:  true,
-		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{
-			{Name: ident("client")},
-			{Name: ident("openapi")},
-		},
+		Pub:      true,
+		Name:     ident("PortalAdminActor"),
 		Sections: []*grammar.ActorSection{authSection},
 	})
 	if actor.Name != "PortalAdminActor" {
@@ -37,9 +33,6 @@ func TestParseActor(t *testing.T) {
 	}
 	if !actor.Pub {
 		t.Fatal("expected pub actor")
-	}
-	if len(actor.Vias) != 2 || actor.Vias[0].Name != "client" || actor.Vias[1].Name != "openapi" {
-		t.Fatalf("unexpected actor vias: %+v", actor.Vias)
 	}
 	if actor.Auth.Credential == nil || actor.Auth.Credential.Name != "PortalAdminActorCredential" {
 		t.Fatalf("unexpected actor credential: %+v", actor.Auth.Credential)
@@ -70,7 +63,6 @@ func TestParseActor(t *testing.T) {
 func TestParseActorRejectsNonStringCredentialMember(t *testing.T) {
 	expectActorDiagnostic(t, "actor credential member userId must be string or string?", &grammar.Actor{
 		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{{Name: ident("client")}},
 		Sections: []*grammar.ActorSection{
 			grammarActorAuthSection(
 				[]*grammar.DataMember{{Name: ident("userId"), Type: plainType(grammar.Int)}},
@@ -83,7 +75,6 @@ func TestParseActorRejectsNonStringCredentialMember(t *testing.T) {
 func TestParseActorRejectsEmptyCredential(t *testing.T) {
 	expectActorDiagnostic(t, "actor credential must have at least one member", &grammar.Actor{
 		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{{Name: ident("client")}},
 		Sections: []*grammar.ActorSection{
 			grammarActorAuthSection([]*grammar.DataMember{}, []*grammar.DataMember{{Name: ident("userId"), Type: plainType(grammar.Int)}}),
 		},
@@ -95,7 +86,6 @@ func TestParseActorAcceptsNullableCredentialMember(t *testing.T) {
 	credentialType.Nullable = true
 	actor := parseActorTest(t, &grammar.Actor{
 		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{{Name: ident("client")}},
 		Sections: []*grammar.ActorSection{
 			grammarActorAuthSection(
 				[]*grammar.DataMember{{Name: ident("subject"), Type: credentialType}, {Name: ident("token"), Type: plainType(grammar.String)}},
@@ -112,7 +102,7 @@ func TestParseActorAcceptsNullableCredentialMember(t *testing.T) {
 func TestParseActorRejectsAllOptionalCredentialMembers(t *testing.T) {
 	for _, fields := range []string{"token: string?", "token: string? session: string?"} {
 		t.Run(fields, func(t *testing.T) {
-			content, err := parser.ParseSource("actor.skel", []byte("domain demo\npub actor UserActor { via client {} auth { credential { "+fields+" } info { userId: string } } }"))
+			content, err := parser.ParseSource("actor.skel", []byte("domain demo\npub actor UserActor { auth { credential { "+fields+" } info { userId: string } } }"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -124,7 +114,6 @@ func TestParseActorRejectsAllOptionalCredentialMembers(t *testing.T) {
 func TestParseActorRejectsCredentialWithoutInfo(t *testing.T) {
 	expectActorDiagnostic(t, "auth must define credential and info together", &grammar.Actor{
 		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{{Name: ident("client")}},
 		Sections: []*grammar.ActorSection{
 			grammarActorAuthSection([]*grammar.DataMember{{Name: ident("subject"), Type: plainType(grammar.String)}}, nil),
 		},
@@ -134,7 +123,6 @@ func TestParseActorRejectsCredentialWithoutInfo(t *testing.T) {
 func TestParseActorRejectsInfoWithoutCredential(t *testing.T) {
 	expectActorDiagnostic(t, "auth must define credential and info together", &grammar.Actor{
 		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{{Name: ident("client")}},
 		Sections: []*grammar.ActorSection{
 			grammarActorAuthSection(nil, []*grammar.DataMember{{Name: ident("userId"), Type: plainType(grammar.Int)}}),
 		},
@@ -144,7 +132,6 @@ func TestParseActorRejectsInfoWithoutCredential(t *testing.T) {
 func TestParseActorRejectsDuplicatedAuth(t *testing.T) {
 	expectActorDiagnostic(t, "duplicated actor auth", &grammar.Actor{
 		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{{Name: ident("client")}},
 		Sections: []*grammar.ActorSection{
 			grammarActorAuthSection(
 				[]*grammar.DataMember{{Name: ident("subject"), Type: plainType(grammar.String)}},
@@ -158,27 +145,19 @@ func TestParseActorRejectsDuplicatedAuth(t *testing.T) {
 	})
 }
 
-func TestParseActorRequiresVia(t *testing.T) {
-	expectActorDiagnostic(t, "must have at least one via", &grammar.Actor{
-		Name: ident("PortalAdminActor"),
-	})
-}
-
-func TestParseActorRejectsDuplicatedVia(t *testing.T) {
-	expectActorDiagnostic(t, "duplicated actor via client", &grammar.Actor{
-		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{
-			{Name: ident("client")},
-			{Name: ident("client")},
-		},
-	})
-}
-
-func TestParseActorRejectsUnsupportedVia(t *testing.T) {
-	expectActorDiagnostic(t, "unexpected actor via partner", &grammar.Actor{
-		Name: ident("PortalAdminActor"),
-		Vias: []*grammar.ActorVia{{Name: ident("partner")}},
-	})
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
+func TestParseActorIgnoresVias(t *testing.T) {
+	for _, names := range [][]string{nil, {"client", "client"}, {"partner", "UPPER"}} {
+		reporter := newDiagnosticReporter()
+		input := &grammar.Actor{Name: ident("PortalAdminActor")}
+		for _, name := range names {
+			input.Sections = append(input.Sections, new(grammar.ActorSection{Via: new(grammar.ActorVia{Name: ident(name)})}))
+		}
+		actor, valid := parseActor(reporter, input)
+		if !valid || len(reporter.errors) != 0 || len(reporter.warnings) != len(names) {
+			t.Fatalf("vias %v: valid=%v actor=%+v errors=%v warnings=%v", names, valid, actor, reporter.errors, reporter.warnings)
+		}
+	}
 }
 
 func grammarActorAuthSection(credentialMembers []*grammar.DataMember, infoMembers []*grammar.DataMember) *grammar.ActorSection {
@@ -210,7 +189,7 @@ func TestActorIdentifier(t *testing.T) {
 		{"two fields", "@identifier id: int @identifier other: string", false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			source := "domain demo\npub actor UserActor { via client {} auth { credential { token: string } info { " + tt.body + " } } }"
+			source := "domain demo\npub actor UserActor { auth { credential { token: string } info { " + tt.body + " } } }"
 			content, err := parser.ParseSource("actor.skel", []byte(source))
 			if err != nil {
 				t.Fatal(err)
@@ -231,8 +210,8 @@ func TestActorIdentifier(t *testing.T) {
 	}
 	for _, source := range []string{
 		"domain demo\ndata User { @identifier id: int }",
-		"domain demo\n@identifier actor UserActor { via client {} }",
-		"domain demo\nactor UserActor { via client {} auth { credential { @identifier token: string } info {} } }",
+		"domain demo\n@identifier actor UserActor {}",
+		"domain demo\nactor UserActor { auth { credential { @identifier token: string } info {} } }",
 	} {
 		content, err := parser.ParseSource("invalid.skel", []byte(source))
 		if err != nil {

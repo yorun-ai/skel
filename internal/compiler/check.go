@@ -47,7 +47,7 @@ func checkLoaded(ctx context.Context, loadResult loader.Result, option Option, w
 	if err != nil {
 		return CheckResult{}, err
 	}
-	diagnostics, _, err := workspaceAnalyzer.AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{AllowUnresolvedImports: true})
+	diagnostics, _, err := workspaceAnalyzer.AnalyzeWithOptionsContext(ctx, sources, AnalysisOptions{AllowUnresolvedImports: true, IncludeWarnings: true})
 	if err != nil {
 		return CheckResult{}, err
 	}

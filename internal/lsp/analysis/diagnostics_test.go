@@ -163,9 +163,10 @@ func TestSemanticDiagnosticsKeepStandaloneFormatterFixturesIndependent(t *testin
 	sources, paths := SemanticSources(documents)
 	diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, true)
 	require.NoError(t, err)
-	// Both fixtures declare the same demo.user declarations, so analyzing them
-	// as one workspace group would report duplicates instead of staying quiet.
-	require.Empty(t, diagnostics)
+	// Both fixtures declare the same domain but are independent inputs.
+	for _, items := range diagnostics {
+		require.Empty(t, items)
+	}
 	require.Len(t, domains, 2)
 	for _, domain := range domains {
 		require.Len(t, domain.Sources, 1)
@@ -301,5 +302,31 @@ func TestRemoteDomainFileDoesNotGroupOtherAuthorities(t *testing.T) {
 		for _, src := range physical.Sources {
 			assert.NotContains(t, src.Path, "://")
 		}
+	}
+}
+
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
+func TestSemanticViaWarningsSurviveCacheAndDisappearAfterRemoval(t *testing.T) {
+	documentURI := uri.File("/workspace/access.skel")
+	analyzer := compiler.NewWorkspaceAnalyzer()
+	for index, source := range []string{
+		"domain demo\nactor UserActor { via Custom {} }\n",
+		"domain demo\nactor UserActor { via Custom {} }\n",
+		"domain demo\nactor UserActor {}\n",
+	} {
+		document := workspace.BuildDocument(documentURI, documentURI.FsPath(), source, int32(index+1))
+		sources, paths := SemanticSources(map[uri.URI]*workspace.Document{documentURI: document})
+		diagnostics, domains, err := SemanticWorkspace(t.Context(), analyzer, sources, paths, true)
+		require.NoError(t, err)
+		require.Len(t, domains, 1)
+		if index == 2 {
+			assert.Empty(t, diagnostics)
+			continue
+		}
+		require.Len(t, diagnostics[documentURI], 1)
+		warning := diagnostics[documentURI][0]
+		assert.Equal(t, protocol.DiagnosticSeverityWarning, warning.Severity)
+		assert.Equal(t, protocol.String("actor.via-ignored"), warning.Code)
+		assert.Equal(t, protocol.Range{Start: protocol.Position{Line: 1, Character: 18}, End: protocol.Position{Line: 1, Character: 21}}, warning.Range)
 	}
 }

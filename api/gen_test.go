@@ -71,7 +71,6 @@ pub event ItemCreatedEvent {
 }
 
 pub actor BaseActor {
-    via client {}
     auth {
         credential {
             subject: string
@@ -460,14 +459,13 @@ func TestCompileModulesSeparateResolutionMappingsFromDependencies(t *testing.T) 
 		{"generic arguments", "pub data Payload { values: map<string, b.Box<c.Access>> }", []string{"b", "c"}, []string{"b", "c"}, nil, []string{"b", "c"}},
 		{"public service implementation", "pub service ExampleService { method get { output b.Token } }", []string{"b"}, []string{"b"}, []string{"b"}, nil},
 		{"actor and resource helpers", `pub actor LocalActor {
-    via client {}
     auth { credential { token: string } info { access: c.Access } }
 }
 pub resource LocalResource {
     check byToken { input { token: b.Token } }
     action read
 }
-api service ExampleApiService { auth required  for LocalActor via client method ping {} }`, []string{"b", "c"}, []string{"b", "c"}, nil, nil},
+api service ExampleApiService { auth required  for LocalActor method ping {} }`, []string{"b", "c"}, []string{"b", "c"}, nil, nil},
 		{"config event and task", `pub config ExampleConfig eternal { token: b.Token }
 pub event ExampleEvent { payload { access: c.Access } }
 task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b", "c"}, []string{"b", "c"}, []string{"b", "c"}, nil},
@@ -480,7 +478,7 @@ task ExampleTask { trigger manually { input { token: b.Token } } }`, []string{"b
 				imports += "import c\n"
 			}
 			writeTestFile(t, a, "domain a\n"+imports+tc.source+"\n")
-			writeTestFile(t, b, "domain b\nimport c\npub data Token { id: uuid access: c.Access }\npub data Box<TItem> { items: list<TItem> }\npub actor AgentActor { via client {} }\npub service AccessService { method get { output c.Access } }\n")
+			writeTestFile(t, b, "domain b\nimport c\npub data Token { id: uuid access: c.Access }\npub data Box<TItem> { items: list<TItem> }\npub actor AgentActor {}\npub service AccessService { method get { output c.Access } }\n")
 			writeTestFile(t, c, "domain c\npub data Access { id: uuid }\n")
 			input := skelapi.Input{SkelIn: a, SkelImports: map[string]string{"b": b, "c": c}}
 			mappings := map[string]string{"b": "example.com/bpub@v1.2.3", "c": "example.com/cpub@v1.3.0", "unused": "example.com/unused@v1.4.0"}
@@ -818,21 +816,21 @@ pub enum Currency { USD EUR }
 	writeTestFile(t, entry, `domain shop.order
 import foreign as f
 import unused
-actor UserActor { via client {} }
-actor AdminActor { via client {} }
-actor IdleActor { via client {} }
+actor UserActor {}
+actor AdminActor {}
+actor IdleActor {}
 pub data Unused { secret: unused.Secret }
 pub enum UnusedEnum { ONE TWO }
 data Node { next: Peer? value: f.Money currency: f.Currency }
 data Peer { next: Node? values: map<string,list<f.Money?>> }
 pub data Extra { value: string }
 api service UserApiService {
- for UserActor via client
+ for UserActor
  auth anonymous
  method read { output f.Box<list<Node>> }
 }
 api service AdminApiService {
- for AdminActor via client
+ for AdminActor
  auth anonymous
  method read { output Unused }
 }

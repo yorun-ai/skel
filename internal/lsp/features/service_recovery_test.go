@@ -22,7 +22,6 @@ enum Status { @desc("active") ACTIVE }`,
 	`config AppConfig eternal { @desc("address") address: string }`,
 	`event CreatedEvent { @sensitive payload { @desc("id") id: uuid } }`,
 	`actor ClientActor {
- via client {}
  auth {
  credential { @desc("token") token: string }
  info { @desc("id") id: uuid }
@@ -35,7 +34,7 @@ enum Status { @desc("active") ACTIVE }`,
  }
  }`,
 	`api service FileApiService {
- for ClientActor via client
+ for ClientActor
  auth required
  method get {
  require any(FileResource:read, all(FileResource:read:owner(id)))
@@ -43,7 +42,7 @@ enum Status { @desc("active") ACTIVE }`,
  output Box<Status>
  }
  }`,
-	`web FileWeb { for ClientActor via client auth required mount /files }`,
+	`web FileWeb { for ClientActor auth required mount /files }`,
 	`task RebuildTask { trigger atTime { input { @desc("id") id: uuid } } }`,
 }
 
@@ -95,7 +94,7 @@ func exerciseEditingSource(t *testing.T, text string) {
 
 func TestLanguageFeaturesHandleEditingDeclarations(t *testing.T) {
 	complete := "domain demo\n" + strings.Join(editingDeclarations[2:], "\n")
-	if diagnostics := compiler.AnalyzeWorkspace([]compiler.Source{{Path: "/workspace/edit.skel", Content: []byte(complete)}}); len(diagnostics) != 0 {
+	if diagnostics := compiler.AnalyzeWorkspace([]compiler.Source{{Path: "/workspace/edit.skel", Content: []byte(complete)}}); compiler.Diagnostics(diagnostics).HasErrors() {
 		t.Fatalf("editing fixture must exercise a valid resolved domain: %v", diagnostics)
 	}
 	declarations := append(append([]string{}, editingDeclarations...), strings.Join(editingDeclarations[2:], "\n"))

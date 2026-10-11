@@ -89,7 +89,6 @@ pub event SecretEvent {
 }
 
 pub actor ClientActor {
-    via client {}
     auth {
         @sensitive
         info {
@@ -350,7 +349,6 @@ pub data User {
 }
 
 pub actor ClientActor {
-    via client {}
 }
 
 @deprecated("Use ProfileService instead")
@@ -442,7 +440,6 @@ pub service LookupService { method ping {} }
 func TestActorIdentifierPublicRoundTrip(t *testing.T) {
 	domain, _ := parseDomainForTest(t, "demo/domain.skel", "domain demo\n", "demo/actor.skel", `domain demo
 pub actor UserActor {
- via client {}
  auth {
   credential { token: string }
   info { @identifier id: int }
@@ -461,7 +458,7 @@ pub actor UserActor {
 
 func TestGenQualifiedImportsRoundTrip(t *testing.T) {
 	_, shared := parseDomainForTest(t, "shared/domain.skel", "domain ws.sandbox\n", "shared/types.skel", `domain ws.sandbox
-pub actor SandboxActor { via client {} }
+pub actor SandboxActor {}
 pub data Value { id: string }
 `, nil)
 	for _, declaration := range []string{"ws.sandbox", "ws.sandbox as sandbox"} {
@@ -484,7 +481,7 @@ pub data Value { id: string }
 func TestGenImportAliasesDoNotSelectUnrelatedDomains(t *testing.T) {
 	imports := map[string]string{}
 	for _, name := range []string{"identity.user", "other"} {
-		_, path := parseDomainForTest(t, name+"/domain.skel", "domain "+name+"\n", name+"/types.skel", "domain "+name+"\npub data Value {}\npub actor ClientActor { via client {} }\n", nil)
+		_, path := parseDomainForTest(t, name+"/domain.skel", "domain "+name+"\n", name+"/types.skel", "domain "+name+"\npub data Value {}\npub actor ClientActor {}\n", nil)
 		imports[name] = path
 	}
 	for _, test := range []struct{ name, declaration, usedDomain, expectedImport, filename string }{

@@ -85,17 +85,15 @@ pub resource Document {
     action write { check owner { input { editorId: string } } }
 }
 actor ClientActor {
-    via client {}
     auth {
         credential { token: string }
         info { id: string }
     }
     permission {}
 }
-actor GuestActor { via client {} }
-actor PermissionActor { via client {} permission {} }
+actor GuestActor {}
+actor PermissionActor { permission {} }
 actor TokenActor {
-    via client {}
     auth {
         credential { token: string }
         info { @identifier id: string }

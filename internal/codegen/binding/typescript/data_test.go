@@ -139,8 +139,8 @@ func TestBuildDataTsPayloadKeepsApiServiceDependencies(t *testing.T) {
 		Name:  "demo.user",
 		Enums: []*schema.Enum{userStatus, unusedStatus},
 		Actors: []*schema.Actor{
-			{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
-			{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
+			{Name: "ClientActor"},
+			{Name: "AgentActor"},
 		},
 		Data: []*schema.Data{user, userProfile, internalOnly},
 		Services: []*schema.Service{
@@ -228,7 +228,6 @@ func TestBuildDataTsPayloadKeepsGenericTypeArguments(t *testing.T) {
 		Name: "demo.user",
 		Actors: []*schema.Actor{{
 			Name: "ClientActor",
-			Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 		}},
 		Data: []*schema.Data{page, user},
 		Services: []*schema.Service{{

@@ -10,14 +10,6 @@ func validateActor(actor *schema.Actor) error {
 	if actor == nil {
 		return fmt.Errorf("generated schema contains nil actor")
 	}
-	for _, via := range actor.Vias {
-		if via == nil {
-			return fmt.Errorf("actor %s contains a nil via", actor.Name)
-		}
-		if err := validateActorVia(via.Name); err != nil {
-			return fmt.Errorf("actor %s: %w", actor.Name, err)
-		}
-	}
 	if actor.Auth != nil {
 		if actor.Auth.Credential == nil || actor.Auth.Info == nil || actor.Auth.Service == nil || actor.Auth.Method == nil {
 			return fmt.Errorf("actor %s has incomplete auth support", actor.Name)
@@ -75,20 +67,6 @@ func validateAudiences(owner string, audiences []*schema.ActorAudience) error {
 		if audience.Actor == "" {
 			return fmt.Errorf("%s contains an audience without an actor", owner)
 		}
-		if audience.Via != "" {
-			if err := validateActorVia(audience.Via); err != nil {
-				return fmt.Errorf("%s: %w", owner, err)
-			}
-		}
 	}
 	return nil
-}
-
-func validateActorVia(via string) error {
-	switch schema.ActorViaKind(via) {
-	case schema.ActorViaClient, schema.ActorViaAgent, schema.ActorViaOpenAPI:
-		return nil
-	default:
-		return fmt.Errorf("unsupported actor via %q", via)
-	}
 }

@@ -40,9 +40,6 @@ func TestAnalyze(t *testing.T) {
 			{
 				Actor: &grammar.Actor{
 					Name: ident("PortalAdminActor"),
-					Vias: []*grammar.ActorVia{
-						{Name: ident("client")},
-					},
 					Sections: []*grammar.ActorSection{
 						grammarActorAuthSection(
 							[]*grammar.DataMember{{Name: ident("subject"), Type: plainType(grammar.String)}},
@@ -66,7 +63,7 @@ func TestAnalyze(t *testing.T) {
 					Auth:      &grammar.AuthMarker{Value: "required"},
 					Api:       true,
 					Name:      ident("UserApiService"),
-					Audiences: []*grammar.ServiceAudience{serviceAllow("PortalAdminActor")},
+					Audiences: []*grammar.ActorAudience{actorAudience("PortalAdminActor")},
 					Methods: []*grammar.Method{
 						{
 							Name: ident("getUser"),

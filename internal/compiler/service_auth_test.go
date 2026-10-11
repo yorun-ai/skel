@@ -14,12 +14,12 @@ func TestCompileExplicitAuthModes(t *testing.T) {
 				continue
 			}
 			t.Run(owner+"/"+mode, func(t *testing.T) {
-				declaration := "api service UserApiService { for ClientActor via client auth " + mode + " method ping {} }"
+				declaration := "api service UserApiService { for ClientActor auth " + mode + " method ping {} }"
 				if owner == "web" {
-					declaration = "web ConsoleWeb { for ClientActor via client auth " + mode + " }"
+					declaration = "web ConsoleWeb { for ClientActor auth " + mode + " }"
 				}
 				path := filepath.Join(t.TempDir(), "input.skel")
-				writeFile(t, path, "domain demo.user\nactor ClientActor { via client {} }\n"+declaration)
+				writeFile(t, path, "domain demo.user\nactor ClientActor {  }\n"+declaration)
 				result, err := Compile(Option{SkelIn: path})
 				if err != nil {
 					t.Fatal(err)
@@ -41,16 +41,16 @@ func TestCompileExplicitAuthModes(t *testing.T) {
 
 func TestCompileRejectsInvalidAuth(t *testing.T) {
 	for _, declaration := range []string{
-		"api service UserApiService { for ClientActor via client auth off method ping {} }",
+		"api service UserApiService { for ClientActor auth off method ping {} }",
 
-		"web ConsoleWeb { for ClientActor via client auth required auth off }",
-		"api service UserApiService { for ClientActor via client auth optional auth required }",
-		"api service UserApiService { for ClientActor via client auth unknown }",
-		"web ConsoleWeb { for ClientActor via client auth unknown }",
+		"web ConsoleWeb { for ClientActor auth required auth off }",
+		"api service UserApiService { for ClientActor auth optional auth required }",
+		"api service UserApiService { for ClientActor auth unknown }",
+		"web ConsoleWeb { for ClientActor auth unknown }",
 	} {
 		t.Run(declaration, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "domain.skel")
-			writeFile(t, path, "domain demo.user\nactor ClientActor { via client {} }\n"+declaration)
+			writeFile(t, path, "domain demo.user\nactor ClientActor {  }\n"+declaration)
 			_, err := Compile(Option{SkelIn: path})
 			if err == nil {
 				t.Fatal("accepted invalid auth")
@@ -66,11 +66,11 @@ func TestCompileAuthCommentsAndActorContract(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "domain.skel")
 	writeFile(t, path, `domain demo.user
 actor ClientActor {
- via client {}
+
  auth { credential { token: string } info { userId: string } }
 }
 api service UserApiService {
- for ClientActor via client
+ for ClientActor
  auth /* service policy */ required
  method ping { auth /* method policy */ anonymous }
 }
@@ -87,9 +87,9 @@ api service UserApiService {
 func TestCompileNormalizesAuthModes(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "domain.skel")
 	writeFile(t, path, `domain demo.auth
-actor ClientActor { via client {} }
+actor ClientActor {  }
 api service SessionApiService {
- for ClientActor via client
+ for ClientActor
  auth optional
  method omitted {}
  method protected { auth required }
@@ -97,7 +97,7 @@ api service SessionApiService {
 }
 pub service BackendService { method call {} }
 ext service ExtensionService { method call {} }
-web ConsoleWeb { for ClientActor via client auth off }
+web ConsoleWeb { for ClientActor auth off }
 `)
 	result, err := Compile(Option{SkelIn: path})
 	if err != nil {

@@ -152,7 +152,6 @@ func (c *_Diff) compareActor(owner string, baseline, candidate *schema.Actor) {
 	if baselineIdentifier != candidateIdentifier {
 		c.add(ImpactDangerous, "actor.identifier.changed", owner, "actor identifier field changed", actorIdentifierPosition(baseline), actorIdentifierPosition(candidate))
 	}
-	c.compareStringSet(owner, "actor.via", actorViaNames(baseline.Vias), actorViaNames(candidate.Vias), ImpactBreaking, ImpactCompatible)
 	if (baseline.Auth != nil) != (candidate.Auth != nil) {
 		code := "actor.auth.added"
 		message := "actor authentication was added"
@@ -234,21 +233,6 @@ func (c *_Diff) compareMetadata(prefix, symbol string, baseline, candidate _Meta
 	}
 	if baseline.DeprecatedReason != candidate.DeprecatedReason {
 		c.add(ImpactCompatible, prefix+".deprecated-reason.changed", symbol, "deprecation reason changed", baselinePos, candidatePos)
-	}
-}
-
-func (c *_Diff) compareStringSet(owner, prefix string, baseline, candidate []string, removedImpact, addedImpact ImpactLevel) {
-	baselineSet := stringSet(baseline)
-	candidateSet := stringSet(candidate)
-	for _, value := range baseline {
-		if !candidateSet[value] {
-			c.add(removedImpact, prefix+".removed", owner, fmt.Sprintf("%s %s was removed", prefix, value), schema.Position{}, schema.Position{})
-		}
-	}
-	for _, value := range candidate {
-		if !baselineSet[value] {
-			c.add(addedImpact, prefix+".added", owner, fmt.Sprintf("%s %s was added", prefix, value), schema.Position{}, schema.Position{})
-		}
 	}
 }
 

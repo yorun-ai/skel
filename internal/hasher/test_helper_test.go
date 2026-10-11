@@ -24,9 +24,6 @@ func newHashTestDomain(t *testing.T, serviceDescription string) *schema.Domain {
 			{
 				Actor: &grammar.Actor{
 					Name: ident("ClientActor"),
-					Vias: []*grammar.ActorVia{
-						{Name: ident("client")},
-					},
 				},
 			},
 			{
@@ -37,7 +34,7 @@ func newHashTestDomain(t *testing.T, serviceDescription string) *schema.Domain {
 						{Name: ident("desc"), Value: &grammar.DecoratorValue{Raw: `"` + serviceDescription + `"`}},
 					},
 					Name:      ident("UserApiService"),
-					Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
+					Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 					Methods: []*grammar.Method{
 						{
 							Name: ident("getUser"),
@@ -65,9 +62,6 @@ func newHashActorCredentialTestDomain(t *testing.T, credentialFieldName string) 
 			{
 				Actor: &grammar.Actor{
 					Name: ident("ClientActor"),
-					Vias: []*grammar.ActorVia{
-						{Name: ident("client")},
-					},
 					Sections: []*grammar.ActorSection{
 						actorAuthSection(
 							[]*grammar.DataMember{{Name: ident(credentialFieldName), Type: plainType(grammar.String)}},
@@ -80,6 +74,7 @@ func newHashActorCredentialTestDomain(t *testing.T, credentialFieldName string) 
 	}).Schema()
 }
 
+// TODO: Remove with the legacy via compatibility tests when its syntax and warnings are removed.
 func newHashAllowViaTestDomain(t *testing.T, via string) *schema.Domain {
 	return analyzeHashTestDomain(t, &grammar.SkelContent{
 		Domain: domainContent("demo.user"),
@@ -87,9 +82,9 @@ func newHashAllowViaTestDomain(t *testing.T, via string) *schema.Domain {
 			{
 				Actor: &grammar.Actor{
 					Name: ident("ClientActor"),
-					Vias: []*grammar.ActorVia{
-						{Name: ident("client")},
-						{Name: ident("openapi")},
+					Sections: []*grammar.ActorSection{
+						{Via: new(grammar.ActorVia{Name: ident("client")})},
+						{Via: new(grammar.ActorVia{Name: ident("openapi")})},
 					},
 				},
 			},
@@ -98,7 +93,7 @@ func newHashAllowViaTestDomain(t *testing.T, via string) *schema.Domain {
 					Auth:      &grammar.AuthMarker{Value: "required"},
 					Api:       true,
 					Name:      ident("UserApiService"),
-					Audiences: []*grammar.ServiceAudience{serviceAllowVia("ClientActor", via)},
+					Audiences: []*grammar.ActorAudience{actorAudience("ClientActor", via)},
 					Methods: []*grammar.Method{
 						{Name: ident("ping")},
 					},
@@ -108,7 +103,7 @@ func newHashAllowViaTestDomain(t *testing.T, via string) *schema.Domain {
 				Web: &grammar.Web{
 					Sections:  []*grammar.WebSection{{Auth: &grammar.AuthMarker{Value: "required"}}},
 					Name:      ident("UserPortalWeb"),
-					Audiences: []*grammar.WebAudience{webAllowVia("ClientActor", via)},
+					Audiences: []*grammar.ActorAudience{actorAudience("ClientActor", via)},
 				},
 			},
 		},
@@ -232,20 +227,11 @@ func qualifiedName(name string) *grammar.QualifiedName {
 	return &grammar.QualifiedName{Parts: idents}
 }
 
-func serviceAllow(name string) *grammar.ServiceAudience {
-	return &grammar.ServiceAudience{Keyword: "for", Actor: qualifiedName(name)}
-}
-
-func serviceAllowVia(name string, via string) *grammar.ServiceAudience {
-	audience := serviceAllow(name)
-	audience.Via = ident(via)
-	return audience
-}
-
-func webAllowVia(name string, via string) *grammar.WebAudience {
-	return &grammar.WebAudience{
-		Keyword: "for",
-		Actor:   qualifiedName(name),
-		Via:     ident(via),
+// TODO: Drop the via argument when legacy via syntax and warnings are removed.
+func actorAudience(name string, via ...string) *grammar.ActorAudience {
+	entry := new(grammar.ActorAudienceEntry{Actor: qualifiedName(name)})
+	if len(via) > 0 {
+		entry.Via = ident(via[0])
 	}
+	return new(grammar.ActorAudience{Keyword: "for", Actors: []*grammar.ActorAudienceEntry{entry}})
 }

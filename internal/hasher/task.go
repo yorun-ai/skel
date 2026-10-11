@@ -74,7 +74,8 @@ func (s *_HashState) hashValue(value any) string {
 func (s *_HashState) buildActorAudienceHashValues(audiences []*schema.ActorAudience) []*_ActorRefHashValue {
 	values := make([]*_ActorRefHashValue, 0, len(audiences))
 	for _, audience := range audiences {
-		name, skelName := s.actorRefNames(audience.Actor)
+		skelName := s.domain.ReferenceName(audience.Actor)
+		name := skelName[strings.LastIndexByte(skelName, '.')+1:]
 		hash := ""
 		if actor := s.actorBySkel[skelName]; actor != nil {
 			hash = s.actorHash(actor)
@@ -83,20 +84,7 @@ func (s *_HashState) buildActorAudienceHashValues(audiences []*schema.ActorAudie
 			Name:     name,
 			SkelName: skelName,
 			Hash:     hash,
-			Via:      audience.Via,
 		})
 	}
 	return values
-}
-
-func (s *_HashState) actorRefNames(actorName string) (string, string) {
-	if index := strings.LastIndexByte(actorName, '.'); index >= 0 {
-		alias, baseName := actorName[:index], actorName[index+1:]
-		for _, import_ := range s.domain.Imports() {
-			if import_.Alias == alias {
-				return baseName, import_.Name + "." + baseName
-			}
-		}
-	}
-	return actorName, s.domain.Name() + "." + actorName
 }

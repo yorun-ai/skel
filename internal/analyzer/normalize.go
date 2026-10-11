@@ -203,18 +203,13 @@ func (p *Analysis) checkActorAudiences(audiences []*schema.ActorAudience, ownerP
 			break
 		}
 		actor := p.actorByRef(audience.Actor)
-		if !p.reporter.checkReference(actor != nil, `%s %s %s references undefined actor "%s"`, ownerPos, ownerKind, ownerName, audience.Actor) {
+		pos := ownerPos
+		if audience.Pos.Line > 0 {
+			pos = audience.Pos
+		}
+		if !p.reporter.checkReference(actor != nil, `%s %s %s references undefined actor "%s"`, pos, ownerKind, ownerName, audience.Actor) {
 			valid = false
 			continue
-		}
-		if audience.Via == "" {
-			continue
-		}
-		_, ok := sliceutil.Find(actor.Vias, func(via *schema.ActorVia) bool {
-			return via.Name == audience.Via
-		})
-		if !p.reporter.checkReference(ok, `%s %s %s for %s references undefined actor via "%s"`, ownerPos, ownerKind, ownerName, audience.Actor, audience.Via) {
-			valid = false
 		}
 	}
 	return valid

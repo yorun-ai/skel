@@ -231,15 +231,7 @@ func triggersByName(values []*schema.TaskTrigger) map[string]*schema.TaskTrigger
 func audiencesByKey(domain *schema.Domain, values []*schema.ActorAudience) map[string]*schema.ActorAudience {
 	result := make(map[string]*schema.ActorAudience, len(values))
 	for _, value := range values {
-		result[referenceName(domain, value.Actor)+"\x00"+value.Via] = value
-	}
-	return result
-}
-
-func actorViaNames(values []*schema.ActorVia) []string {
-	result := make([]string, 0, len(values))
-	for _, value := range values {
-		result = append(result, value.Name)
+		result[referenceName(domain, value.Actor)] = value
 	}
 	return result
 }

@@ -89,10 +89,7 @@ func (e *_SchemaEncoder) projectMembers(values []*schema.DataMember) []*SchemaMe
 }
 
 func (e *_SchemaEncoder) projectActor(value *schema.Actor) *SchemaDeclaration {
-	actor := new(SchemaActor{Vias: make([]*SchemaActorVia, 0, len(value.Vias))})
-	for _, via := range value.Vias {
-		actor.Vias = append(actor.Vias, &SchemaActorVia{Name: via.Name})
-	}
+	actor := new(SchemaActor{})
 	if auth := value.Auth; auth != nil {
 		actor.Auth = new(SchemaActorAuth{
 			Credential: e.projectDataSchema(auth.Credential), Info: e.projectDataSchema(auth.Info),
@@ -203,7 +200,7 @@ func (e *_SchemaEncoder) projectTask(value *schema.Task) *SchemaDeclaration {
 func (e *_SchemaEncoder) projectAudiences(values []*schema.ActorAudience) []*SchemaAudience {
 	audiences := make([]*SchemaAudience, 0, len(values))
 	for _, value := range values {
-		audiences = append(audiences, &SchemaAudience{Actor: e.domain.ReferenceName(value.Actor), Via: value.Via})
+		audiences = append(audiences, &SchemaAudience{Actor: e.domain.ReferenceName(value.Actor)})
 	}
 	return audiences
 }

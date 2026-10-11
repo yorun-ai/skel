@@ -50,13 +50,11 @@ type Service struct {
 	Methods []*Method
 }
 
-// ActorAudience identifies an actor and transport allowed to access a service
+// ActorAudience identifies an actor allowed to access a service
 // or web entry point.
 type ActorAudience struct {
 	// Actor is the referenced actor name as resolved from source.
 	Actor string
-	// Via is the required actor transport, or empty when no transport is selected.
-	Via string
 	// Pos is the audience declaration's source position.
 	Pos Position
 }

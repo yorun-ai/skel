@@ -83,7 +83,7 @@ func TestCompareUnresolvedSchemaCarriesImportIdentity(t *testing.T) {
  pub data Envelope { values: list<imported.Box<imported.Value>> }
  api service ReadsApiService { auth required  for ClientActor  require imported.Record:read:owns(id) method read { input { id: string } output Envelope } }
 
-actor ClientActor { via client {} }
+actor ClientActor {}
 `
 	before := inspectSchema(t, filepath.Join(t.TempDir(), "before.skel"), source)
 	after := inspectSchema(t, filepath.Join(t.TempDir(), "after.skel"), strings.ReplaceAll(source, "imported", "renamed"))
@@ -177,7 +177,7 @@ func TestComparePermissionsAcrossResolutionStates(t *testing.T) {
 					source := func(policy string) string {
 						return `domain demo
 import foreign.contract as imported
-actor ClientActor { via client {} permission {} }
+actor ClientActor { permission {} }
 api service ReadApiService { auth required
     for ClientActor
     require imported.Record:read
@@ -220,11 +220,11 @@ func TestCompareActorCapabilitySourcePositions(t *testing.T) {
 				body = "auth { credential { token: string } info { id: string } }"
 			}
 			path := filepath.Join(t.TempDir(), "actor.skel")
-			without := inspectSchema(t, path, "domain demo\nactor UserActor {\n    via client {}\n}\n")
-			with := inspectSchema(t, path, "domain demo\nactor UserActor {\n    via client {}\n    "+body+"\n}\n")
+			without := inspectSchema(t, path, "domain demo\nactor UserActor {\n}\n")
+			with := inspectSchema(t, path, "domain demo\nactor UserActor {\n    "+body+"\n}\n")
 			actorPos := schema.Position{File: path, Line: 2, Column: 7}
-			sectionPos := schema.Position{File: path, Line: 4, Column: 5}
-			moved := inspectSchema(t, path, "domain demo\nactor UserActor {\n    via client {}\n\n    "+body+"\n}\n")
+			sectionPos := schema.Position{File: path, Line: 3, Column: 5}
+			moved := inspectSchema(t, path, "domain demo\nactor UserActor {\n\n    "+body+"\n}\n")
 			report, err := diff.Compare(with, moved)
 			if err != nil || len(report.Changes) != 0 {
 				t.Fatalf("moving a capability changed its contract: %+v, %v", report, err)
@@ -258,7 +258,6 @@ func TestCompareActorIdentifierSourcePosition(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "actor.skel")
 	source := `domain demo
 actor UserActor {
-    via client {}
     auth {
         credential { token: string }
         info { id: string }
@@ -283,7 +282,6 @@ actor UserActor {
 func TestCompareActorAuthSensitivity(t *testing.T) {
 	source := `domain demo
 actor UserActor {
-    via client {}
     auth {
         credential { token: string }
         info { id: string }
@@ -295,9 +293,9 @@ actor UserActor {
 			beforePath, afterPath := filepath.Join(root, "before.skel"), filepath.Join(root, "after.skel")
 			before := inspectSchema(t, beforePath, source)
 			after := inspectSchema(t, afterPath, strings.Replace(source, section+" {", "@sensitive "+section+" {", 1))
-			line := 5
+			line := 4
 			if section == "info" {
-				line = 6
+				line = 5
 			}
 			for _, pair := range [][2]*schema.Domain{{before, after}, {after, before}} {
 				report, err := diff.Compare(pair[0], pair[1])

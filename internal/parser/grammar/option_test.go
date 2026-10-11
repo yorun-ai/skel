@@ -36,7 +36,7 @@ service AgentService {
 	audiences := serviceAudiencesForTest(content.Entries[0].Service)
 	methods := serviceMethodsForTest(content.Entries[0].Service)
 	input := methodInputForTest(methods[0])
-	if audiences[0].Actor.String() != "AgentActor" {
+	if audiences[0].Actors[0].Actor.String() != "AgentActor" {
 		t.Fatalf("unexpected actor parse result: %+v", audiences)
 	}
 	if input == nil {
@@ -57,7 +57,7 @@ func TestOptionsLexerRecognizesAtSign(t *testing.T) {
 		t.Fatalf("finalize content: %v", err)
 	}
 	audiences := serviceAudiencesForTest(content.Entries[0].Service)
-	if audiences[0].Actor.String() != "ClientActor" {
+	if audiences[0].Actors[0].Actor.String() != "ClientActor" {
 		t.Fatalf("unexpected actor tokenization: %+v", audiences)
 	}
 }

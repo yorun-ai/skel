@@ -8,9 +8,6 @@ import {{ $import.Name }}{{ with importAlias $import }} as {{ . }}{{ end }}
 {{ if $i }}
 {{ end -}}
 {{ template "description" (description $actor.Description 0) }}{{ template "deprecated" (deprecated $actor.Deprecated $actor.DeprecatedReason 0) }}pub actor {{ $actor.Name }} {
-{{- range $via := $actor.Vias }}
-    via {{ $via.Name }} {}
-{{- end }}
 {{- if $actor.Auth }}
     auth {
 {{- with $actor.Auth.Credential }}

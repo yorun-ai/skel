@@ -16,7 +16,7 @@ func TestParseService(t *testing.T) {
 		},
 
 		Name:      ident("UserApiService"),
-		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor", "client"), serviceAllow("OpenAPIActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor", "OpenAPIActor")},
 		Methods: []*grammar.Method{
 			{
 				Decorators: []*grammar.Decorator{
@@ -67,9 +67,6 @@ func TestParseService(t *testing.T) {
 	if service.Audiences[0].Actor != "ClientActor" || service.Audiences[1].Actor != "OpenAPIActor" {
 		t.Fatalf("unexpected service audiences: %+v", service.Audiences)
 	}
-	if service.Audiences[0].Via != "client" {
-		t.Fatalf("unexpected service for via: %+v", service.Audiences)
-	}
 	if len(service.Methods) != 1 {
 		t.Fatalf("unexpected service method count: %d", len(service.Methods))
 	}
@@ -107,7 +104,7 @@ func TestParseServiceSupportsTripleQuotedDescription(t *testing.T) {
 			{Name: ident("desc"), Value: decoratorValue("\"\"\"\n    User service\n    Second line description\n\"\"\"")},
 		},
 		Name:      ident("UserApiService"),
-		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 		Methods: []*grammar.Method{
 			{
 				Decorators: []*grammar.Decorator{
@@ -175,7 +172,7 @@ func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 				Auth: &grammar.AuthMarker{Value: "optional"},
 			},
 			{
-				Audience: serviceAllow("ClientActor", "client"),
+				Audience: actorAudience("ClientActor"),
 			},
 			{
 				Method: &grammar.Method{
@@ -189,7 +186,7 @@ func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 	if service.AuthMode != schema.AuthModeOptional {
 		t.Fatalf("unexpected service auth: %s", service.AuthMode)
 	}
-	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "client" {
+	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" {
 		t.Fatalf("unexpected audiences: %+v", service.Audiences)
 	}
 	if service.Methods[0].AuthMode != schema.AuthModeUnset {
@@ -225,7 +222,7 @@ func TestParseServiceRejectsExampleDecorator(t *testing.T) {
 			{Name: ident("example"), Value: decoratorValue(`"demo"`)},
 		},
 		Name:      ident("UserApiService"),
-		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 		Methods: []*grammar.Method{
 			{
 				Name:   ident("getUser"),
@@ -240,7 +237,7 @@ func TestParseServiceRejectsMethodExampleDecorator(t *testing.T) {
 		Auth:      &grammar.AuthMarker{Value: "required"},
 		Api:       true,
 		Name:      ident("UserApiService"),
-		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 		Methods: []*grammar.Method{
 			{
 				Decorators: []*grammar.Decorator{
@@ -258,7 +255,7 @@ func TestParseServiceRejectsInputExampleDecorator(t *testing.T) {
 		Auth:      &grammar.AuthMarker{Value: "required"},
 		Api:       true,
 		Name:      ident("UserApiService"),
-		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 		Methods: []*grammar.Method{
 			{
 				Name: ident("getUser"),
@@ -280,7 +277,7 @@ func TestParseServiceReturnsErrorForDuplicatedMethod(t *testing.T) {
 		Auth:      &grammar.AuthMarker{Value: "required"},
 		Api:       true,
 		Name:      ident("UserApiService"),
-		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 		Methods: []*grammar.Method{
 			{Name: ident("getUser")},
 			{Name: ident("getUser")},
@@ -293,7 +290,7 @@ func TestParseServiceAudiencesArgumentNameMatchingMethodName(t *testing.T) {
 		Auth:      &grammar.AuthMarker{Value: "required"},
 		Api:       true,
 		Name:      ident("UserApiService"),
-		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 		Methods: []*grammar.Method{
 			{
 				Name: ident("getUser"),
@@ -315,7 +312,7 @@ func TestParseServiceReturnsErrorWhenExampleHasNoDescription(t *testing.T) {
 		Auth:      &grammar.AuthMarker{Value: "required"},
 		Api:       true,
 		Name:      ident("UserApiService"),
-		Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 		Methods: []*grammar.Method{
 			{
 				Name: ident("getUser"),

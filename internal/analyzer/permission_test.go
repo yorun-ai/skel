@@ -37,7 +37,6 @@ resource User {
 }
 
 actor UserActor {
-    via client {}
     auth {
         credential {
             session: string
@@ -203,7 +202,7 @@ api service UserApiService { auth required  for ClientActor
     }
 }
 
-actor ClientActor { via client {} }
+actor ClientActor {}
 `)
 	domain := mustAnalyze(t, content).Schema()
 	require := domain.Services()[0].Methods[0].Require
@@ -247,7 +246,7 @@ api service OrderApiService { auth required  for ClientActor
     }
 }
 
-actor ClientActor { via client {} }
+actor ClientActor {}
 `)
 	expectAnalyzeDiagnosticsContains(t, "supports at most one [*]", content)
 }
@@ -279,7 +278,7 @@ api service UserApiService { auth required  for ClientActor
     }
 }
 
-actor ClientActor { via client {} }
+actor ClientActor {}
 `)
 	expectAnalyzeDiagnosticsContains(t, "cannot end with [*]", content)
 }

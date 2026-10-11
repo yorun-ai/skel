@@ -37,9 +37,7 @@ skelc version
 ```skel
 domain demo.user
 
-pub actor ClientActor {
-    via client {}
-}
+pub actor ClientActor {}
 
 pub data User {
     id: int
@@ -47,7 +45,7 @@ pub data User {
 }
 
 api service UserApiService {
-    for ClientActor via client
+    for ClientActor
     auth required
 
     method getUser {
@@ -136,7 +134,7 @@ permission、web 和 task：
 
 ```skel
 web ConsoleWeb {
-    for ClientActor via client
+    for ClientActor
     auth required
     mount /console
 }

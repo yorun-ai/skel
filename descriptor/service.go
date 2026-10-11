@@ -21,10 +21,9 @@ type Service struct {
 	Methods []*Method          `json:"methods"`
 }
 
-// HasAudience reports whether the service accepts the actor's Skel name and transport.
-// An audience with no Via restriction accepts any transport for that actor.
-func (service *Service) HasAudience(actor string, via ActorViaKind) bool {
-	return hasAudience(service.Audiences, actor, via)
+// HasAudience reports whether the service accepts the actor's Skel name.
+func (service *Service) HasAudience(actor string) bool {
+	return hasAudience(service.Audiences, actor)
 }
 
 // Method returns the method with the given local name, or nil if unavailable.

@@ -4,24 +4,16 @@ data Order {
     id: int
 }
 
-actor ClientActor {
-    via client {}
-}
+actor ClientActor {}
 
-actor ClientActorV1 {
-    via client {}
-}
+actor ClientActorV1 {}
 
-actor ClientActorV2 {
-    via client {}
-}
+actor ClientActorV2 {}
 
-actor ClientActorV10 {
-    via client {}
-}
+actor ClientActorV10 {}
 
 api service OrderApiService {
-    for ClientActor via client
+    for ClientActor
     auth required
     method get {
         input { id: int }
@@ -30,7 +22,7 @@ api service OrderApiService {
 }
 
 api service OrderApiServiceV1 {
-    for ClientActorV1 via client
+    for ClientActorV1
     auth required
     method get {
         input { id: int }
@@ -39,7 +31,7 @@ api service OrderApiServiceV1 {
 }
 
 api service OrderApiServiceV2 {
-    for ClientActorV2 via client
+    for ClientActorV2
     auth required
     method get {
         input { id: int }
@@ -48,7 +40,7 @@ api service OrderApiServiceV2 {
 }
 
 api service OrderApiServiceV10 {
-    for ClientActorV10 via client
+    for ClientActorV10
     auth required
     method get {
         input { id: int }

@@ -1,8 +1,6 @@
 package analyzer
 
 import (
-	"fmt"
-
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/parser/grammar"
@@ -24,7 +22,7 @@ func parseService(reporter *_DiagnosticReporter, gs *grammar.Service) (*schema.S
 	})
 	valid = metaValid && valid
 	valid = reporter.checkNot(meta.HasExample, "%s service does not support decorator @example", gs.Name.Pos) && valid
-	audiences, audiencesValid := parseServiceAudiences(reporter, serviceAudiences(gs))
+	audiences, audiencesValid := parseActorAudiences(reporter, serviceAudiences(gs))
 	valid = audiencesValid && valid
 	valid = reporter.checkNot(gs.Api && audiencesValid && len(audiences) == 0, "%s API service must declare at least one for Actor", gs.Name.Pos) && valid
 	authMarker, authValid := serviceAuthMarker(reporter, gs)
@@ -62,11 +60,11 @@ func parseService(reporter *_DiagnosticReporter, gs *grammar.Service) (*schema.S
 	}, valid
 }
 
-func serviceAudiences(gs *grammar.Service) []*grammar.ServiceAudience {
+func serviceAudiences(gs *grammar.Service) []*grammar.ActorAudience {
 	if len(gs.Sections) == 0 {
 		return gs.Audiences
 	}
-	audiences := make([]*grammar.ServiceAudience, 0)
+	audiences := make([]*grammar.ActorAudience, 0)
 	for _, section := range gs.Sections {
 		if section.Audience != nil {
 			audiences = append(audiences, section.Audience)
@@ -156,45 +154,6 @@ func parseAuthMode(reporter *_DiagnosticReporter, marker *grammar.AuthMarker, de
 	}
 	reporter.reportf("%s unexpected auth marker %s", marker.Pos, marker.Value)
 	return defaultMode, false
-}
-
-func parseServiceAudiences(reporter *_DiagnosticReporter, audiences []*grammar.ServiceAudience) ([]*schema.ActorAudience, bool) {
-	if len(audiences) == 0 {
-		return []*schema.ActorAudience{}, true
-	}
-	parsed := make([]*schema.ActorAudience, 0, len(audiences))
-	audiencePos := map[string]lexer.Position{}
-	valid := true
-	for _, audience := range audiences {
-		if reporter.cancelled() {
-			break
-		}
-		actorIdent := audience.Actor.Parts[len(audience.Actor.Parts)-1]
-		valid = checkCaseAdvanced(reporter, "Actor", "", "Actor", caseTypeCamel, actorIdent) && valid
-		via := ""
-		if audience.Via != nil {
-			via = audience.Via.Value
-		}
-		name := audience.Actor.String()
-		key := fmt.Sprintf("%s:%s", name, via)
-		duplicatedPosition, duplicated := audiencePos[key]
-		if duplicated {
-			if via != "" {
-				reporter.reportDuplicatef("%s duplicated service audience %s via %s found, also present at %s", actorIdent.Pos, name, via, duplicatedPosition)
-			} else {
-				reporter.reportDuplicatef("%s duplicated service audience %s found, also present at %s", actorIdent.Pos, name, duplicatedPosition)
-			}
-			valid = false
-			continue
-		}
-		audiencePos[key] = actorIdent.Pos
-		parsed = append(parsed, &schema.ActorAudience{
-			Actor: name,
-			Via:   via,
-			Pos:   position(audience.Pos),
-		})
-	}
-	return parsed, valid
 }
 
 func authMarkerPosition(marker *grammar.AuthMarker) schema.Position {

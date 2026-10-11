@@ -56,6 +56,7 @@ func TestDiagnosticsExposeOnlyFailuresAsErrors(t *testing.T) {
 	}
 
 	require.True(t, diagnostics.HasErrors())
+	assert.Equal(t, "demo.skel:2:3 failure", diagnostics.Error())
 	require.Len(t, diagnostics.Errors(), 1)
 	assert.Equal(t, "demo.skel:2:3 failure", diagnostics.Errors()[0].Error())
 	assert.Equal(t, diagnostics[1:], diagnostics.Failures())

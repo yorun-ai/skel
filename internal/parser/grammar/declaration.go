@@ -71,24 +71,36 @@ type Service struct {
 	Name       *Identifier       `parser:"@@"`
 	Sections   []*ServiceSection `parser:"\"{\" (Newline)* (@@ (Newline)*)* \"}\""`
 
-	Audiences []*ServiceAudience
+	Audiences []*ActorAudience
 	Auth      *AuthMarker
 	Methods   []*Method
 }
 
 type ServiceSection struct {
-	Decorators []*Decorator     `parser:"(@@ (Newline)*)*"`
-	Audience   *ServiceAudience `parser:"  (?= \"for\") @@"`
-	Auth       *AuthMarker      `parser:"| (?= \"auth\") @@"`
-	Require    *Require         `parser:"| (?= \"require\") @@"`
-	Method     *Method          `parser:"| @@"`
+	Decorators []*Decorator   `parser:"(@@ (Newline)*)*"`
+	Audience   *ActorAudience `parser:"  (?= \"for\") @@"`
+	Auth       *AuthMarker    `parser:"| (?= \"auth\") @@"`
+	Require    *Require       `parser:"| (?= \"require\") @@"`
+	Method     *Method        `parser:"| @@"`
 }
 
-type ServiceAudience struct {
+type ActorAudience struct {
 	Pos     lexer.Position
-	Keyword string         `parser:"@\"for\""`
-	Actor   *QualifiedName `parser:"@@"`
-	Via     *Identifier    `parser:"(\"via\" @@)?"`
+	Keyword string                `parser:"@\"for\""`
+	Actors  []*ActorAudienceEntry `parser:"@@ ((Newline)* \",\" (Newline)* @@)*"`
+}
+
+type ActorAudienceEntry struct {
+	Pos   lexer.Position
+	Actor *QualifiedName `parser:"@@"`
+	Via   *Identifier    `parser:"(\"via\" @@)?"`
+	Block *AudienceBlock `parser:"@@?"`
+}
+
+// AudienceBlock accepts the obsolete empty block only to report a migration warning.
+type AudienceBlock struct {
+	Pos lexer.Position
+	End string `parser:"\"{\" (Newline)* @\"}\""`
 }
 
 type Web struct {
@@ -96,14 +108,14 @@ type Web struct {
 	Decorators []*Decorator
 	Name       *Identifier   `parser:"@@"`
 	Sections   []*WebSection `parser:"\"{\" (Newline)* (@@ (Newline)*)* \"}\""`
-	Audiences  []*WebAudience
+	Audiences  []*ActorAudience
 	Mounts     []*WebMount
 }
 
 type WebSection struct {
-	Audience *WebAudience `parser:"  (?= \"for\") @@"`
-	Auth     *AuthMarker  `parser:"| (?= \"auth\") @@"`
-	Mount    *WebMount    `parser:"| @@"`
+	Audience *ActorAudience `parser:"  (?= \"for\") @@"`
+	Auth     *AuthMarker    `parser:"| (?= \"auth\") @@"`
+	Mount    *WebMount      `parser:"| @@"`
 }
 
 type WebMount struct {
@@ -129,20 +141,12 @@ func (web *Web) Finalize() {
 	}
 }
 
-type WebAudience struct {
-	Pos     lexer.Position
-	Keyword string         `parser:"@\"for\""`
-	Actor   *QualifiedName `parser:"@@"`
-	Via     *Identifier    `parser:"(\"via\" @@)?"`
-}
-
 type Actor struct {
 	Pos        lexer.Position
 	Decorators []*Decorator
 	Pub        bool
 	Name       *Identifier     `parser:"@@"`
-	Vias       []*ActorVia     `parser:"\"{\" (Newline)* (@@ (Newline)*)*"`
-	Sections   []*ActorSection `parser:"(@@ (Newline)*)* \"}\""`
+	Sections   []*ActorSection `parser:"\"{\" (Newline)* (@@ (Newline)*)* \"}\""`
 }
 
 func (actor *Actor) Finalize() error {
@@ -163,7 +167,8 @@ type ActorVia struct {
 }
 
 type ActorSection struct {
-	Auth       *ActorAuth       `parser:"  (?= \"auth\") @@"`
+	Via        *ActorVia        `parser:"  (?= \"via\") @@"`
+	Auth       *ActorAuth       `parser:"| (?= \"auth\") @@"`
 	Permission *ActorPermission `parser:"| (?= \"permission\") @@"`
 }
 
