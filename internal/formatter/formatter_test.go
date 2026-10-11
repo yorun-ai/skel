@@ -230,7 +230,6 @@ func TestSourcePreservesSemanticHash(t *testing.T) {
 	source := []byte(`domain demo.user
 
 pub actor ClientActor {
-via client {}
 }
 
 pub data User {
@@ -238,7 +237,7 @@ id:uuid
 }
 
 api service UserApiService { auth required
-for ClientActor via client
+for ClientActor
 method get {
 input {
 id:uuid
@@ -300,7 +299,7 @@ func compileTestDomain(t *testing.T, name string, source []byte) *schema.Domain 
 }
 
 func TestActorIdentifierRoundTrip(t *testing.T) {
-	source := []byte("domain demo\npub actor UserActor{via client{} auth{credential{token:string}info{\n// stable identity\n@identifier\nid:int\n}}}\n")
+	source := []byte("domain demo\npub actor UserActor{auth{credential{token:string}info{\n// stable identity\n@identifier\nid:int\n}}}\n")
 	before := compileTestDomain(t, "actor.skel", source)
 	formatted := formatTestSource(t, source)
 	after := compileTestDomain(t, "actor.skel", formatted)
@@ -313,7 +312,7 @@ func TestActorIdentifierRoundTrip(t *testing.T) {
 }
 
 func TestApiServiceRoundTrip(t *testing.T) {
-	input := []byte("domain demo.order\nactor ClientActor{via client{}}\n// client endpoint\napi service OrderApiService { auth required for ClientActor via client method ping{}}\n")
+	input := []byte("domain demo.order\nactor ClientActor{}\n// client endpoint\napi service OrderApiService { auth required for ClientActor method ping{}}\n")
 	before := compileTestDomain(t, "api.skel", input)
 	formatted := formatTestSource(t, input)
 	after := compileTestDomain(t, "api.skel", formatted)
@@ -332,6 +331,62 @@ func TestApiServiceRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSourceActorListRoundTrip(t *testing.T) {
+	source := []byte(`domain demo
+actor AActor {}
+actor BActor {}
+actor CActorV10 {}
+api service EntryApiService {
+for AActor,BActor,
+// another caller
+CActorV10
+auth required
+method ping {}
+}
+web EntryWeb {
+for AActor
+,BActor /* caller */ ,CActorV10
+auth off
+}
+`)
+	formatted := formatTestSource(t, source)
+	before := compileTestDomain(t, "before.skel", source)
+	after := compileTestDomain(t, "after.skel", formatted)
+	if before.Hash() != after.Hash() {
+		t.Fatalf("formatting changed actor audiences:\n%s", formatted)
+	}
+	if second := formatTestSource(t, formatted); string(second) != string(formatted) {
+		t.Fatalf("actor list formatting is not idempotent:\n%s", second)
+	}
+}
+
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
+func TestSourcePreservesLegacyVia(t *testing.T) {
+	source := []byte("domain demo\nactor UserActor{via UNKNOWN{}}\napi service EntryApiService{for UserActor via legacy auth required method ping{}}\nweb EntryWeb{for UserActor via Custom auth off}\n")
+	want := `domain demo
+
+actor UserActor {
+    via UNKNOWN {}
+}
+
+api service EntryApiService {
+    for UserActor via legacy auth required method ping {}
+}
+
+web EntryWeb {
+    for UserActor via Custom auth off
+}
+`
+	formatted := formatTestSource(t, source)
+	if string(formatted) != want {
+		t.Fatalf("formatter changed legacy via syntax: %s", formatted)
+	}
+	checkTestSource(t, "legacy.skel", formatted)
+	if string(formatTestSource(t, formatted)) != want {
+		t.Fatal("legacy via formatting is not idempotent")
+	}
+}
+
 func TestExtServiceRoundTrip(t *testing.T) {
 	input := []byte("domain demo.storage\n// reusable contract\next service StorageService {method ping{}}\n")
 	before := compileTestDomain(t, "ext.skel", input)
@@ -346,8 +401,8 @@ func TestExtServiceRoundTrip(t *testing.T) {
 }
 
 func TestWebMountFormattingRoundTrip(t *testing.T) {
-	source := []byte("domain demo\nactor ClientActor { via client {} }\nweb PortalWeb {\nmount\t/* base */\t/portal/v1-assets/ // keep\nfor ClientActor\nauth required\n}\n")
-	want := "domain demo\n\nactor ClientActor {\n    via client {}\n}\n\nweb PortalWeb {\n    mount /* base */ /portal/v1-assets/ // keep\n    for ClientActor\n    auth required\n}\n"
+	source := []byte("domain demo\nactor ClientActor {}\nweb PortalWeb {\nmount\t/* base */\t/portal/v1-assets/ // keep\nfor ClientActor\nauth required\n}\n")
+	want := "domain demo\n\nactor ClientActor {}\n\nweb PortalWeb {\n    mount /* base */ /portal/v1-assets/ // keep\n    for ClientActor\n    auth required\n}\n"
 	got := formatTestSource(t, source)
 	if string(got) != want {
 		t.Fatalf("formatted source:\n%s", got)
@@ -372,9 +427,9 @@ func TestFullDomainReferencesRoundTrip(t *testing.T) {
 
 func TestFormatExplicitAuthModes(t *testing.T) {
 	source := []byte(`domain demo.user
-actor ClientActor { via client {} }
-api service UserApiService { for ClientActor via client auth required method ping { auth optional } method login { auth anonymous } }
-web ConsoleWeb { for ClientActor via client auth off mount / }
+actor ClientActor {}
+api service UserApiService { for ClientActor auth required method ping { auth optional } method login { auth anonymous } }
+web ConsoleWeb { for ClientActor auth off mount / }
 `)
 	formatted := formatTestSource(t, source)
 	checkTestSource(t, "auth.skel", formatted)

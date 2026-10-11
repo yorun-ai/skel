@@ -18,7 +18,7 @@ enum State { READY }
 data Payload { state: State }
 data Local { value: string }
 config LocalConfig eternal { value: string }
-actor LocalActor { via client {} }
+actor LocalActor {}
 resource LocalResource { action read }
 api service LocalApiService { for LocalActor auth required method ping {} }
 event LocalEvent { payload { value: string } }
@@ -27,7 +27,7 @@ event LocalEvent { payload { value: string } }
 pub enum Mode { ACTIVE }
 pub data Direct { id: string }
 pub config SettingsConfig eternal { enabled: bool }
-pub actor ClientActor { via client {} }
+pub actor ClientActor {}
 pub resource Record { action read }
 pub service BackendService { method get { output Payload } }
 ext service StorageService { method get { output Payload } }
@@ -103,7 +103,6 @@ func TestFacadeGoRendersActorAuthService(t *testing.T) {
 			{
 				Pub:  true,
 				Name: "PublicActor",
-				Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 				Auth: new(schema.ActorAuth{Credential: credential, Info: info}),
 			},
 		},
@@ -143,7 +142,7 @@ func TestFacadeGoImportsActorRegistration(t *testing.T) {
 	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo",
 		Actors: []*schema.Actor{
-			{Pub: true, Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
+			{Pub: true, Name: "ClientActor"},
 		},
 	})
 	outputDir := t.TempDir()

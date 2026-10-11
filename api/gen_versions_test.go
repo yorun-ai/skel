@@ -21,7 +21,6 @@ func TestVersionedDeclarationsAcrossGenerators(t *testing.T) {
 	for _, version := range versions {
 		source += fmt.Sprintf(`
 pub actor ClientActor%[1]s {
-    via client {}
     auth {
         credential { token: string }
         info { @identifier id: int }
@@ -31,7 +30,7 @@ pub actor ClientActor%[1]s {
 pub service OrderService%[1]s { method get { input { id: int } output Item } }
 ext service StorageService%[1]s { method store { input { item: Item } } }
 api service OrderApiService%[1]s {
-    for ClientActor%[1]s via client
+    for ClientActor%[1]s
     auth required
     method get { input { id: int } output Item }
 }
@@ -39,7 +38,7 @@ pub event OrderPlacedEvent%[1]s { payload { item: Item } }
 ext event AuditRecordedEvent%[1]s { payload { item: Item } }
 config CheckoutConfig%[1]s eternal { limit: int }
 task RebuildTask%[1]s { trigger run { input { item: Item } } }
-web ConsoleWeb%[1]s { for ClientActor%[1]s via client auth required }
+web ConsoleWeb%[1]s { for ClientActor%[1]s auth required }
 `, version)
 	}
 	formatted, err := api.FormatSource([]byte(source))
@@ -177,7 +176,7 @@ web ConsoleWeb%[1]s { for ClientActor%[1]s via client auth required }
 		writeTestFile(t, consumer, `domain demo.consumer
 import demo.versions as orders
 api service ConsumerApiServiceV10 {
-    for orders.ClientActorV10 via client
+    for orders.ClientActorV10
     auth required
     method get { output orders.Item }
 }
@@ -192,21 +191,21 @@ func TestVersionedActorFilterAcrossGenerators(t *testing.T) {
 	root := t.TempDir()
 	actors, entry := filepath.Join(root, "actors.skel"), filepath.Join(root, "entry.skel")
 	writeTestFile(t, actors, `domain identity.user
-pub actor ClientActorV1 { via client {} }
-pub actor ClientActorV10 { via client {} }
+pub actor ClientActorV1 {}
+pub actor ClientActorV10 {}
 `)
 	source := "domain demo.order\nimport identity.user as identity\n"
 	for _, version := range []string{"V1", "V10"} {
 		source += fmt.Sprintf(`
-actor ClientActor%[1]s { via client {} }
+actor ClientActor%[1]s {}
 data LocalResult%[1]s { id: int }
 data ImportedResult%[1]s { id: int }
 api service LocalApiService%[1]s {
-    for ClientActor%[1]s via client auth required
+    for ClientActor%[1]s auth required
     method get { output LocalResult%[1]s }
 }
 api service ImportedApiService%[1]s {
-    for identity.ClientActor%[1]s via client auth required
+    for identity.ClientActor%[1]s auth required
     method get { output ImportedResult%[1]s }
 }
 `, version)

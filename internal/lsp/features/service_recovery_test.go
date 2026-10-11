@@ -22,7 +22,6 @@ enum Status { @desc("active") ACTIVE }`,
 	`config AppConfig eternal { @desc("address") address: string }`,
 	`event CreatedEvent { @sensitive payload { @desc("id") id: uuid } }`,
 	`actor ClientActor {
- via client {}
  auth {
  credential { @desc("token") token: string }
  info { @desc("id") id: uuid }
@@ -35,7 +34,7 @@ enum Status { @desc("active") ACTIVE }`,
  }
  }`,
 	`api service FileApiService {
- for ClientActor via client
+ for ClientActor
  auth required
  method get {
  require any(FileResource:read, all(FileResource:read:owner(id)))
@@ -43,7 +42,7 @@ enum Status { @desc("active") ACTIVE }`,
  output Box<Status>
  }
  }`,
-	`web FileWeb { for ClientActor via client auth required mount /files }`,
+	`web FileWeb { for ClientActor auth required mount /files }`,
 	`task RebuildTask { trigger atTime { input { @desc("id") id: uuid } } }`,
 }
 

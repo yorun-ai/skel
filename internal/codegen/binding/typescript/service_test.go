@@ -218,8 +218,8 @@ func TestBuildServiceTsPayloadIncludesExplicitApiServices(t *testing.T) {
 	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
 		Name: "demo.user",
 		Actors: []*schema.Actor{
-			{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
-			{Name: "AgentActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaAgent)}},
+			{Name: "ClientActor"},
+			{Name: "AgentActor"},
 		},
 		Data: []*schema.Data{user},
 		Services: []*schema.Service{
@@ -261,7 +261,6 @@ func TestBuildServiceTsPayloadExcludesBackendServices(t *testing.T) {
 		Actors: []*schema.Actor{{
 			Pub:  true,
 			Name: "ClientActor",
-			Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 		}},
 		Data: []*schema.Data{user},
 		Services: []*schema.Service{

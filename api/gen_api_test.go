@@ -22,10 +22,10 @@ pub data External { detail: Detail }
 `)
 	writeTestFile(t, order, `domain shop.order
 import common.shared
-actor ClientActor { via client {} }
+actor ClientActor {}
 data Unused { secret: string }
 api service OrderApiService { auth required
-    for ClientActor via client
+    for ClientActor
     method get {
         input { payload: common.shared.Page<common.shared.Page<binary>> }
         output common.shared.External
@@ -44,7 +44,7 @@ api service OrderApiService { auth required
     }
     method ping {}
 }
-api service HealthApiService { auth required  for ClientActor via client method ping {} }
+api service HealthApiService { auth required  for ClientActor method ping {} }
 pub service BackendService { method ping {} }
 `)
 	sharedOut, out := filepath.Join(root, "sharedapi"), filepath.Join(root, "orderapi")
@@ -220,8 +220,8 @@ import demo.backend as backend
 data Item { id: string }
 data Unused { hidden: string }
 pub enum State { READY }
-actor TestActor { via client {} }
-api service OrderApiService { for TestActor via client auth required method get { output Item } }
+actor TestActor {}
+api service OrderApiService { for TestActor auth required method get { output Item } }
 api service ExtraApiService { for TestActor auth optional method get { output Item } }
 pub service BackendService { method get { output backend.Internal } }
 ext service HiddenService { method ping {} }
@@ -287,7 +287,7 @@ func TestCrossDomainImportAliasCollisions(t *testing.T) {
 			declarations = "import second.user\nimport first.user\n"
 		}
 		input := filepath.Join(t.TempDir(), "app.skel")
-		writeTestFile(t, input, "domain demo.app\n"+declarations+"data Pair { first: first.user.Value second: second.user.Value }\nactor TestActor { via client {} }\napi service AppApiService { auth required  for TestActor via client method get { output Pair } }\n")
+		writeTestFile(t, input, "domain demo.app\n"+declarations+"data Pair { first: first.user.Value second: second.user.Value }\nactor TestActor {}\napi service AppApiService { auth required  for TestActor method get { output Pair } }\n")
 		out := filepath.Join(t.TempDir(), "appapi")
 		if _, err := api.CompileGolang(api.Input{SkelIn: input, SkelImports: imports}, api.GolangOption{CompilerVersion: "v0.0.0-dev", ApiOnly: true, AsModule: true, Module: "example.com/appapi", Out: out, Imports: goImports}); err != nil {
 			t.Fatal(err)
@@ -334,7 +334,7 @@ func TestApiActorFilterAcrossTargets(t *testing.T) {
 	root := t.TempDir()
 	actors, backend, entry := filepath.Join(root, "actors.skel"), filepath.Join(root, "backend.skel"), filepath.Join(root, "entry.skel")
 	writeTestFile(t, actors, `domain identity.user
-pub actor UserActor { via client {} via agent {} }
+pub actor UserActor {}
 `)
 	writeTestFile(t, backend, `domain private.backend
 pub data Secret { value: string }
@@ -342,22 +342,21 @@ pub data Secret { value: string }
 	writeTestFile(t, entry, `domain demo.order
 import identity.user as identity
 import private.backend as backend
-actor AdminActor { via client {} }
-actor IdleActor { via client {} }
+actor AdminActor {}
+actor IdleActor {}
 pub data PublicValue { value: string }
 data UserValue { value: string }
 api service UserApiService {
- for identity.UserActor via agent
+ for identity.UserActor
  auth optional
  method get { output UserValue }
 }
 api service SharedApiService { auth required
- for identity.UserActor via client
- for AdminActor via client
+ for identity.UserActor, AdminActor
  method ping {}
 }
 api service AdminApiService { auth required
- for AdminActor via client
+ for AdminActor
  method get { output backend.Secret }
 }
 `)
@@ -449,9 +448,9 @@ func TestExtensionServicesAreExcludedFromApiClients(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "service.skel")
 	// Extension contracts are excluded from the API surface.
 	writeTestFile(t, source, `domain demo.storage
-actor ClientActor { via client {} }
+actor ClientActor {}
 ext service StorageService { method get { output string } }
-api service HealthApiService { for ClientActor via client auth optional method ping {} }
+api service HealthApiService { for ClientActor auth optional method ping {} }
 `)
 	for _, target := range []string{"go", "ts"} {
 		t.Run(target, func(t *testing.T) {

@@ -32,7 +32,6 @@ func TestExternalEnumValues(t *testing.T) {
 		got  any
 		want any
 	}{
-		{name: "actor via", got: schema.ActorViaOpenAPI, want: schema.ActorViaKind("openapi")},
 		{name: "data kind", got: schema.DataKindConfig, want: schema.DataKind("config")},
 		{name: "config lifecycle", got: schema.ConfigLifecycleInstant, want: schema.ConfigLifecycle("instant")},
 		{name: "auth mode", got: schema.AuthModeOptional, want: schema.AuthMode("optional")},

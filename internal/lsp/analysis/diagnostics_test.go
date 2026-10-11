@@ -164,13 +164,8 @@ func TestSemanticDiagnosticsKeepStandaloneFormatterFixturesIndependent(t *testin
 	diagnostics, domains, err := SemanticWorkspace(t.Context(), compiler.NewWorkspaceAnalyzer(), sources, paths, true)
 	require.NoError(t, err)
 	// Both fixtures declare the same domain but are independent inputs.
-	// Their legacy via syntax warns without duplicate-declaration errors.
 	for _, items := range diagnostics {
-		require.Len(t, items, 3)
-		for _, item := range items {
-			assert.Equal(t, protocol.DiagnosticSeverityWarning, item.Severity)
-			assert.Equal(t, protocol.String("actor.via-ignored"), item.Code)
-		}
+		require.Empty(t, items)
 	}
 	require.Len(t, domains, 2)
 	for _, domain := range domains {
@@ -310,6 +305,7 @@ func TestRemoteDomainFileDoesNotGroupOtherAuthorities(t *testing.T) {
 	}
 }
 
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
 func TestSemanticViaWarningsSurviveCacheAndDisappearAfterRemoval(t *testing.T) {
 	documentURI := uri.File("/workspace/access.skel")
 	analyzer := compiler.NewWorkspaceAnalyzer()

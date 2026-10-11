@@ -2,41 +2,15 @@ package descriptor_test
 
 import (
 	"encoding/json"
-	"slices"
 	"testing"
 
 	"go.yorun.ai/skel/descriptor"
 )
 
-func TestActorLegacyViaMetadata(t *testing.T) {
-	// Keep the descriptor literal shape emitted by older skelc versions compiling.
-	actor := descriptor.Actor{
-		Name:     "UserActor",
-		SkelName: "demo.UserActor",
-		Vias: []descriptor.ActorViaKind{
-			descriptor.ActorViaClient,
-			descriptor.ActorViaAgent,
-			descriptor.ActorViaOpenAPI,
-		},
-	}
-	encoded, err := json.Marshal(actor)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var decoded descriptor.Actor
-	if err := json.Unmarshal(encoded, &decoded); err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal(decoded.Vias, actor.Vias) {
-		t.Fatalf("legacy vias did not round trip: got %v, want %v", decoded.Vias, actor.Vias)
-	}
-}
-
 func TestActorAudienceMatching(t *testing.T) {
 	audiences := []*descriptor.ActorAudience{
 		{
 			SkelName: "demo.User",
-			Via:      descriptor.ActorViaClient,
 		},
 		{
 			SkelName: "demo.Admin",
@@ -50,39 +24,30 @@ func TestActorAudienceMatching(t *testing.T) {
 	})
 	for _, test := range []struct {
 		actor string
-		via   descriptor.ActorViaKind
 		want  bool
 	}{
 		{
 			actor: "demo.User",
-			via:   descriptor.ActorViaClient,
-			want:  true,
-		},
-		{
-			actor: "demo.User",
-			via:   descriptor.ActorViaAgent,
 			want:  true,
 		},
 		{
 			actor: "demo.Admin",
-			via:   descriptor.ActorViaOpenAPI,
 			want:  true,
 		},
 		{
 			actor: "other.User",
-			via:   descriptor.ActorViaClient,
 		},
 	} {
-		if got := service.HasAudience(test.actor, test.via); got != test.want {
-			t.Errorf("Service.HasAudience(%q, %q) = %v, want %v", test.actor, test.via, got, test.want)
+		if got := service.HasAudience(test.actor); got != test.want {
+			t.Errorf("Service.HasAudience(%q) = %v, want %v", test.actor, got, test.want)
 		}
-		if got := web.HasAudience(test.actor, test.via); got != test.want {
-			t.Errorf("Web.HasAudience(%q, %q) = %v, want %v", test.actor, test.via, got, test.want)
+		if got := web.HasAudience(test.actor); got != test.want {
+			t.Errorf("Web.HasAudience(%q) = %v, want %v", test.actor, got, test.want)
 		}
 	}
 	var emptyService descriptor.Service
 	var emptyWeb descriptor.Web
-	if emptyService.HasAudience("demo.User", descriptor.ActorViaClient) || emptyWeb.HasAudience("demo.User", descriptor.ActorViaClient) {
+	if emptyService.HasAudience("demo.User") || emptyWeb.HasAudience("demo.User") {
 		t.Fatal("empty audiences must not grant access")
 	}
 }

@@ -16,8 +16,10 @@ func parseActor(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.Actor
 	})
 	valid = metaValid && valid
 	valid = reporter.checkNot(meta.HasExample, "%s actor does not support decorator @example", ga.Name.Pos) && valid
-	for _, via := range ga.Vias {
-		reporter.warnIgnoredVia(via.Pos)
+	for _, section := range ga.Sections {
+		if section.Via != nil {
+			reporter.warnIgnoredVia(section.Via.Pos)
+		}
 	}
 	auth, authValid := parseActorAuth(reporter, ga)
 	valid = authValid && valid

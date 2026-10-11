@@ -33,7 +33,7 @@ pub config AppConfig eternal { pageSize: int }
 pub config DynamicConfig instant { enabled: bool }
 pub event ChangedEvent { payload { node: Node } }
 web PortalWeb {
-    for ClientActor via client
+    for ClientActor
     auth required
     mount /api
 }
@@ -160,7 +160,6 @@ func TestGenDescriptorGoRendersActorCapabilities(t *testing.T) {
 		Actors: []*schema.Actor{
 			{
 				Name: "ClientActor",
-				Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 				Auth: new(schema.ActorAuth{
 					IdentifierField: "userId",
 					Credential: &schema.Data{
@@ -179,7 +178,6 @@ func TestGenDescriptorGoRendersActorCapabilities(t *testing.T) {
 			},
 			{
 				Name: "AnonymousActor",
-				Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)},
 			},
 		},
 	})

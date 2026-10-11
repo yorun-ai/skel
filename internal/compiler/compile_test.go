@@ -14,7 +14,7 @@ func TestCompileDirectory(t *testing.T) {
 	writeFile(t, filepath.Join(skelDir, "user.skel"), `
 domain demo.user
 
-actor ClientActor { via client {} }
+actor ClientActor {}
 
 api service UserApiService { auth required
     for ClientActor
@@ -67,7 +67,6 @@ func TestCompileRequiresTransitiveImports(t *testing.T) {
 domain app
 
 pub actor UserActor {
-    via client {}
 }
 `)
 	writeFile(t, filepath.Join(userDir, "domain.skel"), "domain user\n")
@@ -162,7 +161,6 @@ pub data Item {
 }
 
 pub actor BaseActor {
-    via client {}
     auth {
         credential {
             subject: string
@@ -329,7 +327,6 @@ func TestCompileRejectsTypeParameterOutsideDeclaringData(t *testing.T) {
 			name: "actor auth info",
 			declaration: `
 actor DemoActor {
-    via client {}
     auth {
         credential {
             subject: string
@@ -407,7 +404,6 @@ config SessionConfig eternal {
 }
 
 actor DemoActor {
-    via client {}
     auth {
         credential {
             subject: string
@@ -506,7 +502,7 @@ func TestCompileReturnsSemanticErrorForMissingDefinition(t *testing.T) {
 	skelFile := filepath.Join(t.TempDir(), "user.skel")
 	writeFile(t, skelFile, `domain demo.user
 
-actor ClientActor { via client {} }
+actor ClientActor {}
 
 api service UserApiService { auth required
     for ClientActor
@@ -527,7 +523,7 @@ func TestImportQualifiers(t *testing.T) {
 	root := t.TempDir()
 	shared := filepath.Join(root, "shared.skel")
 	writeFile(t, shared, `domain ws.sandbox
-pub actor SandboxActor { via client {} }
+pub actor SandboxActor {}
 pub data Box<TValue> { value: TValue }
 pub enum State { READY }
 pub resource Document { action read }

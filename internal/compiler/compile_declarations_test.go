@@ -35,8 +35,8 @@ func TestCompileEvent(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": describedUserDomain,
 		"event.skel": `
-actor PartnerActor { via client {} }
-actor OpenAPIActor { via openapi {} }
+actor PartnerActor {}
+actor OpenAPIActor {}
 
 @desc("User created event")
 event UserCreatedEvent {
@@ -133,7 +133,6 @@ event ChangedEvent {
 
 @deprecated("Use NewActor")
 actor ClientActor {
-    via client {}
 }
 
 @deprecated("Use NewResource")
@@ -174,7 +173,7 @@ task RefreshTask {
 
 @deprecated("Use NewWeb")
 web PortalWeb { auth required
-    for ClientActor via client
+    for ClientActor
 }
 `,
 	})
@@ -237,7 +236,6 @@ event ChangedEvent {
 `,
 		"credential": `domain demo
 actor ClientActor {
-    via client {}
     auth {
         @deprecated("Not supported")
         credential { token: string }
@@ -247,7 +245,6 @@ actor ClientActor {
 `,
 		"info": `domain demo
 actor ClientActor {
-    via client {}
     auth {
         credential { token: string }
         @deprecated("Not supported")

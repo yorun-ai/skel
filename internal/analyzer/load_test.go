@@ -86,16 +86,17 @@ func TestAnalyzeRejectsPubTask(t *testing.T) {
 	})
 }
 
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
 func TestAnalyzeIgnoresUnknownAudienceVia(t *testing.T) {
+	audience := actorAudience("ClientActor")
+	audience.Actors[0].Via = ident("openapi")
 	analysis, diagnostics := Analyze(&grammar.SkelContent{
 		Domain: domainContent("demo.user"),
 		Entries: []*grammar.SkelEntry{
 			{
 				Actor: &grammar.Actor{
-					Name: ident("ClientActor"),
-					Vias: []*grammar.ActorVia{
-						{Name: ident("client")},
-					},
+					Name:     ident("ClientActor"),
+					Sections: []*grammar.ActorSection{{Via: new(grammar.ActorVia{Name: ident("client")})}},
 				},
 			},
 			{
@@ -103,7 +104,7 @@ func TestAnalyzeIgnoresUnknownAudienceVia(t *testing.T) {
 					Auth:      &grammar.AuthMarker{Value: "required"},
 					Api:       true,
 					Name:      ident("UserApiService"),
-					Audiences: []*grammar.ServiceAudience{serviceAllow("ClientActor", "openapi")},
+					Audiences: []*grammar.ActorAudience{audience},
 					Methods: []*grammar.Method{
 						{Name: ident("ping")},
 					},
@@ -123,9 +124,6 @@ func TestAnalyzeReturnsErrorWhenActorAuthServiceNameConflicts(t *testing.T) {
 			{
 				Actor: &grammar.Actor{
 					Name: ident("ClientActor"),
-					Vias: []*grammar.ActorVia{
-						{Name: ident("client")},
-					},
 					Sections: []*grammar.ActorSection{
 						grammarActorAuthSection(
 							[]*grammar.DataMember{{Name: ident("subject"), Type: plainType(grammar.String)}},

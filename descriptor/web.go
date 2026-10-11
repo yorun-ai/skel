@@ -14,7 +14,6 @@ type Web struct {
 }
 
 // HasAudience reports whether the web entry accepts the actor's Skel name.
-// The legacy via argument is ignored; only the actor name is matched.
-func (web *Web) HasAudience(actor string, _ ActorViaKind) bool {
+func (web *Web) HasAudience(actor string) bool {
 	return hasAudience(web.Audiences, actor)
 }

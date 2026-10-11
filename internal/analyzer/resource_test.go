@@ -55,7 +55,6 @@ domain user
 import app
 
 actor UserActor {
-    via client {}
 }
 
 api service UserApiService { auth required
@@ -97,7 +96,7 @@ resource User {
     check byPermission { input { permission: PermissionInput } }
     action read
 }
-actor UserActor { via client {} }
+actor UserActor {}
 api service UserApiService { auth required
     for UserActor
     method read {

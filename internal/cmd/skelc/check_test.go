@@ -231,6 +231,7 @@ func checkDiagnosticsContainCode(result *output.CheckResult, code string) bool {
 	return false
 }
 
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
 func TestRunSkelcViaWarningsAllowCheckAndGeneration(t *testing.T) {
 	path := t.TempDir() + "/access.skel"
 	writeCLIFile(t, path, "domain demo\nactor UserActor { via UNKNOWN {} }\napi service EntryApiService { for UserActor via Custom auth required method ping {} }\n")

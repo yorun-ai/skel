@@ -22,8 +22,7 @@ type Service struct {
 }
 
 // HasAudience reports whether the service accepts the actor's Skel name.
-// The legacy via argument is ignored; only the actor name is matched.
-func (service *Service) HasAudience(actor string, _ ActorViaKind) bool {
+func (service *Service) HasAudience(actor string) bool {
 	return hasAudience(service.Audiences, actor)
 }
 

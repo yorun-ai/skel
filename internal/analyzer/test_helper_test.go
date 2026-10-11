@@ -80,18 +80,10 @@ func qualifiedName(name string) *grammar.QualifiedName {
 	return &grammar.QualifiedName{Parts: idents}
 }
 
-func serviceAllow(name string, via ...string) *grammar.ServiceAudience {
-	audience := &grammar.ServiceAudience{Keyword: "for", Actor: qualifiedName(name)}
-	if len(via) > 0 {
-		audience.Via = ident(via[0])
-	}
-	return audience
-}
-
-func webAllow(name string, via ...string) *grammar.WebAudience {
-	audience := &grammar.WebAudience{Keyword: "for", Actor: qualifiedName(name)}
-	if len(via) > 0 {
-		audience.Via = ident(via[0])
+func actorAudience(names ...string) *grammar.ActorAudience {
+	audience := new(grammar.ActorAudience{Keyword: "for"})
+	for _, name := range names {
+		audience.Actors = append(audience.Actors, new(grammar.ActorAudienceEntry{Actor: qualifiedName(name)}))
 	}
 	return audience
 }
@@ -99,9 +91,6 @@ func webAllow(name string, via ...string) *grammar.WebAudience {
 func actorWithCredentialForTest(name string) *grammar.Actor {
 	return &grammar.Actor{
 		Name: ident(name),
-		Vias: []*grammar.ActorVia{
-			{Name: ident("client")},
-		},
 		Sections: []*grammar.ActorSection{
 			grammarActorAuthSection(
 				[]*grammar.DataMember{{Name: ident("subject"), Type: plainType(grammar.String)}},

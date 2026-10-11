@@ -48,6 +48,29 @@ func TestServiceCompletesKeywordsTypesAndImportedSymbols(t *testing.T) {
 	assert.True(t, hasCompletion(items, "user"))
 }
 
+func TestServiceCompletesActorListAfterComma(t *testing.T) {
+	for _, owner := range []string{"api service EntryApiService", "web EntryWeb"} {
+		for _, clause := range []string{"for AActor, actors.", "for AActor,\nactors."} {
+			t.Run(owner+"/"+clause, func(t *testing.T) {
+				server := newFixture()
+				documentURI := uri.File("/workspace/entry.skel")
+				server.putDocument(uri.File("/workspace/actors.skel"), "domain demo.actors\npub actor BActorV10 {}\n", 1, true)
+				source := "domain demo\nimport demo.actors as actors\nactor AActor {}\n" + owner + " {\n" + clause
+				server.putDocument(documentURI, source+"\n}\n", 1, true)
+				lines := strings.Split(source, "\n")
+				result, err := server.service().Completion(t.Context(), &protocol.CompletionParams{
+					TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+						TextDocument: protocol.TextDocumentIdentifier{URI: documentURI},
+						Position:     protocol.Position{Line: uint32(len(lines) - 1), Character: uint32(len(lines[len(lines)-1]))},
+					},
+				})
+				require.NoError(t, err)
+				assert.True(t, hasCompletion(result.(protocol.CompletionItemSlice), "BActorV10"))
+			})
+		}
+	}
+}
+
 func TestServiceCompletesDecoratorPrefixForField(t *testing.T) {
 	server := newFixture()
 	documentURI := uri.File("/workspace/user.skel")
@@ -233,8 +256,8 @@ func TestServiceFiltersDecoratorCompletionByTarget(t *testing.T) {
 		},
 		{
 			name:   "actor identifier field",
-			source: "domain demo\nactor UserActor {\n    via client {}\n    auth {\n        credential { token: string }\n        info {\n            @\n            id: int\n        }\n    }\n}\n",
-			line:   6,
+			source: "domain demo\nactor UserActor {\n    auth {\n        credential { token: string }\n        info {\n            @\n            id: int\n        }\n    }\n}\n",
+			line:   5,
 			want:   []string{"@deprecated", "@desc", "@example", "@identifier", "@sensitive"},
 		},
 		{
@@ -318,7 +341,7 @@ func TestServiceMarksDeprecatedCompletion(t *testing.T) {
 func TestServiceCompletesContextualLanguageValues(t *testing.T) {
 	server := newFixture()
 	documentURI := uri.File("/workspace/user.skel")
-	source := "domain demo\nconfig DatabaseConfig et\nactor ClientActor {\n    via cl\n}\nservice UserService {\n    for ClientActor via op\n}\n"
+	source := "domain demo\nconfig DatabaseConfig et\n"
 	server.putDocument(documentURI, source, 1, true)
 
 	tests := []struct {
@@ -393,6 +416,7 @@ func TestExtensionModifierCompletion(t *testing.T) {
 	assert.True(t, found, "extension modifier must be offered")
 }
 
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
 func TestServiceDoesNotCompleteDeprecatedVia(t *testing.T) {
 	fixture := newFixture()
 	documentURI := uri.File("/workspace/access.skel")

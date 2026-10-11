@@ -25,9 +25,9 @@ func TestGeneratedGoArgumentNames(t *testing.T) {
 	}
 	writeFileForTest(t, input, `domain demo.names
 pub data Item { type: string typeName: string }
-pub actor ClientActor { via client {} }
+pub actor ClientActor {}
 api service NamesApiService {
- for ClientActor via client
+ for ClientActor
  auth required
  method exchange {
   input { `+fields.String()+` }

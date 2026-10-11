@@ -14,7 +14,7 @@ func TestGeneratedScalarTypes(t *testing.T) {
 	root := t.TempDir()
 	input := filepath.Join(root, "domain.skel")
 	writeFileForTest(t, input, `domain demo.scalar
-pub actor ClientActor { via client {} }
+pub actor ClientActor {}
 @sensitive
 pub data Values {
     amount: decimal
@@ -30,7 +30,7 @@ pub data Values {
     lookup: map<uuid, list<decimal>>
 }
 api service ScalarApiService {
-    for ClientActor via client
+    for ClientActor
     auth required
     method exchange {
         input { types: Values skeltype: Values }

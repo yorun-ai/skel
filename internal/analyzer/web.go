@@ -16,7 +16,7 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*schema
 	valid = metaValid && valid
 	valid = reporter.checkNot(meta.HasExample, "%s web does not support decorator @example", gw.Name.Pos) && valid
 	valid = reporter.checkNot(pub, "%s web %s does not support pub", gw.Name.Pos, gw.Name.Value) && valid
-	audiences, audiencesValid := parseWebAudiences(reporter, gw.Audiences)
+	audiences, audiencesValid := parseActorAudiences(reporter, gw.Audiences)
 	valid = audiencesValid && valid
 	valid = reporter.check(len(audiences) > 0, "%s web %s must declare at least one actor", gw.Name.Pos, gw.Name.Value) && valid
 	authMode := schema.AuthModeUnset
@@ -59,20 +59,4 @@ func parseWeb(reporter *_DiagnosticReporter, gw *grammar.Web, pub bool) (*schema
 		AuthPos:          authMarkerPosition(authMarker),
 		MountPath:        mountPath,
 	}, valid
-}
-
-func parseWebAudiences(reporter *_DiagnosticReporter, audiences []*grammar.WebAudience) ([]*schema.ActorAudience, bool) {
-	serviceAudiences := make([]*grammar.ServiceAudience, 0, len(audiences))
-	for _, audience := range audiences {
-		if reporter.cancelled() {
-			break
-		}
-		serviceAudiences = append(serviceAudiences, &grammar.ServiceAudience{
-			Pos:     audience.Pos,
-			Keyword: audience.Keyword,
-			Actor:   audience.Actor,
-			Via:     audience.Via,
-		})
-	}
-	return parseServiceAudiences(reporter, serviceAudiences)
 }

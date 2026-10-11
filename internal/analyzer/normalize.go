@@ -203,7 +203,11 @@ func (p *Analysis) checkActorAudiences(audiences []*schema.ActorAudience, ownerP
 			break
 		}
 		actor := p.actorByRef(audience.Actor)
-		if !p.reporter.checkReference(actor != nil, `%s %s %s references undefined actor "%s"`, ownerPos, ownerKind, ownerName, audience.Actor) {
+		pos := ownerPos
+		if audience.Pos.Line > 0 {
+			pos = audience.Pos
+		}
+		if !p.reporter.checkReference(actor != nil, `%s %s %s references undefined actor "%s"`, pos, ownerKind, ownerName, audience.Actor) {
 			valid = false
 			continue
 		}

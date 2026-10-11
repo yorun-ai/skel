@@ -121,7 +121,9 @@ func Build(revision *source.Document, parsed *grammar.SkelContent) *Document {
 		case entry.Service != nil:
 			for _, section := range entry.Service.Sections {
 				if section.Audience != nil {
-					reference(section.Audience.Actor, Actor)
+					for _, audience := range section.Audience.Actors {
+						reference(audience.Actor, Actor)
+					}
 				}
 				if section.Require != nil {
 					require(section.Require.Expr)
@@ -139,7 +141,9 @@ func Build(revision *source.Document, parsed *grammar.SkelContent) *Document {
 		case entry.Web != nil:
 			for _, section := range entry.Web.Sections {
 				if section.Audience != nil {
-					reference(section.Audience.Actor, Actor)
+					for _, audience := range section.Audience.Actors {
+						reference(audience.Actor, Actor)
+					}
 				}
 			}
 		case entry.Resource != nil:

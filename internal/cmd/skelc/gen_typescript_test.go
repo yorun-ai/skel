@@ -74,7 +74,6 @@ func TestRunSkelcGenTSApi(t *testing.T) {
 	writeCLIFile(t, dir+"/actor.skel", `domain demo.user
 
 pub actor ClientActor {
-    via client {}
 }
 `)
 	writeCLIFile(t, dir+"/types.skel", `domain demo.user

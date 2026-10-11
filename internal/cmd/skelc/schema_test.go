@@ -84,7 +84,7 @@ func TestRunSkelcSchemaGetActorCapabilities(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			entry := filepath.Join(t.TempDir(), "actor.skel")
-			source := "domain demo.user\npub actor ClientActor { via client {}\n"
+			source := "domain demo.user\npub actor ClientActor {\n"
 			if test.auth {
 				source += "auth { credential { token: string } info { @identifier id: uuid } }\n"
 			}
@@ -231,7 +231,7 @@ api service OrderApiService { auth required  for ClientActor
     }
 }
 
-actor ClientActor { via client {} }
+actor ClientActor {}
 `
 	writeCLIFile(t, filepath.Join(source, "schema.skel"), sourceSchema)
 	writeCLIFile(t, filepath.Join(aliasSource, "schema.skel"), strings.ReplaceAll(sourceSchema, "identity", "account"))
@@ -464,8 +464,8 @@ pub data User {
 func TestSchemaListGenerationViews(t *testing.T) {
 	source := filepath.Join(t.TempDir(), "source.skel")
 	writeCLIFile(t, source, `domain demo
-pub actor UserActor { via client {} }
-actor WriterActor { via client {} }
+pub actor UserActor {}
+actor WriterActor {}
 enum Status { READY DONE }
 data Value { status: Status }
 pub data Unused { value: string }
@@ -475,8 +475,8 @@ pub event ChangedEvent { payload { value: string } }
 ext event StoredEvent { payload { value: string } }
 pub service BackendService { method read { output Value } }
 ext service StorageService { method read { output Value } }
-api service ReadApiService { for UserActor via client auth anonymous method read { output Value } }
-api service WriteApiService { for WriterActor via client auth anonymous method write { output string } }
+api service ReadApiService { for UserActor auth anonymous method read { output Value } }
+api service WriteApiService { for WriterActor auth anonymous method write { output string } }
 `)
 	for _, test := range []struct {
 		name  string
@@ -562,7 +562,7 @@ func TestSchemaListViewImportsAndErrors(t *testing.T) {
 			t.Fatalf("wrong error for %v: %+v", flags, result)
 		}
 	}
-	writeCLIFile(t, source, "domain demo\nactor UserActor { via client {} }\npub service ReadService { for UserActor method ping {} }\n")
+	writeCLIFile(t, source, "domain demo\nactor UserActor {}\npub service ReadService { for UserActor method ping {} }\n")
 	failure := decodeCommandError(t, Run([]string{"schema", "list", "--pub", "--skel-in", source}))
 	if failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(failure.Message, "client admission rules") {
 		t.Fatalf("public view validation skipped: %+v", failure)

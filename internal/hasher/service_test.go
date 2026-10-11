@@ -33,12 +33,10 @@ func TestFillHashesPropagatesDataChangesToService(t *testing.T) {
 	}
 }
 
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
 func TestFillHashesIgnoresAllowVia(t *testing.T) {
 	clientDomain := newHashAllowViaTestDomain(t, "client")
 	openapiDomain := newHashAllowViaTestDomain(t, "openapi")
-	openapiDomain.Actors()[0].Vias = []*schema.ActorVia{nil, {Name: "UNKNOWN"}}
-	openapiDomain.Services()[0].Audiences[0].Via = "UNKNOWN"
-	openapiDomain.Webs()[0].Audiences[0].Via = "UNKNOWN"
 
 	fillHashes(t, clientDomain, openapiDomain)
 	if clientDomain.Actors()[0].Hash != openapiDomain.Actors()[0].Hash {
@@ -246,5 +244,41 @@ func TestFillHashesIncludesServiceDirection(t *testing.T) {
 	}
 	if pubDomain.Services()[0].Methods[0].Hash != extDomain.Services()[0].Methods[0].Hash {
 		t.Fatal("service direction changed method wire hashes")
+	}
+}
+
+func TestFillHashesNormalizesActorReferences(t *testing.T) {
+	for _, test := range []struct{ name, reference, qualified string }{
+		{"local", "ClientActorV1", "demo.user.ClientActorV1"},
+		{"imported", "identity.ClientActorV1", "identity.user.ClientActorV1"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			domains := make([]*schema.Domain, 0, 3)
+			for _, reference := range []string{test.reference, test.qualified, test.qualified + "0"} {
+				domains = append(domains, schema.NewDomainFromSpec(schema.DomainSpec{
+					Name:    "demo.user",
+					Imports: []*schema.Import{{Name: "identity.user", Alias: "identity"}},
+					Actors: []*schema.Actor{
+						{Name: "ClientActorV1", SkelName: "demo.user.ClientActorV1"},
+						{Name: "ClientActorV10", SkelName: "demo.user.ClientActorV10"},
+					},
+					Services: []*schema.Service{{Name: "EntryApiService", SkelName: "demo.user.EntryApiService", Api: true, Audiences: []*schema.ActorAudience{{Actor: reference}}}},
+					Webs:     []*schema.Web{{Name: "EntryWeb", SkelName: "demo.user.EntryWeb", Audiences: []*schema.ActorAudience{{Actor: reference}}}},
+				}))
+			}
+			fillHashes(t, domains...)
+			for index, candidate := range domains[1:] {
+				wantEqual := index == 0
+				if (domains[0].Services()[0].Hash == candidate.Services()[0].Hash) != wantEqual {
+					t.Fatalf("service hash equality for candidate %d: want %v", index, wantEqual)
+				}
+				if (domains[0].Webs()[0].Hash == candidate.Webs()[0].Hash) != wantEqual {
+					t.Fatalf("web hash equality for candidate %d: want %v", index, wantEqual)
+				}
+				if (domains[0].Hash() == candidate.Hash()) != wantEqual {
+					t.Fatalf("domain hash equality for candidate %d: want %v", index, wantEqual)
+				}
+			}
+		})
 	}
 }

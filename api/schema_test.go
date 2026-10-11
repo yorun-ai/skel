@@ -17,7 +17,7 @@ func TestQuerySchemaEffectivePolicyWithOpaqueAndResolvedImports(t *testing.T) {
 	path, dependency := filepath.Join(root, "source.skel"), filepath.Join(root, "shared.skel")
 	input := api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(`domain demo
 import shared as dep
-actor ClientActor { via client {} permission {} }
+actor ClientActor { permission {} }
 api service DocumentApiService {
     for ClientActor
     auth optional
@@ -63,10 +63,10 @@ pub resource Document {
 func TestQuerySchemaViews(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "source.skel")
 	input := api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(`domain demo
-actor UserActor { via client {} }
+actor UserActor {}
 data Hidden { value: string }
 pub data Visible { value: string }
-api service ReadApiService { for UserActor via client auth optional method read { output Hidden } }
+api service ReadApiService { for UserActor auth optional method read { output Hidden } }
 `)}}
 	for _, tc := range []struct {
 		option          api.SchemaQueryOption

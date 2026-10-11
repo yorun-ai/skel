@@ -141,7 +141,7 @@ func serviceDeclaration(name string, methods ...string) *schema.Declaration {
 }
 
 func actorDomain(authEnabled, permEnabled bool) *schema.Domain {
-	actor := &schema.Actor{Vias: []*schema.ActorVia{}}
+	actor := new(schema.Actor{})
 	if permEnabled {
 		actor.Permission = new(schema.ActorPermission{})
 	}

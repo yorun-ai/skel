@@ -80,11 +80,6 @@ func TypeParamType(typeParam *schema.TypeParameter) *schema.Type {
 	return new(schema.Type{Kind: schema.TypeKindTypeParameter, TypeParameter: typeParam})
 }
 
-// ActorVia builds the actor via identified by kind.
-func ActorVia(kind schema.ActorViaKind) *schema.ActorVia {
-	return new(schema.ActorVia{Name: string(kind)})
-}
-
 // DomainSchema builds a named domain spec.
 func DomainSchema(name string) schema.DomainSpec {
 	return DomainSchemaWithDescription(name, "")

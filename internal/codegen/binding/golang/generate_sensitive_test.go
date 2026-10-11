@@ -18,14 +18,12 @@ func TestGenerateSensitiveMarkerConflicts(t *testing.T) {
 		"config":       "@sensitive\nconfig SecretConfig eternal { skelSensitive: string }",
 		"event":        "pub event ChangedEvent { @sensitive payload { skelSensitive: string } }",
 		"actor credential": `pub actor ClientActor {
-    via client {}
     auth {
         @sensitive credential { skelSensitive: string }
         info { @identifier id: int }
     }
 }`,
 		"actor info": `pub actor ClientActor {
-    via client {}
     auth {
         credential { token: string }
         @sensitive info { @identifier skelSensitive: int }

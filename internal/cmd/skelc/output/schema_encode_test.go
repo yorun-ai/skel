@@ -15,14 +15,14 @@ func TestSchemaOutputIncludesEffectivePolicies(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "source.skel")
 	result, err := api.QuerySchema(api.Input{SkelIn: path, Sources: map[string][]byte{path: []byte(`domain demo
 import shared as dep
-actor ClientActor { via client {} permission {} }
+actor ClientActor { permission {} }
 api service DocumentApiService {
     for ClientActor
     auth optional
     require dep.Document:read
     method get { require dep.Document:read:byId(id) input { id: string } }
 }
-web PortalWeb { for ClientActor via client auth off }
+web PortalWeb { for ClientActor auth off }
 `)}}, api.SchemaQueryOption{})
 	if err != nil {
 		t.Fatal(err)

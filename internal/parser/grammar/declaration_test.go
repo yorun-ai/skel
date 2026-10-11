@@ -39,8 +39,6 @@ pub config DatabaseConfig eternal {
 }
 
 pub actor PortalAdminActor {
-    via client {}
-    via openapi {}
     auth {
         @sensitive
         credential {
@@ -55,8 +53,7 @@ pub actor PortalAdminActor {
 }
 
 pub service UserService {
-    for PortalAdminActor
-    for LinkActor
+    for PortalAdminActor, LinkActor
 
     @desc("List users")
     method listUsers {
@@ -81,8 +78,7 @@ task RebuildUserIndexTask {
 }
 
 web UserPortalWeb {
-    for PortalAdminActor
-    for LinkActor
+    for PortalAdminActor, LinkActor
 }
 `)
 
@@ -171,15 +167,12 @@ web UserPortalWeb {
 	if !actorEntry.Actor.Pub {
 		t.Fatal("expected pub actor")
 	}
-	if len(actorEntry.Actor.Vias) != 2 || actorEntry.Actor.Vias[0].Name.Value != "client" || actorEntry.Actor.Vias[1].Name.Value != "openapi" {
-		t.Fatalf("unexpected actor vias: %+v", actorEntry.Actor.Vias)
-	}
-	if len(actorEntry.Actor.Sections) != 3 {
+	if len(actorEntry.Actor.Sections) != 1 {
 		t.Fatalf("unexpected actor sections: %+v", actorEntry.Actor.Sections)
 	}
-	auth := actorEntry.Actor.Sections[2].Auth
+	auth := actorEntry.Actor.Sections[0].Auth
 	if auth == nil {
-		t.Fatalf("unexpected actor auth: %+v", actorEntry.Actor.Sections[2])
+		t.Fatalf("unexpected actor auth: %+v", actorEntry.Actor.Sections[0])
 	}
 	if len(auth.Credential.Decorators) != 1 || auth.Credential.Decorators[0].Name.Value != "sensitive" {
 		t.Fatalf("unexpected actor credential decorators: %+v", auth.Credential.Decorators)
@@ -188,7 +181,7 @@ web UserPortalWeb {
 		t.Fatalf("unexpected actor info decorators: %+v", auth.Info.Decorators)
 	}
 	if auth.Credential == nil || len(auth.Credential.Members) != 1 || auth.Credential.Members[0].Name.Value != "subject" {
-		t.Fatalf("unexpected actor credential: %+v", actorEntry.Actor.Sections[2])
+		t.Fatalf("unexpected actor credential: %+v", actorEntry.Actor.Sections[0])
 	}
 	if auth.Info == nil || len(auth.Info.Members) != 1 || auth.Info.Members[0].Name.Value != "userId" {
 		t.Fatalf("unexpected actor info: %+v", auth)
@@ -205,10 +198,10 @@ web UserPortalWeb {
 		t.Fatal("expected pub service")
 	}
 	audiences := serviceAudiencesForTest(serviceEntry.Service)
-	if len(audiences) != 2 {
+	if len(audiences) != 1 || len(audiences[0].Actors) != 2 {
 		t.Fatalf("unexpected actor count: %d", len(audiences))
 	}
-	if audiences[0].Actor.String() != "PortalAdminActor" || audiences[1].Actor.String() != "LinkActor" {
+	if audiences[0].Actors[0].Actor.String() != "PortalAdminActor" || audiences[0].Actors[1].Actor.String() != "LinkActor" {
 		t.Fatalf("unexpected actors: %+v", audiences)
 	}
 	methods := serviceMethodsForTest(serviceEntry.Service)
@@ -268,27 +261,32 @@ web UserPortalWeb {
 	if webEntry.Web == nil || webEntry.Web.Name.Value != "UserPortalWeb" {
 		t.Fatalf("unexpected web entry: %+v", webEntry)
 	}
-	if len(webEntry.Web.Audiences) != 2 || webEntry.Web.Audiences[0].Actor.String() != "PortalAdminActor" || webEntry.Web.Audiences[1].Actor.String() != "LinkActor" {
+	if len(webEntry.Web.Audiences) != 1 || len(webEntry.Web.Audiences[0].Actors) != 2 || webEntry.Web.Audiences[0].Actors[0].Actor.String() != "PortalAdminActor" || webEntry.Web.Audiences[0].Actors[1].Actor.String() != "LinkActor" {
 		t.Fatalf("unexpected web audiences: %+v", webEntry.Web.Audiences)
 	}
 }
 
-func TestParseActorAcceptsIgnoredViaAfterAuth(t *testing.T) {
-	parser := buildSkelParserForTest(t)
-	_, err := parser.ParseString("test.skel", strings.TrimSpace(`
-domain demo.user
-
+// TODO: Remove this compatibility test when legacy via syntax and warnings are removed.
+func TestParseActorAcceptsLegacyViaSections(t *testing.T) {
+	content := parseSkelForTest(t, `domain demo.user
 actor ClientActor {
-    auth {
-        credential {
-            subject: string
-        }
-    }
     via client {}
-}
-`))
-	if err != nil {
-		t.Fatalf("ignored via must be accepted after actor auth: %v", err)
+    via openapi {}
+    auth { credential { subject: string } }
+    via Custom {}
+}`)
+	sections := content.Entries[0].Actor.Sections
+	if len(sections) != 4 || sections[2].Auth == nil {
+		t.Fatalf("unexpected actor sections: %+v", sections)
+	}
+	for _, test := range []struct {
+		index int
+		name  string
+	}{{0, "client"}, {1, "openapi"}, {3, "Custom"}} {
+		via := sections[test.index].Via
+		if via == nil || via.Name.Value != test.name {
+			t.Fatalf("unexpected legacy via section %d: %+v", test.index, via)
+		}
 	}
 }
 
@@ -297,7 +295,6 @@ func TestParseActorAuthCredentialAndInfoCanAppearInEitherOrder(t *testing.T) {
 domain demo.user
 
 actor ClientActor {
-    via client {}
     auth {
         info {
             userId: int
@@ -309,7 +306,7 @@ actor ClientActor {
 }
 	`)
 	actor := content.Entries[0].Actor
-	if len(actor.Sections) != 2 || actor.Sections[1].Auth == nil || actor.Sections[1].Auth.Info == nil || actor.Sections[1].Auth.Credential == nil {
+	if len(actor.Sections) != 1 || actor.Sections[0].Auth == nil || actor.Sections[0].Auth.Info == nil || actor.Sections[0].Auth.Credential == nil {
 		t.Fatalf("unexpected actor sections: %+v", actor.Sections)
 	}
 }
@@ -320,7 +317,6 @@ func TestParseActorPermissionMustBeEmpty(t *testing.T) {
 domain demo.user
 
 actor ClientActor {
-    via client {}
     permission {
         User:read
     }
@@ -357,8 +353,8 @@ resource User {
 
 }
 
-func serviceAudiencesForTest(service *Service) []*ServiceAudience {
-	audiences := make([]*ServiceAudience, 0)
+func serviceAudiencesForTest(service *Service) []*ActorAudience {
+	audiences := make([]*ActorAudience, 0)
 	for _, section := range service.Sections {
 		if section.Audience != nil {
 			audiences = append(audiences, section.Audience)

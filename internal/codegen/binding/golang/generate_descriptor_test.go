@@ -22,7 +22,6 @@ func TestActorRegistrationImportDoesNotCollideWithSourceAlias(t *testing.T) {
 	writeFileForTest(t, entry, `domain demo
 import shared as meta
 actor ClientActor {
-    via client {}
     auth {
         credential { token: string }
         info { id: string details: meta.Credential }
@@ -82,7 +81,7 @@ func TestGeneratorGoRendersDescriptorFile(t *testing.T) {
 			},
 		},
 		Actors: []*schema.Actor{
-			{Pub: true, Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
+			{Pub: true, Name: "ClientActor"},
 		},
 		Services: []*schema.Service{
 			{
@@ -117,9 +116,6 @@ func TestGeneratorGoRendersDescriptorFile(t *testing.T) {
 		t.Fatalf("expected pub descriptor config declaration, got:\n%s", string(goDescriptorContent))
 	}
 	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), "Pub: true")
-	if strings.Contains(string(goDescriptorContent), `descriptor.ActorVia`) {
-		t.Fatalf("unexpected pub descriptor actor via, got:\n%s", string(goDescriptorContent))
-	}
 }
 
 // TestGeneratorGoDescriptorHasNoBlankLineInsideDeclarations guards against stray
@@ -158,7 +154,7 @@ func TestGeneratorGoDescriptorHasNoBlankLineInsideDeclarations(t *testing.T) {
 			{Name: "Status", Items: []*schema.EnumItem{{Name: "ACTIVE"}}},
 		},
 		Actors: []*schema.Actor{
-			{Pub: true, Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}},
+			{Pub: true, Name: "ClientActor"},
 		},
 		Services: []*schema.Service{
 			{
@@ -228,7 +224,7 @@ func TestGeneratorGoRendersWebMountInSpecAndDescriptor(t *testing.T) {
 	for _, path := range []string{"", "/", "/portal/v1-assets/"} {
 		pkg := newSchemaDomainForTest(t, schema.DomainSpec{
 			Name:   "demo.web",
-			Actors: []*schema.Actor{{Name: "ClientActor", Vias: []*schema.ActorVia{codegentest.ActorVia(schema.ActorViaClient)}}},
+			Actors: []*schema.Actor{{Name: "ClientActor"}},
 			Webs:   []*schema.Web{{Name: "PortalWeb", AuthMode: schema.AuthModeRequired, MountPath: path, Audiences: []*schema.ActorAudience{{Actor: "ClientActor"}}}},
 		})
 		out := filepath.Join(t.TempDir(), "skeled")
@@ -259,8 +255,8 @@ func TestApiBackendDescriptorAndClientBoundary(t *testing.T) {
 	root := t.TempDir()
 	entry := filepath.Join(root, "order.skel")
 	writeFileForTest(t, entry, `domain demo.order
-actor TestActor { via client {} }
-api service OrderApiService { auth required  for TestActor via client method ping {} }
+actor TestActor {}
+api service OrderApiService { auth required  for TestActor method ping {} }
 pub service BackendService { method ping {} }
 `)
 	input := api.Input{SkelIn: entry}

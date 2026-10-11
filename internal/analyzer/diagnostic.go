@@ -70,11 +70,14 @@ func (r *_DiagnosticReporter) reportf(message string, args ...any) {
 }
 
 func (r *_DiagnosticReporter) warnIgnoredVia(pos lexer.Position) {
+	r.warnf(diagnostic.CodeViaIgnored, "%s via is deprecated and ignored; remove this clause", pos)
+}
+
+func (r *_DiagnosticReporter) warnf(code, message string, args ...any) {
 	if r.cancelled() || len(r.warnings) >= MaxDiagnosticsPerDomain {
 		return
 	}
-	r.warnings = append(r.warnings, newDiagnosticFailure(diagnostic.CodeViaIgnored,
-		"%s via is deprecated and ignored; remove this clause", pos))
+	r.warnings = append(r.warnings, newDiagnosticFailure(code, message, args...))
 }
 
 func (r *_DiagnosticReporter) reportDuplicatef(message string, args ...any) {

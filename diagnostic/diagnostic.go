@@ -17,6 +17,8 @@ const (
 	CodeSemanticReference  = "semantic.reference"
 	CodeSemanticWarning    = "semantic.warning"
 	CodeViaIgnored         = "actor.via-ignored"
+	CodeRepeatedFor        = "actor.repeated-for"
+	CodeForBlockIgnored    = "actor.for-block-ignored"
 	CodeImportMissing      = "import.missing"
 	CodeImportCycle        = "import.cycle"
 	CodeDomainMissing      = "domain.missing"

@@ -188,13 +188,10 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 	})
 
 	t.Run("actor", func(t *testing.T) {
-		auth := func(enabled, permission bool, vias ...string) *schema.Actor {
-			result := &schema.Actor{Vias: []*schema.ActorVia{}}
+		auth := func(enabled, permission bool) *schema.Actor {
+			result := new(schema.Actor{})
 			if permission {
 				result.Permission = new(schema.ActorPermission{})
-			}
-			for _, via := range vias {
-				result.Vias = append(result.Vias, &schema.ActorVia{Name: via})
 			}
 			if enabled {
 				result.Auth = new(schema.ActorAuth{})
@@ -204,7 +201,6 @@ func _testDeclarationRules(t *testing.T, coverage *_RuleCoverage) {
 			return result
 		}
 		changes := diffChanges(func(diff *_Diff) {
-			diff.compareActor("Caller", auth(false, false, "old"), auth(false, false, "new"))
 			diff.compareActor("Caller", auth(false, false), auth(true, true))
 			diff.compareActor("Caller", auth(true, true), auth(false, false))
 			changed := auth(true, true)
@@ -356,7 +352,7 @@ func TestWebOffAuthTransitions(t *testing.T) {
 			makeDomain := func(mode schema.AuthMode) *schema.Domain {
 				return newTestDomain(&schema.Declaration{
 					Kind: schema.DeclarationTypeWeb, Name: "ExampleWeb", SkelName: "demo.user.ExampleWeb",
-					Web: &schema.Web{AuthMode: mode, Audiences: []*schema.ActorAudience{{Actor: "demo.user.UserActor", Via: "client"}}},
+					Web: &schema.Web{AuthMode: mode, Audiences: []*schema.ActorAudience{{Actor: "demo.user.UserActor"}}},
 				})
 			}
 			report, err := Compare(makeDomain(test.before), makeDomain(test.after))

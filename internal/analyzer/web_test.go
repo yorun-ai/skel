@@ -13,7 +13,7 @@ func TestParseWeb(t *testing.T) {
 			{Name: ident("desc"), Value: decoratorValue(`"User portal entry point"`)},
 		},
 		Name:      ident("UserPortalWeb"),
-		Audiences: []*grammar.WebAudience{webAllow("ClientActor", "client"), webAllow("OpenAPIActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor", "OpenAPIActor")},
 	}, false)
 
 	if web.Name != "UserPortalWeb" {
@@ -25,16 +25,13 @@ func TestParseWeb(t *testing.T) {
 	if len(web.Audiences) != 2 || web.Audiences[0].Actor != "ClientActor" || web.Audiences[1].Actor != "OpenAPIActor" {
 		t.Fatalf("unexpected web audiences: %+v", web.Audiences)
 	}
-	if web.Audiences[0].Via != "" {
-		t.Fatalf("unexpected web for via: %+v", web.Audiences)
-	}
 }
 
 func TestParseWebRejectsPub(t *testing.T) {
 	expectWebDiagnostic(t, "does not support pub", &grammar.Web{
 		Sections:  []*grammar.WebSection{{Auth: &grammar.AuthMarker{Value: "required"}}},
 		Name:      ident("UserPortalWeb"),
-		Audiences: []*grammar.WebAudience{webAllow("ClientActor")},
+		Audiences: []*grammar.ActorAudience{actorAudience("ClientActor")},
 	}, true)
 }
 

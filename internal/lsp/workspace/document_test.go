@@ -35,7 +35,7 @@ data Order {
 
 func TestIndexDocumentCoversEverySchemaDeclarationType(t *testing.T) {
 	document := BuildDocument(uri.File("/workspace/all.skel"), "/workspace/all.skel", `domain demo
-actor Caller { via client {} }
+actor Caller {}
 config Runtime eternal {}
 data Record {}
 enum State { READY }

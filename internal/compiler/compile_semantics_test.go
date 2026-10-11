@@ -12,7 +12,6 @@ func TestCompileServiceAndData(t *testing.T) {
 		"domain.skel": describedUserDomain,
 		"user.skel": `
 actor ClientActor {
-    via client {}
     auth {
         credential {
             subject: string
@@ -24,7 +23,7 @@ actor ClientActor {
 }
 
 api service UserApiService { auth required
-    for ClientActor via client
+    for ClientActor
 
     @desc("Get a user by ID")
     method getUserById {
@@ -57,7 +56,7 @@ enum UserStatus {
 	if service.Name != "UserApiService" {
 		t.Fatalf("unexpected service name: %s", service.Name)
 	}
-	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" || service.Audiences[0].Via != "" {
+	if len(service.Audiences) != 1 || service.Audiences[0].Actor != "ClientActor" {
 		t.Fatalf("unexpected service audiences: %+v", service.Audiences)
 	}
 	if len(service.Methods) != 1 {
@@ -75,8 +74,8 @@ func TestCompileAcrossFilesAndResolveTypes(t *testing.T) {
 	domain := parseDomain(t, map[string]string{
 		"domain.skel": describedUserDomain,
 		"types.skel": `
-actor ClientActor { via client {} }
-actor OpenAPIActor { via openapi {} }
+actor ClientActor {}
+actor OpenAPIActor {}
 
 enum UserStatus {
     ACTIVE
@@ -94,8 +93,7 @@ data User {
 `,
 		"service.skel": `
 api service UserApiService { auth required
-    for ClientActor
-    for OpenAPIActor
+    for ClientActor, OpenAPIActor
 
     @desc("List users")
     method listUsers {
@@ -190,7 +188,7 @@ api service UserApiService { auth required
 func TestCompileDirectoryIncludesAllDeclarationKinds(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "domain.skel"), describedUserDomain)
-	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\nactor PortalAdminActor { via client {} }\napi service AgentApiService { auth required  for PortalAdminActor\nmethod ping {} }\n")
+	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\nactor PortalAdminActor {}\napi service AgentApiService { auth required  for PortalAdminActor\nmethod ping {} }\n")
 	writeFile(t, filepath.Join(dir, "types.skel"), "domain demo.user\ndata User { id: int }\nenum UserStatus { ACTIVE }\n")
 
 	result, err := Compile(Option{SkelIn: dir})
