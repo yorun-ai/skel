@@ -6,6 +6,22 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.32.1] - 2026-10-11
+
+### Fixed
+
+- Default generated Go API clients to vRPC Go v0.15.0 and require that version
+  or newer, aligning the runtime dependency with Skel v0.32.0. Explicit older
+  versions are rejected before generated output is modified.
+
+### Upgrade Notes
+
+- This out-of-cycle patch aligns generated API dependencies with the vRPC Go
+  release that depends on Skel v0.32.0. Upgrade existing Go API modules to
+  `go.yorun.ai/vrpc v0.15.0` or newer and update any older
+  `--go-vrpc-version` overrides.
+- Generated backend Go modules still default to and require Vine v0.29.0.
+
 ## [0.32.0] - 2026-10-11
 
 ### Added
@@ -1025,7 +1041,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.32.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.32.1...HEAD
+[0.32.1]: https://github.com/yorun-ai/skel/compare/v0.32.0...v0.32.1
 [0.32.0]: https://github.com/yorun-ai/skel/compare/v0.31.1...v0.32.0
 [0.31.1]: https://github.com/yorun-ai/skel/compare/v0.31.0...v0.31.1
 [0.31.0]: https://github.com/yorun-ai/skel/compare/v0.30.0...v0.31.0
