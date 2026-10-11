@@ -100,7 +100,7 @@ pub service BackendService { method ping {} }
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(mod), "go.yorun.ai/vrpc v0.14.0") {
+	if !strings.Contains(string(mod), "go.yorun.ai/vrpc v0.15.0") {
 		t.Fatalf("unexpected API runtime dependency: %s", mod)
 	}
 
