@@ -6,6 +6,52 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-10-11
+
+### Added
+
+- Support an optional `Vn` suffix on service, API service, event, config, task,
+  actor and web names, including `V1`, `V2`, `V10` and larger positive versions.
+  References and generated contracts retain the complete declaration name;
+  versioned declarations remain independent contracts.
+- Accept comma-separated actor audiences such as `for AActor, BActor` in API
+  services and webs, including line breaks around commas. Repeated `for`
+  clauses and empty audience blocks emit migration warnings; duplicate actors
+  and nonempty audience blocks remain errors.
+
+### Changed
+
+- Generate event helpers such as `EmitOrderPlacedV2` and `OnOrderPlacedV2`
+  for `OrderPlacedEventV2`, preserving the existing event naming convention.
+- Ignore legacy `via` clauses and their values with warnings. They no longer
+  affect generated code, actor audiences or compatibility hashes; legacy
+  transport-specific entries for the same actor collapse to one audience.
+- Require and default generated backend Go modules to Vine v0.29.0.
+- Default generated Go API clients to vRPC v0.14.0 while retaining support for
+  v0.13.0 or later.
+
+### Removed
+
+- Remove public `Via`/`Vias` fields and related types from schema, descriptor
+  and CLI output contracts. Descriptor `Service.HasAudience` and
+  `Web.HasAudience` now accept only the actor name.
+
+### Fixed
+
+- Reject event and config names with no name body, such as `Event`, `Config`,
+  `EventV2` and `ConfigV2`, consistently with other declaration kinds.
+
+### Upgrade Notes
+
+- Install with `go install go.yorun.ai/skel/cmd/skelc@v0.32.0` and regenerate
+  dependent Go packages. Backend output requires Vine v0.29.0 or later;
+  selecting an older runtime is rejected.
+- Update direct Go API consumers and CLI JSON readers for the removed via
+  metadata and changed `HasAudience` signatures. Remove `via` clauses and
+  combine repeated audience clauses into a comma-separated `for` list.
+- Keep existing declaration names when adding versioned contracts; introducing
+  a new version does not rename or replace existing contracts automatically.
+
 ## [0.31.1] - 2026-10-09
 
 ### Fixed
@@ -979,7 +1025,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.31.1...HEAD
+[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.32.0...HEAD
+[0.32.0]: https://github.com/yorun-ai/skel/compare/v0.31.1...v0.32.0
 [0.31.1]: https://github.com/yorun-ai/skel/compare/v0.31.0...v0.31.1
 [0.31.0]: https://github.com/yorun-ai/skel/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/yorun-ai/skelc/compare/v0.29.0...v0.30.0
