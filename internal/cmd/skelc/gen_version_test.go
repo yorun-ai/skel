@@ -14,9 +14,9 @@ func TestGenerationVersionErrorsAreInvalidArgumentsAndPreserveOutput(t *testing.
 	for _, flags := range [][]string{
 		{"--go-vine-version", "v01.15.7"},
 		{"--api", "--go-vrpc-version", "v01.12.0"},
-		{"--api", "--go-vrpc-version", "v0.12.0"},
+		{"--api", "--go-vrpc-version", "v0.14.0"},
 		{"--api", "--go-vine-version", "v0.29.0"},
-		{"--go-vrpc-version", "v0.13.0"},
+		{"--go-vrpc-version", "v0.15.0"},
 		{"--go-import", "unused=example.com/dependency@v01.2.3"},
 		{"--go-import", "first=example.com/dependency@v1.0.0", "--go-import", "second=example.com/dependency@v1.1.0"},
 	} {
