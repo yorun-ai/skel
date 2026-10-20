@@ -210,7 +210,7 @@ func TestRunSkelcSchemaParserErrorsUseStdoutResult(t *testing.T) {
 	}
 }
 
-func TestRunSkelcSchemaGetKeepsImportsOpaque(t *testing.T) {
+func TestRunSkelcSchemaGetShallowKeepsImportsOpaque(t *testing.T) {
 	source := t.TempDir()
 	aliasSource := t.TempDir()
 	writeCLIFile(t, filepath.Join(source, "domain.skel"), `domain demo.order`)
@@ -238,8 +238,8 @@ actor ClientActor {}
 
 	get := func(kind, name string) *output.SchemaDeclaration {
 		t.Helper()
-		result := Run([]string{"schema", "get", kind, name, "--skel-in", source})
-		aliasResult := Run([]string{"schema", "get", kind, name, "--skel-in", aliasSource})
+		result := Run([]string{"schema", "get", kind, name, "--shallow", "--skel-in", source})
+		aliasResult := Run([]string{"schema", "get", kind, name, "--shallow", "--skel-in", aliasSource})
 		if result.ExitCode != ExitCodeSuccess || aliasResult.ExitCode != ExitCodeSuccess {
 			t.Fatalf("query with opaque imports failed: %+v; %+v", result, aliasResult)
 		}
@@ -566,5 +566,53 @@ func TestSchemaListViewImportsAndErrors(t *testing.T) {
 	failure := decodeCommandError(t, Run([]string{"schema", "list", "--pub", "--skel-in", source}))
 	if failure.Code != output.ErrorCodeCompilationFailed || !strings.Contains(failure.Message, "client admission rules") {
 		t.Fatalf("public view validation skipped: %+v", failure)
+	}
+}
+
+func TestSchemaGetImportedConfigFields(t *testing.T) {
+	root := t.TempDir()
+	shared, consumer := filepath.Join(root, "shared"), filepath.Join(root, "consumer")
+	writeCLIFile(t, filepath.Join(shared, "domain.skel"), "domain infra.proxy")
+	writeCLIFile(t, filepath.Join(shared, "config.skel"), `domain infra.proxy
+pub enum Mode { DIRECT FORWARD }
+abs config GitAbsConfig instant {
+ upstreamEndpoint: string
+ mode: Mode
+}
+`)
+	writeCLIFile(t, filepath.Join(consumer, "domain.skel"), "domain dist.proxy")
+	writeCLIFile(t, filepath.Join(consumer, "config.skel"), `domain dist.proxy
+import infra.proxy as proxy
+config GitConfig = proxy.GitAbsConfig
+`)
+	args := []string{"schema", "get", "config", "dist.proxy.GitConfig", "--skel-in", consumer}
+	decode := func(args []string) output.SchemaDeclaration {
+		t.Helper()
+		result := Run(args)
+		if result.ExitCode != ExitCodeSuccess {
+			t.Fatalf("schema get: %+v", result)
+		}
+		var declaration output.SchemaDeclaration
+		if err := json.Unmarshal([]byte(result.Stdout), &declaration); err != nil {
+			t.Fatal(err)
+		}
+		return declaration
+	}
+	shallow := decode(append(slices.Clone(args), "--shallow"))
+	if shallow.Data.FromSkelName != "infra.proxy.GitAbsConfig" || len(shallow.Data.Members) != 0 {
+		t.Fatalf("unexpected shallow config: %+v", shallow.Data)
+	}
+	resolvedArgs := append(slices.Clone(args), "--skel-import", "infra.proxy="+shared)
+	resolved := decode(resolvedArgs)
+	if len(resolved.Data.Members) != 2 || resolved.Data.Members[0].Name != "upstreamEndpoint" || resolved.Data.Members[1].Type.Name != "infra.proxy.Mode" {
+		t.Fatalf("missing inherited fields: %+v", resolved.Data)
+	}
+	for _, invalid := range [][]string{
+		slices.Clone(args),
+		append(slices.Clone(args), "--shallow", "--skel-import", "infra.proxy="+shared),
+	} {
+		if result := Run(invalid); result.ExitCode == ExitCodeSuccess {
+			t.Fatalf("incomplete import options accepted: %+v", result)
+		}
 	}
 }
