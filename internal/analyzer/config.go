@@ -26,6 +26,7 @@ func (p *Analysis) normalizeConfigSources(allowMissing bool) {
 					}
 				}
 				if allowMissing && declared {
+					ref.SkelName = ref.ExternalDomain + "." + ref.SkelName
 					continue
 				}
 				p.reporter.reportf("%s import %s not found", ref.Pos, ref.ExternalAlias)

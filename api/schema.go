@@ -57,7 +57,7 @@ type SchemaQueryOption = internalapi.SchemaQueryOption
 type SchemaQueryResult = internalapi.SchemaQueryResult
 
 // QuerySchema creates a semantic domain for inspection, listing or lookup.
-// The default view keeps unresolved imports, matching schema list/get.
+// The default view keeps unresolved imports, matching schema list and schema get --shallow.
 func QuerySchema(input Input, selection SchemaQueryOption) (SchemaQueryResult, error) {
 	return internalapi.QuerySchema(input, selection)
 }

@@ -178,7 +178,7 @@ TypeScript 生成必须传 `--api`，不接受 `--pub`。默认 API 输出包含
 
 ### 引用其他 domain
 
-在 `.skel` 中声明 `import` 后，生成命令通过可重复使用的 `--skel-import domain=PATH` 指定完整的传递依赖图。skelc 会分析全部依赖，但只为 `--skel-in` 指定的目标生成代码。生成 Go module 或 TypeScript 时，再使用对应的 `--go-import`、`--go-module-prefix` 或 `--ts-import` 映射目标语言的 package。`schema dep --api` 接受相同的 `--prune`、`--actor`、`--name` 和 `--skel-import` 选择参数，以 JSON 返回选中的本领域声明与外部类型依赖；查询和生成共用选择规则。`schema list --pub` 和 `schema list --api` 也接受依赖映射，列出对应生成视图中的声明。默认 `schema list` 及其他 schema 检查命令不接受依赖映射，而是把 import 符号保留为不透明的完整名称。完整示例见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli)。
+在 `.skel` 中声明 `import` 后，生成命令通过可重复使用的 `--skel-import domain=PATH` 指定完整的传递依赖图。skelc 会分析全部依赖，但只为 `--skel-in` 指定的目标生成代码。生成 Go module 或 TypeScript 时，再使用对应的 `--go-import`、`--go-module-prefix` 或 `--ts-import` 映射目标语言的 package。`schema dep --api` 接受相同的 `--prune`、`--actor`、`--name` 和 `--skel-import` 选择参数，以 JSON 返回选中的本领域声明与外部类型依赖；查询和生成共用选择规则。`schema list --pub` 和 `schema list --api` 也接受依赖映射，列出对应生成视图中的声明。`schema get` 默认解析 imports，需提供全部必要依赖映射。使用 `schema get --shallow` 保留不透明的外部引用；该模式拒绝依赖映射。默认 `schema list` 仍为浅层查询。完整示例见 [CLI 参考](https://skel.yorun.ai/zh-CN/docs/cli)。
 
 ### 查询、查看差异和格式化
 

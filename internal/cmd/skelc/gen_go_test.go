@@ -134,7 +134,7 @@ func TestRunSkelcGenGoModule(t *testing.T) {
 
 	result := Run([]string{"gen", "go-module", "--skel-in", dir, "--go-out", goOut, "--go-module-prefix", "github.com/acme/skel"})
 	assertGenerationResult(t, result)
-	assertFileContains(t, filepath.Join(goOut, "go.mod"), "go.yorun.ai/vine v0.32.0")
+	assertFileContains(t, filepath.Join(goOut, "go.mod"), "go.yorun.ai/vine v0.32.1")
 }
 
 func TestRunSkelcGenGoModuleWithGoVineVersion(t *testing.T) {

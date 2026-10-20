@@ -20,6 +20,7 @@ const (
 	commandSchemaGet  = "get"
 	commandSchemaDiff = "diff"
 
+	flagSchemaShallow        = "shallow"
 	flagSchemaSkelIn         = "skel-in"
 	flagSchemaBaselineSkelIn = "baseline-skel-in"
 )
@@ -71,7 +72,7 @@ func newSchemaGetCommand() *ucli.Command {
 			if err != nil {
 				return commandFailure(output.ErrorCodeInvalidArgument, err)
 			}
-			document, err := loadQuerySchema(cmd)
+			document, err := loadQuerySchema(cmd, !cmd.Bool(flagSchemaShallow))
 			if err != nil {
 				return err
 			}
@@ -152,7 +153,7 @@ func loadSchemaList(cmd *ucli.Command) (*schema.Domain, error) {
 		if cmd.IsSet(flagGenSkelImport) {
 			return nil, commandFailure(output.ErrorCodeInvalidArgument, fmt.Errorf("flag skel-import requires api or pub"))
 		}
-		return loadQuerySchema(cmd)
+		return loadQuerySchema(cmd, false)
 	}
 	imports, err := parseMappingFlags(cmd.StringSlice(flagGenSkelImport), flagGenSkelImport)
 	if err != nil {
@@ -168,6 +169,8 @@ func loadSchemaList(cmd *ucli.Command) (*schema.Domain, error) {
 
 func newSchemaGetFlags() []ucli.Flag {
 	return []ucli.Flag{
+		&ucli.BoolFlag{Name: flagSchemaShallow, Usage: "inspect local declarations without resolving imports"},
+		&ucli.StringSliceFlag{Name: flagGenSkelImport, Usage: "skel dependency mapping in domain=path form; cannot be combined with --shallow"},
 		&ucli.StringFlag{Name: flagSchemaSkelIn, Usage: "skeleton input file or directory"},
 	}
 }
@@ -217,8 +220,15 @@ func filterSchemaEntries(entries []*output.SchemaEntry, kind string) []*output.S
 	return filtered
 }
 
-func loadQuerySchema(cmd *ucli.Command) (*schema.Domain, error) {
-	result, err := skelapi.QuerySchema(skelapi.Input{SkelIn: cmd.String(flagSchemaSkelIn), Strict: cmd.Bool(flagStrict)}, skelapi.SchemaQueryOption{})
+func loadQuerySchema(cmd *ucli.Command, resolveImports bool) (*schema.Domain, error) {
+	if cmd.Bool(flagSchemaShallow) && cmd.IsSet(flagGenSkelImport) {
+		return nil, commandFailure(output.ErrorCodeInvalidArgument, fmt.Errorf("flags shallow and skel-import are mutually exclusive"))
+	}
+	imports, err := parseMappingFlags(cmd.StringSlice(flagGenSkelImport), flagGenSkelImport)
+	if err != nil {
+		return nil, commandFailure(output.ErrorCodeInvalidArgument, err)
+	}
+	result, err := skelapi.QuerySchema(skelapi.Input{SkelIn: cmd.String(flagSchemaSkelIn), SkelImports: imports, Strict: cmd.Bool(flagStrict)}, skelapi.SchemaQueryOption{ResolveImports: resolveImports})
 	if err != nil {
 		return nil, generationCommandFailure(err)
 	}

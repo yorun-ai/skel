@@ -6,6 +6,36 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-10-21
+
+### Changed
+
+- Resolve imports by default in `schema get`, using repeatable
+  `--skel-import domain=PATH` mappings to load the dependency graph and return
+  inherited abstract configuration fields.
+- Add `schema get --shallow` for inspection without resolving imports.
+- Default generated backend Go modules to Vine v0.32.1; the minimum supported
+  Vine version remains v0.32.0.
+
+### Fixed
+
+- Preserve the fully qualified source name of imported abstract configs in
+  shallow schema queries, including imports declared with aliases.
+
+### Upgrade Notes
+
+- Existing `schema get` calls for domains with imports must provide all required
+  `--skel-import domain=PATH` mappings. Missing dependencies now fail instead of
+  returning an incomplete declaration. Add `--shallow` when only local
+  declarations and opaque imported references are needed; this flag cannot be
+  combined with `--skel-import`.
+- Default `schema list` and the Go `QuerySchema` API remain shallow. Go callers
+  can continue to opt into resolution with `SchemaQueryOption.ResolveImports`.
+- Generated runtime contracts are unchanged. This release does not require a
+  coordinated vRPC Go or Vine dependency upgrade. Newly generated backend
+  modules default to Vine v0.32.1; existing module requirements are not rewritten
+  by this release alone.
+
 ## [0.33.0] - 2026-10-21
 
 ### Added
@@ -1081,7 +1111,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.33.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.34.0...HEAD
+[0.34.0]: https://github.com/yorun-ai/skel/compare/v0.33.0...v0.34.0
 [0.33.0]: https://github.com/yorun-ai/skel/compare/v0.32.1...v0.33.0
 [0.32.1]: https://github.com/yorun-ai/skel/compare/v0.32.0...v0.32.1
 [0.32.0]: https://github.com/yorun-ai/skel/compare/v0.31.1...v0.32.0

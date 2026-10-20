@@ -12,7 +12,7 @@ import (
 const MinimumVineVersion = "v0.32.0"
 
 // DefaultVineVersion is the Vine version used when generation does not select one.
-const DefaultVineVersion = "v0.32.0"
+const DefaultVineVersion = "v0.32.1"
 
 func resolveVineVersion(version string) (string, error) {
 	version = strings.TrimSpace(version)
