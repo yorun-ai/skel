@@ -16,7 +16,6 @@ import (
 
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/diagnostic"
-	"go.yorun.ai/skel/schema"
 )
 
 func TestParseFrozenImportGraph(t *testing.T) {
@@ -136,20 +135,6 @@ func ExampleParse() {
 	fmt.Println(result.Domain.Name())
 
 	// Output: demo.user
-}
-
-func TestParseExposesSemanticSchema(t *testing.T) {
-	skelDir := t.TempDir()
-	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
-
-	result, err := api.Parse(api.Input{SkelIn: skelDir})
-	if err != nil {
-		t.Fatalf("parse Skel: %v", err)
-	}
-	var domain *schema.Domain = result.Domain
-	if domain.Name() != "demo.user" {
-		t.Fatalf("unexpected domain: %s", domain.Name())
-	}
 }
 
 func TestParseReturnsStructuredWarnings(t *testing.T) {

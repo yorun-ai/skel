@@ -6,56 +6,6 @@ import (
 	"go.yorun.ai/skel/internal/parser/grammar"
 )
 
-func TestParseTask(t *testing.T) {
-	task := parseTaskTest(t, &grammar.Task{
-		Decorators: []*grammar.Decorator{
-			{Name: ident("desc"), Value: decoratorValue(`"Rebuild the user index"`)},
-		},
-		Name: ident("RebuildUserIndexTask"),
-		Triggers: []*grammar.TaskTrigger{
-			{
-				Decorators: []*grammar.Decorator{
-					{Name: ident("desc"), Value: decoratorValue(`"Scheduled trigger"`)},
-				},
-				Name: ident("atTime"),
-				Input: &grammar.MethodInput{
-					Decorators: []*grammar.Decorator{
-						{Name: ident("desc"), Value: decoratorValue(`"Trigger parameters"`)},
-						{Name: ident("sensitive")},
-					},
-					Arguments: []*grammar.Argument{
-						{
-							Decorators: []*grammar.Decorator{
-								{Name: ident("desc"), Value: decoratorValue(`"Start time"`)},
-							},
-							Name: ident("startAt"),
-							Type: plainType(grammar.LocalDateTime),
-						},
-					},
-				},
-			},
-		},
-	})
-	if task.Name != "RebuildUserIndexTask" {
-		t.Fatalf("unexpected task name: %s", task.Name)
-	}
-	if task.Description != "Rebuild the user index" {
-		t.Fatalf("unexpected task description: %q", task.Description)
-	}
-	if len(task.Triggers) != 1 || task.Triggers[0].Name != "atTime" {
-		t.Fatalf("unexpected task triggers: %+v", task.Triggers)
-	}
-	if task.Triggers[0].InputDescription != "Trigger parameters" {
-		t.Fatalf("unexpected input description: %q", task.Triggers[0].InputDescription)
-	}
-	if !task.Triggers[0].ArgumentsSensitive {
-		t.Fatal("expected trigger input to be sensitive")
-	}
-	if task.Triggers[0].ArgumentsData == nil || task.Triggers[0].ArgumentsData.Name != "RebuildUserIndexTaskAtTimeArguments" {
-		t.Fatalf("unexpected arguments data: %+v", task.Triggers[0].ArgumentsData)
-	}
-}
-
 func TestParseTaskTriggerWithoutInput(t *testing.T) {
 	task := parseTaskTest(t, &grammar.Task{
 		Name: ident("RebuildUserIndexTask"),

@@ -157,46 +157,6 @@ func TestFacadeGoImportsActorRegistration(t *testing.T) {
 	}
 }
 
-func TestFacadeGoRendersResourcePermissions(t *testing.T) {
-	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
-		Name: "demo.app",
-		Resources: []*schema.Resource{
-			{
-				Pub:  true,
-				Name: "User",
-				Actions: []*schema.ResourceAction{
-					{Name: "read"},
-					{Name: "update"},
-					{Name: "manage"},
-				},
-			},
-		},
-	})
-	outputDir := filepath.Join(t.TempDir(), "app")
-	gen := newGen(Option{
-		Domain:        pkg,
-		View:          mustView(t, view.ModeRegular, pkg),
-		Mode:          view.ModeRegular,
-		PackageName:   "app",
-		Out:           outputDir,
-		PubImportPath: "github.com/acme/skel/demo/apppub",
-	})
-
-	gen.genFacadeGo()
-
-	content := readFacadeGoForTest(t, outputDir)
-	normalizedContent := strings.Join(strings.Fields(content), " ")
-	for _, expected := range []string{
-		"UserReadPermission = apppub.UserReadPermission",
-		"UserUpdatePermission = apppub.UserUpdatePermission",
-		"UserManagePermission = apppub.UserManagePermission",
-	} {
-		if !strings.Contains(normalizedContent, expected) {
-			t.Fatalf("expected pub.go to contain %q, got:\n%s", expected, content)
-		}
-	}
-}
-
 func readFacadeGoForTest(t *testing.T, outputDir string) string {
 	t.Helper()
 

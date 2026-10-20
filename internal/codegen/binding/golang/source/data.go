@@ -44,6 +44,10 @@ func (g *_Gen) buildDataGoPayload() *DataGoPayload {
 }
 
 type Data struct {
+	Abs              bool
+	From             *Type
+	FromSkelName     string
+	ConversionMethod string
 	Name             string
 	FullName         string
 	ReceiverType     string
@@ -118,6 +122,10 @@ func (r _Types) castDataMember(p *schema.DataMember) *DataMember {
 func buildDataImports(dataList []*Data) []*Import {
 	imports := newImportSet()
 	for _, data := range dataList {
+		if data.From != nil {
+			imports.addMany(data.From.Imports)
+			continue
+		}
 		for _, member := range data.Members {
 			imports.addMany(collectTypeImports(member.Type))
 		}

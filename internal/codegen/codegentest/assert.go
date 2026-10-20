@@ -23,16 +23,6 @@ func AssertGoSourceContains(t *testing.T, src string, want string) {
 	t.Fatalf("generated source does not contain %s\ngot:\n%s", want, src)
 }
 
-// AssertGoSourceNotContains reports a failure when src contains want as a Go
-// token sequence.
-func AssertGoSourceNotContains(t *testing.T, src string, want string) {
-	t.Helper()
-	if !GoSourceContains(src, want) {
-		return
-	}
-	t.Fatalf("generated source unexpectedly contains %s\ngot:\n%s", want, src)
-}
-
 // GoSourceContains reports whether src contains want as a Go token sequence.
 func GoSourceContains(src string, want string) bool {
 	return strings.Contains(GoSourceTokens(src), GoSourceTokens(want))

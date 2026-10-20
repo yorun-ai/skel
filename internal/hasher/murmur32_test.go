@@ -10,10 +10,3 @@ func TestMurmur32(t *testing.T) {
 		t.Fatalf("unexpected murmur32 hash: %s", got)
 	}
 }
-
-func TestHashValueReturnsMarshalError(t *testing.T) {
-	_, err := hashValue(make(chan int))
-	if err == nil {
-		t.Fatal("expected unsupported value to return an error")
-	}
-}

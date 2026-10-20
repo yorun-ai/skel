@@ -42,6 +42,10 @@ type Data struct {
 	DeprecatedReason string
 	// Kind identifies whether this value represents data, config, or an event.
 	Kind DataKind
+	// Abs marks an exported abstract configuration contract.
+	Abs bool
+	// From references the abstract config adopted by a concrete config.
+	From *Type
 	// Lifecycle is set for config declarations.
 	Lifecycle ConfigLifecycle
 	// Pub reports whether the declaration uses the pub modifier.
@@ -54,6 +58,14 @@ type Data struct {
 	TypeParameters []*TypeParameter
 	// Members lists the declaration's fields in source order.
 	Members []*DataMember
+}
+
+// FromSkelName returns the referenced configuration contract name, if any.
+func (d *Data) FromSkelName() string {
+	if d.From == nil {
+		return ""
+	}
+	return d.From.SkelName
 }
 
 // IsGeneric reports whether d declares one or more type parameters.

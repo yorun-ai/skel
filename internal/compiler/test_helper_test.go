@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/internal/loader"
-	"go.yorun.ai/skel/internal/parser/grammar"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -62,24 +61,6 @@ func writeFile(t *testing.T, path string, content string) {
 	}
 }
 
-func identForTest(value string) *grammar.Identifier {
-	return &grammar.Identifier{Value: value}
-}
-
-func domainContentForTest(name string, description string) *grammar.DomainContent {
-	parts := strings.Split(name, ".")
-	identParts := make([]*grammar.Identifier, 0, len(parts))
-	for _, part := range parts {
-		identParts = append(identParts, identForTest(part))
-	}
-
-	return &grammar.DomainContent{
-		Description: description,
-		Name: &grammar.QualifiedName{
-			Parts: identParts,
-		},
-	}
-}
 func expectErrorContains(t *testing.T, err error, expected string) {
 	t.Helper()
 	if err == nil || !strings.Contains(err.Error(), expected) {

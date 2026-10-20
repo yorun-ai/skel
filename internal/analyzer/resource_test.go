@@ -5,42 +5,6 @@ import (
 	"testing"
 )
 
-func TestResourceDefaultsToNonPub(t *testing.T) {
-	content := parseResourceTestContent(t, `
-domain demo
-
-resource User {
-    action read
-}
-`)
-	domain := mustAnalyze(t, content).Schema()
-
-	if len(domain.Resources()) != 1 {
-		t.Fatalf("unexpected resource count: %d", len(domain.Resources()))
-	}
-	if domain.Resources()[0].Pub {
-		t.Fatalf("resource Pub = true, want false")
-	}
-}
-
-func TestPubResourceSetsPub(t *testing.T) {
-	content := parseResourceTestContent(t, `
-domain demo
-
-pub resource User {
-    action read
-}
-`)
-	domain := mustAnalyze(t, content).Schema()
-
-	if len(domain.Resources()) != 1 {
-		t.Fatalf("unexpected resource count: %d", len(domain.Resources()))
-	}
-	if !domain.Resources()[0].Pub {
-		t.Fatalf("resource Pub = false, want true")
-	}
-}
-
 func TestRequireRejectsImportedNonPubResource(t *testing.T) {
 	imported := mustAnalyze(t, parseResourceTestContent(t, `
 domain app

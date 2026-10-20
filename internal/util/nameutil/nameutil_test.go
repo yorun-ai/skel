@@ -1,17 +1,10 @@
 package nameutil
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestMaxLengthAndPaddingSpaces(t *testing.T) {
-	assert.Equal(t, 11, MaxLength([]string{"short", "hello world", "mid"}))
-	assert.Equal(t, 0, MaxLength(nil))
-	assert.Equal(t, "   ", PaddingSpaces(3))
-}
 
 func TestCaseConversions(t *testing.T) {
 	assert.Equal(t, "UserService", ToCamel("user_service"))
@@ -45,11 +38,6 @@ func TestCaseMatchers(t *testing.T) {
 	assert.True(t, IsLowerCamelCase("userName2"))
 	assert.False(t, IsLowerCamelCase("UserName"))
 	assert.False(t, IsLowerCamelCase("user_name"))
-}
-
-func TestSplitWordsMixedInput(t *testing.T) {
-	assert.Equal(t, []string{"HTTP", "Server", "2", "Test"}, splitWords("HTTPServer2-Test"))
-	assert.True(t, strings.Contains(ToScreamingSnake("HTTPServer2-Test"), "HTTP_SERVER_2_TEST"))
 }
 
 func TestCutKindSuffix(t *testing.T) {

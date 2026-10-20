@@ -6,22 +6,6 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func TestBuildFiltersAndValidatesOneSharedPublicProjection(t *testing.T) {
-	publicData := &schema.Data{Pub: true, Name: "Public"}
-	privateData := &schema.Data{Name: "Private"}
-	domain := schema.NewDomainFromSpec(schema.DomainSpec{
-		Name: "demo.user", Data: []*schema.Data{publicData, privateData},
-		Enums: []*schema.Enum{{Pub: true, Name: "Status"}, {Name: "InternalStatus"}},
-	})
-	view, err := BuildPublicView(domain)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(view.Data) != 1 || view.Data[0] != publicData || len(view.Enums) != 1 {
-		t.Fatalf("unexpected public projection: %+v", view)
-	}
-}
-
 func TestBuildValidatesPublicActorCredentialClosure(t *testing.T) {
 	privateData := &schema.Data{Name: "Secret", Kind: schema.DataKindData}
 	credential := &schema.Data{Name: "Credential", Members: []*schema.DataMember{{

@@ -4,6 +4,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/diagnostic"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -14,6 +15,9 @@ func parseService(reporter *_DiagnosticReporter, gs *grammar.Service) (*schema.S
 	suffix := "Service"
 	if gs.Api {
 		suffix = "ApiService"
+	} else {
+		_, _, reserved := nameutil.CutKindSuffix(gs.Name.Value, "ApiService")
+		valid = reporter.checkNot(reserved, "%s ApiService suffix is reserved for api service", gs.Name.Pos) && valid
 	}
 	valid = checkCaseAdvanced(reporter, "Service", "", suffix, caseTypeCamel, gs.Name) && valid
 	meta, metaValid := parseDecoratorMeta(reporter, gs.Decorators, _DecoratorContext{

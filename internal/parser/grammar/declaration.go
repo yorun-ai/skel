@@ -26,10 +26,12 @@ type Data struct {
 	Pos            lexer.Position
 	Decorators     []*Decorator
 	Pub            bool
+	Abs            bool
 	Name           *Identifier      `parser:"@@"`
-	Qualifier      *Identifier      `parser:"@@?"`
+	From           *QualifiedName   `parser:"( \"=\" @@"`
+	Qualifier      *Identifier      `parser:"| @@?"`
 	TypeParameters []*TypeParameter `parser:"(\"<\" (@@ (\",\")?)* \">\")?"`
-	Members        []*DataMember    `parser:"\"{\" (Newline)* (@@ (Newline)*)* \"}\""`
+	Members        []*DataMember    `parser:"\"{\" (Newline)* (@@ (Newline)*)* \"}\")"`
 }
 
 type TypeParameter struct {

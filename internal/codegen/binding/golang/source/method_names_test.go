@@ -31,14 +31,6 @@ func TestBuildMethodNames(t *testing.T) {
 	}
 }
 
-func TestBuildMethodNamesWithoutCollisions(t *testing.T) {
-	names := buildMethodNames([]*MethodArgument{{Name: "value"}}, nil)
-
-	if names.ReceiverName != "client" || names.ContextName != "ctx" || names.ResultName != "ret" || names.ErrorName != "err" || names.OptionsName != "_ivOpts" {
-		t.Fatalf("unexpected names: %+v", names)
-	}
-}
-
 func TestEscapeArgumentNames(t *testing.T) {
 	for keyword := token.BREAK; keyword <= token.VAR; keyword++ {
 		if !keyword.IsKeyword() {

@@ -102,6 +102,7 @@ func Build(revision *source.Document, parsed *grammar.SkelContent) *Document {
 		case entry.Data != nil:
 			members(entry.Data.Members)
 		case entry.Config != nil:
+			reference(entry.Config.From, Config)
 			members(entry.Config.Members)
 		case entry.Event != nil:
 			if entry.Event.Payload != nil {

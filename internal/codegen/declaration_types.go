@@ -29,7 +29,11 @@ func (v Declarations) TypeRoots(api bool) []*schema.Type {
 		addData(data)
 	}
 	for _, config := range v.Configs {
-		addData(config)
+		if config.From != nil {
+			roots = append(roots, config.From)
+		} else {
+			addData(config)
+		}
 	}
 	for _, event := range v.Events {
 		addData(event)

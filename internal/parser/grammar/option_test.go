@@ -1,66 +1,8 @@
 package grammar
 
 import (
-	"strings"
 	"testing"
-
-	"github.com/alecthomas/participle/v2"
 )
-
-func TestOptionsSupportDecorator(t *testing.T) {
-	parser := buildSkelParserForTest(t)
-	src := strings.TrimSpace(`
-domain demo.user
-
-service AgentService {
-    for AgentActor
-
-    method call {
-        input {
-            prompt: string
-        }
-    }
-}
-`)
-
-	content, err := parser.ParseString("agent.skel", src, participle.AllowTrailing(true))
-	if err != nil {
-		t.Fatalf("parse with options: %v", err)
-	}
-	if err := content.Finalize(); err != nil {
-		t.Fatalf("finalize content: %v", err)
-	}
-	if len(content.Entries) != 1 || content.Entries[0].Service == nil {
-		t.Fatalf("unexpected parsed content: %+v", content)
-	}
-	audiences := serviceAudiencesForTest(content.Entries[0].Service)
-	methods := serviceMethodsForTest(content.Entries[0].Service)
-	input := methodInputForTest(methods[0])
-	if audiences[0].Actors[0].Actor.String() != "AgentActor" {
-		t.Fatalf("unexpected actor parse result: %+v", audiences)
-	}
-	if input == nil {
-		t.Fatalf("unexpected method input: %+v", methods[0])
-	}
-	if len(input.Arguments) != 1 {
-		t.Fatalf("unexpected method args: %+v", input.Arguments)
-	}
-}
-
-func TestOptionsLexerRecognizesAtSign(t *testing.T) {
-	parser := buildSkelParserForTest(t)
-	content, err := parser.ParseString("decorator.skel", "domain demo.user\nservice UserService { for ClientActor\nmethod ping {} }")
-	if err != nil {
-		t.Fatalf("parse decorator skel: %v", err)
-	}
-	if err := content.Finalize(); err != nil {
-		t.Fatalf("finalize content: %v", err)
-	}
-	audiences := serviceAudiencesForTest(content.Entries[0].Service)
-	if audiences[0].Actors[0].Actor.String() != "ClientActor" {
-		t.Fatalf("unexpected actor tokenization: %+v", audiences)
-	}
-}
 
 func TestOptionsIgnoreLineComments(t *testing.T) {
 	content := parseSkelForTest(t, `

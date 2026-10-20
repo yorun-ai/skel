@@ -18,6 +18,8 @@ type Config struct {
 	Deprecated       bool            `json:"deprecated,omitzero"`
 	DeprecatedReason string          `json:"deprecatedReason,omitempty"`
 	Hash             string          `json:"hash"`
+	Abs              bool            `json:"abs,omitzero"`
+	FromSkelName     string          `json:"fromSkelName,omitempty"`
 	Pub              bool            `json:"pub"`
 	Sensitive        bool            `json:"sensitive,omitzero"`
 	Lifecycle        ConfigLifecycle `json:"lifecycle"`

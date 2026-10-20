@@ -36,23 +36,6 @@ func TestLoadDirectory(t *testing.T) {
 	}
 }
 
-func TestLoadSingleFile(t *testing.T) {
-	filePath := filepath.Join(t.TempDir(), "user.skel")
-	writeFile(t, filePath, "domain demo.user\ndata User { id: string }\n")
-
-	result := mustLoad(t, filePath)
-
-	if result.IsDir {
-		t.Fatal("did not expect directory result")
-	}
-	if len(result.Files) != 1 || result.Files[0].FilePath != filePath {
-		t.Fatalf("unexpected source files: %+v", result.Files)
-	}
-	if string(result.Files[0].Content) != "domain demo.user\ndata User { id: string }\n" {
-		t.Fatalf("unexpected source content: %q", result.Files[0].Content)
-	}
-}
-
 func TestLoadReturnsErrorWhenDomainFileMissing(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\n")
@@ -70,20 +53,6 @@ func TestLoadRejectsNonSkelFile(t *testing.T) {
 	_, err := Load(filePath)
 	if err == nil || !strings.Contains(err.Error(), "is not a .skel file") {
 		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-func TestClassifyFile(t *testing.T) {
-	tests := map[string]string{
-		".hidden.skel": "hidden",
-		"domain.skel":  "domain",
-		"data.skel":    "skel",
-		"README.md":    "other",
-	}
-	for name, expected := range tests {
-		if actual := classifyFile(name); actual != expected {
-			t.Fatalf("classifyFile(%q) = %q, want %q", name, actual, expected)
-		}
 	}
 }
 

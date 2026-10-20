@@ -72,7 +72,7 @@ func (e *_SchemaEncoder) projectDataSchema(value *schema.Data) *SchemaData {
 		typeParameters = append(typeParameters, parameter.Name)
 	}
 	return &SchemaData{
-		Lifecycle: string(value.Lifecycle), Sensitive: value.Sensitive, Ext: value.Ext,
+		Abs: value.Abs, FromSkelName: value.FromSkelName(), Lifecycle: string(value.Lifecycle), Sensitive: value.Sensitive, Ext: value.Ext,
 		TypeParameters: typeParameters, Members: e.projectMembers(value.Members),
 	}
 }

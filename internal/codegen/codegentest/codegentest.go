@@ -82,10 +82,5 @@ func TypeParamType(typeParam *schema.TypeParameter) *schema.Type {
 
 // DomainSchema builds a named domain spec.
 func DomainSchema(name string) schema.DomainSpec {
-	return DomainSchemaWithDescription(name, "")
-}
-
-// DomainSchemaWithDescription builds a named domain spec carrying description.
-func DomainSchemaWithDescription(name string, description string) schema.DomainSpec {
-	return schema.DomainSpec{Name: name, Description: description}
+	return schema.DomainSpec{Name: name}
 }

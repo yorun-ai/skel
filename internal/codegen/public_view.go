@@ -32,7 +32,7 @@ func BuildPublicView(domain *schema.Domain) (*PublicView, error) {
 	view := &PublicView{
 		Enums:     filter(domain.Enums(), func(value *schema.Enum) bool { return value.Pub }),
 		Data:      filter(domain.Data(), func(value *schema.Data) bool { return value.Pub }),
-		Configs:   filter(domain.Configs(), func(value *schema.Data) bool { return value.Pub }),
+		Configs:   filter(domain.Configs(), func(value *schema.Data) bool { return value.Pub || value.Abs }),
 		Actors:    filter(domain.Actors(), func(value *schema.Actor) bool { return value.Pub }),
 		Resources: filter(domain.Resources(), func(value *schema.Resource) bool { return value.Pub }),
 		Events:    filter(domain.Events(), func(value *schema.Data) bool { return value.Pub || value.Ext }),
@@ -62,6 +62,9 @@ func validatePublicView(view *PublicView) error {
 		}
 	}
 	for _, config := range view.Configs {
+		if config.From != nil {
+			continue
+		}
 		if err := validateMembers("pub config "+config.Name, config.Members, map[*schema.Data]bool{}); err != nil {
 			return err
 		}

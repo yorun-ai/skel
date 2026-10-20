@@ -81,6 +81,12 @@ func (c *_Diff) compareEnum(owner string, baseline, candidate *schema.Enum) {
 }
 
 func (c *_Diff) compareData(owner string, baseline, candidate *schema.Data) {
+	if baseline.Abs != candidate.Abs {
+		c.add(ImpactBreaking, "config.abs.changed", owner, "configuration abstractness changed", baseline.Pos, candidate.Pos)
+	}
+	if baseline.FromSkelName() != candidate.FromSkelName() {
+		c.add(ImpactBreaking, "config.source.changed", owner, "configuration source changed", baseline.Pos, candidate.Pos)
+	}
 	if baseline.Ext != candidate.Ext {
 		c.add(ImpactBreaking, "event.ext.changed", owner, "event extension direction changed", schema.Position{}, schema.Position{})
 	}

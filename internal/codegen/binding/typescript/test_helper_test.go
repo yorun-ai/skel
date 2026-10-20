@@ -6,7 +6,6 @@ import (
 
 	"go.yorun.ai/skel/internal/codegen"
 	"go.yorun.ai/skel/internal/codegen/binding"
-	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -33,14 +32,6 @@ func buildSchemaDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.Doma
 		}
 	})
 	return domain
-}
-
-func externalDataTypeForTest(data *schema.Data, domainName string, alias string, explicitAlias bool) *schema.Type {
-	type_ := codegentest.DataType(data)
-	type_.ExternalDomain = domainName
-	type_.ExternalAlias = alias
-	type_.ExternalAliasExplicit = explicitAlias
-	return type_
 }
 
 func renderTemplate(t *testing.T, template string, payload any) string {

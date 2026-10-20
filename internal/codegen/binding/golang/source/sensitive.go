@@ -22,6 +22,19 @@ func (g *_Gen) validateSensitiveMembers() error {
 		return nil
 	}
 	for _, data := range g.view.Configs {
+		method := ""
+		if data.Abs {
+			method = "As" + transDataName(data)
+		}
+		if data.From != nil {
+			method = "As" + transDataName(data.From.Data)
+		}
+		for _, member := range data.Members {
+			if method != "" && nameutil.ToCamel(member.Name) == method {
+				return fmt.Errorf("%s Go field %s conflicts with generated config conversion method %s", member.Pos, member.Name, method)
+			}
+		}
+
 		if err := validateSensitiveData(data); err != nil {
 			return err
 		}

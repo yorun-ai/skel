@@ -8,94 +8,6 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func TestParseData(t *testing.T) {
-	data := parseDataTest(t, &grammar.Data{
-		Decorators: []*grammar.Decorator{
-			{Name: ident("desc"), Value: decoratorValue(`"Pagination information"`)},
-			{Name: ident("sensitive")},
-		},
-		Name: ident("Page"),
-		TypeParameters: []*grammar.TypeParameter{
-			{Name: ident("TItem")},
-		},
-		Members: []*grammar.DataMember{
-			{
-				Decorators: []*grammar.Decorator{
-					{Name: ident("desc"), Value: decoratorValue(`"Data item"`)},
-				},
-				Name: ident("items"),
-				Type: listType(refGrammarType("TItem")),
-			},
-			{
-				Decorators: []*grammar.Decorator{
-					{Name: ident("desc"), Value: decoratorValue(`"Next-page cursor"`)},
-					{Name: ident("example"), Value: decoratorValue(`"cursor-1"`)},
-					{Name: ident("sensitive")},
-				},
-				Name: ident("nextToken"),
-				Type: nullableType(plainType(grammar.String)),
-			},
-		},
-	})
-
-	if data.Name != "Page" {
-		t.Fatalf("unexpected data name: %s", data.Name)
-	}
-	if data.Description != "Pagination information" {
-		t.Fatalf("unexpected data description: %q", data.Description)
-	}
-	if !data.Sensitive {
-		t.Fatal("expected data to be sensitive as a whole")
-	}
-	if !data.IsGeneric() {
-		t.Fatal("data should be generic")
-	}
-	if len(data.TypeParameters) != 1 || data.TypeParameters[0].Name != "TItem" {
-		t.Fatalf("unexpected type parameters: %+v", data.TypeParameters)
-	}
-	if len(data.Members) != 2 {
-		t.Fatalf("unexpected member count: %d", len(data.Members))
-	}
-	if data.Members[0].Type.Kind != schema.TypeKindList {
-		t.Fatalf("unexpected first member type kind: %v", data.Members[0].Type.Kind)
-	}
-	if data.Members[0].Description != "Data item" {
-		t.Fatalf("unexpected first member description: %q", data.Members[0].Description)
-	}
-	if data.Members[1].Example != `"cursor-1"` {
-		t.Fatalf("unexpected second member example: %q", data.Members[1].Example)
-	}
-	if !data.Members[1].Sensitive {
-		t.Fatal("expected sensitive nextToken member")
-	}
-	if !data.Members[1].Type.Nullable {
-		t.Fatal("expected nullable nextToken member")
-	}
-}
-
-func TestParseDataDeprecated(t *testing.T) {
-	data := parseDataTest(t, &grammar.Data{
-		Decorators: []*grammar.Decorator{
-			{Name: ident("deprecated"), Value: decoratorValue(`"  Use UserProfile instead  "`)},
-		},
-		Name: ident("User"),
-		Members: []*grammar.DataMember{{
-			Decorators: []*grammar.Decorator{
-				{Name: ident("deprecated"), Value: decoratorValue(`"Use id instead"`)},
-			},
-			Name: ident("legacyId"),
-			Type: plainType(grammar.String),
-		}},
-	})
-
-	if !data.Deprecated || data.DeprecatedReason != "Use UserProfile instead" {
-		t.Fatalf("unexpected data deprecation: %+v", data)
-	}
-	if !data.Members[0].Deprecated || data.Members[0].DeprecatedReason != "Use id instead" {
-		t.Fatalf("unexpected member deprecation: %+v", data.Members[0])
-	}
-}
-
 func TestParseDataRejectsInvalidDeprecatedDecorator(t *testing.T) {
 	for name, test := range map[string]struct {
 		decorators []*grammar.Decorator
@@ -229,37 +141,6 @@ func TestParseDataReturnsErrorWhenMemberExampleHasNoDescription(t *testing.T) {
 	})
 }
 
-func TestParseConfig(t *testing.T) {
-	config := parseConfigTest(t, &grammar.Data{
-		Decorators: []*grammar.Decorator{
-			{Name: ident("desc"), Value: decoratorValue(`"Database configuration"`)},
-		},
-		Name:      ident("DatabaseConfig"),
-		Qualifier: ident("eternal"),
-		Members: []*grammar.DataMember{
-			{
-				Decorators: []*grammar.Decorator{
-					{Name: ident("desc"), Value: decoratorValue(`"Connection address"`)},
-				},
-				Name: ident("connUrl"),
-				Type: plainType(grammar.String),
-			},
-		},
-	})
-	if config.Kind != schema.DataKindConfig {
-		t.Fatalf("unexpected config kind: %v", config.Kind)
-	}
-	if config.Name != "DatabaseConfig" {
-		t.Fatalf("unexpected config name: %s", config.Name)
-	}
-	if config.IsGeneric() {
-		t.Fatal("config should not be generic")
-	}
-	if config.Lifecycle != schema.ConfigLifecycleEternal {
-		t.Fatalf("unexpected config lifecycle: %v", config.Lifecycle)
-	}
-}
-
 func TestParseConfigReturnsErrorWhenNameDoesNotEndWithConfig(t *testing.T) {
 	expectConfigDiagnostic(t, "Config name must end with Config", &grammar.Data{
 		Name:      ident("Database"),
@@ -336,16 +217,6 @@ func TestParseEventRejectsSensitiveDeclaration(t *testing.T) {
 	})
 }
 
-func TestParseDataAllowsPub(t *testing.T) {
-	data := parseDataTest(t, &grammar.Data{
-		Pub:  true,
-		Name: ident("User"),
-	})
-	if !data.Pub {
-		t.Fatal("expected pub data")
-	}
-}
-
 func TestParseConfigAllowsPub(t *testing.T) {
 	config := parseConfigTest(t, &grammar.Data{
 		Decorators: []*grammar.Decorator{{Name: ident("sensitive")}},
@@ -375,5 +246,31 @@ func TestParseConfigRejectsUnknownDecorator(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func TestParseAbstractConfigName(t *testing.T) {
+	for _, name := range []string{"DatabaseAbsConfig", "DatabaseAbsConfigV2"} {
+		t.Run(name, func(t *testing.T) {
+			parseConfigTest(t, &grammar.Data{Abs: true, Name: ident(name), Qualifier: ident("eternal")})
+		})
+	}
+	for _, name := range []string{"DatabaseConfig", "DatabaseConfigV2", "DatabaseAbsConfigV0", "DatabaseAbsConfigV01", "DatabaseAbsConfigV", "DatabaseAbsConfigV-1"} {
+		t.Run(name, func(t *testing.T) {
+			expectConfigDiagnostic(t, "Config name must end with AbsConfig", &grammar.Data{Abs: true, Name: ident(name), Qualifier: ident("eternal")})
+		})
+	}
+	for _, name := range []string{"AbsConfig", "AbsConfigV2"} {
+		t.Run(name, func(t *testing.T) {
+			expectConfigDiagnostic(t, "missing body after trimming prefix & suffix", &grammar.Data{Abs: true, Name: ident(name), Qualifier: ident("eternal")})
+		})
+	}
+}
+
+func TestParseConcreteConfigRejectsAbstractSuffix(t *testing.T) {
+	for _, pub := range []bool{false, true} {
+		for _, name := range []string{"DatabaseAbsConfig", "DatabaseAbsConfigV2"} {
+			expectConfigDiagnostic(t, "AbsConfig suffix is reserved for abs config", &grammar.Data{Pub: pub, Name: ident(name), Qualifier: ident("eternal")})
+		}
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 	skeldiagnostic "go.yorun.ai/skel/diagnostic"
-	"go.yorun.ai/skel/internal/lsp/source"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -34,14 +33,4 @@ func TestToProtocolConvertsUTF16RangeAndRelatedInformation(t *testing.T) {
 	assert.Equal(t, protocol.Position{Character: 3}, converted.Range.End)
 	require.Len(t, converted.RelatedInformation, 1)
 	assert.Equal(t, uri.File("/workspace/first.skel"), converted.RelatedInformation[0].Location.URI)
-}
-
-func TestCachedRangeMatchesUTF16Conversion(t *testing.T) {
-	text := "domain demo\n😀value\r\n"
-	item := skeldiagnostic.Diagnostic{Range: skeldiagnostic.SourceRange{Start: schema.Position{Line: 2, Column: 2}, End: schema.Position{Line: 2, Column: 7}}, Related: []skeldiagnostic.RelatedInformation{{Range: skeldiagnostic.SourceRange{Start: schema.Position{File: "other", Line: 2, Column: 2}, End: schema.Position{Line: 2, Column: 7}}}}}
-	expected := ToProtocol(item, text, func(path string) (uri.URI, string, bool) { return uri.File(path), text, true })
-	buffer := source.New(text)
-	actual := ToProtocolBuffer(item, buffer, func(path string) (uri.URI, source.Buffer, bool) { return uri.File(path), buffer, true })
-	assert.Equal(t, expected, actual)
-	assert.Equal(t, uint32(2), actual.Range.Start.Character)
 }

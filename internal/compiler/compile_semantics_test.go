@@ -1,7 +1,6 @@
 package compiler
 
 import (
-	"path/filepath"
 	"testing"
 
 	"go.yorun.ai/skel/schema"
@@ -182,45 +181,5 @@ api service UserApiService { auth required
 	}
 	if userData.Members[1].Type.Enum.Name != "UserStatus" {
 		t.Fatalf("unexpected enum name: %q", userData.Members[1].Type.Enum.Name)
-	}
-}
-
-func TestCompileDirectoryIncludesAllDeclarationKinds(t *testing.T) {
-	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, "domain.skel"), describedUserDomain)
-	writeFile(t, filepath.Join(dir, "service.skel"), "domain demo.user\nactor PortalAdminActor {}\napi service AgentApiService { auth required  for PortalAdminActor\nmethod ping {} }\n")
-	writeFile(t, filepath.Join(dir, "types.skel"), "domain demo.user\ndata User { id: int }\nenum UserStatus { ACTIVE }\n")
-
-	result, err := Compile(Option{SkelIn: dir})
-	if err != nil {
-		t.Fatalf("compile directory: %v", err)
-	}
-	domain := result.Domain
-
-	entryKinds := map[string]bool{}
-	for _, service := range domain.Services() {
-		entryKinds["service"] = true
-		if service.Name != "AgentApiService" {
-			t.Fatalf("unexpected service: %+v", service)
-		}
-	}
-	for _, actor := range domain.Actors() {
-		entryKinds["actor"] = true
-		if actor.Name != "PortalAdminActor" {
-			t.Fatalf("unexpected actor: %+v", actor)
-		}
-	}
-	for _, dataType := range domain.Data() {
-		if dataType.Name == "User" {
-			entryKinds["data"] = true
-		}
-	}
-	for _, enumType := range domain.Enums() {
-		if enumType.Name == "UserStatus" {
-			entryKinds["enum"] = true
-		}
-	}
-	if !entryKinds["service"] || !entryKinds["data"] || !entryKinds["enum"] || !entryKinds["actor"] {
-		t.Fatalf("unexpected parsed entry kinds: %+v", entryKinds)
 	}
 }

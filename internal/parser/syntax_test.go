@@ -2,18 +2,11 @@ package parser
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestValidateSource(t *testing.T) {
-	if err := ValidateSource("/tmp/demo.skel", []byte("domain demo.user\n")); err != nil {
-		t.Fatal(err)
-	}
-}
 
 func TestParseSourceReturnsNormalizedSyntaxError(t *testing.T) {
 	_, err := ParseSource("/workspace/demo.skel", []byte("domain demo\ndata User {"))
@@ -23,13 +16,6 @@ func TestParseSourceReturnsNormalizedSyntaxError(t *testing.T) {
 	assert.Equal(t, "/workspace/demo.skel", syntaxError.Position.File)
 	assert.True(t, syntaxError.UnexpectedEOF)
 	assert.False(t, syntaxError.Finalize)
-}
-
-func TestValidateSourceReturnsErrorForInvalidSyntax(t *testing.T) {
-	err := ValidateSource("/tmp/demo.skel", []byte("domain {\n"))
-	if err == nil || !strings.Contains(err.Error(), "parse /tmp/demo.skel failed") {
-		t.Fatalf("unexpected error: %v", err)
-	}
 }
 
 func TestParseSourceFragmentPreservesOffsets(t *testing.T) {

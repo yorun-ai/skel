@@ -29,14 +29,6 @@ func expectActorDiagnostic(t *testing.T, expected string, value *grammar.Actor) 
 	assertDiagnosticsContain(t, reporter.result(), expected)
 }
 
-func parseEnumTest(t *testing.T, value *grammar.Enum) *schema.Enum {
-	t.Helper()
-	reporter := newDiagnosticReporter()
-	parsed, _ := parseEnum(reporter, value)
-	requireNoReporterDiagnostics(t, reporter)
-	return parsed
-}
-
 func expectEnumDiagnostic(t *testing.T, expected string, value *grammar.Enum) {
 	t.Helper()
 	reporter := newDiagnosticReporter()
@@ -102,14 +94,6 @@ func expectServiceDiagnostic(t *testing.T, expected string, value *grammar.Servi
 	reporter := newDiagnosticReporter()
 	parseService(reporter, value)
 	assertDiagnosticsContain(t, reporter.result(), expected)
-}
-
-func parseWebTest(t *testing.T, value *grammar.Web, pub bool) *schema.Web {
-	t.Helper()
-	reporter := newDiagnosticReporter()
-	parsed, _ := parseWeb(reporter, value, pub)
-	requireNoReporterDiagnostics(t, reporter)
-	return parsed
 }
 
 func expectWebDiagnostic(t *testing.T, expected string, value *grammar.Web, pub bool) {

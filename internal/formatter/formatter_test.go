@@ -437,3 +437,19 @@ web ConsoleWeb { for ClientActor auth off mount / }
 		t.Fatal("auth formatting is not idempotent")
 	}
 }
+
+func TestAbstractConfigRoundTrip(t *testing.T) {
+	source := []byte("domain demo\nabs config BaseAbsConfig eternal { value:string }\n// independent value\npub config AppConfig=BaseAbsConfig\nconfig OtherConfig = BaseAbsConfig\n")
+	formatted := formatTestSource(t, source)
+	checkTestSource(t, "config.skel", formatted)
+	parsed, err := parser.ParseSource("config.skel", formatted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(parsed.Entries) != 3 || !parsed.Entries[0].Config.Abs || parsed.Entries[1].Config.From == nil || parsed.Entries[2].Config.From == nil {
+		t.Fatalf("lost config declarations: %s", formatted)
+	}
+	if string(formatTestSource(t, formatted)) != string(formatted) {
+		t.Fatalf("non-idempotent format: %s", formatted)
+	}
+}

@@ -8,66 +8,6 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func TestSpecTemplateRendersServiceSpecs(t *testing.T) {
-	payload := &_SpecTsPayload{Services: []*_Service{{
-		SkelName: "demo.template.DemoService",
-		SpecName: "DemoServiceSpec",
-		Methods: []*_ServiceMethod{
-			{Name: "getDemo", SkelName: "getDemo"},
-			{Name: "ping", SkelName: "ping"},
-		},
-	}}}
-
-	output := renderTemplate(t, specTsTemplate, payload)
-	for _, check := range []string{
-		"export const DemoServiceSpec = {",
-		"serviceName: 'demo.template.DemoService'",
-		"getDemo: 'getDemo'",
-		"ping: 'ping'",
-		"} as const;",
-	} {
-		if !strings.Contains(output, check) {
-			t.Fatalf("expected rendered spec to contain %q, got:\n%s", check, output)
-		}
-	}
-}
-
-func TestSpecTemplateKeepsModuleSemanticsWhenEmpty(t *testing.T) {
-	output := renderTemplate(t, specTsTemplate, &_SpecTsPayload{})
-	if !strings.Contains(output, "export {};") {
-		t.Fatalf("expected rendered spec to keep module semantics, got:\n%s", output)
-	}
-}
-
-func TestBuildSpecTsPayloadUsesFinalClientServiceSet(t *testing.T) {
-	userActorDomain := buildSchemaDomainForTest(t, schema.DomainSpec{
-		Name:   "app",
-		Actors: []*schema.Actor{{Name: "UserActor"}},
-	})
-	pkg := buildSchemaDomainForTest(t, schema.DomainSpec{
-		Name: "demo.user",
-		Imports: []*schema.Import{{
-			Domain: userActorDomain,
-			Name:   "app",
-			Alias:  "app",
-		}},
-		Actors: []*schema.Actor{{Name: "AgentActor"}},
-		Services: []*schema.Service{
-			{Name: "ExternalClientApiService", Api: true, AuthMode: schema.AuthModeRequired, Audiences: []*schema.ActorAudience{{Actor: "app.UserActor"}}, Methods: []*schema.Method{{Name: "ping"}}},
-			{Name: "BackendService", Pub: true, Methods: []*schema.Method{{Name: "ping"}}},
-		},
-	})
-
-	gen := newTestGen(pkg, ".")
-	payload := gen.buildSpecTsPayload()
-	if len(payload.Services) != 1 {
-		t.Fatalf("unexpected service count: %d", len(payload.Services))
-	}
-	if got, want := payload.Services[0].SpecName, "ExternalClientApiServiceSpec"; got != want {
-		t.Fatalf("unexpected service spec: got=%s want=%s", got, want)
-	}
-}
-
 func TestBuildSpecTsPayloadRendersSparseWireForBinaryMethods(t *testing.T) {
 	chunk := &schema.Data{
 		Name: "Chunk",

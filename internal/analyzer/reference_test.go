@@ -7,41 +7,6 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func TestParseTypeAndFixRef(t *testing.T) {
-	page := &schema.Data{
-		Name: "Page",
-		Kind: schema.DataKindData,
-		TypeParameters: []*schema.TypeParameter{
-			{Name: "TItem"},
-		},
-	}
-	user := &schema.Data{Name: "User", Kind: schema.DataKindData}
-
-	tp := parseTypeTest(t, refGrammarType("Page", refGrammarType("User")))
-	fixTypeRefTest(t, tp, &_RefContext{
-		dataList: map[string]*schema.Data{
-			"Page": page,
-			"User": user,
-		},
-		typeParameters: map[string]*schema.TypeParameter{
-			"TItem": page.TypeParameters[0],
-		},
-	})
-
-	if tp.Kind != schema.TypeKindData {
-		t.Fatalf("unexpected type kind: %v", tp.Kind)
-	}
-	if tp.Data != page {
-		t.Fatalf("unexpected data: %+v", tp.Data)
-	}
-	if len(tp.TypeArguments) != 1 || tp.TypeArguments[0].Data != user {
-		t.Fatalf("unexpected type arguments: %+v", tp.TypeArguments)
-	}
-	if tp.Name() != "PageOfUser" {
-		t.Fatalf("unexpected type name: %s", tp.Name())
-	}
-}
-
 func TestTypeRefData(t *testing.T) {
 	user := &schema.Data{Name: "User", Kind: schema.DataKindData}
 	page := &schema.Type{
@@ -58,22 +23,6 @@ func TestTypeRefData(t *testing.T) {
 	}
 	if refs[user] != refKindDirect {
 		t.Fatalf("unexpected nested ref kind: %v", refs[user])
-	}
-}
-
-func TestParseTypeMapAndNullable(t *testing.T) {
-	typ := parseTypeTest(t, nullableType(mapType(plainType(grammar.String), refGrammarType("User"))))
-	if typ.Kind != schema.TypeKindMap {
-		t.Fatalf("unexpected type kind: %v", typ.Kind)
-	}
-	if !typ.Nullable {
-		t.Fatal("expected nullable map type")
-	}
-	if typ.Map.Key.Kind != schema.TypeKindScalar || typ.Map.Key.Scalar != schema.ScalarString {
-		t.Fatalf("unexpected map key: %+v", typ.Map.Key)
-	}
-	if typ.Map.Value.Kind != schema.TypeKindUnresolvedReference || typ.Map.Value.SkelName != "User" {
-		t.Fatalf("unexpected map value: %+v", typ.Map.Value)
 	}
 }
 

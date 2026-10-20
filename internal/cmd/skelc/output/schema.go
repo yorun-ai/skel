@@ -49,6 +49,8 @@ type SchemaEnumItem struct {
 // SchemaData is the serialized body shared by data, config, and event declarations.
 type SchemaData struct {
 	Ext            bool            `json:"ext,omitempty"`
+	Abs            bool            `json:"abs,omitempty"`
+	FromSkelName   string          `json:"fromSkelName,omitempty"`
 	Lifecycle      string          `json:"lifecycle,omitempty"`
 	Sensitive      bool            `json:"sensitive,omitempty"`
 	TypeParameters []string        `json:"typeParameters,omitempty"`

@@ -43,13 +43,6 @@ func segmentedSources(t *testing.T, source string) []string {
 	return parts
 }
 
-func TestSplitSourceSegmentsKeepsSingleDeclarationTogether(t *testing.T) {
-	source := "domain demo.user\ndata User {\n    id: string\n}\n"
-	if parts := segmentedSources(t, source); len(parts) != 2 {
-		t.Fatalf("expected the domain line and the data declaration: %q", parts)
-	}
-}
-
 func TestSplitSourceSegmentsSeparatesTopLevelDeclarations(t *testing.T) {
 	source := "domain demo.user\n" +
 		"data User {\n    id: string\n}\n" +

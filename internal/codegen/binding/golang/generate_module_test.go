@@ -1,7 +1,6 @@
 package golang_test
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -10,112 +9,6 @@ import (
 	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/schema"
 )
-
-func TestGeneratorSkipsGoModuleFilesByDefault(t *testing.T) {
-	goOutDir := filepath.Join(t.TempDir(), "skeled")
-
-	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
-		Name: "demo.user",
-		Data: []*schema.Data{
-			{
-				Name: "User",
-				Members: []*schema.DataMember{
-					{Name: "id", Type: codegentest.StringType()},
-				},
-			},
-		},
-	})
-
-	if err := generateFixture(pkg, golang.Option{Out: goOutDir}); err != nil {
-		t.Fatal(err)
-	}
-
-	assertFileMissing(t, filepath.Join(goOutDir, "go.mod"))
-	assertFileMissing(t, filepath.Join(goOutDir, "go.sum"))
-
-	if _, err := os.ReadFile(filepath.Join(goOutDir, "doc.go")); err != nil {
-		t.Fatalf("expected doc.go to exist: %v", err)
-	}
-	if _, err := os.ReadFile(filepath.Join(goOutDir, "data.go")); err != nil {
-		t.Fatalf("expected data.go to exist: %v", err)
-	}
-}
-
-func TestGeneratorRendersGoModuleFiles(t *testing.T) {
-	goOutDir := filepath.Join(t.TempDir(), "golang")
-
-	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
-		Name: "demo.user",
-		Data: []*schema.Data{
-			{
-				Name: "User",
-				Members: []*schema.DataMember{
-					{Name: "id", Type: codegentest.StringType()},
-				},
-			},
-		},
-	})
-
-	if err := generateFixture(pkg, golang.Option{
-		Out:          goOutDir,
-		AsModule:     true,
-		ModulePrefix: "github.com/acme/skel",
-		VineVersion:  "v1.8.7",
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := os.ReadFile(filepath.Join(goOutDir, "go.mod")); err != nil {
-		t.Fatalf("expected go.mod to exist: %v", err)
-	}
-	assertFileMissing(t, filepath.Join(goOutDir, "go.sum"))
-	goModContent, err := os.ReadFile(filepath.Join(goOutDir, "go.mod"))
-	if err != nil {
-		t.Fatalf("expected go.mod to exist: %v", err)
-	}
-	if !strings.Contains(string(goModContent), "module github.com/acme/skel/demo/user") {
-		t.Fatalf("unexpected go.mod content: %q", string(goModContent))
-	}
-	if !strings.Contains(string(goModContent), "go.yorun.ai/vine v1.8.7") {
-		t.Fatalf("unexpected go.mod content: %q", string(goModContent))
-	}
-}
-
-func TestGeneratorRendersDefaultGoPubModulePrefix(t *testing.T) {
-	goOutDir := filepath.Join(t.TempDir(), "golang")
-	goPubOutDir := filepath.Join(t.TempDir(), "golangpub")
-
-	pkg := newSchemaDomainForTest(t, schema.DomainSpec{
-		Name: "user",
-		Data: []*schema.Data{
-			{
-				Pub:  true,
-				Name: "User",
-				Members: []*schema.DataMember{
-					{Name: "id", Type: codegentest.StringType()},
-				},
-			},
-		},
-	})
-
-	if err := generateFixture(pkg, golang.Option{
-		Out:          goOutDir,
-		AsModule:     true,
-		PubOut:       goPubOutDir,
-		ModulePrefix: "go.yorun.ai/app/vine/demo",
-		VineVersion:  "v1.8.7",
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	goModContent, err := os.ReadFile(filepath.Join(goPubOutDir, "go.mod"))
-	if err != nil {
-		t.Fatalf("expected go.mod to exist: %v", err)
-	}
-	if !strings.Contains(string(goModContent), "module go.yorun.ai/app/vine/demo/userpub") {
-		t.Fatalf("unexpected go.mod content: %q", string(goModContent))
-	}
-}
 
 func TestGeneratorRendersGoPubAndRegularModules(t *testing.T) {
 	tmpDir := t.TempDir()

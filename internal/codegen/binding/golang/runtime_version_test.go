@@ -16,7 +16,7 @@ func TestResolveOptionSelectsRuntime(t *testing.T) {
 	if err != nil || client.Options().VrpcVersion != "v0.15.0" || client.Options().VineVersion != "" {
 		t.Fatalf("client: %+v, %v", client, err)
 	}
-	for _, option := range []Option{{VrpcVersion: "v0.15.0"}, {ApiOnly: true, VineVersion: "v0.29.0"}} {
+	for _, option := range []Option{{VrpcVersion: "v0.15.0"}, {ApiOnly: true, VineVersion: "v0.32.0"}} {
 		if _, err := ResolveOption(option); err == nil {
 			t.Fatalf("accepted unused version: %+v", option)
 		}

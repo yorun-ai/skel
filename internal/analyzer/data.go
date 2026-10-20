@@ -44,14 +44,21 @@ func parseEvent(reporter *_DiagnosticReporter, ge *grammar.Event) (*schema.Data,
 func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind schema.DataKind) (*schema.Data, bool) {
 	valid := checkCase(reporter, "Data", caseTypeCamel, gs.Name)
 	if kind == schema.DataKindConfig {
-		body, _, hasSuffix := nameutil.CutKindSuffix(gs.Name.Value, "Config")
-		valid = reporter.check(hasSuffix, "%s Config name must end with Config, optionally followed by V and a positive integer without leading zeroes", gs.Name.Pos) && valid
+		suffix := "Config"
+		if gs.Abs {
+			suffix = "AbsConfig"
+		} else {
+			_, _, reserved := nameutil.CutKindSuffix(gs.Name.Value, "AbsConfig")
+			valid = reporter.checkNot(reserved, "%s AbsConfig suffix is reserved for abs config", gs.Name.Pos) && valid
+		}
+		body, _, hasSuffix := nameutil.CutKindSuffix(gs.Name.Value, suffix)
+		valid = reporter.check(hasSuffix, "%s Config name must end with %s, optionally followed by V and a positive integer without leading zeroes", gs.Name.Pos, suffix) && valid
 		valid = reporter.check(body != "", "%s missing body after trimming prefix & suffix: found=%s", gs.Name.Pos, gs.Name.Value) && valid
-		qualifierValid := reporter.check(gs.Qualifier != nil,
+		qualifierValid := reporter.check(gs.Qualifier != nil || gs.From != nil,
 			"%s Config %s requires lifecycle qualifier eternal/instant",
 			gs.Name.Pos, gs.Name.Value)
 		valid = qualifierValid && valid
-		if qualifierValid {
+		if qualifierValid && gs.Qualifier != nil {
 			valid = reporter.check(
 				gs.Qualifier.Value == string(schema.ConfigLifecycleEternal) || gs.Qualifier.Value == string(schema.ConfigLifecycleInstant),
 				"%s Config %s has invalid lifecycle qualifier %s, expected eternal/instant",
@@ -83,7 +90,15 @@ func parseDataLike(reporter *_DiagnosticReporter, gs *grammar.Data, kind schema.
 		Name:    gs.Name.Value,
 		Kind:    kind,
 		Pub:     gs.Pub,
+		Abs:     gs.Abs,
 		Members: []*schema.DataMember{},
+	}
+	if gs.From != nil {
+		qualifier, name, _ := nameutil.SplitQualified(gs.From.String())
+		if qualifier == "" {
+			name = gs.From.String()
+		}
+		parsedData.From = &schema.Type{Kind: schema.TypeKindUnresolvedReference, Pos: position(gs.From.Pos), ReferencePos: position(gs.From.Pos), SkelName: name, ExternalAlias: qualifier}
 	}
 	if gs.Qualifier != nil {
 		parsedData.Lifecycle = schema.ConfigLifecycle(gs.Qualifier.Value)

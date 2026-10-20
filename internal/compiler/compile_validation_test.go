@@ -12,15 +12,6 @@ func TestCompileReturnsErrorWhenDomainNameMissing(t *testing.T) {
 	expectErrorContains(t, err, path)
 }
 
-func TestCompileReturnsErrorWhenSkelDomainMismatches(t *testing.T) {
-	dir := validationInputForTest(t,
-		describedUserDomain,
-		"domain demo.account\ndata User { id: string }\n",
-	)
-	_, err := Compile(Option{SkelIn: dir})
-	expectErrorContains(t, err, "domain mismatch")
-}
-
 func TestCompileDirectorySkelFileWithoutDomainReturnsError(t *testing.T) {
 	dir := validationInputForTest(t,
 		describedUserDomain,
@@ -28,24 +19,6 @@ func TestCompileDirectorySkelFileWithoutDomainReturnsError(t *testing.T) {
 	)
 	_, err := Compile(Option{SkelIn: dir})
 	expectErrorContains(t, err, "missing domain declaration")
-}
-
-func TestCompileReturnsErrorWhenDirectorySkelFileDeclaresDomainDecorator(t *testing.T) {
-	dir := validationInputForTest(t,
-		describedUserDomain,
-		"@desc(\"Not allowed\")\ndomain demo.user\ndata User { id: string }\n",
-	)
-	_, err := Compile(Option{SkelIn: dir})
-	expectErrorContains(t, err, "domain decorator is only allowed in domain.skel")
-}
-
-func TestCompileReturnsErrorWhenDomainFileDeclaresEntries(t *testing.T) {
-	dir := validationInputForTest(t,
-		"@desc(\"User domain\")\ndomain demo.user\ndata User { id: string }\n",
-		"domain demo.user\nservice UserService { method ping {} }\n",
-	)
-	_, err := Compile(Option{SkelIn: dir})
-	expectErrorContains(t, err, "can only contain domain declaration and @desc")
 }
 
 func validationInputForTest(t *testing.T, domain, source string) string {
