@@ -6,6 +6,46 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-10-21
+
+### Added
+
+- Define reusable configuration contracts with `abs config NameAbsConfig eternal`
+  or `instant`. Abstract configs are implicitly public and can be imported by
+  other domains.
+- Adopt an abstract contract with `config NameConfig = BaseAbsConfig` or
+  `pub config NameConfig = imported.BaseAbsConfig`. Concrete configs inherit
+  fields, lifecycle and sensitivity while retaining independent Go type identity.
+- Generate `As...AbsConfig()` pointer conversions for abstract configs and their
+  concrete adopters, allowing generic Go consumers to share a config contract.
+- Expose abstractness and source relationships in schema, descriptor and CLI
+  metadata; include them in compatibility hashing and comparison. Formatting,
+  public skeleton output and language tooling support the new declarations.
+
+### Changed
+
+- Require and default generated backend Go modules to Vine v0.32.0.
+- Reserve the `AbsConfig` suffix for abstract configs and `ApiService` for API
+  services, including declarations with version suffixes.
+
+### Maintenance
+
+- Remove redundant field-copy, constant-mirroring, formatting-only and duplicate
+  tests, along with unused test helpers. Retain protocol, generation,
+  compatibility, concurrency, fuzz and benchmark coverage.
+
+### Upgrade Notes
+
+- Regenerate backend Go packages and use Vine v0.32.0 or later. This Skel release
+  is part of a coordinated runtime upgrade; backend consumers need the matching
+  Vine release before adopting its generated output.
+- Rename existing ordinary configs ending in `AbsConfig` and ordinary services
+  ending in `ApiService`, or declare them with the corresponding modifier when
+  appropriate.
+- The right side of `=` must be an abstract config defined with a body. Concrete
+  config sources and chained adoption are rejected. Do not combine `abs` with
+  `pub`, or specify a separate lifecycle or body on an adopting declaration.
+
 ## [0.32.1] - 2026-10-11
 
 ### Fixed
@@ -1041,7 +1081,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.32.1...HEAD
+[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.33.0...HEAD
+[0.33.0]: https://github.com/yorun-ai/skel/compare/v0.32.1...v0.33.0
 [0.32.1]: https://github.com/yorun-ai/skel/compare/v0.32.0...v0.32.1
 [0.32.0]: https://github.com/yorun-ai/skel/compare/v0.31.1...v0.32.0
 [0.31.1]: https://github.com/yorun-ai/skel/compare/v0.31.0...v0.31.1
