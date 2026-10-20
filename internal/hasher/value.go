@@ -54,6 +54,8 @@ type _DataHashValue struct {
 	Deprecated       bool                `json:"deprecated,omitempty"`
 	DeprecatedReason string              `json:"deprecatedReason,omitempty"`
 	Kind             schema.DataKind     `json:"kind,omitempty"`
+	Abs              bool                `json:"abs,omitempty"`
+	FromSkelName     string              `json:"fromSkelName,omitempty"`
 	Ext              bool                `json:"ext,omitempty"`
 	Pub              bool                `json:"pub,omitempty"`
 	Sensitive        bool                `json:"sensitive,omitempty"`

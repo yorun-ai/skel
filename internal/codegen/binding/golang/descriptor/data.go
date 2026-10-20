@@ -35,7 +35,7 @@ func (g *_Gen) buildConfigDescriptor(value *schema.Data) *descriptor.Config {
 		Name: value.Name, SkelName: value.SkelName, Hash: value.Hash,
 		Description: value.Description, Deprecated: value.Deprecated,
 		DeprecatedReason: value.DeprecatedReason, Pub: value.Pub,
-		Sensitive: value.Sensitive, Lifecycle: descriptor.ConfigLifecycle(value.Lifecycle),
+		Abs: value.Abs, FromSkelName: value.FromSkelName(), Sensitive: value.Sensitive, Lifecycle: descriptor.ConfigLifecycle(value.Lifecycle),
 		Members: g.buildMemberDescriptors(value.Members),
 	}
 }

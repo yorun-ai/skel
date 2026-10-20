@@ -20,6 +20,7 @@ func (p *Analysis) normalizeWithMissingImports(allowMissingImports bool) {
 		allowUnresolvedImports: allowMissingImports,
 	}
 	p.normalizeDeclaredData(refs)
+	p.normalizeConfigSources(allowMissingImports)
 	p.normalizeOwnedTypes(refs, allowMissingImports)
 	p.validateNormalizedData()
 }

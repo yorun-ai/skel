@@ -526,3 +526,28 @@ func TestPublicConfigStructuredTypesRoundTrip(t *testing.T) {
 		t.Fatal("public config lost nested binary type")
 	}
 }
+
+func TestGenAbstractConfigRoundTrip(t *testing.T) {
+	domain, _ := parseDomainForTest(t, "demo/domain.skel", "domain demo\n", "demo/config.skel", `domain demo
+ abs config BaseAbsConfig eternal { value: string }
+ pub config AppConfig = BaseAbsConfig
+ config PrivateConfig = BaseAbsConfig
+ `, nil)
+	out := t.TempDir()
+	mustGenerateForTest(t, domain, Option{Out: out, PubOnly: true})
+	parsed, err := compiler.Compile(compiler.Option{SkelIn: out})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(parsed.Domain.Configs()) != 2 {
+		t.Fatal("lost public configs")
+	}
+	for _, config := range parsed.Domain.Configs() {
+		if config.Name == "PrivateConfig" {
+			t.Fatal("private config leaked into public contract")
+		}
+		if config.Name == "AppConfig" && (config.FromSkelName() != "demo.BaseAbsConfig" || len(config.Members) != 1) {
+			t.Fatalf("lost adopted shape: %+v", config)
+		}
+	}
+}

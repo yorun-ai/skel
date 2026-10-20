@@ -377,3 +377,29 @@ func TestParseConfigRejectsUnknownDecorator(t *testing.T) {
 		})
 	}
 }
+
+func TestParseAbstractConfigName(t *testing.T) {
+	for _, name := range []string{"DatabaseAbsConfig", "DatabaseAbsConfigV2"} {
+		t.Run(name, func(t *testing.T) {
+			parseConfigTest(t, &grammar.Data{Abs: true, Name: ident(name), Qualifier: ident("eternal")})
+		})
+	}
+	for _, name := range []string{"DatabaseConfig", "DatabaseConfigV2", "DatabaseAbsConfigV0", "DatabaseAbsConfigV01", "DatabaseAbsConfigV", "DatabaseAbsConfigV-1"} {
+		t.Run(name, func(t *testing.T) {
+			expectConfigDiagnostic(t, "Config name must end with AbsConfig", &grammar.Data{Abs: true, Name: ident(name), Qualifier: ident("eternal")})
+		})
+	}
+	for _, name := range []string{"AbsConfig", "AbsConfigV2"} {
+		t.Run(name, func(t *testing.T) {
+			expectConfigDiagnostic(t, "missing body after trimming prefix & suffix", &grammar.Data{Abs: true, Name: ident(name), Qualifier: ident("eternal")})
+		})
+	}
+}
+
+func TestParseConcreteConfigRejectsAbstractSuffix(t *testing.T) {
+	for _, pub := range []bool{false, true} {
+		for _, name := range []string{"DatabaseAbsConfig", "DatabaseAbsConfigV2"} {
+			expectConfigDiagnostic(t, "AbsConfig suffix is reserved for abs config", &grammar.Data{Pub: pub, Name: ident(name), Qualifier: ident("eternal")})
+		}
+	}
+}

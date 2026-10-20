@@ -331,3 +331,11 @@ func TestParseServiceReturnsErrorWhenExampleHasNoDescription(t *testing.T) {
 		},
 	})
 }
+
+func TestParseBackendServiceRejectsApiSuffix(t *testing.T) {
+	for _, ext := range []bool{false, true} {
+		for _, name := range []string{"OrderApiService", "OrderApiServiceV2"} {
+			expectServiceDiagnostic(t, "ApiService suffix is reserved for api service", &grammar.Service{Pub: !ext, Ext: ext, Name: ident(name)})
+		}
+	}
+}

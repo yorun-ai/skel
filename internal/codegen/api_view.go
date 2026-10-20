@@ -169,6 +169,9 @@ func collectViewData(domain *schema.Domain, view *PublicView) {
 		enums[e] = true
 	}
 	for _, d := range view.Configs {
+		if d.From != nil {
+			continue
+		}
 		visitData(d)
 	}
 	for _, d := range view.Events {

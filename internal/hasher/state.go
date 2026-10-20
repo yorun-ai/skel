@@ -62,6 +62,8 @@ func (s *_HashState) dataHash(data *schema.Data) string {
 			DeprecatedReason: data.DeprecatedReason,
 			Kind:             data.Kind,
 			Ext:              data.Ext,
+			Abs:              data.Abs,
+			FromSkelName:     data.FromSkelName(),
 			Pub:              data.Pub,
 			Sensitive:        data.Sensitive,
 			Lifecycle:        string(data.Lifecycle),

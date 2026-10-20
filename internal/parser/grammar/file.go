@@ -34,6 +34,15 @@ func (content *SkelContent) Finalize() error {
 		return nil
 	}
 	for _, entry := range content.Entries {
+		if entry.Abs && (entry.Pub || entry.Api || entry.Ext || entry.Config == nil) {
+			return participle.Errorf(entry.Pos, "abs is only allowed on configs and cannot be combined with pub, api or ext")
+		}
+		if entry.Data != nil && entry.Data.From != nil {
+			return participle.Errorf(entry.Pos, "only configs can adopt an abstract config")
+		}
+		if entry.Config != nil && entry.Abs && entry.Config.From != nil {
+			return participle.Errorf(entry.Pos, "abstract configs must define a body")
+		}
 		if entry.Ext && (entry.Pub || entry.Api || (entry.Service == nil && entry.Event == nil)) {
 			return participle.Errorf(entry.Pos, "ext is only allowed on services and events and cannot be combined with pub or api")
 		}
@@ -50,6 +59,7 @@ func (content *SkelContent) Finalize() error {
 		case entry.Config != nil:
 			entry.Config.Decorators = entry.Decorators
 			entry.Config.Pub = entry.Pub
+			entry.Config.Abs = entry.Abs
 		case entry.Actor != nil:
 			entry.Actor.Decorators = entry.Decorators
 			entry.Actor.Pub = entry.Pub
@@ -138,6 +148,7 @@ type SkelEntry struct {
 	Pub        bool         `parser:"@\"pub\"?"`
 	Api        bool         `parser:"@\"api\"?"`
 	Ext        bool         `parser:"@\"ext\"?"`
+	Abs        bool         `parser:"@\"abs\"?"`
 	Enum       *Enum        `parser:"(\"enum\" @@"`
 	Data       *Data        `parser:"| \"data\" @@"`
 	Config     *Data        `parser:"| \"config\" @@"`

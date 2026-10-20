@@ -13,7 +13,11 @@ func collectTypeImports(domain *schema.Domain, view *codegen.PublicView) []*sche
 		types = appendDataImportTypes(types, data)
 	}
 	for _, config := range view.Configs {
-		types = appendDataImportTypes(types, config)
+		if config.From != nil {
+			types = append(types, config.From)
+		} else {
+			types = appendDataImportTypes(types, config)
+		}
 	}
 	for _, resource := range view.Resources {
 		for _, check := range resource.Checks {

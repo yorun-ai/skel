@@ -26,6 +26,9 @@ func optionalPubOffsetBefore(source string, offset int) int {
 		end--
 	}
 	pub := "pub"
+	if end >= 3 && source[end-3:end] == "abs" {
+		pub = "abs"
+	}
 	if end >= 3 && source[end-3:end] == "ext" {
 		pub = "ext"
 	}

@@ -32,10 +32,10 @@ func TestGoVineVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if version := info.GolangCodeGen.MinimumVineVersion; version != "v0.29.0" {
+	if version := info.GolangCodeGen.MinimumVineVersion; version != "v0.32.0" {
 		t.Fatalf("unexpected minimum Go Vine version: %q", version)
 	}
-	if version := info.GolangCodeGen.DefaultVineVersion; version != "v0.29.0" {
+	if version := info.GolangCodeGen.DefaultVineVersion; version != "v0.32.0" {
 		t.Fatalf("unexpected default Go Vine version: %q", version)
 	}
 }

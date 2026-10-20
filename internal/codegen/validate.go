@@ -53,6 +53,19 @@ func validateDomain(domain *schema.Domain, seen map[*schema.Domain]bool) error {
 		}
 	}
 	for _, config := range domain.Configs() {
+		if config.Abs && (config.Pub || config.From != nil) {
+			return fmt.Errorf("abstract config %s has conflicting modifiers or a source", config.Name)
+		}
+		if config.From != nil {
+			source := config.From.Data
+			if source == nil || !source.Abs || source.Kind != schema.DataKindConfig || source.From != nil || config.From.SkelName != source.SkelName {
+				return fmt.Errorf("config %s requires a resolved abstract config source", config.Name)
+			}
+			if config.Lifecycle != source.Lifecycle {
+				return fmt.Errorf("config %s lifecycle differs from source", config.Name)
+			}
+		}
+
 		if config.Lifecycle != schema.ConfigLifecycleEternal && config.Lifecycle != schema.ConfigLifecycleInstant {
 			return fmt.Errorf("config %s has unsupported lifecycle %q", config.Name, config.Lifecycle)
 		}

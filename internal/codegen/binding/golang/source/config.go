@@ -30,6 +30,15 @@ func (g *_Gen) buildConfigGoPayload() *DataGoPayload {
 		castedData.SpecName = "_" + castedData.Name + "Spec"
 		castedData.SkelName = dataType.SkelName
 		castedData.Hash = dataType.Hash
+		castedData.Abs = dataType.Abs
+		if dataType.From != nil {
+			castedData.From = g.types.castType(dataType.From)
+			castedData.FromSkelName = dataType.From.SkelName
+			castedData.ConversionMethod = "As" + transDataName(dataType.From.Data)
+		} else if dataType.Abs {
+			castedData.ConversionMethod = "As" + castedData.Name
+		}
+
 		switch dataType.Lifecycle {
 		case schema.ConfigLifecycleEternal:
 			castedData.Lifecycle = string(dataType.Lifecycle)
