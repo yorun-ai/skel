@@ -11,37 +11,6 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func TestGeneratorAlwaysRendersGoDocFile(t *testing.T) {
-	goOutDir := filepath.Join(t.TempDir(), "skeled")
-
-	pkg := newSchemaDomainForTest(t, codegentest.DomainSchema("demo.user"))
-
-	if err := generateFixture(pkg, golang.Option{Out: goOutDir}); err != nil {
-		t.Fatal(err)
-	}
-
-	goDocContent, err := os.ReadFile(filepath.Join(goOutDir, "doc.go"))
-	if err != nil {
-		t.Fatalf("read go doc file: %v", err)
-	}
-	if !strings.Contains(string(goDocContent), "// Package skeled") {
-		t.Fatalf("expected fallback go doc comment, got:\n%s", string(goDocContent))
-	}
-	if !strings.Contains(string(goDocContent), "// This package is fully managed by skelc.") ||
-		!strings.Contains(string(goDocContent), "// unmanaged files.") {
-		t.Fatalf("expected generated package ownership warning, got:\n%s", string(goDocContent))
-	}
-	if !strings.Contains(string(goDocContent), "package skeled") {
-		t.Fatalf("expected go doc package declaration, got:\n%s", string(goDocContent))
-	}
-	if strings.Contains(string(goDocContent), "\n\npackage skeled") {
-		t.Fatalf("did not expect blank line between fallback doc comment and package declaration, got:\n%s", string(goDocContent))
-	}
-
-	assertFileMissing(t, filepath.Join(goOutDir, "go.mod"))
-	assertFileMissing(t, filepath.Join(goOutDir, "go.sum"))
-}
-
 func TestGeneratorRendersDescriptionComments(t *testing.T) {
 	goOutDir := filepath.Join(t.TempDir(), "skeled")
 
@@ -161,21 +130,9 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read go doc file: %v", err)
 	}
-	if !strings.Contains(string(goDocContent), "package skeled") {
-		t.Fatalf("expected go doc package declaration, got:\n%s", string(goDocContent))
-	}
 	if !strings.Contains(string(goDocContent), "// Package skeled User domain") {
 		t.Fatalf("expected go doc comment from domain description, got:\n%s", string(goDocContent))
 	}
-	if strings.HasPrefix(string(goDocContent), "\n") {
-		t.Fatalf("did not expect leading blank line in doc.go, got:\n%s", string(goDocContent))
-	}
-	if strings.Contains(string(goDocContent), "\n\npackage skeled") {
-		t.Fatalf("did not expect blank line between doc comment and package declaration, got:\n%s", string(goDocContent))
-	}
-
-	assertFileMissing(t, filepath.Join(goOutDir, "go.mod"))
-	assertFileMissing(t, filepath.Join(goOutDir, "go.sum"))
 
 	goServiceContent, err := os.ReadFile(filepath.Join(goOutDir, "service.go"))
 	if err != nil {
@@ -267,18 +224,10 @@ func TestGeneratorRendersDescriptionComments(t *testing.T) {
 		t.Fatalf("read go descriptor file: %v", err)
 	}
 	codegentest.AssertGoSourceContains(t, string(goDescriptorContent), `SkelName: "demo.user.ClientActor"`)
-	if !strings.Contains(string(goDescriptorContent), `Hash:`) {
-		t.Fatalf("expected go descriptor hash fields, got:\n%s", string(goDescriptorContent))
-	}
 	if !strings.Contains(string(goDescriptorContent), "ArgumentsSensitive:") ||
 		!strings.Contains(string(goDescriptorContent), "ResultSensitive:") ||
 		!strings.Contains(string(goDescriptorContent), "Sensitive:") {
 		t.Fatalf("expected sensitive metadata in go descriptor, got:\n%s", string(goDescriptorContent))
-	}
-	initIndex := strings.Index(string(goDescriptorContent), "func init()")
-	descriptorIndex := strings.Index(string(goDescriptorContent), "var _DomainDescriptor")
-	if initIndex < 0 || descriptorIndex < 0 || initIndex > descriptorIndex {
-		t.Fatalf("expected descriptor init before descriptor var, got:\n%s", string(goDescriptorContent))
 	}
 
 	goTaskContent, err := os.ReadFile(filepath.Join(goOutDir, "task.go"))

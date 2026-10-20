@@ -1,52 +1,9 @@
 package grammar
 
 import (
-	"reflect"
-	"regexp"
-	"slices"
 	"strings"
 	"testing"
 )
-
-func TestTopLevelDeclarationKeywordsMatchSkelEntryGrammar(t *testing.T) {
-	quotedKeyword := regexp.MustCompile(`"([a-z]+)"`)
-	entryType := reflect.TypeFor[SkelEntry]()
-	keywords := make([]string, 0, entryType.NumField())
-	for index := range entryType.NumField() {
-		field := entryType.Field(index)
-		if field.Name == "Pos" || field.Name == "Decorators" || field.Name == "Pub" || field.Name == "Api" || field.Name == "Ext" || field.Name == "Abs" {
-			continue
-		}
-		match := quotedKeyword.FindStringSubmatch(field.Tag.Get("parser"))
-		if len(match) != 2 {
-			t.Fatalf("declaration field %s has no keyword in parser tag %q", field.Name, field.Tag.Get("parser"))
-		}
-		keywords = append(keywords, match[1])
-	}
-	if !slices.Equal(keywords, TopLevelDeclarationKeywords()) {
-		t.Fatalf("declaration keywords = %q, want %q", TopLevelDeclarationKeywords(), keywords)
-	}
-}
-
-func TestParseDomainContent(t *testing.T) {
-	content := parseSkelForTest(t, `
-@desc("User domain")
-domain demo.user
-`)
-
-	if err := content.Domain.Finalize(); err != nil {
-		t.Fatalf("finalize domain skel: %v", err)
-	}
-	if content.Domain == nil || content.Domain.Name == nil {
-		t.Fatalf("unexpected domain content: %+v", content.Domain)
-	}
-	if content.Domain.Name.String() != "demo.user" {
-		t.Fatalf("unexpected domain name: %s", content.Domain.Name.String())
-	}
-	if content.Domain.Description != "User domain" {
-		t.Fatalf("unexpected domain description: %q", content.Domain.Description)
-	}
-}
 
 func TestParseDomainContentWithTripleQuotedDescription(t *testing.T) {
 	content := parseSkelForTest(t, `

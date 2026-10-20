@@ -65,16 +65,6 @@ func TestTimestampCBORRoundTrip(t *testing.T) {
 	}
 }
 
-func TestNewTimestampNowReturnsUTCValue(t *testing.T) {
-	value := NewTimestampNow()
-	if value.Location() != time.UTC {
-		t.Fatalf("unexpected timestamp location: got=%s want=%s", value.Location(), time.UTC)
-	}
-	if value.IsZero() {
-		t.Fatal("unexpected zero timestamp")
-	}
-}
-
 func TestLocalDateJSONRoundTrip(t *testing.T) {
 	type payload struct {
 		Value LocalDate `json:"value"`

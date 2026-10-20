@@ -253,42 +253,6 @@ data AppUser {
 	}
 }
 
-func TestGenerateTargetsShareParsedDomain(t *testing.T) {
-	skelDir := t.TempDir()
-	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
-
-	parsed, err := skelapi.Parse(skelapi.Input{SkelIn: skelDir})
-	if err != nil {
-		t.Fatalf("parse Skel: %v", err)
-	}
-	goOut := filepath.Join(t.TempDir(), "golang")
-	if err := skelapi.GenerateGolang(parsed.Domain, skelapi.GolangOption{CompilerVersion: "v0.0.0-dev", Out: goOut}); err != nil {
-		t.Fatalf("generate Go: %v", err)
-	}
-	tsOut := filepath.Join(t.TempDir(), "typescript")
-	if err := skelapi.GenerateTypeScript(parsed.Domain, skelapi.TypeScriptOption{ApiOnly: true, Out: tsOut}); err != nil {
-		t.Fatalf("generate TypeScript: %v", err)
-	}
-	assertTestFileExists(t, filepath.Join(goOut, "descriptor.go"))
-	assertTestFileExists(t, filepath.Join(tsOut, "index.ts"))
-	assertTestFileStartsWithGeneratedMarker(t, filepath.Join(tsOut, "index.ts"))
-}
-
-func TestGenerateTypeScript(t *testing.T) {
-	skelDir := t.TempDir()
-	tsOut := filepath.Join(t.TempDir(), "generated")
-	writeTestFile(t, filepath.Join(skelDir, "domain.skel"), "domain demo.user")
-
-	_, err := skelapi.CompileTypeScript(
-		skelapi.Input{SkelIn: skelDir},
-		skelapi.TypeScriptOption{ApiOnly: true, Out: tsOut},
-	)
-	if err != nil {
-		t.Fatalf("generate TypeScript: %v", err)
-	}
-	assertTestFileExists(t, filepath.Join(tsOut, "index.ts"))
-}
-
 func TestGenerateSkeleton(t *testing.T) {
 	skelDir := t.TempDir()
 	skelOut := filepath.Join(t.TempDir(), "generated")

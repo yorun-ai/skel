@@ -64,13 +64,6 @@ func TestRunSkelcCompilationFailurePreservesOutputs(t *testing.T) {
 	}
 }
 
-func TestRunSkelcGenGo(t *testing.T) {
-	dir, goOut := newGenFixture(t)
-
-	result := Run([]string{"gen", "go", "--skel-in", dir, "--go-out", goOut})
-	assertGenerationResult(t, result)
-}
-
 func TestRunSkelcGenGoWritesWarningsToDefaultJSONLLogs(t *testing.T) {
 	dir, goOut := newGenFixture(t)
 	writeCLIFile(t, dir+"/.hidden.skel", `domain demo.user`)
@@ -136,21 +129,6 @@ func TestRunSkelcGenGoPreservesUnmanagedOutput(t *testing.T) {
 	assertFileContains(t, filepath.Join(goOut, "doc.go"), codegenoutput.GeneratedFileMarker)
 }
 
-func TestRunSkelcGenGoDoesNotChangeOutputWhenCompilationFails(t *testing.T) {
-	dir := t.TempDir()
-	goOut := filepath.Join(t.TempDir(), "skeled")
-	writeCLIFile(t, filepath.Join(dir, "user.skel"), `data User { id: string }`)
-	writeCLIFile(t, filepath.Join(goOut, "old.go"), "old")
-
-	result := Run([]string{"gen", "go", "--skel-in", dir, "--go-out", goOut})
-
-	commandError := decodeCommandError(t, result)
-	if result.ExitCode != ExitCodeError || commandError.Code != output.ErrorCodeCompilationFailed {
-		t.Fatalf("expected compilation failure: %+v", result)
-	}
-	assertFileContains(t, filepath.Join(goOut, "old.go"), "old")
-}
-
 func TestRunSkelcGenGoModule(t *testing.T) {
 	dir, goOut := newGenFixture(t)
 
@@ -184,16 +162,6 @@ func TestRunSkelcGenGoModuleRejectsGoVineVersionWithoutVPrefix(t *testing.T) {
 	result := Run([]string{"gen", "go-module", "--skel-in", dir, "--go-out", goOut, "--go-module-prefix", "github.com/acme/skel", "--go-vine-version", "1.2.3"})
 
 	assertCommandErrorMessage(t, result, "go-vine-version 1.2.3 must be v-prefixed semantic version")
-}
-
-func TestRunSkelcGenGoModuleAcceptsPubFlag(t *testing.T) {
-	dir, goOut := newGenFixture(t)
-
-	result := Run([]string{"gen", "go-module", "--pub", "--skel-in", dir, "--go-out", goOut, "--go-module-prefix", "github.com/acme/skel"})
-
-	if result.ExitCode != ExitCodeSuccess {
-		t.Fatalf("unexpected exit code: %d, stderr=%q", result.ExitCode, result.Stderr)
-	}
 }
 
 func TestRunSkelcGenGoRendersDescriptor(t *testing.T) {

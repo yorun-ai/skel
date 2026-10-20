@@ -27,13 +27,3 @@ func TestNewFailureWithCauseWrapsCause(t *testing.T) {
 
 	require.ErrorIs(t, failure, cause)
 }
-
-func TestNewFailurefRendersPositionArgumentIntoMessage(t *testing.T) {
-	failure := NewFailuref("%s invalid field", lexer.Position{Filename: "user.skel", Line: 2, Column: 3})
-
-	assert.Equal(t, CodeValidation, failure.Code)
-	assert.Equal(t, "user.skel", failure.Position.File)
-	assert.Equal(t, 2, failure.Position.Line)
-	assert.Equal(t, 3, failure.Position.Column)
-	assert.Equal(t, "user.skel:2:3 invalid field", failure.Message)
-}

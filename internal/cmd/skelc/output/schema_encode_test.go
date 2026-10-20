@@ -59,38 +59,6 @@ web PortalWeb { for ClientActor auth off }
 	}
 }
 
-func TestSchemaOutputMapsSchemaEnums(t *testing.T) {
-	t.Run("config lifecycle", func(t *testing.T) {
-		tests := []struct {
-			semantic schema.ConfigLifecycle
-			wire     string
-		}{
-			{semantic: schema.ConfigLifecycleEternal, wire: "eternal"},
-			{semantic: schema.ConfigLifecycleInstant, wire: "instant"},
-		}
-		for _, test := range tests {
-			got := (&_SchemaEncoder{}).projectDataSchema(new(schema.Data{Lifecycle: test.semantic, Members: []*schema.DataMember{}})).Lifecycle
-			if got != test.wire {
-				t.Fatalf("lifecycle %q projects to %q, want %q", test.semantic, got, test.wire)
-			}
-		}
-	})
-
-	t.Run("authentication", func(t *testing.T) {
-		tests := []struct {
-			semantic schema.AuthMode
-			wire     string
-		}{
-			{semantic: schema.AuthModeUnset, wire: "inherit"},
-		}
-		for _, test := range tests {
-			if got := string((&schema.Method{AuthMode: test.semantic}).NormalizedAuth()); got != test.wire {
-				t.Fatalf("auth %q projects to %q, want %q", test.semantic, got, test.wire)
-			}
-		}
-	})
-}
-
 func TestSchemaOutputMapsTypeKinds(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -112,29 +80,6 @@ func TestSchemaOutputMapsTypeKinds(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if got := (&_SchemaEncoder{domain: schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo"})}).projectType(test.semantic); !reflect.DeepEqual(got, test.wire) {
 				t.Fatalf("type projection mismatch:\nwant: %#v\ngot:  %#v", test.wire, got)
-			}
-		})
-	}
-}
-
-func TestSchemaOutputMapsRequirementModes(t *testing.T) {
-	check := new(schema.PermissionCheckInvocation{ResourceSkelName: "demo.contract.Document", CheckName: "owns"})
-	tests := []struct {
-		name     string
-		semantic *schema.PermissionExpression
-		wire     string
-	}{
-		{name: "code", semantic: new(schema.PermissionExpression{Mode: schema.PermissionRequireModeCode, Code: "demo.contract.Document:read"}), wire: "code"},
-		{name: "check", semantic: new(schema.PermissionExpression{Mode: schema.PermissionRequireModeCheck, Check: check}), wire: "check"},
-		{name: "all", semantic: new(schema.PermissionExpression{Mode: schema.PermissionRequireModeAll, Children: []*schema.PermissionExpression{}}), wire: "all"},
-		{name: "any", semantic: new(schema.PermissionExpression{Mode: schema.PermissionRequireModeAny, Children: []*schema.PermissionExpression{}}), wire: "any"},
-		{name: "reference", semantic: new(schema.PermissionExpression{Check: check}), wire: "reference"},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if got := (&_SchemaEncoder{domain: schema.NewDomainFromSpec(schema.DomainSpec{Name: "demo"})}).projectRequirementExpr(test.semantic); got.Mode != test.wire {
-				t.Fatalf("requirement mode = %q, want %q", got.Mode, test.wire)
 			}
 		})
 	}

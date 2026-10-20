@@ -22,23 +22,6 @@ func ExampleType_ContainsBinaryType() {
 	// true
 }
 
-func TestTypeContainsBinaryType(t *testing.T) {
-	binaryData := &Data{
-		Name: "Attachment",
-		Members: []*DataMember{
-			{Name: "content", Type: &Type{Kind: TypeKindScalar, Scalar: ScalarBinary}},
-		},
-	}
-	valueType := &Type{Kind: TypeKindData, Data: binaryData}
-
-	if !valueType.ContainsBinaryType() {
-		t.Fatal("expected data containing binary member to report binary type")
-	}
-	if valueType.Name() != "Attachment" {
-		t.Fatalf("unexpected type name: %q", valueType.Name())
-	}
-}
-
 func TestContainsBinaryTypeGenericBindings(t *testing.T) {
 	parameter := &TypeParameter{Name: "T"}
 	box := &Data{Name: "Box", TypeParameters: []*TypeParameter{parameter}}

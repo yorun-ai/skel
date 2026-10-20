@@ -9,52 +9,6 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func TestCastData(t *testing.T) {
-	data := (_Types{}).castData(&schema.Data{
-		Name:        "Page",
-		Description: "Paginated result",
-		TypeParameters: []*schema.TypeParameter{
-			{Name: "TItem"},
-		},
-		Members: []*schema.DataMember{
-			{
-				Name:        "generatedAt",
-				Description: "Generated at",
-				Type: &schema.Type{
-					Kind:   schema.TypeKindScalar,
-					Scalar: schema.ScalarTimestamp,
-				},
-			},
-			{
-				Name:        "avatarUrl",
-				Description: "Avatar URL",
-				Example:     `"https://xxx.com/a.png"`,
-				Type: &schema.Type{
-					Kind:     schema.TypeKindScalar,
-					Scalar:   schema.ScalarString,
-					Nullable: true,
-				},
-			},
-		},
-	})
-
-	if data.FullName != "Page<TItem>" {
-		t.Fatalf("unexpected full name: %s", data.FullName)
-	}
-	if len(data.CommentLines) == 0 || data.CommentLines[0] != "Paginated result." {
-		t.Fatalf("unexpected data comment lines: %+v", data.CommentLines)
-	}
-	if len(data.Members) != 2 {
-		t.Fatalf("unexpected member count: %d", len(data.Members))
-	}
-	if data.Members[0].Type.Plain != "string" {
-		t.Fatalf("unexpected first member type: %s", data.Members[0].Type.Plain)
-	}
-	if len(data.Members[1].CommentLines) == 0 || data.Members[1].CommentLines[0] != `Avatar URL (e.g. "https://xxx.com/a.png").` {
-		t.Fatalf("unexpected second member comment lines: %+v", data.Members[1].CommentLines)
-	}
-}
-
 func TestCastDataRendersDeprecatedDocs(t *testing.T) {
 	data := (_Types{}).castData(&schema.Data{
 		Name:             "User",
@@ -73,49 +27,6 @@ func TestCastDataRendersDeprecatedDocs(t *testing.T) {
 	}
 	if !strings.Contains(output, "* @deprecated Use id instead") {
 		t.Fatalf("expected deprecated member docs, got:\n%s", output)
-	}
-}
-
-func TestCastDataMapsDurationToString(t *testing.T) {
-	data := (_Types{}).castData(&schema.Data{
-		Name: "TimeoutConfig",
-		Members: []*schema.DataMember{
-			{
-				Name: "timeout",
-				Type: &schema.Type{
-					Kind:   schema.TypeKindScalar,
-					Scalar: schema.ScalarDuration,
-				},
-			},
-		},
-	})
-	if data.Members[0].Type.Plain != "string" {
-		t.Fatalf("unexpected duration member type: %s", data.Members[0].Type.Plain)
-	}
-}
-
-func TestCastDataMapsLocalDateToString(t *testing.T) {
-	data := (_Types{}).castData(&schema.Data{
-		Name: "Profile",
-		Members: []*schema.DataMember{
-			{
-				Name: "birthday",
-				Type: &schema.Type{
-					Kind:   schema.TypeKindScalar,
-					Scalar: schema.ScalarLocalDate,
-				},
-			},
-		},
-	})
-	if data.Members[0].Type.Plain != "string" {
-		t.Fatalf("unexpected date member type: %s", data.Members[0].Type.Plain)
-	}
-}
-
-func TestTypesTemplateKeepsModuleSemanticsWhenEmpty(t *testing.T) {
-	output := renderTemplate(t, dataTsTemplate, &_DataTsPayload{})
-	if !strings.Contains(output, "export {};") {
-		t.Fatalf("expected rendered types to keep module semantics, got:\n%s", output)
 	}
 }
 

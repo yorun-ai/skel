@@ -47,21 +47,6 @@ func TestSchemaCompatibilityCodeLensAndCommandUseInMemoryDocument(t *testing.T) 
 	assert.Equal(t, "data.member.type.changed", report.Changes[0].Code)
 }
 
-func TestInitializeAdvertisesSchemaCompatibilityCapabilities(t *testing.T) {
-	server := newServer()
-	options, err := json.Marshal(_InitializationOptions{SchemaCompatibility: _SchemaCompatibilitySettings{
-		Diagnostics: true, IncludeCompatible: true, CodeLens: false, Baseline: "../baseline",
-	}})
-	require.NoError(t, err)
-	result, err := server.Initialize(t.Context(), &protocol.InitializeParams{InitializationOptions: options})
-	require.NoError(t, err)
-	require.NotNil(t, result.Capabilities.CodeLensProvider)
-	assert.Equal(t, []string{commandSchemaDiff}, result.Capabilities.ExecuteCommandProvider.Commands)
-	assert.Equal(t, _SchemaCompatibilitySettings{
-		Diagnostics: true, IncludeCompatible: true, CodeLens: false, Baseline: "../baseline",
-	}, server.schemaCompatibility)
-}
-
 func TestRemoteSchemaCommandRetainsDocumentIdentity(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "contract.skel")

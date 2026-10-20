@@ -45,14 +45,6 @@ func nullableType(inner *grammar.Type) *grammar.Type {
 	return inner
 }
 
-func listType(value *grammar.Type) *grammar.Type {
-	return &grammar.Type{
-		List: &grammar.ListType{
-			Value: value,
-		},
-	}
-}
-
 func mapType(key *grammar.Type, value *grammar.Type) *grammar.Type {
 	return &grammar.Type{
 		Map: &grammar.MapType{

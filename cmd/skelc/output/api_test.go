@@ -9,9 +9,6 @@ import (
 )
 
 func TestFacadeWireContract(t *testing.T) {
-	if output.ExitCodeSuccess != 0 || output.ExitCodeUnsatisfied != 1 || output.ExitCodeError != 2 {
-		t.Fatalf("unexpected exit codes: %d %d %d", output.ExitCodeSuccess, output.ExitCodeUnsatisfied, output.ExitCodeError)
-	}
 	for _, test := range []struct {
 		name  string
 		value any

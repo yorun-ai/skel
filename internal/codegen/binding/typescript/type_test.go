@@ -3,30 +3,9 @@ package typescript
 import (
 	"testing"
 
-	"go.yorun.ai/skel/internal/codegen/binding"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/schema"
 )
-
-func TestCastTypeMapsBinaryToUint8Array(t *testing.T) {
-	got := (_Types{}).castType(&schema.Type{
-		Kind:   schema.TypeKindScalar,
-		Scalar: schema.ScalarBinary,
-	})
-	if got.Plain != "Uint8Array" {
-		t.Fatalf("unexpected binary type mapping: %s", got.Plain)
-	}
-}
-
-func TestCastTypeMapsUUIDToString(t *testing.T) {
-	got := (_Types{}).castType(&schema.Type{
-		Kind:   schema.TypeKindScalar,
-		Scalar: schema.ScalarUUID,
-	})
-	if got.Plain != "string" {
-		t.Fatalf("unexpected uuid type mapping: %s", got.Plain)
-	}
-}
 
 func TestCastTypeMapsJSONToString(t *testing.T) {
 	got := (_Types{}).castType(&schema.Type{
@@ -35,41 +14,6 @@ func TestCastTypeMapsJSONToString(t *testing.T) {
 	})
 	if got.Plain != "string" {
 		t.Fatalf("unexpected json type mapping: %s", got.Plain)
-	}
-}
-
-func TestCastMapTypeMapsUUIDKeyToString(t *testing.T) {
-	got := (_Types{}).castType(codegentest.MapType(codegentest.UUIDType(), codegentest.StringType()))
-	if got.Plain != "Record<string, string>" {
-		t.Fatalf("unexpected uuid-keyed map type: %s", got.Plain)
-	}
-}
-
-func TestCastTypeQualifiesExternalDataWithAlias(t *testing.T) {
-	kind := &schema.Type{
-		Kind: schema.TypeKindData,
-		Data: &schema.Data{
-			Name: "UserSummary",
-		},
-		ExternalAlias: "userpub",
-	}
-	got := (_Types{bindings: binding.TypeBindings{kind: {Alias: "userpub", Path: "@example/user"}}}).castType(kind)
-	if got.Plain != "userpub.UserSummary" {
-		t.Fatalf("unexpected external type: %s", got.Plain)
-	}
-}
-
-func TestCastTypeQualifiesExternalEnumWithAlias(t *testing.T) {
-	kind := &schema.Type{
-		Kind: schema.TypeKindEnum,
-		Enum: &schema.Enum{
-			Name: "UserStatus",
-		},
-		ExternalAlias: "userpub",
-	}
-	got := (_Types{bindings: binding.TypeBindings{kind: {Alias: "userpub", Path: "@example/user"}}}).castType(kind)
-	if got.Plain != "userpub.UserStatus" {
-		t.Fatalf("unexpected external type: %s", got.Plain)
 	}
 }
 

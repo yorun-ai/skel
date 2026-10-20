@@ -8,21 +8,6 @@ import (
 	"go.yorun.ai/skel/schema"
 )
 
-func fillSchemaHashesForTest(pkg *schema.Domain) {
-	for _, data := range pkg.Data() {
-		data.Hash = "data-hash"
-	}
-	for _, actor := range pkg.Actors() {
-		actor.Hash = "actor-hash"
-	}
-	for _, service := range pkg.Services() {
-		service.Hash = "service-hash"
-		for _, method := range service.Methods {
-			method.Hash = "method-hash"
-		}
-	}
-}
-
 func buildDescriptorDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.Domain {
 	t.Helper()
 	for _, data := range spec.Data {

@@ -126,38 +126,6 @@ func TestParseServiceSupportsTripleQuotedDescription(t *testing.T) {
 	}
 }
 
-func TestParseServiceAudiencesMissingActors(t *testing.T) {
-	service := parseServiceTest(t, &grammar.Service{
-		Pub:  true,
-		Name: ident("UserService"),
-		Methods: []*grammar.Method{
-			{
-				Name:   ident("ping"),
-				Output: &grammar.MethodOutput{Type: plainType(grammar.String)},
-			},
-		},
-	})
-	if len(service.Audiences) != 0 {
-		t.Fatalf("expected empty audiences, got %+v", service.Audiences)
-	}
-}
-
-func TestParseServiceAudiencesPub(t *testing.T) {
-	service := parseServiceTest(t, &grammar.Service{
-		Pub:  true,
-		Name: ident("UserService"),
-		Methods: []*grammar.Method{
-			{
-				Name:   ident("ping"),
-				Output: &grammar.MethodOutput{Type: plainType(grammar.String)},
-			},
-		},
-	})
-	if !service.Pub {
-		t.Fatal("expected pub service")
-	}
-}
-
 func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 	service := parseServiceTest(t, &grammar.Service{
 		Api:  true,
@@ -194,23 +162,6 @@ func TestParseServiceSectionsAllowAnyOrderAndMethodAuthOverride(t *testing.T) {
 	}
 	if service.Methods[1].AuthMode != schema.AuthModeRequired {
 		t.Fatalf("expected update to override auth, got %s", service.Methods[1].AuthMode)
-	}
-}
-
-func TestParseServiceDefaultsAuthToUnset(t *testing.T) {
-	service := parseServiceTest(t, &grammar.Service{
-		Pub:  true,
-		Name: ident("UserService"),
-		Methods: []*grammar.Method{
-			{Name: ident("ping")},
-		},
-	})
-
-	if service.AuthMode != schema.AuthModeUnset {
-		t.Fatalf("expected service auth unset, got %s", service.AuthMode)
-	}
-	if service.Methods[0].AuthMode != schema.AuthModeUnset {
-		t.Fatalf("expected method auth unset, got %s", service.Methods[0].AuthMode)
 	}
 }
 

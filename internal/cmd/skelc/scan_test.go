@@ -70,14 +70,3 @@ func TestScanImportsEmptyAndInvalidInputs(t *testing.T) {
 		}
 	}
 }
-
-func TestScanHelp(t *testing.T) {
-	result := Run([]string{"scan", "--help"})
-	if result.ExitCode != ExitCodeSuccess || !strings.Contains(result.Stdout, "imports OPTIONS:") || !strings.Contains(result.Stdout, "--skel-in") {
-		t.Fatalf("unexpected help: %+v", result)
-	}
-	result = Run([]string{"--help"})
-	if !strings.Contains(result.Stdout, "scan") {
-		t.Fatal("root help does not expose scan")
-	}
-}

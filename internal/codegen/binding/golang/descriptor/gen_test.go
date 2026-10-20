@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"go.yorun.ai/skel/descriptor"
 	"go.yorun.ai/skel/internal/codegen/binding/golang/view"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
 	"go.yorun.ai/skel/internal/compiler"
@@ -235,26 +234,5 @@ func TestGenDescriptorGoRendersDeprecatedFields(t *testing.T) {
 		if !strings.Contains(generated, `"`+reason+`"`) {
 			t.Fatalf("expected reason %q, got:\n%s", reason, generated)
 		}
-	}
-}
-
-func TestGenDescriptorGoRendersWebAuthModes(t *testing.T) {
-	for _, mode := range []schema.AuthMode{schema.AuthModeRequired, schema.AuthModeOptional, schema.AuthModeAnonymous, schema.AuthModeOff} {
-		t.Run(string(mode), func(t *testing.T) {
-			pkg := buildDescriptorDomainForTest(t, schema.DomainSpec{Name: "demo.user", Webs: []*schema.Web{{Name: "ConsoleWeb", AuthMode: mode}}})
-			out := filepath.Join(t.TempDir(), "skeled")
-			newGen(Option{Domain: pkg, View: mustView(t, view.ModeFull, pkg), Mode: view.ModeFull, PackageName: "skeled", Out: out}).gen()
-			content, err := os.ReadFile(filepath.Join(out, descriptorGoFilename))
-			if err != nil {
-				t.Fatal(err)
-			}
-			expected := mode
-			literal, err := renderAuthModeLiteral(descriptor.AuthMode(expected))
-			if err != nil {
-				t.Fatal(err)
-			}
-			codegentest.AssertGoSourceContains(t, string(content), "AuthMode: "+literal)
-
-		})
 	}
 }

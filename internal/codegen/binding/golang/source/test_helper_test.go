@@ -47,14 +47,6 @@ func buildSchemaDomainForTest(t *testing.T, spec schema.DomainSpec) *schema.Doma
 	return schema.NewDomainFromSpec(spec)
 }
 
-func importPaths(imports []*Import) []string {
-	paths := make([]string, 0, len(imports))
-	for _, import_ := range imports {
-		paths = append(paths, import_.Path)
-	}
-	return paths
-}
-
 func mustView(t *testing.T, mode view.Mode, domain *schema.Domain) *view.Domain {
 	t.Helper()
 	result, err := view.New(mode, domain)

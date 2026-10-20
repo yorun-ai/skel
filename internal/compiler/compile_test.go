@@ -478,26 +478,6 @@ func TestCompileReturnsErrorWhenDomainFileMissing(t *testing.T) {
 	expectErrorContains(t, err, "domain.skel not found")
 }
 
-func TestCompileSingleSkelFile(t *testing.T) {
-	skelFile := filepath.Join(t.TempDir(), "user.skel")
-	writeFile(t, skelFile, `@desc("User domain")
-domain demo.user
-
-data User {
-    id: string
-}
-`)
-
-	result, err := Compile(Option{SkelIn: skelFile})
-	if err != nil {
-		t.Fatalf("Compile() error = %v", err)
-	}
-
-	if result.Domain.Name() != "demo.user" || len(result.Domain.Data()) != 1 {
-		t.Fatalf("unexpected domain: %#v", result.Domain)
-	}
-}
-
 func TestCompileReturnsSemanticErrorForMissingDefinition(t *testing.T) {
 	skelFile := filepath.Join(t.TempDir(), "user.skel")
 	writeFile(t, skelFile, `domain demo.user

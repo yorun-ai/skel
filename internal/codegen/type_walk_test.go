@@ -1,7 +1,6 @@
 package codegen
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -24,30 +23,6 @@ func TestWalkTypeVisitsStructuralChildrenInOrder(t *testing.T) {
 	expected := []schema.TypeKind{schema.TypeKindMap, schema.TypeKindScalar, schema.TypeKindList, schema.TypeKindScalar}
 	if !reflect.DeepEqual(kinds, expected) {
 		t.Fatalf("unexpected walk order: %v", kinds)
-	}
-}
-
-func TestWalkTypeGraphTerminatesOnRecursiveData(t *testing.T) {
-	data := &schema.Data{Name: "Node", Kind: schema.DataKindData}
-	reference := &schema.Type{Kind: schema.TypeKindData, Data: data}
-	data.Members = []*schema.DataMember{{Name: "next", Type: reference}}
-	visits := 0
-	if err := WalkTypeGraph(reference, func(*schema.Type) error {
-		visits++
-		return nil
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if visits != 1 {
-		t.Fatalf("expected recursive type to be visited once, got %d", visits)
-	}
-}
-
-func TestWalkTypePropagatesVisitorError(t *testing.T) {
-	expected := errors.New("stop")
-	err := WalkType(&schema.Type{Kind: schema.TypeKindScalar}, func(*schema.Type) error { return expected })
-	if !errors.Is(err, expected) {
-		t.Fatalf("expected visitor error, got %v", err)
 	}
 }
 

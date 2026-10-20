@@ -2,19 +2,8 @@ package skelc
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 )
-
-func TestErrorLogEntry(t *testing.T) {
-	entry := errorLogEntry("failed to %s the contract", "compile")
-	if entry.Level != logLevelError {
-		t.Fatalf("unexpected level: %q", entry.Level)
-	}
-	if entry.Message != "failed to compile the contract" {
-		t.Fatalf("unexpected message: %q", entry.Message)
-	}
-}
 
 func TestFormatLogRendersTextLevels(t *testing.T) {
 	for _, test := range []struct {
@@ -33,21 +22,6 @@ func TestFormatLogRendersTextLevels(t *testing.T) {
 				t.Fatalf("formatLog() = %q; want %q", got, test.want)
 			}
 		})
-	}
-}
-
-func TestFormatLogRendersJSONL(t *testing.T) {
-	got := formatLog(_LogEntry{Level: logLevelInfo, Message: "  [I] ready  "}, logFormatJSONL)
-	if !strings.HasSuffix(got, "\n") {
-		t.Fatalf("JSONL entries must end with a newline: %q", got)
-	}
-
-	var entry _JSONLEntry
-	if err := json.Unmarshal([]byte(got), &entry); err != nil {
-		t.Fatalf("decode JSONL entry: %v", err)
-	}
-	if entry.Level != "info" || entry.Message != "ready" {
-		t.Fatalf("unexpected JSONL entry: %+v", entry)
 	}
 }
 

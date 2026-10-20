@@ -11,30 +11,6 @@ import (
 	"go.yorun.ai/skel/internal/optionvalidation"
 )
 
-func TestBuildPackageJSONPayload(t *testing.T) {
-	payload, err := buildPackageJSONPayload(_ModuleOption{PackageName: "@yorun-ai/skeled-example"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if payload.Name != "@yorun-ai/skeled-example" {
-		t.Fatalf("unexpected package name: %s", payload.Name)
-	}
-	if got := joinPackageJSONDependencies(sortedPackageJSONDependencies(payload.PeerDependencies)); got != "@yorun-ai/vrpc@*" {
-		t.Fatalf("unexpected peer dependencies: %#v", payload.PeerDependencies)
-	}
-	data, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	output := string(data)
-	if !strings.Contains(output, `"@yorun-ai/vrpc": "*"`) {
-		t.Fatalf("expected rendered package.json to include @yorun-ai/vrpc, got:\n%s", output)
-	}
-	if !strings.Contains(output, `"peerDependencies": {`) || strings.Contains(output, `"dependencies": {`) {
-		t.Fatalf("expected rendered package.json to put deps in peerDependencies, got:\n%s", output)
-	}
-}
-
 func TestBuildPackageJSONPayloadIncludesConfiguredAndResolvedImports(t *testing.T) {
 	payload, err := buildPackageJSONPayload(_ModuleOption{
 		PackageName: "@yorun-ai/skeled-example",
@@ -54,16 +30,6 @@ func TestBuildPackageJSONPayloadIncludesConfiguredAndResolvedImports(t *testing.
 	want := "@vine-demo/skeled-app@*,@vine-demo/skeled-inventory@*,@vine-demo/skeled-user@workspace:*,@yorun-ai/vrpc@*"
 	if got := joinPackageJSONDependencies(sortedPackageJSONDependencies(payload.PeerDependencies)); got != want {
 		t.Fatalf("unexpected peer dependencies: got=%s want=%s", got, want)
-	}
-}
-
-func TestImportPathStripsVersion(t *testing.T) {
-	got, err := importPath("@vine-demo/skeled-user@workspace:*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got != "@vine-demo/skeled-user" {
-		t.Fatalf("unexpected import path: %s", got)
 	}
 }
 

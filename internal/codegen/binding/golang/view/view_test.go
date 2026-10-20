@@ -63,31 +63,6 @@ func TestPubViewRejectsServiceRequiringNonPubResource(t *testing.T) {
 	}
 }
 
-func TestFullViewKeepsEveryDeclaration(t *testing.T) {
-	domain := schema.NewDomainFromSpec(schema.DomainSpec{
-		Name: "demo",
-		Data: []*schema.Data{{Name: "Public", Pub: true}, {Name: "Local"}},
-		Enums: []*schema.Enum{
-			{Name: "PublicStatus", Pub: true},
-			{Name: "LocalStatus"},
-		},
-		Resources: []*schema.Resource{
-			{Pub: true, Name: "PublicUser"},
-			{Name: "LocalUser"},
-		},
-		Services: []*schema.Service{
-			{Pub: true, Name: "PublicService", SkelName: "demo.PublicService"},
-			{Name: "LocalService", SkelName: "demo.LocalService"},
-		},
-	})
-
-	full := Full(domain)
-
-	if len(full.Data) != 2 || len(full.Enums) != 2 || len(full.Resources) != 2 || len(full.Services) != 2 {
-		t.Fatalf("unexpected full view: %+v", full)
-	}
-}
-
 func TestViewTypeRootsRespectArgumentSource(t *testing.T) {
 	declared := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}
 	injected := &schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString}

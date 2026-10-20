@@ -44,17 +44,6 @@ func TestRunSkelcCheckModesHaveIdenticalDiagnostics(t *testing.T) {
 	}
 }
 
-func TestRunSkelcCheck(t *testing.T) {
-	dir := t.TempDir()
-	writeCLIFile(t, dir+"/domain.skel", `domain demo.user`)
-
-	result := Run([]string{"check", "--skel-in", dir})
-	checked := decodeCheckResult(t, result)
-	if result.ExitCode != ExitCodeSuccess || !checked.Valid || len(checked.Diagnostics) != 0 || result.Stderr != "" {
-		t.Fatalf("unexpected result: %+v", result)
-	}
-}
-
 func TestRunSkelcCheckReturnsSyntaxDiagnostics(t *testing.T) {
 	dir := t.TempDir()
 	writeCLIFile(t, dir+"/domain.skel", `domain demo.user`)

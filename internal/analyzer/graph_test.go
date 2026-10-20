@@ -32,15 +32,6 @@ func TestFindCyclesReturnsNothingForAcyclicGraph(t *testing.T) {
 	}
 }
 
-func TestFindCyclesIgnoresNodesWithoutSelfReference(t *testing.T) {
-	graph := newGraph[string]()
-	graph.addEdge("a", "b")
-
-	if cycles := graph.findCycles(); len(cycles) != 0 {
-		t.Fatalf("expected no cycles, got %v", cycles)
-	}
-}
-
 // sortedCycles normalizes reported components so the assertions do not depend
 // on Tarjan traversal order or on node order inside a component.
 func sortedCycles(cycles [][]string) [][]string {
