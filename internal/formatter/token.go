@@ -11,6 +11,7 @@ type _Token struct {
 	kind   string
 	value  string
 	column int
+	offset int
 }
 
 func lex(source []byte) ([]_Token, error) {
@@ -34,6 +35,6 @@ func lex(source []byte) ([]_Token, error) {
 		if kind == "Whitespace" {
 			continue
 		}
-		tokens = append(tokens, _Token{kind: kind, value: token.Value, column: token.Pos.Column})
+		tokens = append(tokens, _Token{kind: kind, value: token.Value, column: token.Pos.Column, offset: token.Pos.Offset})
 	}
 }

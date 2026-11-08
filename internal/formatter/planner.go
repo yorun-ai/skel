@@ -18,6 +18,9 @@ const (
 )
 
 type _Planner struct {
+	multiline      map[int]bool
+	afterOpenBrace bool
+	boundaries     map[int]int
 	tokens         []_Token
 	layout         []_Layout
 	depth          int
@@ -31,15 +34,31 @@ type _Planner struct {
 	braceIndents   []bool
 }
 
-func buildLayout(tokens []_Token) []_Layout {
-	planner := _Planner{tokens: tokens}
+func buildLayout(tokens []_Token, boundaries map[int]int, continuations map[int]int) []_Layout {
+	styleBoundaries(tokens, boundaries)
+	planner := _Planner{tokens: tokens, boundaries: boundaries, multiline: multilineParens(tokens)}
 	for index, token := range tokens {
+		if delta := continuations[token.offset]; delta > 0 {
+			planner.layout = append(planner.layout, _Layout{kind: layoutIndent})
+		} else if delta < 0 {
+			planner.layout = append(planner.layout, _Layout{kind: layoutDedent})
+		}
 		planner.add(index, token)
 	}
 	return planner.layout
 }
 
 func (p *_Planner) add(index int, token _Token) {
+	if token.kind != "Newline" {
+		p.afterOpenBrace = token.kind == "Punctuation" && token.value == "{"
+	}
+	if lines := p.boundaries[token.offset]; lines != 0 {
+		if lines < 0 {
+			lines = 1
+		}
+		p.breakLine(lines)
+	}
+
 	switch token.kind {
 	case "Newline":
 		p.addNewline(index, token.value)
@@ -58,11 +77,20 @@ func (p *_Planner) addNewline(index int, value string) {
 		breaks = 2
 	}
 	next := p.nextMeaningful(index + 1)
-	if p.previous == "{" || next != nil && next.value == "}" {
+	if p.previous == "{" && next != nil && next.value == "}" {
+		return
+	}
+	if p.afterOpenBrace || next != nil && next.value == "}" {
 		breaks = 1
 	}
 	if p.depth == 0 && p.parenDepth == 0 && (next == nil || next.value != "}") && p.canonicalTopLevelBreak(index) {
 		breaks = 2
+	}
+	if next != nil && p.boundaries[next.offset] < 0 {
+		breaks = 1
+	}
+	if p.boundaries != nil && p.parenDepth > 0 {
+		breaks = 1
 	}
 	p.breakLine(breaks)
 }
@@ -169,11 +197,17 @@ func (p *_Planner) addSyntax(index int, token _Token) {
 		p.before(value)
 		p.text(value)
 		p.parenDepth++
-		next := p.nextMeaningful(index + 1)
-		indented := index+1 < len(p.tokens) && p.tokens[index+1].kind == "Newline" && (next == nil || next.value != "}")
+		indented := p.multiline[index]
+		if p.boundaries == nil {
+			next := p.nextMeaningful(index + 1)
+			indented = index+1 < len(p.tokens) && p.tokens[index+1].kind == "Newline" && (next == nil || next.value != "}")
+		}
 		p.parenIndents = append(p.parenIndents, indented)
 		if indented {
 			p.layout = append(p.layout, _Layout{kind: layoutIndent})
+			if p.boundaries != nil {
+				p.breakLine(1)
+			}
 		}
 	case ")":
 		if len(p.parenIndents) > 0 {
@@ -181,10 +215,22 @@ func (p *_Planner) addSyntax(index int, token _Token) {
 			p.parenIndents = p.parenIndents[:len(p.parenIndents)-1]
 			if indented {
 				p.layout = append(p.layout, _Layout{kind: layoutDedent})
+				if p.boundaries != nil {
+					p.breakLine(1)
+				}
 			}
 		}
 		p.text(value)
 		p.parenDepth = max(0, p.parenDepth-1)
+	case ",":
+		p.before(value)
+		p.text(value)
+		if p.boundaries != nil && len(p.parenIndents) > 0 && p.parenIndents[len(p.parenIndents)-1] {
+			if next := p.nextMeaningful(index + 1); next != nil && !isComment(*next) {
+				p.breakLine(1)
+				return
+			}
+		}
 	default:
 		p.before(value)
 		p.textOrRaw(token)
@@ -199,6 +245,12 @@ func (p *_Planner) addSyntax(index int, token _Token) {
 }
 
 func (p *_Planner) before(value string) {
+	// Do not turn separated tokens in an incomplete fragment into a comment.
+	if p.previous == "*" && strings.HasPrefix(value, "/") {
+		p.space()
+		return
+	}
+
 	// Path tokens consume every non-space character except braces. Preserve
 	// their boundary even when punctuation normally attaches to the prior token.
 	if p.lineTokenCount > 0 && p.previousKind == "Path" && value != "{" && value != "}" {
