@@ -270,8 +270,13 @@ and superseded analysis is cancelled immediately.
 
 ## Programmatic API
 
+`go.yorun.ai/skel/types/codec` provides shared `MarshalJSON`, `UnmarshalJSON`,
+`MarshalCBOR`, and `UnmarshalCBOR` payload operations, including native UUID text
+encoding. vRPC envelopes and Vine payloads reuse these rules.
+
 `go.yorun.ai/skel/types` provides portable Go values such as `types.Decimal`,
-`types.Timestamp`, and `types.UUID`, their constructors, and JSON/CBOR encodings.
+`types.Timestamp`, their constructors, and JSON/CBOR encodings. UUIDs use native
+`uuid.UUID`; `types.UUID` and `types.NewUUID` are deprecated.
 Backend and API Go output share these types. Generated modules require the Skel
 compiler version used for generation; development builds require a local workspace
 or module replacement. See the [types example](types/example_test.go).
@@ -390,7 +395,7 @@ contract. Read APIs also have `Context` variants for cancellation.
 
 skelc reads contracts and generates code; it is not the application runtime:
 
-- Generated Go code uses scalar values from `go.yorun.ai/skel/types`; backend services use `go.yorun.ai/vine` and API clients use `go.yorun.ai/vrpc`
+- Generated Go code uses native `uuid.UUID` and other extended scalar values from `go.yorun.ai/skel/types`; backend services use `go.yorun.ai/vine` and API clients use `go.yorun.ai/vrpc`
 - Generated TypeScript service clients use `@yorun-ai/vrpc`
 - Runtime capabilities such as a CBOR codec are configured by the application when it creates a vRPC client; skelc does not bundle them into generated code
 

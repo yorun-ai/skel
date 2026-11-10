@@ -22,13 +22,14 @@ changes skip those jobs while the required gate still completes successfully:
 | --- | --- |
 | Go static | Module metadata drift, `go vet`, Staticcheck correctness/simplification/unused-code checks and nilness |
 | Go race | Full-repository tests with the race detector |
-| Examples | Generate both examples and the versioned API fixture, type-check their TypeScript clients and exercise versioned calls against the pinned published vRPC runtime |
+| Examples | Generate the quickstart and commerce examples without downloading downstream runtimes |
 
-Generated backend Go modules are not compiled in Skel CI or cache warmup.
-Generator tests check emitted declarations and module requirements without
-loading Vine. Go API client compilation and checks against Skel's own public
-types remain covered. Consumers compile and test generated backend code with
-their selected runtime dependencies.
+Generated Go clients and backend modules are not compiled against vRPC or Vine
+in Skel CI or cache warmup. TypeScript clients are not compiled or invoked
+against the TypeScript vRPC runtime either. Generator tests check emitted
+contracts, naming, imports and module requirements. Compilation checks against
+Skel's own public types remain covered. Consumer runtime integration tests are
+outside this repository's CI boundary.
 
 All Go commands use `GOWORK=off`. CI and cache warmup follow the latest Go
 1.27 patch; release builds remain pinned to their validated toolchain.
@@ -104,18 +105,10 @@ CHANGE_BASE=$(git rev-parse HEAD~1) CHANGE_HEAD=$(git rev-parse HEAD) \
 When editing a job's commands, also execute those commands locally and keep
 generated example output outside the repository.
 
-The Examples job uses Node.js 24 and `.github/scripts/typecheck-generated.mjs`.
-Its isolated temporary workspace installs the exact versions and integrity hashes
-from `.github/typescript/package-lock.json`; it never substitutes sibling runtime
-source. Cross-domain example imports resolve through TypeScript paths. Update the
-fixture lockfile deliberately when changing the tested runtime or TypeScript version.
-
-`.github/typescript/versions.skel` keeps unversioned, V1, V2 and V10 API services
-and actors in one domain. The generated clients and `versions-client.ts` are
-type-checked together, then compiled to CommonJS for execution in Node. The call
-check uses the published runtime with an in-memory transport to verify that every
-client retains its full service name, passes its input and returns the decoded
-result. It requires no running backend or network requests.
+The Examples job runs `examples/quickstart/generate.sh` and
+`examples/commerce/generate.sh` with temporary output directories. These scripts
+check and generate the contracts without installing or running a downstream
+runtime. Versioned output remains covered by generator tests.
 
 ## Release Publication and Recovery
 

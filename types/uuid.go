@@ -9,11 +9,15 @@ import (
 
 // UUID is the shared skel UUID type.
 // It is encoded as a UUID string in both JSON and CBOR.
+//
+// Deprecated: Use uuid.UUID. go.yorun.ai/skel/types/codec encodes native UUIDs as strings.
 type UUID struct {
 	uuid.UUID
 }
 
 // NewUUID converts id to the Skel UUID representation.
+//
+// Deprecated: Use uuid.UUID directly.
 func NewUUID(id uuid.UUID) UUID {
 	return UUID{
 		UUID: id,

@@ -9,7 +9,8 @@
 
 ## Architecture Boundaries
 
-- `types` directly defines portable Skel Go scalar values and their JSON/CBOR encodings. Keep it independent of compiler models, schemas, generators, Vine, and vRPC. All Go generation modes use `go.yorun.ai/skel/types` for scalar values; application registration and schema metadata remain separate.
+- `types` directly defines portable Skel Go scalar values and their JSON/CBOR encodings. Keep it independent of compiler models, schemas, generators, Vine, and vRPC. All Go generation modes use native `uuid.UUID` for UUIDs and `go.yorun.ai/skel/types` for other extended scalar values; application registration and schema metadata remain separate.
+- `types/codec` owns fixed JSON/CBOR payload rules, including native UUID text encoding and JSON scalar validation during CBOR decoding. It is independent of compiler models and transport envelopes. `types` must not import `types/codec`.
 - `tag` directly owns Go struct-tag interpretation through semantic helpers. Keep generic flag parsing private and runtime behavior such as redaction, actor registration and argument-range validation in consumers; the package must not depend on compiler models or application runtimes.
 
 - `cmd/skelc/output` exposes CLI result, error and exit-code contracts through `internal/cmd/skelc/output`; keep command execution in `internal/cmd/skelc`.
@@ -75,6 +76,8 @@
 - Report publication complete only after the workflow succeeds and the Release and verified attachments are available. See `.github/CI.md` for validation and recovery.
 
 ## Tests
+
+- Keep generator tests independent of Vine and vRPC runtime downloads. Assert generated contracts here; compilation and invocation against those runtimes belong in consumer integration tests. Compilation against Skel's own public packages remains in scope.
 
 - Keep implementation tests paired with their source files. Shared setup may live in a narrowly scoped test helper file.
 - Name unit tests `<source>_test.go`. For larger suites or integration scenarios, use `<entrypoint>_<scenario>_test.go`; name tests after the current entrypoint rather than a removed API.

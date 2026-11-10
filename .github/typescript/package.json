@@ -1,9 +1,0 @@
-{
-  "name": "skelc-generated-typescript-check",
-  "private": true,
-  "type": "module",
-  "devDependencies": {
-    "@yorun-ai/vrpc": "0.10.0",
-    "typescript": "7.0.2"
-  }
-}

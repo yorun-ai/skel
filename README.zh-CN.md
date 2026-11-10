@@ -249,7 +249,12 @@ stdout 输出只包含稳定 `code` 和供人阅读的 `message` 的 JSON 对象
 
 ## 程序调用 API
 
-`go.yorun.ai/skel/types` 提供 `types.Decimal`、`types.Timestamp`、`types.UUID` 等
+`go.yorun.ai/skel/types/codec` 提供共享的 `MarshalJSON`、`UnmarshalJSON`、
+`MarshalCBOR` 和 `UnmarshalCBOR` payload 编解码入口，包括原生 UUID 的文本编码。
+vRPC envelope 内的 payload 和 Vine payload 复用这些规则。
+
+UUID 使用原生 `uuid.UUID`，`types.UUID` 和 `types.NewUUID` 已废弃。
+`go.yorun.ai/skel/types` 提供 `types.Decimal`、`types.Timestamp` 等
 Go 值类型、构造函数及 JSON/CBOR 编解码。服务端和 API 客户端的 Go 生成代码共用这些类型。
 生成模块依赖本次使用的 Skel 编译器版本；开发构建需要配置本地 workspace 或 module replace。
 用法见 [types 示例](types/example_test.go)。
@@ -351,7 +356,7 @@ Git HEAD 比较。基线与候选输入必须满足相同的语言规则，内�
 
 skelc 负责读取契约并生成代码，本身不是应用运行时：
 
-- 生成的 Go 代码使用 `go.yorun.ai/skel/types` 提供的标量值；服务端使用 `go.yorun.ai/vine`，API 客户端使用 `go.yorun.ai/vrpc`
+- 生成的 Go 代码使用原生 `uuid.UUID` 和 `go.yorun.ai/skel/types` 提供的其他扩展标量值；服务端使用 `go.yorun.ai/vine`，API 客户端使用 `go.yorun.ai/vrpc`
 - 生成的 TypeScript service client 使用 `@yorun-ai/vrpc`
 - CBOR codec 等运行时能力由应用在创建 vRPC client 时配置，不会被 skelc 打包进生成代码
 
