@@ -111,6 +111,11 @@ func Build(revision *source.Document, parsed *grammar.SkelContent) *Document {
 		case entry.Actor != nil:
 			for _, section := range entry.Actor.Sections {
 				if section.Auth != nil {
+					if section.Auth.Impersonator != nil {
+						for _, actor := range section.Auth.Impersonator.Actors {
+							reference(actor, Actor)
+						}
+					}
 					if section.Auth.Credential != nil {
 						members(section.Auth.Credential.Members)
 					}

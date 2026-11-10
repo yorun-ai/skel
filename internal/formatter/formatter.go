@@ -17,7 +17,10 @@ func Source(source []byte) ([]byte, error) {
 		return nil, fmt.Errorf("lex Skel source: %w", err)
 	}
 
-	layout := buildLayout(tokens)
+	var audiences []_Audience
+	boundaries := sourceBoundaries(normalized, &audiences)
+	tokens, continuations := layoutAudiences(tokens, audiences, boundaries)
+	layout := buildLayout(tokens, boundaries, continuations)
 	return render(layout), nil
 }
 

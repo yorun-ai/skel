@@ -66,6 +66,12 @@ func (g *_Gen) genFacadeGo() {
 	for _, actor := range public.Actors {
 		if actor.Auth != nil {
 			payload.AuthCredentialData = append(payload.AuthCredentialData, g.types.castData(actor.Auth.Credential), g.types.castData(actor.Auth.Info))
+			if actor.Auth.Result != nil {
+				payload.AuthCredentialData = append(payload.AuthCredentialData, g.types.castData(actor.Auth.Result))
+			}
+			if actor.Auth.ImpersonatorInfo != nil {
+				payload.AuthCredentialData = append(payload.AuthCredentialData, g.types.castData(actor.Auth.ImpersonatorInfo))
+			}
 			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(actor.Auth.Service))
 		}
 		if actor.Permission != nil {

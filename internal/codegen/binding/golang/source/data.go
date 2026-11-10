@@ -44,10 +44,6 @@ func (g *_Gen) buildDataGoPayload() *DataGoPayload {
 }
 
 type Data struct {
-	Abs              bool
-	From             *Type
-	FromSkelName     string
-	ConversionMethod string
 	Name             string
 	FullName         string
 	ReceiverType     string
@@ -56,6 +52,10 @@ type Data struct {
 	SpecName         string
 	SkelName         string
 	Hash             string
+	Abs              bool
+	From             *Type
+	FromSkelName     string
+	ConversionMethod string
 	Lifecycle        string
 	RegisterFunc     string
 	CommentLines     []string

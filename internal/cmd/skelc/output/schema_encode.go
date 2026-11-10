@@ -96,6 +96,11 @@ func (e *_SchemaEncoder) projectActor(value *schema.Actor) *SchemaDeclaration {
 			IdentifierField: auth.IdentifierField,
 		})
 	}
+	if value.Auth != nil {
+		for _, ref := range value.Auth.Impersonators {
+			actor.Auth.Impersonators = append(actor.Auth.Impersonators, ref.Actor)
+		}
+	}
 	if value.Permission != nil {
 		actor.Permission = new(SchemaActorPermission{})
 	}

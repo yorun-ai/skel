@@ -171,6 +171,16 @@ func (c *_Diff) compareActor(owner string, baseline, candidate *schema.Actor) {
 		c.add(impact, code, owner, message, actorAuthPosition(baseline), actorAuthPosition(candidate))
 	}
 	if baseline.Auth != nil && candidate.Auth != nil {
+		baselineRefs, candidateRefs := []string{}, []string{}
+		for _, ref := range baseline.Auth.Impersonators {
+			baselineRefs = append(baselineRefs, c.baseline.ReferenceName(ref.Actor))
+		}
+		for _, ref := range candidate.Auth.Impersonators {
+			candidateRefs = append(candidateRefs, c.candidate.ReferenceName(ref.Actor))
+		}
+		if !sameNamedSet(baselineRefs, candidateRefs) {
+			c.add(ImpactBreaking, "actor.impersonators.changed", owner, "supported impersonator actors changed", actorAuthPosition(baseline), actorAuthPosition(candidate))
+		}
 		c.compareActorAuthData(owner+".credential", "actor.auth-credential", baseline.Auth.Credential, candidate.Auth.Credential, actorAuthPosition(baseline), actorAuthPosition(candidate))
 		c.compareActorAuthData(owner+".info", "actor.auth-info", baseline.Auth.Info, candidate.Auth.Info, actorAuthPosition(baseline), actorAuthPosition(candidate))
 	}

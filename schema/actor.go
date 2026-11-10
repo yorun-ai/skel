@@ -34,6 +34,12 @@ type ActorAuth struct {
 	Info *Data
 	// IdentifierField names the optional identity field in Info.
 	IdentifierField string
+	// Result is the derived authentication result envelope.
+	Result *Data
+	// ImpersonatorInfo is the optional mutually exclusive operator-info data.
+	ImpersonatorInfo *Data
+	// Impersonators lists the explicitly supported operator actors.
+	Impersonators []*ActorImpersonator
 	// Service is the language-defined authentication service.
 	Service *Service
 	// Method is the canonical authentication method node in Service.Methods.
@@ -48,4 +54,16 @@ type ActorPermission struct {
 	Service *Service
 	// Method is the canonical permission-checking method node in Service.Methods.
 	Method *Method
+}
+
+// ActorImpersonator associates an operator actor with its generated info field.
+type ActorImpersonator struct {
+	// Pos is the source position of the actor reference.
+	Pos Position
+	// Actor is the source actor reference, including an import qualifier when needed.
+	Actor string
+	// ActorSkelName is the resolved fully qualified actor name.
+	ActorSkelName string
+	// InfoFieldName is the member name in the derived impersonator-info data.
+	InfoFieldName string
 }

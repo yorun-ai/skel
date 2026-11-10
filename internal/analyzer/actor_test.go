@@ -221,3 +221,113 @@ func TestActorIdentifier(t *testing.T) {
 		assertDiagnosticsContain(t, diagnostics, "unexpected decorator @identifier")
 	}
 }
+
+func TestActorAuthenticationResultAndImpersonators(t *testing.T) {
+	source := `domain demo
+pub actor UserActor { auth {
+    impersonator UserActor, OpsActor
+    credential { session: string }
+    info { @identifier userId: int }
+} }
+pub actor OpsActor { auth { credential { token: string } info { id: string } } }
+`
+	content, err := parser.ParseSource("actor.skel", []byte(source))
+	if err != nil {
+		t.Fatal(err)
+	}
+	analysis := mustAnalyze(t, content)
+	auth := analysis.actorsMap["UserActor"].Auth
+	if auth.Method.Name != "auth" || auth.Method.ResultType.Data != auth.Result || auth.Result.Name != "UserActorAuthResult" {
+		t.Fatalf("wrong auth result: %+v", auth)
+	}
+	if len(auth.Result.Members) != 2 || auth.Result.Members[0].Name != "info" || auth.Result.Members[0].Type.Data != auth.Info || auth.Result.Members[0].Type.Nullable {
+		t.Fatalf("wrong result members: %+v", auth.Result.Members)
+	}
+	if !auth.Result.Members[1].Type.Nullable || auth.Result.Members[1].Type.Data != auth.ImpersonatorInfo {
+		t.Fatal("operator container must be nullable")
+	}
+	for i, name := range []string{"UserActor", "OpsActor"} {
+		ref := auth.Impersonators[i]
+		member := auth.ImpersonatorInfo.Members[i]
+		if ref.ActorSkelName != "demo."+name || member.Name != ref.InfoFieldName || !member.Type.Nullable || member.Type.Data != analysis.actorsMap[name].Auth.Info {
+			t.Fatalf("wrong operator mapping: %+v / %+v", ref, member)
+		}
+	}
+	plain := analysis.actorsMap["OpsActor"].Auth
+	if len(plain.Result.Members) != 1 || plain.ImpersonatorInfo != nil {
+		t.Fatal("plain auth must only return info")
+	}
+}
+
+func TestActorImpersonatorValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		clause string
+		extra  string
+		want   string
+	}{
+		{"undefined", "impersonator MissingActor", "", "undefined impersonator"},
+		{"no auth", "impersonator OpsActor", "actor OpsActor {}", "must declare auth info"},
+		{"duplicate", "impersonator UserActor, UserActor", "", "duplicated impersonator"},
+		{"generated collision", "", "data UserActorAuthResult {}", "UserActorAuthResult"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			source := "domain demo\nactor UserActor { auth {\n" + tc.clause + "\ncredential { token: string } info { id: string } } }\n" + tc.extra
+			content, err := parser.ParseSource("actor.skel", []byte(source))
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, diagnostics := Analyze(content, nil)
+			assertDiagnosticsContain(t, diagnostics, tc.want)
+		})
+	}
+}
+
+func TestActorImpersonatorImportedReference(t *testing.T) {
+	source, err := parser.ParseSource("shared.skel", []byte(`domain shared
+pub actor OpsActor { auth { credential { token: string } info { id: string } } }`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	imported := mustAnalyze(t, source)
+	source, err = parser.ParseSource("app.skel", []byte(`domain app
+import shared as ops
+pub actor UserActor { auth { impersonator ops.OpsActor credential { token: string } info { id: string } } }`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	analysis := mustAnalyze(t, source, imported)
+	auth := analysis.actorsMap["UserActor"].Auth
+	kind := auth.ImpersonatorInfo.Members[0].Type
+	if kind.ExternalDomain != "shared" || kind.ExternalAlias != "ops" || !kind.ExternalAliasExplicit || auth.Impersonators[0].ActorSkelName != "shared.OpsActor" {
+		t.Fatalf("lost imported identity: %+v", kind)
+	}
+}
+
+func TestActorImpersonatorNameCollisionAndVisibility(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		imported string
+		clause   string
+		local    string
+		want     string
+	}{
+		{"field collision", "pub actor OpsActor", "shared.OpsActor, OpsActor", "pub actor OpsActor { auth { credential { token: string } info {} } }", "info field opsActorInfo conflicts"},
+		{"private import", "actor OpsActor", "shared.OpsActor", "", "is not public"},
+		{"private local", "pub actor OpsActor", "LocalActor", "actor LocalActor { auth { credential { token: string } info {} } }", "cannot expose private impersonator"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			content, err := parser.ParseSource("shared.skel", []byte("domain shared\n"+tc.imported+" { auth { credential { token: string } info {} } }"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			imported := mustAnalyze(t, content)
+			content, err = parser.ParseSource("app.skel", []byte("domain app\nimport shared\npub actor UserActor { auth { impersonator "+tc.clause+"\ncredential { token: string } info {} } }\n"+tc.local))
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, diagnostics := Analyze(content, []*Analysis{imported})
+			assertDiagnosticsContain(t, diagnostics, tc.want)
+		})
+	}
+}

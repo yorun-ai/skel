@@ -28,6 +28,70 @@ func TestExtensionEventRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSourceCompactsEmptyBlocks(t *testing.T) {
+	for _, whitespace := range []string{"", " ", "\n", "\n \t\n\n", "\r\n\t\r\n"} {
+		t.Run(whitespace, func(t *testing.T) {
+			source := "domain demo\nactor ClientActor {" + whitespace + "}\n" +
+				"task HeartbeatTask {\ntrigger tick {" + whitespace + "}\n}\n" +
+				"task CompletionNotificationTask {\ntrigger tick {" + whitespace + "}\n}\n"
+			want := "domain demo\n\nactor ClientActor {}\n\ntask HeartbeatTask {\n    trigger tick {}\n}\n\ntask CompletionNotificationTask {\n    trigger tick {}\n}\n"
+			got := formatTestSource(t, []byte(source))
+			if string(got) != want {
+				t.Fatalf("unexpected formatted source:\n%s\nwant:\n%s", got, want)
+			}
+			checkTestSource(t, "empty.skel", got)
+			if second := formatTestSource(t, got); string(second) != string(got) {
+				t.Fatalf("format is not idempotent:\n%s", second)
+			}
+		})
+	}
+}
+
+func TestSourcePreservesCommentOnlyBlocks(t *testing.T) {
+	for _, comment := range []string{"// keep", "/* keep */"} {
+		t.Run(comment, func(t *testing.T) {
+			source := "domain demo\ntask HeartbeatTask {\ntrigger tick {\n" + comment + "\n}\n}\n"
+			want := "domain demo\n\ntask HeartbeatTask {\n    trigger tick {\n        " + comment + "\n    }\n}\n"
+			got := formatTestSource(t, []byte(source))
+			if string(got) != want {
+				t.Fatalf("unexpected formatted source:\n%s\nwant:\n%s", got, want)
+			}
+			checkTestSource(t, "comment.skel", got)
+			if second := formatTestSource(t, got); string(second) != string(got) {
+				t.Fatalf("format is not idempotent:\n%s", second)
+			}
+		})
+	}
+}
+
+func TestSourceRemovesLeadingBlockBlankLines(t *testing.T) {
+	for _, whitespace := range []string{"\n\n\n", "\n \t\n \n", "\r\n \t\r\n\r\n"} {
+		for _, prefix := range []string{"", "// keep\n", "/* keep */\n", "@desc(\"Name\")\n"} {
+			t.Run(whitespace+prefix, func(t *testing.T) {
+				source := []byte("domain demo\ntask JobTask {" + whitespace + "trigger tick {" + whitespace + "input {" + whitespace + prefix + "name: string\n\ncount: int\n}\n}\n}\n")
+				want := "domain demo\n\ntask JobTask {\n    trigger tick {\n        input {\n"
+				if prefix != "" {
+					want += "            " + prefix
+				}
+				want += "            name: string\n\n            count: int\n        }\n    }\n}\n"
+				got, err := ValidatedSource(source)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if string(got) != want {
+					t.Fatalf("got:\n%s\nwant:\n%s", got, want)
+				}
+				if second := formatTestSource(t, got); string(second) != want {
+					t.Fatalf("not idempotent:\n%s", second)
+				}
+				if parseDomainHash(t, "before.skel", source) != parseDomainHash(t, "after.skel", got) {
+					t.Fatal("format changed semantic hash")
+				}
+			})
+		}
+	}
+}
+
 func TestSourceGolden(t *testing.T) {
 	input := readTestFile(t, "complete.input.skel")
 	want := readTestFile(t, "complete.golden.skel")
@@ -103,6 +167,7 @@ func TestSourcePreservesPathTokenBoundaries(t *testing.T) {
 				for _, token := range tokens {
 					if token.kind != "Newline" {
 						token.column = 0
+						token.offset = 0
 						result = append(result, token)
 					}
 				}
@@ -370,11 +435,15 @@ actor UserActor {
 }
 
 api service EntryApiService {
-    for UserActor via legacy auth required method ping {}
+    for UserActor via legacy
+    auth required
+
+    method ping {}
 }
 
 web EntryWeb {
-    for UserActor via Custom auth off
+    for UserActor via Custom
+    auth off
 }
 `
 	formatted := formatTestSource(t, source)
@@ -451,5 +520,25 @@ func TestAbstractConfigRoundTrip(t *testing.T) {
 	}
 	if string(formatTestSource(t, formatted)) != string(formatted) {
 		t.Fatalf("non-idempotent format: %s", formatted)
+	}
+}
+
+func TestActorImpersonatorRoundTrip(t *testing.T) {
+	source := []byte(`domain demo
+actor UserActor { auth { impersonator UserActor, // operator
+OpsActor credential { token:string } info { id:string } } }
+actor OpsActor { auth { credential { token:string } info { id:string } } }
+`)
+	formatted := formatTestSource(t, source)
+	checkTestSource(t, "actor.skel", formatted)
+	if string(formatTestSource(t, formatted)) != string(formatted) {
+		t.Fatal("formatter is not idempotent")
+	}
+	content, err := parser.ParseSource("actor.skel", formatted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(content.Entries[0].Actor.Sections[0].Auth.Impersonator.Actors) != 2 {
+		t.Fatal("lost operator references")
 	}
 }

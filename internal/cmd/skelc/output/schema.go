@@ -88,6 +88,7 @@ type SchemaActorAuth struct {
 	Credential      *SchemaData `json:"credential"`
 	Info            *SchemaData `json:"info"`
 	IdentifierField string      `json:"identifierField,omitempty"`
+	Impersonators   []string    `json:"impersonators,omitempty"`
 }
 
 // SchemaActorPermission records the presence of an actor permission declaration.

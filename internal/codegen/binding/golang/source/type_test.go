@@ -67,7 +67,7 @@ func TestCastExternalEnumTypeUsesQualifiedUnspecifiedDefaultValue(t *testing.T) 
 	}
 }
 
-func TestCastMapTypeMapsUUIDKeyToSkelUUID(t *testing.T) {
+func TestCastMapTypeMapsUUIDKeyToNativeUUID(t *testing.T) {
 	got := (_Types{}).castType(&schema.Type{
 		Kind: schema.TypeKindMap,
 		Map: &schema.MapType{
@@ -76,10 +76,10 @@ func TestCastMapTypeMapsUUIDKeyToSkelUUID(t *testing.T) {
 		},
 	})
 
-	if got.Plain != "map[skeltype.UUID]string" {
+	if got.Plain != "map[uuid.UUID]string" {
 		t.Fatalf("unexpected map type: %s", got.Plain)
 	}
-	if len(got.Imports) != 1 || got.Imports[0].Path != typesImport {
+	if len(got.Imports) != 1 || got.Imports[0].Path != "uuid" {
 		t.Fatalf("unexpected map imports: %+v", got.Imports)
 	}
 }

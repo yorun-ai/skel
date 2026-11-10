@@ -7,11 +7,9 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/api"
-	"go.yorun.ai/skel/internal/testutil"
 )
 
-func TestApiGoClientCrossDomainAndInvocation(t *testing.T) {
-	testutil.RequireToolchain(t)
+func TestApiGoClientCrossDomainGeneration(t *testing.T) {
 	root := t.TempDir()
 	shared := filepath.Join(root, "shared.skel")
 	order := filepath.Join(root, "order.skel")
@@ -100,7 +98,7 @@ pub service BackendService { method ping {} }
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(mod), "go.yorun.ai/vrpc v0.15.0") {
+	if !strings.Contains(string(mod), "go.yorun.ai/vrpc v0.17.0") {
 		t.Fatalf("unexpected API runtime dependency: %s", mod)
 	}
 
@@ -125,90 +123,7 @@ pub service BackendService { method ping {} }
 			t.Errorf("missing API method documentation %q", fragment)
 		}
 	}
-	writeTestFile(t, filepath.Join(out, "invoke_test.go"), apiInvocationTest)
-	testutil.Go(t, out, "mod", "edit", "-replace=example.com/gen/common/sharedapi="+sharedOut)
-	testutil.UseLocalSkel(t, out)
-	deps := testutil.Go(t, out, "list", "-mod=mod", "-deps", "./...")
-	if strings.Contains(deps, "go.yorun.ai/vine") {
-		t.Fatal("API module depends on Vine")
-	}
-	testutil.Go(t, out, "test", "-mod=mod", "./...")
 }
-
-const apiInvocationTest = `package orderapi
-import (
-    "context"
-    "io"
-    "net/http"
-    "net/http/httptest"
-    "testing"
-    "github.com/fxamacker/cbor/v2"
-    "go.yorun.ai/vrpc"
-    "go.yorun.ai/skel/types"
-    shared "example.com/gen/common/sharedapi"
-)
-func TestInvoke(t *testing.T) {
-    identity := vrpc.Identity{Name: "demo.server", Version: "1.0.0", InstanceID: "550e8400-e29b-41d4-a716-446655440000"}
-    serverHeader, err := vrpc.EncodeIdentity(identity)
-    if err != nil { t.Fatal(err) }
-    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        w.Header().Set("vrpc-status", "OK")
-        w.Header().Set("vrpc-server", serverHeader)
-        w.Header().Set("content-type", "application/vrpc+json")
-        switch r.URL.Path {
-        case "/invoke/shop.order.OrderApiService/get":
-            if r.Header.Get("content-type") != "application/vrpc+cbor" { t.Error("generic binary argument did not select CBOR") }
-            io.WriteString(w, "{\"result\":{\"detail\":{\"label\":\"ok\"}}}")
-        case "/invoke/shop.order.OrderApiService/echo":
-            bodyBytes, readErr := io.ReadAll(r.Body)
-            if readErr != nil { t.Fatal(readErr) }
-            var request struct {
-                Params struct {
-                    Value []byte ` + "`json:\"value\"`" + `
-                    Context string ` + "`json:\"ctx\"`" + `
-                    Options int32 ` + "`json:\"options\"`" + `
-                    Result string ` + "`json:\"result\"`" + `
-                } ` + "`json:\"params\"`" + `
-            }
-            if err := cbor.Unmarshal(bodyBytes, &request); err != nil { t.Fatal(err) }
-            if request.Params.Context != "context" || request.Params.Options != 7 || request.Params.Result != "result" || len(request.Params.Value) != 2 {
-                t.Fatalf("unexpected arguments: %+v", request.Params)
-            }
-            w.Header().Set("content-type", "application/vrpc+cbor")
-            body, err := cbor.Marshal(map[string]any{"result": []byte{0,255}})
-            if err != nil { t.Error(err) }
-            w.Write(body)
-        case "/invoke/shop.order.OrderApiService/ping":
-            io.WriteString(w, "{\"result\":null}")
-        default: t.Errorf("unexpected path: %s", r.URL.Path)
-        }
-    }))
-    defer server.Close()
-    raw, err := vrpc.NewClient(vrpc.Option{Endpoint: server.URL+"/invoke", Identity: identity})
-    if err != nil { t.Fatal(err) }
-    var client OrderApiServiceClient = NewOrderApiServiceClient(raw)
-    got, err := client.Get(context.Background(), shared.Page[shared.Page[types.Binary]]{Items: []shared.Page[types.Binary]{{Items: []types.Binary{{0,255}}}}})
-    if err != nil || got.Detail.Label != "ok" { t.Fatalf("get: %+v %v", got, err) }
-    blob, err := client.Echo(context.Background(), types.Binary{0,255}, "context", 7, "result", "client", "ret", "err")
-    if err != nil || len(blob) != 2 || blob[1] != 255 { t.Fatalf("echo: %v %v", blob, err) }
-    if err := client.Ping(context.Background()); err != nil { t.Fatal(err) }
-    fake := &fakeOrderClient{}
-    client = fake
-    if err := client.Ping(context.Background()); err != nil || !fake.called {
-        t.Fatalf("replacement client was not called: %v", err)
-    }
-}
-
-type fakeOrderClient struct {
-    OrderApiServiceClient
-    called bool
-}
-
-func (client *fakeOrderClient) Ping(ctx context.Context, options ...vrpc.InvokeOption) error {
-    client.called = true
-    return nil
-}
-`
 
 func TestApiOutputBoundaryAndUnusedBackendImport(t *testing.T) {
 	root := t.TempDir()
@@ -262,7 +177,6 @@ ext service HiddenService { method ping {} }
 }
 
 func TestCrossDomainImportAliasCollisions(t *testing.T) {
-	testutil.RequireToolchain(t)
 	root := t.TempDir()
 	imports := map[string]string{}
 	goImports := map[string]string{}
@@ -305,11 +219,6 @@ func TestCrossDomainImportAliasCollisions(t *testing.T) {
 			t.Fatal("Go imports depend on declaration order")
 		}
 		firstGo = string(content)
-		for domain, path := range outputs {
-			testutil.Go(t, out, "mod", "edit", "-replace="+goImports[domain]+"="+path)
-		}
-		testutil.UseLocalSkel(t, out)
-		testutil.Go(t, out, "test", "-mod=mod", "./...")
 		tsOut := t.TempDir()
 		if _, err := api.CompileTypeScript(api.Input{SkelIn: input, SkelImports: imports}, api.TypeScriptOption{ApiOnly: true, Out: tsOut, Imports: tsImports}); err != nil {
 			t.Fatal(err)

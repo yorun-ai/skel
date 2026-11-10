@@ -24,13 +24,13 @@ type EventGoPayload struct {
 }
 
 type Event struct {
-	Ext                       bool
-	PayloadAlias              bool
 	Name                      string
 	SkelName                  string
 	Hash                      string
 	SpecName                  string
 	CommentLines              []string
+	Ext                       bool
+	PayloadAlias              bool
 	Sensitive                 bool
 	MarkerMethodName          string
 	ListenerOnly              bool

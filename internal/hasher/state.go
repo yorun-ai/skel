@@ -35,6 +35,18 @@ func newHashState(domain *schema.Domain) *_HashState {
 	}
 	for _, actor := range domain.Actors() {
 		state.actorBySkel[actor.SkelName] = actor
+		if actor.Auth != nil {
+			for _, data := range []*schema.Data{
+				actor.Auth.Credential,
+				actor.Auth.Info,
+				actor.Auth.Result,
+				actor.Auth.ImpersonatorInfo,
+			} {
+				if data != nil {
+					state.dataBySkel[data.SkelName] = data
+				}
+			}
+		}
 	}
 	return state
 }
@@ -79,14 +91,15 @@ func (s *_HashState) webHash(web *schema.Web) string {
 		if auth == schema.AuthModeUnset {
 			auth = ""
 		}
-		return s.hashValue(_WebHashValue{Auth: auth,
-			MountPath:        web.MountPath,
+		return s.hashValue(_WebHashValue{
 			Name:             web.Name,
 			SkelName:         web.SkelName,
 			Description:      web.Description,
 			Deprecated:       web.Deprecated,
 			DeprecatedReason: web.DeprecatedReason,
 			Actors:           s.buildActorAudienceHashValues(web.Audiences),
+			Auth:             auth,
+			MountPath:        web.MountPath,
 		})
 	})
 }
@@ -109,29 +122,36 @@ func (s *_HashState) actorHash(actor *schema.Actor) string {
 			authMethodName = actor.Auth.Method.SkelName
 			authMethodHash = s.methodHash(actor.Auth.Method)
 		}
-		var permMethodName string
-		var permMethodHash string
+		var permissionMethodName string
+		var permissionMethodHash string
 		if actor.Permission != nil && actor.Permission.Method != nil {
-			permMethodName = actor.Permission.Method.SkelName
-			permMethodHash = s.methodHash(actor.Permission.Method)
+			permissionMethodName = actor.Permission.Method.SkelName
+			permissionMethodHash = s.methodHash(actor.Permission.Method)
+		}
+		var impersonators []string
+		if actor.Auth != nil {
+			for _, ref := range actor.Auth.Impersonators {
+				impersonators = append(impersonators, ref.InfoFieldName+":"+ref.ActorSkelName)
+			}
 		}
 		return s.hashValue(_ActorHashValue{
-			IdentifierField:    identifierField,
-			Name:               actor.Name,
-			SkelName:           actor.SkelName,
-			Description:        actor.Description,
-			Deprecated:         actor.Deprecated,
-			DeprecatedReason:   actor.DeprecatedReason,
-			AuthEnabled:        actor.Auth != nil,
-			AuthCredential:     authCredentialName,
-			AuthCredentialHash: authCredentialHash,
-			AuthInfo:           authInfoName,
-			AuthInfoHash:       authInfoHash,
-			AuthMethod:         authMethodName,
-			AuthMethodHash:     authMethodHash,
-			PermissionEnabled:  actor.Permission != nil,
-			PermissionMethod:   permMethodName,
-			PermMethodHash:     permMethodHash,
+			Name:                 actor.Name,
+			SkelName:             actor.SkelName,
+			Description:          actor.Description,
+			Deprecated:           actor.Deprecated,
+			DeprecatedReason:     actor.DeprecatedReason,
+			AuthEnabled:          actor.Auth != nil,
+			AuthCredential:       authCredentialName,
+			AuthCredentialHash:   authCredentialHash,
+			AuthInfo:             authInfoName,
+			AuthInfoHash:         authInfoHash,
+			IdentifierField:      identifierField,
+			Impersonators:        impersonators,
+			AuthMethod:           authMethodName,
+			AuthMethodHash:       authMethodHash,
+			PermissionEnabled:    actor.Permission != nil,
+			PermissionMethod:     permissionMethodName,
+			PermissionMethodHash: permissionMethodHash,
 		})
 	})
 }

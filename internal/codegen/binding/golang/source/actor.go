@@ -65,6 +65,12 @@ func (g *_Gen) genActorGo() {
 				g.types.castData(tokenActor.Auth.Credential),
 				info,
 			)
+			if tokenActor.Auth.Result != nil {
+				payload.CredentialData = append(payload.CredentialData, g.types.castData(tokenActor.Auth.Result))
+			}
+			if tokenActor.Auth.ImpersonatorInfo != nil {
+				payload.CredentialData = append(payload.CredentialData, g.types.castData(tokenActor.Auth.ImpersonatorInfo))
+			}
 			payload.AuthServices = append(payload.AuthServices, g.types.castActorAuthService(tokenActor.Auth.Service))
 		}
 		if tokenActor.Permission != nil {
