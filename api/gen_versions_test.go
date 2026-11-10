@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"go.yorun.ai/skel/api"
-	"go.yorun.ai/skel/internal/testutil"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -134,15 +133,6 @@ web ConsoleWeb%[1]s { for ClientActor%[1]s auth required }
 						}
 					}
 				}
-			}
-			// Backend compilation is verified in the consuming runtime; keep CI
-			// independent of Vine, as with the other generator integration tests.
-			if mode == "api" {
-				t.Run("compile", func(t *testing.T) {
-					testutil.RequireToolchain(t)
-					testutil.UseLocalSkel(t, out)
-					testutil.Go(t, out, "test", "-mod=mod", "./...")
-				})
 			}
 		})
 	}

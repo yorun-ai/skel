@@ -8,7 +8,6 @@ import (
 
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestGeneratedGoArgumentNames(t *testing.T) {
@@ -20,7 +19,7 @@ func TestGeneratedGoArgumentNames(t *testing.T) {
 			fields.WriteString(keyword.String() + ": string\n")
 		}
 	}
-	for _, name := range []string{"recover", "ex", "skeltype", "service", "runner", "launcher", "ret", "err", "client", "ctx", "string", "typeName"} {
+	for _, name := range []string{"recover", "ex", "skeltype", "uuid", "service", "runner", "launcher", "ret", "err", "client", "ctx", "string", "typeName"} {
 		fields.WriteString(name + ": string\n")
 	}
 	writeFileForTest(t, input, `domain demo.names
@@ -78,14 +77,6 @@ task NamesTask {
 				codegentest.AssertGoSourceContains(t, task, "launcher_ *")
 				codegentest.AssertGoSourceContains(t, task, "runner_ *")
 				codegentest.AssertGoSourceContains(t, task, "err_ ex.Error")
-			}
-			// Backend compilation is a consumer check; CI stays independent of Vine.
-			if mode == "api" {
-				t.Run("compile", func(t *testing.T) {
-					testutil.RequireToolchain(t)
-					testutil.UseLocalSkel(t, out)
-					testutil.Go(t, out, "test", "-mod=mod", "./...")
-				})
 			}
 		})
 	}

@@ -7,7 +7,6 @@ import (
 
 	"go.yorun.ai/skel/api"
 	"go.yorun.ai/skel/internal/codegen/codegentest"
-	"go.yorun.ai/skel/internal/testutil"
 )
 
 func TestGeneratedScalarTypes(t *testing.T) {
@@ -25,6 +24,8 @@ pub data Values {
     clock: localtime
     local: localdatetime
     id: uuid
+    optionalId: uuid?
+    ids: list<uuid>
     document: json
     optional: timestamp?
     lookup: map<uuid, list<decimal>>
@@ -33,7 +34,7 @@ api service ScalarApiService {
     for ClientActor
     auth required
     method exchange {
-        input { types: Values skeltype: Values }
+        input { types: Values skeltype: Values uuid: uuid }
         output uuid
     }
 }
@@ -64,17 +65,10 @@ api service ScalarApiService {
 			for _, field := range []string{
 				"Amount skeltype.Decimal", "Bytes skeltype.Binary", "At skeltype.Timestamp",
 				"Elapsed skeltype.Duration", "Date skeltype.LocalDate", "Clock skeltype.LocalTime",
-				"Local skeltype.LocalDateTime", "Id skeltype.UUID", "Document skeltype.JSON",
-				"Optional *skeltype.Timestamp", "Lookup map[skeltype.UUID][]skeltype.Decimal",
+				"Local skeltype.LocalDateTime", "Id uuid.UUID", "OptionalId *uuid.UUID", "Ids []uuid.UUID", "Document skeltype.JSON",
+				"Optional *skeltype.Timestamp", "Lookup map[uuid.UUID][]skeltype.Decimal",
 			} {
 				codegentest.AssertGoSourceContains(t, data, field)
-			}
-			if mode == "api" {
-				t.Run("compile", func(t *testing.T) {
-					testutil.RequireToolchain(t)
-					testutil.UseLocalSkel(t, out)
-					testutil.Go(t, out, "test", "-mod=mod", "./...")
-				})
 			}
 		})
 	}

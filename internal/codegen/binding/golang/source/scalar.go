@@ -71,9 +71,9 @@ func castScalarType(p *schema.Type) *Type {
 		}
 	case schema.ScalarUUID:
 		return &Type{
-			Plain:        binding.ChooseString(p.Nullable, "*skeltype.UUID", "skeltype.UUID"),
-			Imports:      []*Import{{Path: typesImport, Alias: "skeltype"}},
-			DefaultValue: binding.ChooseString(p.Nullable, "nil", "skeltype.UUID{}"),
+			Plain:        binding.ChooseString(p.Nullable, "*uuid.UUID", "uuid.UUID"),
+			Imports:      []*Import{{Path: "uuid"}},
+			DefaultValue: binding.ChooseString(p.Nullable, "nil", "uuid.UUID{}"),
 		}
 	case schema.ScalarJSON:
 		return &Type{

@@ -30,7 +30,7 @@ func escapeArgumentNames(arguments []*MethodArgument, result *Type) {
 }
 
 func methodReservedNames(arguments []*MethodArgument, result *Type) map[string]bool {
-	reserved := map[string]bool{"ex": true, "recover": true, "skeltype": true}
+	reserved := map[string]bool{"ex": true, "recover": true, "skeltype": true, "uuid": true}
 	reserveType := func(kind *Type) {
 		if kind == nil {
 			return

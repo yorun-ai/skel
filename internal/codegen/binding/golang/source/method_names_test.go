@@ -45,10 +45,10 @@ func TestEscapeArgumentNames(t *testing.T) {
 	}
 	args := []*MethodArgument{
 		{Name: "Type"}, {Name: "typeName"}, {Name: "recover"}, {Name: "ex"},
-		{Name: "skeltype"}, {Name: "string"}, {Name: "other"},
+		{Name: "skeltype"}, {Name: "uuid"}, {Name: "string"}, {Name: "other"},
 	}
 	escapeArgumentNames(args, &Type{Plain: "[]string"})
-	want := []string{"Type", "typeName", "recover_", "ex_", "skeltype_", "string_", "other"}
+	want := []string{"Type", "typeName", "recover_", "ex_", "skeltype_", "uuid_", "string_", "other"}
 	for i, argument := range args {
 		if argument.Name != want[i] {
 			t.Errorf("argument %d = %q, want %q", i, argument.Name, want[i])
