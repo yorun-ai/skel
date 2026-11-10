@@ -54,6 +54,9 @@ func collectActorImports(domain *schema.Domain, actors []*schema.Actor) []*schem
 		if actor.Auth != nil {
 			types = appendDataImportTypes(types, actor.Auth.Credential)
 			types = appendDataImportTypes(types, actor.Auth.Info)
+			if actor.Auth.ImpersonatorInfo != nil {
+				types = appendDataImportTypes(types, actor.Auth.ImpersonatorInfo)
+			}
 		}
 	}
 	collectImportsFromTypes(used, types)

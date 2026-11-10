@@ -10,6 +10,9 @@ import {{ $import.Name }}{{ with importAlias $import }} as {{ . }}{{ end }}
 {{ template "description" (description $actor.Description 0) }}{{ template "deprecated" (deprecated $actor.Deprecated $actor.DeprecatedReason 0) }}pub actor {{ $actor.Name }} {
 {{- if $actor.Auth }}
     auth {
+{{- if $actor.Auth.Impersonators }}
+        impersonator {{ range $i, $ref := $actor.Auth.Impersonators }}{{ if $i }}, {{ end }}{{ $ref.Actor }}{{ end }}
+{{- end }}
 {{- with $actor.Auth.Credential }}
 {{ template "sensitive" (sensitive .Sensitive 8) }}        credential {
 {{- range $member := .Members }}

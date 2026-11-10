@@ -20,6 +20,13 @@ func validateActor(actor *schema.Actor) error {
 		if err := validateData(actor.Auth.Info); err != nil {
 			return fmt.Errorf("actor %s auth info: %w", actor.Name, err)
 		}
+		if actor.Auth.Result != nil {
+			if err := validateAuthResult(actor); err != nil {
+				return err
+			}
+		} else if len(actor.Auth.Impersonators) != 0 || actor.Auth.ImpersonatorInfo != nil {
+			return fmt.Errorf("actor %s impersonators require an auth result", actor.Name)
+		}
 		if actor.Auth.Service.Api {
 			return fmt.Errorf("API service %s cannot be used as a framework callback", actor.Auth.Service.Name)
 		}
@@ -66,6 +73,46 @@ func validateAudiences(owner string, audiences []*schema.ActorAudience) error {
 		}
 		if audience.Actor == "" {
 			return fmt.Errorf("%s contains an audience without an actor", owner)
+		}
+	}
+	return nil
+}
+
+func validateAuthResult(actor *schema.Actor) error {
+	auth := actor.Auth
+	if err := validateData(auth.Result); err != nil {
+		return fmt.Errorf("actor %s auth result: %w", actor.Name, err)
+	}
+	resultType := auth.Method.ResultType
+	if resultType == nil || resultType.Kind != schema.TypeKindData || resultType.Nullable || resultType.Data != auth.Result {
+		return fmt.Errorf("actor %s auth method must return its auth result", actor.Name)
+	}
+	members := auth.Result.Members
+	expected := 1
+	if len(auth.Impersonators) > 0 {
+		expected = 2
+	}
+	if len(members) != expected || members[0].Name != "info" || members[0].Type.Kind != schema.TypeKindData || members[0].Type.Nullable || members[0].Type.Data != auth.Info {
+		return fmt.Errorf("actor %s auth result must contain its required info", actor.Name)
+	}
+	if expected == 1 {
+		if auth.ImpersonatorInfo != nil {
+			return fmt.Errorf("actor %s has undeclared impersonator info", actor.Name)
+		}
+		return nil
+	}
+	if auth.ImpersonatorInfo == nil || members[1].Name != "impersonatorInfo" || members[1].Type.Kind != schema.TypeKindData || !members[1].Type.Nullable || members[1].Type.Data != auth.ImpersonatorInfo || len(auth.ImpersonatorInfo.Members) != len(auth.Impersonators) {
+		return fmt.Errorf("actor %s has invalid impersonator info", actor.Name)
+	}
+	fields, actors := map[string]bool{}, map[string]bool{}
+	for index, ref := range auth.Impersonators {
+		if ref == nil || ref.ActorSkelName == "" || ref.InfoFieldName == "" || fields[ref.InfoFieldName] || actors[ref.ActorSkelName] {
+			return fmt.Errorf("actor %s has invalid or duplicate impersonator mapping", actor.Name)
+		}
+		fields[ref.InfoFieldName], actors[ref.ActorSkelName] = true, true
+		member := auth.ImpersonatorInfo.Members[index]
+		if member.Name != ref.InfoFieldName || member.Type.Kind != schema.TypeKindData || !member.Type.Nullable {
+			return fmt.Errorf("actor %s impersonator %s must map to nullable info", actor.Name, ref.ActorSkelName)
 		}
 	}
 	return nil

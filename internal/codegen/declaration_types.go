@@ -45,6 +45,8 @@ func (v Declarations) TypeRoots(api bool) []*schema.Type {
 		if actor.Auth != nil {
 			addData(actor.Auth.Credential)
 			addData(actor.Auth.Info)
+			addData(actor.Auth.Result)
+			addData(actor.Auth.ImpersonatorInfo)
 			addService(actor.Auth.Service)
 		}
 		if actor.Permission != nil {

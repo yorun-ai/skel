@@ -24,6 +24,12 @@ func FillHashes(domain *schema.Domain) error {
 		if actor.Auth != nil {
 			actor.Auth.Credential.Hash = state.dataHash(actor.Auth.Credential)
 			actor.Auth.Info.Hash = state.dataHash(actor.Auth.Info)
+			if actor.Auth.Result != nil {
+				actor.Auth.Result.Hash = state.dataHash(actor.Auth.Result)
+			}
+			if actor.Auth.ImpersonatorInfo != nil {
+				actor.Auth.ImpersonatorInfo.Hash = state.dataHash(actor.Auth.ImpersonatorInfo)
+			}
 			actor.Auth.Service.Hash = state.serviceHash(actor.Auth.Service)
 		}
 		if actor.Permission != nil {

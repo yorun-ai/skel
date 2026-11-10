@@ -12,7 +12,7 @@ import (
 
 var completionKeywords = []string{
 	"actor", "action", "all", "any", "as", "auth", "check", "config", "credential", "data",
-	"domain", "enum", "event", "for", "import", "info", "input", "method", "mount", "output",
+	"domain", "enum", "event", "for", "import", "impersonator", "info", "input", "method", "mount", "output",
 	"abs", "api", "ext", "payload", "permission", "pub", "require", "resource", "service", "task", "trigger", "web",
 }
 

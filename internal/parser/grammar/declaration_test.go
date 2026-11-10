@@ -121,3 +121,13 @@ func TestWebMountSyntax(t *testing.T) {
 		t.Fatalf("unexpected path or position: %+v", path)
 	}
 }
+
+func TestActorImpersonatorSyntax(t *testing.T) {
+	for _, clause := range []string{"impersonator AActor,\n// next\nother.BActor", "impersonator AActor"} {
+		content := parseSkelForTest(t, "domain demo\nactor UserActor { auth { "+clause+"\ncredential { token: string } info {} } }")
+		auth := content.Entries[0].Actor.Sections[0].Auth
+		if auth.Sections[0].Impersonator == nil || auth.Sections[0].Impersonator.Pos.Line != 2 {
+			t.Fatal("missing impersonator/source position")
+		}
+	}
+}

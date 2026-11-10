@@ -134,6 +134,12 @@ func Dependencies(domain *Domain) *DependencyReport {
 		if declaration.Actor != nil && declaration.Actor.Auth != nil {
 			data(declaration.Actor.Auth.Credential)
 			data(declaration.Actor.Auth.Info)
+			if declaration.Actor.Auth.ImpersonatorInfo != nil {
+				data(declaration.Actor.Auth.ImpersonatorInfo)
+			}
+			for _, ref := range declaration.Actor.Auth.Impersonators {
+				add(ref.ActorSkelName, "actor")
+			}
 		}
 		if declaration.Resource != nil {
 			checks(declaration.Resource.Checks)

@@ -139,6 +139,10 @@ func (p *Analysis) checkActorGeneratedNames() {
 		if actor.Auth != nil {
 			p.checkGeneratedIdentifier(actor.Auth.Credential.Name, actor.Auth.Credential.Pos, generated)
 			p.checkGeneratedIdentifier(actor.Auth.Info.Name, actor.Auth.Info.Pos, generated)
+			p.checkGeneratedIdentifier(actor.Auth.Result.Name, actor.Auth.Result.Pos, generated)
+			if actor.Auth.ImpersonatorInfo != nil {
+				p.checkGeneratedIdentifier(actor.Auth.ImpersonatorInfo.Name, actor.Auth.ImpersonatorInfo.Pos, generated)
+			}
 			p.checkGeneratedIdentifier(actor.Auth.Service.Name, actor.Pos, generated)
 		}
 		if actor.Permission != nil {

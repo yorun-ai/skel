@@ -18,6 +18,14 @@ func (g *_Gen) buildActorDescriptor(value *schema.Actor) *descriptor.Actor {
 			Service:         g.buildGeneratedServiceDescriptor(auth.Service), MethodName: generatedMethodName(auth.Method),
 		})
 	}
+	if value.Auth != nil {
+		for _, ref := range value.Auth.Impersonators {
+			result.Auth.Impersonators = append(result.Auth.Impersonators, new(descriptor.ActorImpersonator{
+				InfoFieldName: ref.InfoFieldName,
+				ActorSkelName: ref.ActorSkelName,
+			}))
+		}
+	}
 	if permission := value.Permission; permission != nil {
 		result.Permission = new(descriptor.ActorPermission{
 			Service: g.buildGeneratedServiceDescriptor(permission.Service), MethodName: generatedMethodName(permission.Method),

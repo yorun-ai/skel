@@ -120,8 +120,6 @@ const (
 
 // Argument describes one service-method or task-trigger argument.
 type Argument struct {
-	// Source identifies whether the caller or runtime supplies this argument.
-	Source ArgumentSource
 	// Pos is the argument's source position.
 	Pos Position
 	// Name is the argument's local name.
@@ -136,6 +134,8 @@ type Argument struct {
 	Example string
 	// Sensitive reports whether the argument carries redaction semantics.
 	Sensitive bool
+	// Source identifies whether the caller or runtime supplies this argument.
+	Source ArgumentSource
 	// Type is the argument's resolved semantic type.
 	Type *Type
 }

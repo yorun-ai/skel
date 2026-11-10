@@ -48,6 +48,7 @@ func (p *Analysis) normalizeOwnedTypes(refs *_RefContext, allowMissingImports bo
 		if actor.Auth != nil {
 			p.normalizeDataType(actor.Auth.Credential, refs)
 			p.normalizeDataType(actor.Auth.Info, refs)
+			p.normalizeImpersonators(actor, allowMissingImports)
 		}
 		if actor.Permission != nil {
 			p.normalizeServiceTypes(actor.Permission.Service, refs)
