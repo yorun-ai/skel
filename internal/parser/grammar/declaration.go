@@ -22,8 +22,8 @@ type EnumItem struct {
 }
 
 type Data struct {
-	EndPos         lexer.Position
 	Pos            lexer.Position
+	EndPos         lexer.Position
 	Decorators     []*Decorator
 	Pub            bool
 	Abs            bool
@@ -178,13 +178,22 @@ type ActorAuth struct {
 	Pos      lexer.Position
 	Sections []*ActorAuthSection `parser:"\"auth\" \"{\" (Newline)* (@@ (Newline)*)* \"}\""`
 
-	Credential *ActorCredential
-	Info       *ActorInfo
+	Credential   *ActorCredential
+	Info         *ActorInfo
+	Impersonator *ActorImpersonator
 }
 
 func (auth *ActorAuth) Finalize() error {
 	for _, section := range auth.Sections {
 		switch {
+		case section.Impersonator != nil:
+			if len(section.Decorators) != 0 {
+				return participle.Errorf(section.Impersonator.Pos, "impersonator does not accept decorators")
+			}
+			if auth.Impersonator != nil {
+				return participle.Errorf(section.Impersonator.Pos, "duplicated actor auth impersonator")
+			}
+			auth.Impersonator = section.Impersonator
 		case section.Credential != nil:
 			section.Credential.Decorators = section.Decorators
 			if auth.Credential != nil {
@@ -203,9 +212,16 @@ func (auth *ActorAuth) Finalize() error {
 }
 
 type ActorAuthSection struct {
-	Decorators []*Decorator     `parser:"(@@ (Newline)*)* ("`
-	Credential *ActorCredential `parser:"  (?= \"credential\") @@"`
-	Info       *ActorInfo       `parser:"| @@)"`
+	Decorators   []*Decorator       `parser:"(@@ (Newline)*)* ("`
+	Credential   *ActorCredential   `parser:"  (?= \"credential\") @@"`
+	Impersonator *ActorImpersonator `parser:"| (?= \"impersonator\") @@"`
+	Info         *ActorInfo         `parser:"| @@)"`
+}
+
+// ActorImpersonator declares the allowed operator actors in an auth block.
+type ActorImpersonator struct {
+	Pos    lexer.Position
+	Actors []*QualifiedName `parser:"\"impersonator\" @@ ((Newline)* \",\" (Newline)* @@)*"`
 }
 
 type ActorCredential struct {

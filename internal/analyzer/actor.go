@@ -5,6 +5,7 @@ import (
 
 	"github.com/alecthomas/participle/v2/lexer"
 	"go.yorun.ai/skel/internal/parser/grammar"
+	"go.yorun.ai/skel/internal/util/nameutil"
 	"go.yorun.ai/skel/schema"
 )
 
@@ -45,8 +46,28 @@ func parseActorAuth(reporter *_DiagnosticReporter, ga *grammar.Actor) (*schema.A
 	}
 	credential, credentialValid := parseActorCredential(reporter, ga, authSection)
 	info, identifierField, infoValid := parseActorInfo(reporter, ga, authSection)
+	var impersonators []*schema.ActorImpersonator
+	seen := map[string]bool{}
+	if authSection.Impersonator != nil {
+		for _, ref := range authSection.Impersonator.Actors {
+			if reporter.cancelled() {
+				break
+			}
+			name := ref.String()
+			valid = reporter.checkNotDuplicate(seen[name], "%s duplicated impersonator %s", ref.Pos, name) && valid
+			seen[name] = true
+			impersonators = append(impersonators, new(schema.ActorImpersonator{
+				Pos:   position(ref.Pos),
+				Actor: name,
+			}))
+		}
+	}
 	return new(schema.ActorAuth{
-		Pos: position(authSection.Pos), Credential: credential, Info: info, IdentifierField: identifierField,
+		Pos:             position(authSection.Pos),
+		Credential:      credential,
+		Info:            info,
+		IdentifierField: identifierField,
+		Impersonators:   impersonators,
 	}), credentialValid && infoValid && valid
 }
 
@@ -201,7 +222,41 @@ func buildActorAuthService(actor *schema.Actor) *schema.Service {
 	}
 	serviceName := actor.Name + "AuthService"
 	credentialType := dataRefType(actor.Auth.Credential)
-	infoType := dataRefType(actor.Auth.Info)
+	auth := actor.Auth
+	result := new(schema.Data{
+		Name:     actor.Name + "AuthResult",
+		Domain:   auth.Info.Domain,
+		SkelName: auth.Info.Domain + "." + actor.Name + "AuthResult",
+		Pos:      auth.Pos,
+		Kind:     schema.DataKindData,
+		Pub:      actor.Pub,
+		Members: []*schema.DataMember{
+			new(schema.DataMember{
+				Pos:  auth.Pos,
+				Name: "info",
+				Type: dataRefType(auth.Info),
+			}),
+		},
+	})
+	auth.Result = result
+	if len(auth.Impersonators) > 0 {
+		auth.ImpersonatorInfo = new(schema.Data{
+			Name:     actor.Name + "ImpersonatorInfo",
+			Domain:   auth.Info.Domain,
+			SkelName: auth.Info.Domain + "." + actor.Name + "ImpersonatorInfo",
+			Pos:      auth.Pos,
+			Kind:     schema.DataKindData,
+			Pub:      actor.Pub,
+		})
+		kind := dataRefType(auth.ImpersonatorInfo)
+		kind.Nullable = true
+		result.Members = append(result.Members, new(schema.DataMember{
+			Pos:  auth.Pos,
+			Name: "impersonatorInfo",
+			Type: kind,
+		}))
+	}
+	infoType := dataRefType(result)
 	credentialArgument := &schema.Argument{
 		Name: "credential",
 		Pos:  actor.Auth.Credential.Pos,
@@ -279,5 +334,60 @@ func dataRefType(data *schema.Data) *schema.Type {
 		Kind:     schema.TypeKindData,
 		Data:     data,
 		SkelName: data.SkelName,
+	}
+}
+
+func (p *Analysis) normalizeImpersonators(actor *schema.Actor, allowMissingImports bool) {
+	auth := actor.Auth
+	if auth.ImpersonatorInfo == nil {
+		return
+	}
+	auth.ImpersonatorInfo.Members = nil
+	fields := map[string]bool{}
+	resolved := map[string]bool{}
+	for _, ref := range auth.Impersonators {
+		if p.reporter.cancelled() {
+			break
+		}
+		qualifier, _, external := nameutil.SplitQualified(ref.Actor)
+		if external && p.importsMap[qualifier] == nil && allowMissingImports {
+			continue
+		}
+		target := p.actorByRef(ref.Actor)
+		if !p.reporter.checkReference(target != nil, "%s undefined impersonator actor %s", ref.Pos, ref.Actor) {
+			continue
+		}
+		if !p.reporter.check(target.Auth != nil, "%s impersonator actor %s must declare auth info", ref.Pos, ref.Actor) {
+			continue
+		}
+		if !p.reporter.check(!external || target.Pub, "%s impersonator actor %s is not public", ref.Pos, ref.Actor) {
+			continue
+		}
+		if !p.reporter.check(!actor.Pub || target.Pub, "%s public actor %s cannot expose private impersonator %s", ref.Pos, actor.Name, ref.Actor) {
+			continue
+		}
+		ref.ActorSkelName = target.SkelName
+		ref.InfoFieldName = nameutil.ToLowerCamel(target.Name) + "Info"
+		if !p.reporter.checkNotDuplicate(resolved[target.SkelName], "%s duplicated impersonator actor %s", ref.Pos, ref.Actor) {
+			continue
+		}
+		resolved[target.SkelName] = true
+		if !p.reporter.checkNotDuplicate(fields[ref.InfoFieldName], "%s impersonator info field %s conflicts with another actor", ref.Pos, ref.InfoFieldName) {
+			continue
+		}
+		fields[ref.InfoFieldName] = true
+		kind := dataRefType(target.Auth.Info)
+		kind.Nullable = true
+		if external {
+			imported := p.importsMap[qualifier]
+			kind.ExternalDomain = imported.Domain.name
+			kind.ExternalAlias = imported.Schema.Alias
+			kind.ExternalAliasExplicit = imported.Schema.ExplicitAlias
+		}
+		auth.ImpersonatorInfo.Members = append(auth.ImpersonatorInfo.Members, new(schema.DataMember{
+			Pos:  ref.Pos,
+			Name: ref.InfoFieldName,
+			Type: kind,
+		}))
 	}
 }

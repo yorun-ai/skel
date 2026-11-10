@@ -219,6 +219,19 @@ func sourceBoundaries(source []byte, audiences *[]_Audience) map[int]int {
 			}
 			visit(node.Credential)
 			visit(node.Info)
+			visit(node.Impersonator)
+		case *grammar.ActorImpersonator:
+			if node == nil {
+				return
+			}
+			list := _Audience{start: node.Pos.Offset}
+			for _, ref := range node.Actors {
+				list.actors = append(list.actors, ref.Pos.Offset)
+				part := ref.Parts[len(ref.Parts)-1]
+				list.end = part.Pos.Offset + len(part.Value)
+			}
+			*audiences = append(*audiences, list)
+			boundaries[node.Pos.Offset] = max(boundaries[node.Pos.Offset], 1)
 		case *grammar.ActorCredential:
 			if node == nil {
 				return

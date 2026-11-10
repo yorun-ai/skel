@@ -522,3 +522,23 @@ func TestAbstractConfigRoundTrip(t *testing.T) {
 		t.Fatalf("non-idempotent format: %s", formatted)
 	}
 }
+
+func TestActorImpersonatorRoundTrip(t *testing.T) {
+	source := []byte(`domain demo
+actor UserActor { auth { impersonator UserActor, // operator
+OpsActor credential { token:string } info { id:string } } }
+actor OpsActor { auth { credential { token:string } info { id:string } } }
+`)
+	formatted := formatTestSource(t, source)
+	checkTestSource(t, "actor.skel", formatted)
+	if string(formatTestSource(t, formatted)) != string(formatted) {
+		t.Fatal("formatter is not idempotent")
+	}
+	content, err := parser.ParseSource("actor.skel", formatted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(content.Entries[0].Actor.Sections[0].Auth.Impersonator.Actors) != 2 {
+		t.Fatal("lost operator references")
+	}
+}

@@ -35,6 +35,14 @@ func (g *_Gen) buildDomainDescriptor() *descriptor.Domain {
 	}
 	for _, value := range domainView.Actors {
 		result.Actors = append(result.Actors, g.buildActorDescriptor(value))
+		if value.Auth != nil {
+			if value.Auth.Result != nil {
+				result.Data = append(result.Data, g.buildDataDescriptor(value.Auth.Result))
+			}
+			if value.Auth.ImpersonatorInfo != nil {
+				result.Data = append(result.Data, g.buildDataDescriptor(value.Auth.ImpersonatorInfo))
+			}
+		}
 	}
 	for _, value := range domainView.Resources {
 		result.Resources = append(result.Resources, g.buildResourceDescriptor(value))

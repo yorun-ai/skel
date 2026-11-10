@@ -79,6 +79,11 @@ func validatePublicView(view *PublicView) error {
 		if err := validateMembers("pub actor "+actor.Name+" credential", actor.Auth.Credential.Members, map[*schema.Data]bool{}); err != nil {
 			return err
 		}
+		if actor.Auth.ImpersonatorInfo != nil {
+			if err := validateMembers("pub actor "+actor.Name+" impersonator", actor.Auth.ImpersonatorInfo.Members, map[*schema.Data]bool{}); err != nil {
+				return err
+			}
+		}
 		if err := validateMembers("pub actor "+actor.Name+" info", actor.Auth.Info.Members, map[*schema.Data]bool{}); err != nil {
 			return err
 		}

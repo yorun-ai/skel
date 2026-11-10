@@ -140,9 +140,9 @@ func serviceDeclaration(name string, methods ...string) *schema.Declaration {
 	}
 }
 
-func actorDomain(authEnabled, permEnabled bool) *schema.Domain {
+func actorDomain(authEnabled, permissionEnabled bool) *schema.Domain {
 	actor := new(schema.Actor{})
-	if permEnabled {
+	if permissionEnabled {
 		actor.Permission = new(schema.ActorPermission{})
 	}
 	if authEnabled {

@@ -15,10 +15,12 @@ type Actor struct {
 // ActorAuth describes an actor's declared authentication and its derived service.
 // A nil Actor.Auth means the actor does not declare authentication.
 type ActorAuth struct {
-	Credential      *Data    `json:"credential"`
-	Info            *Data    `json:"info"`
-	IdentifierField string   `json:"identifierField,omitempty"`
-	Service         *Service `json:"service"`
+	Credential      *Data  `json:"credential"`
+	Info            *Data  `json:"info"`
+	IdentifierField string `json:"identifierField,omitempty"`
+	// Impersonators maps the optional result fields to explicitly supported actors.
+	Impersonators []*ActorImpersonator `json:"impersonators,omitempty"`
+	Service       *Service             `json:"service"`
 	// MethodName references the authentication method by its local name in Service.
 	MethodName string `json:"methodName"`
 }
@@ -60,4 +62,12 @@ func hasAudience(audiences []*ActorAudience, actor string) bool {
 		}
 	}
 	return false
+}
+
+// ActorImpersonator maps an authentication result info field to an operator actor.
+type ActorImpersonator struct {
+	// InfoFieldName names a member of the auth result impersonatorInfo object.
+	InfoFieldName string `json:"infoFieldName"`
+	// ActorSkelName is the fully qualified operator actor reference.
+	ActorSkelName string `json:"actorSkelName"`
 }

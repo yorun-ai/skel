@@ -65,35 +65,36 @@ type _DataHashValue struct {
 }
 
 type _WebHashValue struct {
-	Auth             schema.AuthMode       `json:"auth,omitempty"`
-	MountPath        string                `json:"mountPath,omitempty"`
 	Name             string                `json:"name"`
 	SkelName         string                `json:"skelName"`
 	Description      string                `json:"description,omitempty"`
 	Deprecated       bool                  `json:"deprecated,omitempty"`
 	DeprecatedReason string                `json:"deprecatedReason,omitempty"`
 	Actors           []*_ActorRefHashValue `json:"actors,omitempty"`
+	Auth             schema.AuthMode       `json:"auth,omitempty"`
+	MountPath        string                `json:"mountPath,omitempty"`
 }
 
 // _ActorHashValue encodes language semantics independently of the public Actor layout.
 // Grouping capability metadata must not change the hash of an unchanged declaration.
 type _ActorHashValue struct {
-	IdentifierField    string `json:"identifierField,omitempty"`
-	Name               string `json:"name"`
-	SkelName           string `json:"skelName"`
-	Description        string `json:"description,omitempty"`
-	Deprecated         bool   `json:"deprecated,omitempty"`
-	DeprecatedReason   string `json:"deprecatedReason,omitempty"`
-	AuthEnabled        bool   `json:"authEnabled,omitempty"`
-	AuthCredential     string `json:"authCredential,omitempty"`
-	AuthCredentialHash string `json:"authCredentialHash,omitempty"`
-	AuthInfo           string `json:"authInfo,omitempty"`
-	AuthInfoHash       string `json:"authInfoHash,omitempty"`
-	AuthMethod         string `json:"authMethod,omitempty"`
-	AuthMethodHash     string `json:"authMethodHash,omitempty"`
-	PermissionEnabled  bool   `json:"permEnabled,omitempty"`
-	PermissionMethod   string `json:"permMethod,omitempty"`
-	PermMethodHash     string `json:"permMethodHash,omitempty"`
+	Name                 string   `json:"name"`
+	SkelName             string   `json:"skelName"`
+	Description          string   `json:"description,omitempty"`
+	Deprecated           bool     `json:"deprecated,omitempty"`
+	DeprecatedReason     string   `json:"deprecatedReason,omitempty"`
+	AuthEnabled          bool     `json:"authEnabled,omitempty"`
+	AuthCredential       string   `json:"authCredential,omitempty"`
+	AuthCredentialHash   string   `json:"authCredentialHash,omitempty"`
+	AuthInfo             string   `json:"authInfo,omitempty"`
+	AuthInfoHash         string   `json:"authInfoHash,omitempty"`
+	IdentifierField      string   `json:"identifierField,omitempty"`
+	Impersonators        []string `json:"impersonators,omitempty"`
+	AuthMethod           string   `json:"authMethod,omitempty"`
+	AuthMethodHash       string   `json:"authMethodHash,omitempty"`
+	PermissionEnabled    bool     `json:"permissionEnabled,omitempty"`
+	PermissionMethod     string   `json:"permissionMethod,omitempty"`
+	PermissionMethodHash string   `json:"permissionMethodHash,omitempty"`
 }
 
 type _ResourceHashValue struct {
@@ -128,13 +129,13 @@ type _ResourceCheck struct {
 }
 
 type _ServiceHashValue struct {
-	Ext              bool                  `json:"ext,omitempty"`
 	Name             string                `json:"name"`
 	SkelName         string                `json:"skelName"`
 	Description      string                `json:"description,omitempty"`
 	Deprecated       bool                  `json:"deprecated,omitempty"`
 	DeprecatedReason string                `json:"deprecatedReason,omitempty"`
 	Pub              bool                  `json:"pub,omitempty"`
+	Ext              bool                  `json:"ext,omitempty"`
 	Api              bool                  `json:"api,omitempty"`
 	Actors           []*_ActorRefHashValue `json:"actors,omitempty"`
 	Auth             string                `json:"auth,omitempty"`
