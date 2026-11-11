@@ -20,6 +20,9 @@ func validateActor(actor *schema.Actor) error {
 		if err := validateData(actor.Auth.Info); err != nil {
 			return fmt.Errorf("actor %s auth info: %w", actor.Name, err)
 		}
+		if len(actor.Auth.Info.Members) == 0 {
+			return fmt.Errorf("actor %s auth info must have at least one member", actor.Name)
+		}
 		if actor.Auth.Result != nil {
 			if err := validateAuthResult(actor); err != nil {
 				return err

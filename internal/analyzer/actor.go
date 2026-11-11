@@ -145,6 +145,7 @@ func parseActorInfo(reporter *_DiagnosticReporter, ga *grammar.Actor, authSectio
 		Members: members,
 	}, schema.DataKindData)
 	valid = metaValid && valid
+	valid = reporter.check(len(info.Members) > 0, "%s actor info must have at least one member", infoSection.Pos) && valid
 	info.Sensitive = meta.Sensitive
 	info.Pub = ga.Pub
 	for _, member := range info.Members {

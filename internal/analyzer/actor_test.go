@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"go.yorun.ai/skel/internal/parser"
+	"strings"
 	"testing"
 
 	"go.yorun.ai/skel/internal/parser/grammar"
@@ -211,7 +212,7 @@ func TestActorIdentifier(t *testing.T) {
 	for _, source := range []string{
 		"domain demo\ndata User { @identifier id: int }",
 		"domain demo\n@identifier actor UserActor {}",
-		"domain demo\nactor UserActor { auth { credential { @identifier token: string } info {} } }",
+		"domain demo\nactor UserActor { auth { credential { @identifier token: string } info { id: string } } }",
 	} {
 		content, err := parser.ParseSource("invalid.skel", []byte(source))
 		if err != nil {
@@ -312,22 +313,58 @@ func TestActorImpersonatorNameCollisionAndVisibility(t *testing.T) {
 		local    string
 		want     string
 	}{
-		{"field collision", "pub actor OpsActor", "shared.OpsActor, OpsActor", "pub actor OpsActor { auth { credential { token: string } info {} } }", "info field opsActorInfo conflicts"},
+		{"field collision", "pub actor OpsActor", "shared.OpsActor, OpsActor", "pub actor OpsActor { auth { credential { token: string } info { id: string } } }", "info field opsActorInfo conflicts"},
 		{"private import", "actor OpsActor", "shared.OpsActor", "", "is not public"},
-		{"private local", "pub actor OpsActor", "LocalActor", "actor LocalActor { auth { credential { token: string } info {} } }", "cannot expose private impersonator"},
+		{"private local", "pub actor OpsActor", "LocalActor", "actor LocalActor { auth { credential { token: string } info { id: string } } }", "cannot expose private impersonator"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			content, err := parser.ParseSource("shared.skel", []byte("domain shared\n"+tc.imported+" { auth { credential { token: string } info {} } }"))
+			content, err := parser.ParseSource("shared.skel", []byte("domain shared\n"+tc.imported+" { auth { credential { token: string } info { id: string } } }"))
 			if err != nil {
 				t.Fatal(err)
 			}
 			imported := mustAnalyze(t, content)
-			content, err = parser.ParseSource("app.skel", []byte("domain app\nimport shared\npub actor UserActor { auth { impersonator "+tc.clause+"\ncredential { token: string } info {} } }\n"+tc.local))
+			content, err = parser.ParseSource("app.skel", []byte("domain app\nimport shared\npub actor UserActor { auth { impersonator "+tc.clause+"\ncredential { token: string } info { id: string } } }\n"+tc.local))
 			if err != nil {
 				t.Fatal(err)
 			}
 			_, diagnostics := Analyze(content, []*Analysis{imported})
 			assertDiagnosticsContain(t, diagnostics, tc.want)
+		})
+	}
+}
+
+func TestActorInfoRequiresMembersButNotIdentifier(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		fields string
+		valid  bool
+	}{
+		{name: "empty"},
+		{name: "comments only", fields: "// no fields\n"},
+		{name: "without identifier", fields: "role: string", valid: true},
+		{name: "nullable field", fields: "role: string?", valid: true},
+		{name: "identifier", fields: "@identifier id: int", valid: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			source := "domain demo\nactor UserActor { auth {\ncredential { token: string }\ninfo { " + tc.fields + " }\n} }"
+			content, err := parser.ParseSource("actor.skel", []byte(source))
+			if err != nil {
+				t.Fatal(err)
+			}
+			analysis, diagnostics := Analyze(content, nil)
+			if tc.valid {
+				if len(diagnostics) != 0 {
+					t.Fatalf("unexpected diagnostics: %v", diagnostics)
+				}
+				if tc.name != "identifier" && analysis.actorsMap["UserActor"].Auth.IdentifierField != "" {
+					t.Fatal("identifier was inferred")
+				}
+			} else {
+				assertDiagnosticsContain(t, diagnostics, "actor info must have at least one member")
+				if !strings.Contains(diagnostics[0].Error(), "actor.skel:4:") {
+					t.Fatalf("expected info source position: %v", diagnostics)
+				}
+			}
 		})
 	}
 }
