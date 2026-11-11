@@ -6,6 +6,66 @@ The project follows [Semantic Versioning](https://semver.org/). The public versi
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-11-11
+
+### Added
+
+- Declare supported impersonators in actor auth blocks with
+  `impersonator OpsActor, AdminActor`, including imported public actors and the
+  current actor. Generate typed operator-info fields and explicit descriptor
+  mappings; preserve them in public contracts, schema queries, dependency
+  reports, compatibility comparisons, formatting and language tooling.
+- Provide `go.yorun.ai/skel/types/codec` as the shared JSON/CBOR payload codec.
+  Native UUIDs encode as strings, nil collections encode as empty collections,
+  duplicate keys are rejected, and CBOR decoding honors JSON scalar validation.
+
+### Changed
+
+- All generated actor auth methods now return `<ActorName>AuthResult` with a
+  required `info` field instead of returning `<ActorName>Info` directly. Actors
+  declaring impersonators also receive nullable `impersonatorInfo` containing
+  nullable fields such as `opsActorInfo`; a non-null operator selection must
+  contain exactly one non-null candidate.
+- Generate native Go `uuid.UUID` values for UUID fields and map keys. Retain
+  `types.UUID` and `types.NewUUID` as deprecated compatibility APIs.
+- Require and default generated backend Go modules to Vine v0.33.0 and generated
+  Go API clients to vRPC Go v0.17.0.
+- Include impersonator mappings and authentication-result types in compatibility
+  hashes. Normalize actor, web and service hash metadata, including full
+  permission field names.
+- Upgrade the decimal dependency to v1.6.0. Decoding now applies its default
+  limit of 10000 to the exponent magnitude after accounting for fractional
+  digits.
+
+### Fixed
+
+- Reject empty actor `auth.info {}` declarations in source compilation and
+  generator SDK validation. Info must declare at least one field; `@identifier`
+  remains optional and nullable fields remain supported.
+- Normalize declaration spacing, decorators, multiline argument lists, actor
+  audiences and file headers while preserving comments and token contents.
+
+### Upgrade Notes
+
+- Regenerate backend packages and update authentication implementations to return
+  the generated auth-result structure and populate its `Info` field. This also
+  applies to actors that do not declare impersonators. Add a field to any empty
+  auth info declaration; there is no new requirement to mark an identifier.
+- Adopt regenerated output together with the matching Vine v0.33.0 or vRPC Go
+  v0.17.0 runtime release. Upgrade portal before enabling authentication services
+  returning the new envelope, and upgrade receiving Vine runtimes before sending
+  impersonated identities. Skel declarations do not implement session switching
+  or authorize impersonation; these decisions remain in the business auth service.
+- Migrate Go UUID assignments and helper calls to native `uuid.UUID`, and use
+  the shared payload codec for JSON/CBOR integration. Existing string UUID wire
+  representations remain unchanged when using that codec.
+- Regenerate related descriptors and registrations together. Actor, web and
+  extension-service compatibility hashes can change even when their source
+  declarations have not changed.
+- Align custom decimal validators with the decoder's exponent limit. For
+  example, `1e10000` and `0.1e10001` are accepted, while `1e10001` and
+  `0.1e-10000` are rejected.
+
 ## [0.34.0] - 2026-10-21
 
 ### Changed
@@ -1111,7 +1171,8 @@ Initial public release.
 - Public Skel contract extraction for cross-domain sharing
 - Binary-aware sparse vRPC wire-schema generation for TypeScript clients
 
-[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.34.0...HEAD
+[Unreleased]: https://github.com/yorun-ai/skel/compare/v0.35.0...HEAD
+[0.35.0]: https://github.com/yorun-ai/skel/compare/v0.34.0...v0.35.0
 [0.34.0]: https://github.com/yorun-ai/skel/compare/v0.33.0...v0.34.0
 [0.33.0]: https://github.com/yorun-ai/skel/compare/v0.32.1...v0.33.0
 [0.32.1]: https://github.com/yorun-ai/skel/compare/v0.32.0...v0.32.1
