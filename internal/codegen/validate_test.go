@@ -164,7 +164,11 @@ func TestPrepareRequiresCanonicalCallbackMethods(t *testing.T) {
 				switch owner {
 				case "actor auth":
 					spec.Actors = []*schema.Actor{{Name: "ClientActor", Auth: new(schema.ActorAuth{
-						Credential: new(schema.Data{Kind: schema.DataKindData}), Info: new(schema.Data{Kind: schema.DataKindData}),
+						Credential: new(schema.Data{Kind: schema.DataKindData}),
+						Info: new(schema.Data{
+							Kind:    schema.DataKindData,
+							Members: []*schema.DataMember{{Name: "role", Type: new(schema.Type{Kind: schema.TypeKindScalar, Scalar: schema.ScalarString})}},
+						}),
 						Service: service, Method: method,
 					})}}
 				case "actor permission":
